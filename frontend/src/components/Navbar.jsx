@@ -108,56 +108,6 @@ export default function Navbar({
 
             <span className="text-slate-700">|</span>
 
-            {/* Staff Quick Link */}
-            {staffUser ? (
-              <div className="flex items-center gap-1 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded text-emerald-200">
-                <button 
-                  onClick={() => setActiveView('staff')}
-                  className="hover:underline font-bold"
-                >
-                  Staff: {staffUser.name?.split(' ')[0]}
-                </button>
-                <button 
-                  onClick={onStaffLogout} 
-                  className="text-slate-400 hover:text-rose-400 ml-1"
-                  title="Logout Staff"
-                >
-                  <LogOut className="w-3 h-3" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onOpenStaffAuth}
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <UserCheck className="w-3 h-3 text-emerald-400/80" />
-                <span>{t.staff}</span>
-              </button>
-            )}
-
-            <span className="text-slate-700">|</span>
-
-            {/* Admin Quick Link */}
-            {adminUser ? (
-              <button
-                onClick={() => setActiveView('admin')}
-                className="text-amber-300 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Shield className="w-3 h-3 text-amber-400" />
-                <span>Admin ({adminUser.name?.split(' ')[0]})</span>
-              </button>
-            ) : (
-              <button
-                onClick={onOpenAdminAuth}
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <Shield className="w-3 h-3 text-amber-400/80" />
-                <span>{t.admin}</span>
-              </button>
-            )}
-
-            <span className="text-slate-700">|</span>
-
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}

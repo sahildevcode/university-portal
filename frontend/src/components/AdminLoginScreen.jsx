@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Key, User, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export default function AdminLoginScreen({ onLoginSuccess }) {
+export default function AdminLoginScreen({ onLoginSuccess, onBackToPublic }) {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
@@ -38,15 +38,15 @@ export default function AdminLoginScreen({ onLoginSuccess }) {
         
         {/* Top Header */}
         <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-8 text-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center mx-auto shadow-lg shadow-amber-400/20 font-black">
-            <Shield className="w-9 h-9" />
+          <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-amber-400 mx-auto shadow-lg shadow-amber-400/20">
+            <img src="/pkc_logo.png" alt="PKC Logo" className="w-full h-full object-contain rounded-full" />
           </div>
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tight text-white">
-              Apex Admin Portal
+              PKC Admin Control Desk
             </h2>
             <p className="text-xs text-indigo-200 mt-1">
-              Authorized Registrar & University Administrative Console
+              PKC Education Learning Institute &amp; Consultancy, Chhatarpur
             </p>
           </div>
         </div>
@@ -107,6 +107,16 @@ export default function AdminLoginScreen({ onLoginSuccess }) {
           <p className="text-[11px] text-center text-slate-400">
             * Authorized personnel only. All access actions are logged and audited.
           </p>
+
+          <div className="pt-2 text-center border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onBackToPublic}
+              className="text-xs font-semibold text-slate-500 hover:text-amber-600 transition-colors inline-flex items-center gap-1 cursor-pointer"
+            >
+              ← Return to Student Website
+            </button>
+          </div>
 
         </form>
 

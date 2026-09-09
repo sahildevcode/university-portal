@@ -12,9 +12,19 @@ import InquiryPage from './pages/InquiryPage';
 import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 
+// Helper to detect initial view based on browser URL pathname
+const getInitialView = () => {
+  if (typeof window !== 'undefined') {
+    const p = window.location.pathname.toLowerCase();
+    if (p === '/admin' || p.startsWith('/admin/')) return 'admin';
+    if (p === '/staff' || p.startsWith('/staff/')) return 'staff';
+  }
+  return 'public';
+};
+
 export default function App() {
   // Active Main View: 'public' (Default) | 'admin' | 'staff'
-  const [activeView, setActiveView] = useState('public');
+  const [activeView, setActiveView] = useState(getInitialView);
 
   // Active Sub-Tab in Public Portal: 'home' | 'about' | 'courses' | 'inquiry'
   const [publicTab, setPublicTab] = useState('home');
@@ -30,6 +40,31 @@ export default function App() {
 
   // Animated Splash Screen state (Logo + Name animation on first load)
   const [showSplash, setShowSplash] = useState(true);
+
+  // Navigation helper to sync URL and view state
+  const navigateTo = (view, path) => {
+    setActiveView(view);
+    if (typeof window !== 'undefined' && window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+  };
+
+  // Sync state if user clicks browser Back/Forward buttons
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const p = window.location.pathname.toLowerCase();
+      if (p === '/admin' || p.startsWith('/admin/')) {
+        setActiveView('admin');
+      } else if (p === '/staff' || p.startsWith('/staff/')) {
+        setActiveView('staff');
+      } else {
+        setActiveView('public');
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
 
   useEffect(() => {
     try {
@@ -110,7 +145,7 @@ export default function App() {
     setStudentUser(user);
     setStudentData(student);
     localStorage.setItem('pkc_student_user', JSON.stringify(user));
-    setActiveView('public');
+    navigateTo('public', '/');
     setPublicTab('courses');
   };
 
@@ -118,7 +153,7 @@ export default function App() {
     setStudentUser(null);
     setStudentData(null);
     localStorage.removeItem('pkc_student_user');
-    setActiveView('public');
+    navigateTo('public', '/');
     setPublicTab('home');
   };
 
@@ -136,20 +171,20 @@ export default function App() {
   const handleAdminLogout = () => {
     setAdminUser(null);
     localStorage.removeItem('pkc_admin_user');
-    setActiveView('public');
+    navigateTo('admin', '/admin');
   };
 
   // Staff Handlers
   const handleStaffLoginSuccess = (staff) => {
     setStaffUser(staff);
     localStorage.setItem('pkc_staff_user', JSON.stringify(staff));
-    setActiveView('staff');
+    navigateTo('staff', '/staff');
   };
 
   const handleStaffLogout = () => {
     setStaffUser(null);
     localStorage.removeItem('pkc_staff_user');
-    setActiveView('public');
+    navigateTo('staff', '/staff');
   };
 
   return (
@@ -158,27 +193,24 @@ export default function App() {
       {/* 0. Animated Intro Splash Screen with Logo and Institute Name */}
       {showSplash && <PageIntroSplash onFinish={() => setShowSplash(false)} />}
 
-      {/* 1. Universal Top Navbar with Logo, Center Title, 4 Subtabs and 3 Portals */}
-      <Navbar 
-        activeView={activeView}
-        setActiveView={setActiveView}
-        publicTab={publicTab}
-        setPublicTab={setPublicTab}
-        studentUser={studentUser}
-        adminUser={adminUser}
-        staffUser={staffUser}
-        lang={lang}
-        setLang={setLang}
-        onOpenStudentAuth={() => handleOpenStudentAuth(null)}
-        onOpenStaffAuth={() => {
-          if (staffUser) setActiveView('staff');
-          else setStaffAuthModalOpen(true);
-        }}
-        onOpenAdminAuth={() => setActiveView('admin')}
-        onStudentLogout={handleStudentLogout}
-        onAdminLogout={handleAdminLogout}
-        onStaffLogout={handleStaffLogout}
-      />
+      {/* 1. Top Navbar: ONLY rendered on public student website */}
+      {activeView === 'public' && (
+        <Navbar 
+          activeView={activeView}
+          setActiveView={(view) => {
+            if (view === 'admin') navigateTo('admin', '/admin');
+            else if (view === 'staff') navigateTo('staff', '/staff');
+            else navigateTo('public', '/');
+          }}
+          publicTab={publicTab}
+          setPublicTab={setPublicTab}
+          studentUser={studentUser}
+          lang={lang}
+          setLang={setLang}
+          onOpenStudentAuth={() => handleOpenStudentAuth(null)}
+          onStudentLogout={handleStudentLogout}
+        />
+      )}
 
       {/* 2. Main Portal Routing based on activeView */}
       <main className="flex-1">
@@ -195,11 +227,6 @@ export default function App() {
                 studentUser={studentUser}
                 lang={lang}
                 onOpenStudentAuth={() => handleOpenStudentAuth(null)}
-                onOpenStaffAuth={() => {
-                  if (staffUser) setActiveView('staff');
-                  else setStaffAuthModalOpen(true);
-                }}
-                onOpenAdminAuth={() => setActiveView('admin')}
               />
             )}
 
@@ -234,7 +261,10 @@ export default function App() {
         {activeView === 'admin' && (
           <div className="p-4 sm:p-6 lg:p-8">
             {!adminUser ? (
-              <AdminLoginScreen onLoginSuccess={handleAdminLoginSuccess} />
+              <AdminLoginScreen 
+                onLoginSuccess={handleAdminLoginSuccess} 
+                onBackToPublic={() => navigateTo('public', '/')}
+              />
             ) : (
               <AdminPortal 
                 adminUser={adminUser} 
@@ -252,19 +282,32 @@ export default function App() {
         {activeView === 'staff' && (
           <div className="p-4 sm:p-6 lg:p-8">
             {!staffUser ? (
-              <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center space-y-4 bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-sm">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto font-bold">
+              <div className="min-h-[70vh] flex items-center justify-center">
+                <div className="text-center space-y-4 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full animate-fadeIn">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center mx-auto font-black shadow-lg shadow-emerald-500/20 text-2xl">
                     🔒
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900">Staff Authentication Required</h3>
-                  <p className="text-xs text-slate-500">Please enter your Admin-issued Staff ID and Password to access the cash desk.</p>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Staff Authentication</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Please login with your Admin-issued Staff ID and Password to access the cash desk.
+                    </p>
+                  </div>
                   <button
                     onClick={() => setStaffAuthModalOpen(true)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-md cursor-pointer"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all cursor-pointer"
                   >
-                    Open Staff Login
+                    Open Staff Login Form
                   </button>
+                  <div className="pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => navigateTo('public', '/')}
+                      className="text-xs font-semibold text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                    >
+                      ← Return to Student Website
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (

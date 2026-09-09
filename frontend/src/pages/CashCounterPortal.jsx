@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown } from 'lucide-react';
+import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown, ExternalLink } from 'lucide-react';
 import StudentRegistration from './StudentRegistration';
 import AccountsDashboard from './AccountsDashboard';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
@@ -92,13 +92,24 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
                 Department: <span className="text-slate-200 font-medium">{staffUser.department || 'Accounts & Admissions'}</span>
               </div>
             </div>
-            <button
-              onClick={onStaffLogout}
-              className="flex items-center gap-1.5 text-xs font-bold text-rose-200 hover:text-white bg-rose-600/80 hover:bg-rose-600 px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer mt-1"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Logout Staff Account</span>
-            </button>
+            <div className="flex items-center gap-2 mt-1">
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-colors border border-white/10"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Student Site</span>
+              </a>
+              <button
+                onClick={onStaffLogout}
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-200 hover:text-white bg-rose-600/80 hover:bg-rose-600 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         ) : null}
       </div>

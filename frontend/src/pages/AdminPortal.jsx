@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, BookOpen, Plus, Edit3, Trash2, Users, CreditCard, 
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
-  UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2
+  UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
+  Copy, Check, ExternalLink
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -19,6 +20,16 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [staffLinkCopied, setStaffLinkCopied] = useState(false);
+
+  const handleCopyStaffLink = () => {
+    const staffUrl = `${window.location.origin}/staff`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(staffUrl);
+    }
+    setStaffLinkCopied(true);
+    setTimeout(() => setStaffLinkCopied(false), 3000);
+  };
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -245,13 +256,38 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
           </div>
         </div>
 
-        <button
-          onClick={onLogout}
-          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Exit Admin Mode</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Share Staff Link */}
+          <button
+            onClick={handleCopyStaffLink}
+            className="flex items-center gap-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+            title="Copy /staff link to send to cash counter staff"
+          >
+            {staffLinkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-emerald-400" />}
+            <span>{staffLinkCopied ? 'Staff Link Copied!' : '📋 Copy Staff Link (/staff)'}</span>
+          </button>
+
+          {/* View Public Student Website */}
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
+            title="Open Student Public Website in new tab"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>🌐 View Student Website</span>
+          </a>
+
+          {/* Logout */}
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Logout Admin</span>
+          </button>
+        </div>
       </div>
 
       {successMsg && (
