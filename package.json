@@ -1,0 +1,13 @@
+{
+  "name": "university-management-system",
+  "version": "1.0.0",
+  "description": "Full Stack University Management System & Student Portal",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": ["university", "erp", "student-portal", "react", "express", "sqlite"],
+  "author": "Apex University ERP Team",
+  "license": "MIT"
+}
