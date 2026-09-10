@@ -1,292 +1,277 @@
 {
   "courses": [
     {
-      "id": "001-1788857860642",
-      "name": "BCA",
-      "code": "001",
-      "department": "School of Computing & IT",
-      "durationYears": 3,
-      "totalSemesters": 6,
-      "totalFee": 0,
-      "feePerSemester": 0,
-      "eligibility": "10+2 in any stream (Min 45%)",
-      "description": "Comprehensive program designed to provide practical industry-grade computer and technical training.",
-      "subjectsBySemester": {
-        "1": [
-          {
-            "code": "001101",
-            "name": "Foundation Core I",
-            "maxTheory": 70,
-            "maxPractical": 30
-          },
-          {
-            "code": "001102",
-            "name": "Foundation Core II",
-            "maxTheory": 70,
-            "maxPractical": 30
-          }
-        ]
-      }
-    },
-    {
-      "id": "002-1788859441706",
-      "name": "BSc",
-      "code": "002",
-      "department": "School of Science",
-      "durationYears": 4,
-      "totalSemesters": 8,
-      "totalFee": 0,
-      "feePerSemester": 0,
-      "eligibility": "10+2 in any stream (Min 45%)",
-      "description": "Comprehensive program designed to provide practical industry-grade computer and technical training.",
-      "subjectsBySemester": {
-        "1": [
-          {
-            "code": "002101",
-            "name": "Foundation Core I",
-            "maxTheory": 70,
-            "maxPractical": 30
-          },
-          {
-            "code": "002102",
-            "name": "Foundation Core II",
-            "maxTheory": 70,
-            "maxPractical": 30
-          }
-        ]
-      }
-    },
-    {
-      "id": "00-1788950439073",
-      "name": "BA",
-      "code": "00",
-      "department": "School of Computing & IT",
-      "durationYears": 3,
-      "totalSemesters": 6,
-      "totalFee": 0,
-      "feePerSemester": 0,
-      "eligibility": "10+2 in any stream (Min 45%)",
-      "description": "Comprehensive program designed to provide practical industry-grade computer and technical training.",
-      "subjectsBySemester": {
-        "1": [
-          {
-            "code": "00101",
-            "name": "Foundation Core I",
-            "maxTheory": 70,
-            "maxPractical": 30
-          },
-          {
-            "code": "00102",
-            "name": "Foundation Core II",
-            "maxTheory": 70,
-            "maxPractical": 30
-          }
-        ]
-      }
-    },
-    {
       "id": "btech-aiml",
       "name": "B.Tech- Artificial Intelligence & Machine Learning (A)",
       "code": "BTECH-AIML",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 280000,
       "feePerSemester": 35000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Advanced program focusing on AI algorithms, Neural Networks, Machine Learning and Python."
+      "description": "B.Tech in AI & ML covering Neural Networks, Deep Learning, Natural Language Processing and Robotics."
     },
     {
       "id": "btech-cse-a",
       "name": "B.Tech- Computer Science & Engineering (A)",
       "code": "BTECH-CSE-A",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 280000,
       "feePerSemester": 35000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Core Computer Science engineering including Data Structures, Algorithms, Systems and Cloud."
+      "description": "B.Tech in CSE Section A covering Algorithms, Cloud Computing, Full Stack & Software Engineering."
     },
     {
       "id": "btech-cse-b",
       "name": "B.Tech- Computer Science & Engineering (B)",
       "code": "BTECH-CSE-B",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 280000,
       "feePerSemester": 35000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Core Computer Science Section B with Software Engineering, Web & Mobile Development."
+      "description": "B.Tech in CSE Section B covering Data Structures, Web Systems, DevOps & Cybersecurity."
     },
     {
       "id": "btech-ds",
       "name": "B.Tech- Data Science (A)",
       "code": "BTECH-DS",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 280000,
       "feePerSemester": 35000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Big Data analytics, Statistics, R, Python, and Predictive Modeling."
+      "description": "B.Tech in Data Science covering Big Data Analytics, Statistical Modeling, Python & Business Intelligence."
     },
     {
       "id": "btech-eee",
       "name": "B.Tech- Electrical and Electronics Engineering",
       "code": "BTECH-EEE",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Power systems, Microprocessors, Control engineering and Circuit design."
+      "description": "B.Tech in EEE covering Electrical Power Systems, Electronic Circuits, Microcontrollers & IoT."
     },
     {
       "id": "btech-ee",
       "name": "B.Tech- Electrical Engineering",
       "code": "BTECH-EE",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Electrical machinery, Power grids, High voltage engineering and Renewable energy."
+      "description": "B.Tech in Electrical Engineering covering High Voltage, Power Grids, Electric Vehicles & Renewable Systems."
     },
     {
       "id": "btech-ece",
       "name": "B.Tech- Electronics & Communication Engineering (A)",
-      "code": "BTECH-ECE",
+      "code": "BTECH-ECE-A",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "VLSI design, Signal Processing, Wireless Communications and Embedded systems."
+      "description": "B.Tech in ECE Section A covering Wireless Networks, 5G/6G, Embedded Systems & VLSI Chip Design."
     },
     {
       "id": "btech-agri",
       "name": "B.Tech- Agricultural Engineering",
       "code": "BTECH-AGRI",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM/PCB (Min 50%)",
-      "description": "Farm machinery, Soil & Water conservation, Food processing and Irrigation engineering."
+      "description": "B.Tech in Agricultural Engineering covering Farm Machinery, Soil Hydrology, Precision Farming & Agro Processing."
     },
     {
       "id": "btech-civil",
       "name": "B.Tech- Civil Engineering",
       "code": "BTECH-CIVIL",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Structural engineering, Geotechnical, Transportation and Environmental infrastructure."
+      "description": "B.Tech in Civil Engineering covering Structural Analysis, Transportation, Surveying & Construction Management."
+    },
+    {
+      "id": "btech-ec",
+      "name": "B.Tech- Electronics and Communication Engineering",
+      "code": "BTECH-EC",
+      "degree": "B.Tech",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "B.Tech in Electronics & Communication covering Signal Processing, Telecommunications & Microelectronics."
     },
     {
       "id": "btech-me-a",
       "name": "B.Tech- Mechanical Engineering (A)",
       "code": "BTECH-ME-A",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Thermodynamics, Fluid mechanics, Manufacturing and CAD/CAM systems."
+      "description": "B.Tech in Mechanical Engineering Section A covering Thermodynamics, Fluid Dynamics, CAD/CAM & Machine Design."
     },
     {
       "id": "btech-me-b",
       "name": "B.Tech- Mechanical Engineering (B)",
       "code": "BTECH-ME-B",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 240000,
       "feePerSemester": 30000,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Automobile engineering, Robotics, Automation and Industrial management."
+      "description": "B.Tech in Mechanical Engineering Section B covering Robotics, Automated Manufacturing & Thermal Systems."
     },
     {
       "id": "btech-mining",
       "name": "B.Tech- Mining Engineering",
       "code": "BTECH-MINING",
+      "degree": "B.Tech",
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
       "totalFee": 260000,
       "feePerSemester": 32500,
       "eligibility": "10+2 with PCM (Min 50%)",
-      "description": "Surface & Underground mining, Rock mechanics, Mineral processing and Mine safety."
+      "description": "B.Tech in Mining Engineering covering Surface Mining, Underground Excavation, Rock Mechanics & Mineral Processing."
     },
     {
-      "id": "bed",
-      "name": "B.Ed (Bachelor of Education)",
-      "code": "BED",
-      "department": "Faculty of Education & Teaching",
+      "id": "mba-agri",
+      "name": "MBA- Agri Business Management",
+      "code": "MBA-AGRI",
+      "degree": "MBA",
+      "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 70000,
-      "feePerSemester": 17500,
-      "eligibility": "Graduation in any discipline (Min 50%)",
-      "description": "NCTE recognized professional teaching degree for secondary & higher secondary educators."
+      "totalFee": 160000,
+      "feePerSemester": 40000,
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "MBA in Agri Business Management covering Commodity Trading, Rural Marketing, Supply Chain & Agricultural Finance."
     },
     {
-      "id": "deled",
-      "name": "D.El.Ed (Diploma in Elementary Education)",
-      "code": "DELED",
-      "department": "Faculty of Education & Teaching",
+      "id": "mba-bank",
+      "name": "MBA- Banking Insurance",
+      "code": "MBA-BANK",
+      "degree": "MBA",
+      "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 50000,
-      "feePerSemester": 12500,
-      "eligibility": "10+2 in any stream (Min 50%)",
-      "description": "NCTE approved primary school teaching diploma program."
+      "totalFee": 160000,
+      "feePerSemester": 40000,
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "MBA in Banking & Insurance covering Financial Risk, Commercial Banking, Underwriting & Wealth Management."
     },
     {
-      "id": "beled",
-      "name": "B.El.Ed (Bachelor of Elementary Education)",
-      "code": "BELED",
-      "department": "Faculty of Education & Teaching",
-      "durationYears": 4,
-      "totalSemesters": 8,
-      "totalFee": 120000,
-      "feePerSemester": 15000,
-      "eligibility": "10+2 in any stream (Min 50%)",
-      "description": "Integrated 4-year professional elementary teacher training degree program."
+      "id": "mba-entr",
+      "name": "MBA- Entrepreneurship",
+      "code": "MBA-ENTR",
+      "degree": "MBA",
+      "department": "School of Management & Business",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 160000,
+      "feePerSemester": 40000,
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "MBA in Entrepreneurship covering Startup Incubation, Venture Capital, Product Strategy & Business Scaling."
     },
     {
-      "id": "bpharma",
-      "name": "B.Pharma (Bachelor of Pharmacy)",
-      "code": "BPHARMA",
-      "department": "School of Pharmaceutical Sciences",
-      "durationYears": 4,
-      "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
-      "eligibility": "10+2 with PCB/PCM (Min 50%)",
-      "description": "PCI approved pharmacy program covering Pharmacology, Pharmaceutics and Medicinal Chemistry."
+      "id": "mba-hosp",
+      "name": "MBA- Hospital Administration",
+      "code": "MBA-HOSP",
+      "degree": "MBA",
+      "department": "School of Management & Business",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 180000,
+      "feePerSemester": 45000,
+      "eligibility": "Graduation in any stream / Life Sciences (Min 50%)",
+      "description": "MBA in Hospital Administration covering Healthcare Quality, Hospital Logistics, Clinical Governance & Public Health."
     },
     {
-      "id": "dpharma",
-      "name": "D.Pharma (Diploma in Pharmacy)",
-      "code": "DPHARMA",
-      "department": "School of Pharmaceutical Sciences",
+      "id": "mba-it",
+      "name": "MBA- IT",
+      "code": "MBA-IT",
+      "degree": "MBA",
+      "department": "School of Management & Business",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 160000,
+      "feePerSemester": 40000,
+      "eligibility": "Graduation with IT/CS or Any Discipline (Min 50%)",
+      "description": "MBA in Information Technology covering Enterprise Systems, IT Project Management, Cloud Strategies & Digital Transformation."
+    },
+    {
+      "id": "mba-ngo",
+      "name": "MBA- NGO",
+      "code": "MBA-NGO",
+      "degree": "MBA",
+      "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
       "totalFee": 140000,
       "feePerSemester": 35000,
-      "eligibility": "10+2 with PCB/PCM (Min 50%)",
-      "description": "PCI approved 2-year diploma in pharmacy practice and medical dispensing."
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "MBA in NGO & Social Management covering CSR Initiatives, Grant Management, Community Development & Public Policy."
+    },
+    {
+      "id": "mba-plain",
+      "name": "MBA- Plain",
+      "code": "MBA-PLAIN",
+      "degree": "MBA",
+      "department": "School of Management & Business",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 140000,
+      "feePerSemester": 35000,
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "General MBA program covering Core Marketing, Human Resource Management, Corporate Finance & Operations."
+    },
+    {
+      "id": "mba-retail",
+      "name": "MBA- Retail",
+      "code": "MBA-RETAIL",
+      "degree": "MBA",
+      "department": "School of Management & Business",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 160000,
+      "feePerSemester": 40000,
+      "eligibility": "Graduation in any stream (Min 50%)",
+      "description": "MBA in Retail Management covering Merchandising, Supply Chain, E-Commerce, Consumer Behavior & Store Operations."
     }
   ],
   "students": [
