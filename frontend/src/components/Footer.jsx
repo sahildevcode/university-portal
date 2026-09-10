@@ -67,11 +67,6 @@ export default function Footer({ setActiveTab }) {
                 </button>
               </li>
               <li>
-                <button onClick={() => setActiveTab('gallery')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
-                  Campus &amp; Event Gallery
-                </button>
-              </li>
-              <li>
                 <button onClick={() => setActiveTab('inquiry')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
                   Admission Inquiry Desk
                 </button>

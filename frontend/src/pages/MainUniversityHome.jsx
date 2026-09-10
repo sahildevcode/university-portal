@@ -13,8 +13,7 @@ import {
   MessageSquare,
   Building2,
   Star,
-  Compass,
-  Camera
+  Compass
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import CampusEventSlider from '../components/CampusEventSlider';
@@ -150,14 +149,6 @@ export default function MainUniversityHome({
                 >
                   <span>{t.onlineInquiry}</span>
                   <ArrowRight className="w-4 h-4 text-slate-600" />
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('gallery')}
-                  className="w-full sm:w-auto bg-[#C59B27]/15 hover:bg-[#C59B27]/25 text-[#C59B27] font-bold text-xs sm:text-sm uppercase tracking-wider px-6 py-4 rounded-md border border-[#C59B27]/50 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>{lang === 'hi' ? 'परिसर गैलरी' : 'Campus Gallery'}</span>
                 </button>
               </div>
 
@@ -493,21 +484,13 @@ export default function MainUniversityHome({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  onClick={() => setActiveTab('gallery')}
-                  className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4 text-[#C59B27]" />
-                  <span>{lang === 'hi' ? 'परिसर गैलरी देखें' : 'EXPLORE CAMPUS GALLERY'}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C59B27]" />
-                </button>
-
+              <div className="pt-2">
                 <button
                   onClick={() => setActiveTab('about')}
-                  className="bg-slate-100 hover:bg-slate-200 text-[#071530] font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-colors cursor-pointer"
+                  className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-2"
                 >
                   <span>ABOUT PKC INSTITUTE</span>
+                  <ArrowRight className="w-4 h-4 text-[#C59B27]" />
                 </button>
               </div>
 

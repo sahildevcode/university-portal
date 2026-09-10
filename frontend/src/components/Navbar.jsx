@@ -213,19 +213,7 @@ export default function Navbar({
               {t.courses}
             </button>
 
-            {/* 4. CAMPUS GALLERY */}
-            <button
-              onClick={() => handleNavClick('gallery')}
-              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
-                activeView === 'public' && publicTab === 'gallery'
-                  ? 'text-[#071530] border-amber-500 font-extrabold'
-                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
-              }`}
-            >
-              {t.gallery || (lang === 'hi' ? 'गैलरी' : 'Gallery')}
-            </button>
-
-            {/* 5. ADMISSION INQUIRY */}
+            {/* 4. ADMISSION INQUIRY */}
             <button
               onClick={() => handleNavClick('inquiry')}
               className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
@@ -290,14 +278,6 @@ export default function Navbar({
               }`}
             >
               {t.courses}
-            </button>
-            <button
-              onClick={() => handleNavClick('gallery')}
-              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                publicTab === 'gallery' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              {t.gallery || (lang === 'hi' ? 'गैलरी' : 'Gallery')}
             </button>
             <button
               onClick={() => handleNavClick('inquiry')}
