@@ -2054,6 +2054,205 @@ app.post('/api/university/course-fees', (req, res) => {
   }
 });
 
+// ==========================================
+// 9. UNIVERSITIES & COLLEGES DIRECTORY API
+// ==========================================
+
+// 9.1 Get Universities
+app.get('/api/universities', (req, res) => {
+  try {
+    const db = readDB();
+    const universities = db.universities || [];
+    const colleges = db.colleges || [];
+
+    const enriched = universities.map(u => ({
+      ...u,
+      collegesCount: colleges.filter(c => c.universityId === u.id || (c.universityName || '').toLowerCase() === (u.name || '').toLowerCase()).length
+    }));
+
+    res.json({ success: true, universities: enriched });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.2 Add New University
+app.post('/api/universities', (req, res) => {
+  try {
+    const { name, shortName, code, city, state, approvedBy, website, description, establishedYear } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'University Name is required.' });
+    }
+
+    const db = readDB();
+    if (!db.universities) db.universities = [];
+
+    const newUniv = {
+      id: `univ-${Date.now()}`,
+      name: name.trim(),
+      shortName: shortName?.trim() || name.trim().split(' ').slice(0, 2).join(' '),
+      code: (code || name.trim().slice(0, 4)).toUpperCase(),
+      city: city?.trim() || 'Bhopal',
+      state: state?.trim() || 'Madhya Pradesh',
+      approvedBy: approvedBy?.trim() || 'UGC, AICTE Recognized',
+      website: website?.trim() || '',
+      description: description?.trim() || '',
+      establishedYear: establishedYear ? Number(establishedYear) : new Date().getFullYear(),
+      status: 'Active',
+      createdAt: new Date().toISOString()
+    };
+
+    db.universities.push(newUniv);
+    writeDB(db);
+
+    res.status(201).json({
+      success: true,
+      message: `University "${newUniv.name}" added successfully!`,
+      university: newUniv
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.3 Update University
+app.put('/api/universities/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.universities) db.universities = [];
+
+    const index = db.universities.findIndex(u => u.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'University not found.' });
+    }
+
+    db.universities[index] = {
+      ...db.universities[index],
+      ...req.body,
+      id
+    };
+
+    writeDB(db);
+    res.json({
+      success: true,
+      message: 'University details updated successfully!',
+      university: db.universities[index]
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.4 Delete University
+app.delete('/api/universities/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.universities) db.universities = [];
+
+    const univ = db.universities.find(u => u.id === id);
+    if (!univ) {
+      return res.status(404).json({ success: false, message: 'University not found.' });
+    }
+
+    db.universities = db.universities.filter(u => u.id !== id);
+    writeDB(db);
+
+    res.json({ success: true, message: `University "${univ.name}" removed.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.5 Get Colleges
+app.get('/api/colleges', (req, res) => {
+  try {
+    const { universityId, universityName, search } = req.query;
+    const db = readDB();
+    let colleges = db.colleges || [];
+
+    if (universityId && universityId !== 'ALL') {
+      colleges = colleges.filter(c => c.universityId === universityId);
+    } else if (universityName && universityName !== 'ALL') {
+      colleges = colleges.filter(c => (c.universityName || '').toLowerCase() === universityName.toLowerCase());
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      colleges = colleges.filter(c =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.shortName || '').toLowerCase().includes(q) ||
+        (c.code || '').toLowerCase().includes(q) ||
+        (c.district || '').toLowerCase().includes(q)
+      );
+    }
+
+    res.json({ success: true, count: colleges.length, colleges });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.6 Add College
+app.post('/api/colleges', (req, res) => {
+  try {
+    const { name, shortName, code, universityId, universityName, district, state, address } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'College name is required.' });
+    }
+
+    const db = readDB();
+    if (!db.colleges) db.colleges = [];
+
+    const newCol = {
+      id: `col-${Date.now()}`,
+      universityId: universityId || 'univ-mpu',
+      universityName: universityName || 'Madhyanchal Professional University Bhopal',
+      code: (code || `COL-${Date.now().toString().slice(-4)}`).toUpperCase(),
+      name: name.trim(),
+      shortName: shortName?.trim() || name.trim(),
+      district: district?.trim() || 'Chhatarpur',
+      state: state?.trim() || 'Madhya Pradesh',
+      address: address?.trim() || '',
+      status: 'Active',
+      createdAt: new Date().toISOString()
+    };
+
+    db.colleges.push(newCol);
+    writeDB(db);
+
+    res.status(201).json({
+      success: true,
+      message: `College "${newCol.shortName}" registered successfully!`,
+      college: newCol
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.7 Delete College
+app.delete('/api/colleges/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.colleges) db.colleges = [];
+
+    const college = db.colleges.find(c => c.id === id);
+    if (!college) {
+      return res.status(404).json({ success: false, message: 'College not found.' });
+    }
+
+    db.colleges = db.colleges.filter(c => c.id !== id);
+    writeDB(db);
+
+    res.json({ success: true, message: `College "${college.shortName || college.name}" deleted.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',

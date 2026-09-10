@@ -162,12 +162,12 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const adminModules = [
     { 
       id: 'syllabus', 
-      label: 'Courses & Syllabus', 
-      fullName: 'Courses & Syllabus Master Hub',
-      sub: 'कोर्स, ब्रांच व फीस स्ट्रक्चर प्रबंधन',
-      icon: Layers, 
+      label: 'Universities & Courses', 
+      fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
+      sub: 'यूनिवर्सिटीज, संबद्ध कॉलेज, ब्रांच/कोर्स व सिलेबस प्रबंधन',
+      icon: Building2, 
       color: 'text-indigo-600',
-      badge: `${localCourses.length} Courses`
+      badge: 'MPU • 18 Colleges'
     },
     { 
       id: 'cashcounter', 

@@ -83,6 +83,210 @@
           }
         ]
       }
+    },
+    {
+      "id": "btech-aiml",
+      "name": "B.Tech- Artificial Intelligence & Machine Learning (A)",
+      "code": "BTECH-AIML",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 280000,
+      "feePerSemester": 35000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Advanced program focusing on AI algorithms, Neural Networks, Machine Learning and Python."
+    },
+    {
+      "id": "btech-cse-a",
+      "name": "B.Tech- Computer Science & Engineering (A)",
+      "code": "BTECH-CSE-A",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 280000,
+      "feePerSemester": 35000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Core Computer Science engineering including Data Structures, Algorithms, Systems and Cloud."
+    },
+    {
+      "id": "btech-cse-b",
+      "name": "B.Tech- Computer Science & Engineering (B)",
+      "code": "BTECH-CSE-B",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 280000,
+      "feePerSemester": 35000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Core Computer Science Section B with Software Engineering, Web & Mobile Development."
+    },
+    {
+      "id": "btech-ds",
+      "name": "B.Tech- Data Science (A)",
+      "code": "BTECH-DS",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 280000,
+      "feePerSemester": 35000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Big Data analytics, Statistics, R, Python, and Predictive Modeling."
+    },
+    {
+      "id": "btech-eee",
+      "name": "B.Tech- Electrical and Electronics Engineering",
+      "code": "BTECH-EEE",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Power systems, Microprocessors, Control engineering and Circuit design."
+    },
+    {
+      "id": "btech-ee",
+      "name": "B.Tech- Electrical Engineering",
+      "code": "BTECH-EE",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Electrical machinery, Power grids, High voltage engineering and Renewable energy."
+    },
+    {
+      "id": "btech-ece",
+      "name": "B.Tech- Electronics & Communication Engineering (A)",
+      "code": "BTECH-ECE",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "VLSI design, Signal Processing, Wireless Communications and Embedded systems."
+    },
+    {
+      "id": "btech-agri",
+      "name": "B.Tech- Agricultural Engineering",
+      "code": "BTECH-AGRI",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM/PCB (Min 50%)",
+      "description": "Farm machinery, Soil & Water conservation, Food processing and Irrigation engineering."
+    },
+    {
+      "id": "btech-civil",
+      "name": "B.Tech- Civil Engineering",
+      "code": "BTECH-CIVIL",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Structural engineering, Geotechnical, Transportation and Environmental infrastructure."
+    },
+    {
+      "id": "btech-me-a",
+      "name": "B.Tech- Mechanical Engineering (A)",
+      "code": "BTECH-ME-A",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Thermodynamics, Fluid mechanics, Manufacturing and CAD/CAM systems."
+    },
+    {
+      "id": "btech-me-b",
+      "name": "B.Tech- Mechanical Engineering (B)",
+      "code": "BTECH-ME-B",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Automobile engineering, Robotics, Automation and Industrial management."
+    },
+    {
+      "id": "btech-mining",
+      "name": "B.Tech- Mining Engineering",
+      "code": "BTECH-MINING",
+      "department": "School of Engineering & Technology",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 260000,
+      "feePerSemester": 32500,
+      "eligibility": "10+2 with PCM (Min 50%)",
+      "description": "Surface & Underground mining, Rock mechanics, Mineral processing and Mine safety."
+    },
+    {
+      "id": "bed",
+      "name": "B.Ed (Bachelor of Education)",
+      "code": "BED",
+      "department": "Faculty of Education & Teaching",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 70000,
+      "feePerSemester": 17500,
+      "eligibility": "Graduation in any discipline (Min 50%)",
+      "description": "NCTE recognized professional teaching degree for secondary & higher secondary educators."
+    },
+    {
+      "id": "deled",
+      "name": "D.El.Ed (Diploma in Elementary Education)",
+      "code": "DELED",
+      "department": "Faculty of Education & Teaching",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 50000,
+      "feePerSemester": 12500,
+      "eligibility": "10+2 in any stream (Min 50%)",
+      "description": "NCTE approved primary school teaching diploma program."
+    },
+    {
+      "id": "beled",
+      "name": "B.El.Ed (Bachelor of Elementary Education)",
+      "code": "BELED",
+      "department": "Faculty of Education & Teaching",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 120000,
+      "feePerSemester": 15000,
+      "eligibility": "10+2 in any stream (Min 50%)",
+      "description": "Integrated 4-year professional elementary teacher training degree program."
+    },
+    {
+      "id": "bpharma",
+      "name": "B.Pharma (Bachelor of Pharmacy)",
+      "code": "BPHARMA",
+      "department": "School of Pharmaceutical Sciences",
+      "durationYears": 4,
+      "totalSemesters": 8,
+      "totalFee": 240000,
+      "feePerSemester": 30000,
+      "eligibility": "10+2 with PCB/PCM (Min 50%)",
+      "description": "PCI approved pharmacy program covering Pharmacology, Pharmaceutics and Medicinal Chemistry."
+    },
+    {
+      "id": "dpharma",
+      "name": "D.Pharma (Diploma in Pharmacy)",
+      "code": "DPHARMA",
+      "department": "School of Pharmaceutical Sciences",
+      "durationYears": 2,
+      "totalSemesters": 4,
+      "totalFee": 140000,
+      "feePerSemester": 35000,
+      "eligibility": "10+2 with PCB/PCM (Min 50%)",
+      "description": "PCI approved 2-year diploma in pharmacy practice and medical dispensing."
     }
   ],
   "students": [
@@ -1602,6 +1806,234 @@
       "officialFee": 30000,
       "feePerSemester": 0,
       "notes": ""
+    }
+  ],
+  "universities": [
+    {
+      "id": "univ-mpu",
+      "name": "Madhyanchal Professional University Bhopal",
+      "shortName": "MPU Bhopal",
+      "code": "MPU01",
+      "city": "Bhopal",
+      "state": "Madhya Pradesh",
+      "approvedBy": "UGC, AICTE, MP State Private Universities Regulatory Commission",
+      "website": "https://mpu.ac.in",
+      "establishedYear": 2018,
+      "status": "Active",
+      "description": "Premier private university offering multidisciplinary engineering, management, education and pharmacy programs."
+    },
+    {
+      "id": "univ-mcbu",
+      "name": "Maharaja Chhatrasal Bundelkhand University (MCBU)",
+      "shortName": "MCBU Chhatarpur",
+      "code": "MCBU01",
+      "city": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "approvedBy": "State University / UGC Approved (2f & 12B)",
+      "website": "https://mcbu.ac.in",
+      "establishedYear": 2015,
+      "status": "Active",
+      "description": "State university in Chhatarpur district overseeing government and affiliated higher education colleges."
+    }
+  ],
+  "colleges": [
+    {
+      "id": "col-bed121",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED121",
+      "name": "BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA (RUN BY- JEEVAN JYOTI SHIKSHA PRASAR AND JAN KALYAN SAMITI)",
+      "shortName": "Jeevan Jyoti Shiksha Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed2097",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED2097",
+      "name": "BED2097 - Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti",
+      "shortName": "Sita Ram College Of Education",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed2140",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED2140",
+      "name": "BED2140 - J J COLLEGE OF EDUCATION RUN BY R D EDUCATION SOCIETY",
+      "shortName": "J J College of Education",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed2266",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED2266",
+      "name": "BED2266 - R.D College",
+      "shortName": "R.D College",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed373",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED373",
+      "name": "BED373 - Shri Krishna College Of Education",
+      "shortName": "Shri Krishna College Of Education",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed455",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED455",
+      "name": "BED455 - Swami Vivekanand Mahavidyalaya",
+      "shortName": "Swami Vivekanand Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-bed914",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BED914",
+      "name": "BED914 - Shri Krishna Shiksha Mahavidyalaya",
+      "shortName": "Shri Krishna Shiksha Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-beled005",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BELED005",
+      "name": "BELED005 - MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA",
+      "shortName": "Maharaja Chhatrasal Shiksha Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-beled006",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "BELED006",
+      "name": "BELED006 - MAA SHARDA EDUCATIONAL INSTITUTE CHHATARPUR SAMITI KHASRA",
+      "shortName": "Maa Sharda Educational Institute",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-n462",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "N462",
+      "name": "Khajuraho Institute of Pharmaceutical Sciences Kadari District Chhatarpur(N462)",
+      "shortName": "Khajuraho Institute of Pharmaceutical Sciences",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-msm1079",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "MSM-1079",
+      "name": "Ma Sharda Mahavidyalay, Plot No. 1079 Street No 75 Gatheowara, Po. Gatheowara",
+      "shortName": "Ma Sharda Mahavidyalay Gatheowara",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-msm-lakshya",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "MSM-LAKSHYA",
+      "name": "Maa Sharda Mahavidhyalaya Run By Lakshya Educational and Social Village Bajrang Nagar, Gatheowara",
+      "shortName": "Maa Sharda Mahavidhyalaya Bajrang Nagar",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-mcsm",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "MCSM",
+      "name": "MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA",
+      "shortName": "Maharaja Chhatrasal Shiksha Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-ramdev",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "RMV1886",
+      "name": "RAMDEV MAHAVIDYALAYA, PLOT NO.: 1886",
+      "shortName": "Ramdev Mahavidyalaya",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-svn",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "SVN01",
+      "name": "S.V.N. COLLEGE, AFTER MARIA MATA SCHOOL, CHOUBEY COLONY",
+      "shortName": "S.V.N. College Choubey Colony",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-sitaram-khop",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "SRC-KHOP",
+      "name": "Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti, Plot No. 90/3, Mahoba Road, Village Khop, Chhatarpur, P.O.+Th.+ Dist. Chhatarpur 471001, M.P.",
+      "shortName": "Sita Ram College Of Education (Village Khop)",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-shrikrishna-orchha",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "SKCE-ORCHHA",
+      "name": "Shri Krishna College Of Education near Orchha Road, Thana, Jhansi Road, Chhatarpur-471001 (M.P.)",
+      "shortName": "Shri Krishna College (Orchha Road)",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
+    },
+    {
+      "id": "col-crystal-harpalpur",
+      "universityId": "univ-mpu",
+      "universityName": "Madhyanchal Professional University Bhopal",
+      "code": "CSPS-HARPALPUR",
+      "name": "Crystal Shiksha Prasar Samiti, Shri Krishna College, Behind. Old Govt. Degree College, Nowgong Road, Harpalpur, Chhatarpur, M.P.",
+      "shortName": "Shri Krishna College Harpalpur",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active"
     }
   ]
 }
