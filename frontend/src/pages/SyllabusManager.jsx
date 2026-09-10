@@ -56,10 +56,16 @@ const INITIAL_UNIVERSITIES = [
 
 // Default 18 colleges accurately affiliated
 const INITIAL_COLLEGES = [
-  // 12 Colleges under Madhyanchal Professional University Bhopal (univ-mpu)
-  { id: 'col-bed121', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED121', name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA (RUN BY- JEEVAN JYOTI SHIKSHA PRASAR AND JAN KALYAN SAMITI)', shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2097', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2097', name: 'BED2097 - Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti', shortName: 'Sita Ram College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2140', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2140', name: 'BED2140 - J J COLLEGE OF EDUCATION RUN BY R D EDUCATION SOCIETY', shortName: 'J J College of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  // Core Colleges under Madhyanchal Professional University Bhopal (univ-mpu)
+  { id: 'col-soet-mpu', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'SOET-MPU', name: 'School of Engineering & Technology (MPU Bhopal)', shortName: 'School of Engineering & Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-soms-mpu', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'SOMS-MPU', name: 'School of Management Studies (MPU Bhopal)', shortName: 'School of Management Studies', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-pcst-bhopal', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'PCST-01', name: 'Patel College of Science & Technology (PCST Bhopal)', shortName: 'Patel College of Science & Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-pit-bhopal', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'PIT-01', name: 'Patel Institute of Technology (PIT Bhopal)', shortName: 'Patel Institute of Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
+
+  // Affiliated Education Colleges under Madhyanchal Professional University Bhopal
+  { id: 'col-bed121', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED121', name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA', shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2097', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2097', name: 'BED2097 - Sita Ram College Of Education', shortName: 'Sita Ram College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2140', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2140', name: 'BED2140 - J J COLLEGE OF EDUCATION', shortName: 'J J College of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-bed2266', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2266', name: 'BED2266 - R.D College', shortName: 'R.D College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-bed2303', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2303', name: 'BED2303 - Bapu Mahavidyalaya Nowgong', shortName: 'Bapu Mahavidyalaya Nowgong', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-bed2385', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2385', name: 'BED2385 - SIDDHARTH SHIKSHA MAHAVIDYALAYA', shortName: 'Siddharth Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
@@ -70,7 +76,7 @@ const INITIAL_COLLEGES = [
   { id: 'col-bed2555', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2555', name: 'BED2555 - ANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Anand Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-bed2568', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2568', name: 'BED2568 - S.V.N SHIKSHA MAHAVIDYALAYA', shortName: 'S.V.N Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
 
-  // 6 Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
+  // Affiliated Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
   { id: 'col-beled005', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'BELED005', name: 'BELED005 - GOVERNMENT POST GRADUATE COLLEGE CHHATARPUR', shortName: 'Govt PG College Chhatarpur', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-n462', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'N462', name: 'N462 - Govt Maharaja Post Graduate College, Chhatarpur', shortName: 'Govt Maharaja PG College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
   { id: 'col-mcsm', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'MCSM', name: 'MCSM - Maharaja Chhatrasal Shiksha Mahavidyalaya', shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
@@ -909,19 +915,23 @@ export default function SyllabusManager() {
             )}
 
             {/* Cascading 4-Step Selection Grid */}
-            <form onSubmit={handleUploadSyllabus} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-xs">
+            <form onSubmit={handleUploadSyllabus} className="space-y-4">
+              {/* 5-Field Side-by-Side Control Bar: University -> College -> Branch -> Semester -> Upload File */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 items-end bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
                 
                 {/* 1. SELECT UNIVERSITY */}
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
                     <span>University *</span>
                   </label>
                   <select
                     value={uploadUnivId}
-                    onChange={(e) => setUploadUnivId(e.target.value)}
-                    className="w-full p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-950 shadow-2xs"
+                    onChange={(e) => {
+                      const newUnivId = e.target.value;
+                      setUploadUnivId(newUnivId);
+                    }}
+                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-xs text-indigo-950 shadow-2xs cursor-pointer truncate"
                     required
                   >
                     {universities.map(u => (
@@ -934,14 +944,14 @@ export default function SyllabusManager() {
 
                 {/* 2. SELECT AFFILIATED COLLEGE */}
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">2</span>
-                    <span>Affiliated College *</span>
+                    <span>College *</span>
                   </label>
                   <select
                     value={uploadCollegeId}
                     onChange={(e) => setUploadCollegeId(e.target.value)}
-                    className="w-full p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl focus:bg-white focus:outline-none font-semibold text-emerald-950 shadow-2xs"
+                    className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-emerald-950 shadow-2xs cursor-pointer truncate"
                     required
                   >
                     {uploadAffiliatedColleges.length > 0 ? (
@@ -951,24 +961,24 @@ export default function SyllabusManager() {
                         </option>
                       ))
                     ) : (
-                      <option value="">No colleges affiliated with this university</option>
+                      <option value="">No affiliated colleges</option>
                     )}
                   </select>
                 </div>
 
                 {/* 3. SELECT PROGRAM / BRANCH */}
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-[10px] font-black">3</span>
-                    <span>Course Branch / Stream *</span>
+                    <span>Branch / Program *</span>
                   </label>
                   <select
                     value={uploadBranchCode}
                     onChange={(e) => {
                       setUploadBranchCode(e.target.value);
-                      setUploadSemester('1'); // reset semester
+                      setUploadSemester('1');
                     }}
-                    className="w-full p-2.5 bg-purple-50/60 border border-purple-200 rounded-xl focus:bg-white focus:outline-none font-bold text-purple-950 shadow-2xs"
+                    className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-xs text-purple-950 shadow-2xs cursor-pointer truncate"
                     required
                   >
                     <optgroup label="B.Tech Engineering Branches (13)">
@@ -985,7 +995,7 @@ export default function SyllabusManager() {
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label="Education &amp; Other Degree Programs">
+                    <optgroup label="Education & Other Programs">
                       {ACADEMIC_BRANCHES.filter(b => b.degree !== 'B.Tech' && b.degree !== 'MBA').map(b => (
                         <option key={b.code} value={b.code}>
                           {b.degree} - {b.name} [{b.code}]
@@ -995,16 +1005,16 @@ export default function SyllabusManager() {
                   </select>
                 </div>
 
-                {/* 4. SELECT SEMESTER */}
+                {/* 4. SELECT SEMESTER (USKE BAGAL MEIN) */}
                 <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-black">4</span>
-                    <span>Semester / Term *</span>
+                    <span>Semester *</span>
                   </label>
                   <select
                     value={uploadSemester}
                     onChange={(e) => setUploadSemester(e.target.value)}
-                    className="w-full p-2.5 bg-blue-50/60 border border-blue-200 rounded-xl focus:bg-white focus:outline-none font-black text-blue-950 shadow-2xs"
+                    className="w-full p-2.5 bg-white border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-black text-xs text-blue-950 shadow-2xs cursor-pointer"
                     required
                   >
                     {semesterOptions.map(sem => (
@@ -1014,30 +1024,96 @@ export default function SyllabusManager() {
                     ))}
                   </select>
                 </div>
+
+                {/* 5. UPLOAD SYLLABUS (USKE BAGAL MEIN) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">5</span>
+                    <span>Upload Syllabus *</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="flex-1 cursor-pointer bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-xl px-2.5 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all truncate shadow-2xs min-h-[38px]">
+                      <Upload className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                      <span className="truncate">
+                        {selectedFile ? selectedFile.name : 'Choose File'}
+                      </span>
+                      <input
+                        type="file"
+                        id="syllabus_file_input"
+                        accept=".pdf,.xls,.xlsx,.doc,.docx"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setSelectedFile(e.target.files[0]);
+                            setUploadStatus(null);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {selectedFile && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          const fileInp = document.getElementById('syllabus_file_input');
+                          if (fileInp) fileInp.value = '';
+                        }}
+                        className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                        title="Clear file"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={uploading || !selectedFile}
+                      className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1 shadow-md shadow-emerald-600/20 transition-all shrink-0 cursor-pointer min-h-[38px]"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{uploading ? '...' : 'Upload'}</span>
+                    </button>
+                  </div>
+                </div>
+
               </div>
 
-              {/* Current Status Box for this Exact Combination */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              {/* Selected File Details Banner */}
+              {selectedFile && (
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-xs text-emerald-900">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>File Selected: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-700 uppercase">
+                    Ready to Upload for Sem-{uploadSemester}
+                  </span>
+                </div>
+              )}
+
+              {/* Status for currently selected combination */}
+              <div className="pt-1">
                 {currentExistingSyllabus ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/90 border border-emerald-200 p-3.5 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                         {currentExistingSyllabus.fileType === 'Excel' ? (
-                          <FileSpreadsheet className="w-5 h-5" />
+                          <FileSpreadsheet className="w-4 h-4" />
                         ) : (
-                          <FileText className="w-5 h-5" />
+                          <FileText className="w-4 h-4" />
                         )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-extrabold uppercase bg-emerald-600 text-white px-2 py-0.2 rounded">
-                            {currentExistingSyllabus.fileType} Ready
+                          <span className="text-[9px] font-black uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">
+                            {currentExistingSyllabus.fileType} Available
                           </span>
                           <span className="text-xs font-bold text-emerald-950">
                             Semester {currentExistingSyllabus.semester} Syllabus Available
                           </span>
                         </div>
-                        <p className="text-xs text-slate-700 mt-0.5 truncate max-w-md">
+                        <p className="text-xs text-slate-600 mt-0.5 truncate max-w-lg">
                           📎 <strong>{currentExistingSyllabus.fileName}</strong> ({(currentExistingSyllabus.fileSize / 1024).toFixed(1)} KB)
                         </p>
                       </div>
@@ -1048,7 +1124,7 @@ export default function SyllabusManager() {
                         href={currentExistingSyllabus.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-2xs"
+                        className="flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-lg text-xs transition-colors shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>View / Download</span>
@@ -1056,94 +1132,21 @@ export default function SyllabusManager() {
                       <button
                         type="button"
                         onClick={() => handleDeleteSyllabus(currentExistingSyllabus.id)}
-                        className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
-                        title="Delete this file"
+                        className="p-1 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                        title="Delete syllabus file"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2.5 text-amber-800 bg-amber-50/80 border border-amber-200 p-3.5 rounded-xl text-xs font-semibold">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div className="flex items-center gap-2 text-slate-500 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs">
+                    <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
                     <span>
-                      No syllabus file on record yet for <strong>{currentUploadBranch?.name}</strong> (Semester {uploadSemester}) at <strong>{currentUploadCollege?.shortName || currentUploadCollege?.name}</strong>. Please upload below.
+                      No syllabus uploaded yet for <strong>{currentUploadBranch?.name}</strong> (Semester {uploadSemester}) at <strong>{currentUploadCollege?.shortName || currentUploadCollege?.name}</strong>. Choose a file above and click <strong>Upload</strong>.
                     </span>
                   </div>
                 )}
-              </div>
-
-              {/* Drag & Drop File Selector */}
-              <div className="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 transition-all rounded-3xl p-6 sm:p-8 text-center space-y-3">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
-                  <Upload className="w-7 h-7" />
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-sm text-slate-800">
-                    Choose Syllabus Document (PDF or Excel)
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Supports .pdf, .xls, .xlsx, .doc, .docx up to 25MB
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-center justify-center gap-2 pt-2">
-                  <label className="cursor-pointer bg-white hover:bg-indigo-50 text-indigo-700 font-bold border border-indigo-300 px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all">
-                    <FileText className="w-4 h-4" />
-                    <span>{selectedFile ? 'Change File' : 'Browse PDF / Excel File'}</span>
-                    <input
-                      type="file"
-                      id="syllabus_file_input"
-                      accept=".pdf,.xls,.xlsx,.doc,.docx"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setSelectedFile(e.target.files[0]);
-                          setUploadStatus(null);
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {selectedFile && (
-                    <div className="flex items-center gap-2 bg-indigo-100/70 border border-indigo-300 text-indigo-950 px-3 py-1 rounded-xl text-xs font-semibold mt-1">
-                      <span>📄 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedFile(null);
-                          const fileInp = document.getElementById('syllabus_file_input');
-                          if (fileInp) fileInp.value = '';
-                        }}
-                        className="text-rose-600 hover:text-rose-800 ml-1 cursor-pointer font-bold"
-                        title="Cancel chosen file"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={uploading || !selectedFile}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold py-3.5 px-8 rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <span>Uploading Syllabus...</span>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      <span>
-                        Upload Syllabus for {currentUploadBranch?.name} (Sem-{uploadSemester})
-                      </span>
-                    </>
-                  )}
-                </button>
               </div>
             </form>
           </div>
