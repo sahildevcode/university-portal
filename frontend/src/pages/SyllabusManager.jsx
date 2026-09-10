@@ -24,7 +24,8 @@ import {
   Globe,
   Briefcase,
   Check,
-  Eye
+  Eye,
+  ArrowLeft
 } from 'lucide-react';
 
 // Default initial universities
@@ -55,7 +56,7 @@ const INITIAL_UNIVERSITIES = [
   }
 ];
 
-// Default 18 colleges from official portal screenshot
+// Default 18 colleges accurately affiliated
 const INITIAL_COLLEGES = [
   {
     id: 'col-bed121',
@@ -158,8 +159,8 @@ const INITIAL_COLLEGES = [
   },
   {
     id: 'col-n462',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
+    universityId: 'univ-mcbu',
+    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
     code: 'N462',
     name: 'Khajuraho Institute of Pharmaceutical Sciences Kadari District Chhatarpur(N462)',
     shortName: 'Khajuraho Institute of Pharmaceutical Sciences',
@@ -213,8 +214,8 @@ const INITIAL_COLLEGES = [
   },
   {
     id: 'col-svn',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
+    universityId: 'univ-mcbu',
+    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
     code: 'SVN01',
     name: 'S.V.N. COLLEGE, AFTER MARIA MATA SCHOOL, CHOUBEY COLONY',
     shortName: 'S.V.N. College Choubey Colony',
@@ -224,8 +225,8 @@ const INITIAL_COLLEGES = [
   },
   {
     id: 'col-sitaram-khop',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
+    universityId: 'univ-mcbu',
+    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
     code: 'SRC-KHOP',
     name: 'Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti, Plot No. 90/3, Mahoba Road, Village Khop, Chhatarpur, P.O.+Th.+ Dist. Chhatarpur 471001, M.P.',
     shortName: 'Sita Ram College Of Education (Village Khop)',
@@ -257,9 +258,9 @@ const INITIAL_COLLEGES = [
   }
 ];
 
-// STRICTLY B.TECH (13 Branches) & MBA (8 Specializations) from user images
+// STRICTLY B.TECH (13 Branches) & MBA (8 Specializations)
 const INITIAL_COURSES = [
-  // B.Tech (13 Branches from Image 3)
+  // B.Tech (13 Branches)
   { id: 'btech-aiml', degree: 'B.Tech', name: 'B.Tech- Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in AI & ML covering Neural Networks, Deep Learning, Natural Language Processing and Robotics.' },
   { id: 'btech-cse-a', degree: 'B.Tech', name: 'B.Tech- Computer Science & Engineering (A)', code: 'BTECH-CSE-A', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in CSE Section A covering Algorithms, Cloud Computing, Full Stack & Software Engineering.' },
   { id: 'btech-cse-b', degree: 'B.Tech', name: 'B.Tech- Computer Science & Engineering (B)', code: 'BTECH-CSE-B', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in CSE Section B covering Data Structures, Web Systems, DevOps & Cybersecurity.' },
@@ -274,7 +275,7 @@ const INITIAL_COURSES = [
   { id: 'btech-me-b', degree: 'B.Tech', name: 'B.Tech- Mechanical Engineering (B)', code: 'BTECH-ME-B', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Mechanical Engineering Section B covering Robotics, Automated Manufacturing & Thermal Systems.' },
   { id: 'btech-mining', degree: 'B.Tech', name: 'B.Tech- Mining Engineering', code: 'BTECH-MINING', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 260000, feePerSemester: 32500, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Mining Engineering covering Surface Mining, Underground Excavation, Rock Mechanics & Mineral Processing.' },
 
-  // MBA (8 Specializations from Image 2)
+  // MBA (8 Specializations)
   { id: 'mba-agri', degree: 'MBA', name: 'MBA- Agri Business Management', code: 'MBA-AGRI', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Agri Business Management covering Commodity Trading, Rural Marketing, Supply Chain & Agricultural Finance.' },
   { id: 'mba-bank', degree: 'MBA', name: 'MBA- Banking Insurance', code: 'MBA-BANK', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Banking & Insurance covering Financial Risk, Commercial Banking, Underwriting & Wealth Management.' },
   { id: 'mba-entr', degree: 'MBA', name: 'MBA- Entrepreneurship', code: 'MBA-ENTR', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Entrepreneurship covering Startup Incubation, Venture Capital, Product Strategy & Business Scaling.' },
@@ -351,102 +352,7 @@ const getCurriculumSubjects = (courseName = '', semNum = '1') => {
     return subjects[sem] || subjects[1];
   }
 
-  if (name.includes('data science')) {
-    const subjects = {
-      1: [
-        { code: 'DS-101', name: 'Calculus, Linear Algebra & Analytical Geometry', credits: 4, type: 'Theory' },
-        { code: 'DS-102', name: 'Physics for Data & Computing Systems', credits: 3, type: 'Theory' },
-        { code: 'DS-103', name: 'Python for Data Science & Numerical Computing', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-104', name: 'Basic Electrical & Electronic Engineering', credits: 3, type: 'Theory' },
-        { code: 'DS-105', name: 'Python NumPy & Pandas Laboratory', credits: 2, type: 'Practical' },
-      ],
-      2: [
-        { code: 'DS-201', name: 'Probability, Random Variables & Statistics', credits: 4, type: 'Theory' },
-        { code: 'DS-202', name: 'Data Structures & Algorithms with Python', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-203', name: 'Relational Database Management Systems & SQL', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-204', name: 'Data Visualization & Storytelling (PowerBI / Tableau)', credits: 3, type: 'Theory' },
-        { code: 'DS-205', name: 'SQL & Database Architecture Lab', credits: 2, type: 'Practical' },
-      ],
-      3: [
-        { code: 'DS-301', name: 'Multivariate Analysis & Statistical Inference', credits: 4, type: 'Theory' },
-        { code: 'DS-302', name: 'Object-Oriented Programming & Systems', credits: 3, type: 'Theory' },
-        { code: 'DS-303', name: 'Operating Systems & File Systems', credits: 3, type: 'Theory' },
-        { code: 'DS-304', name: 'NoSQL Databases & Distributed Storage', credits: 3, type: 'Theory' },
-        { code: 'DS-305', name: 'Statistical Modeling Lab with R & Python', credits: 2, type: 'Practical' },
-      ],
-      4: [
-        { code: 'DS-401', name: 'Machine Learning Algorithms & Optimization', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-402', name: 'Data Warehousing & Business Intelligence ETL', credits: 3, type: 'Theory' },
-        { code: 'DS-403', name: 'Computer Networks & Distributed Systems', credits: 3, type: 'Theory' },
-        { code: 'DS-404', name: 'Big Data Architectures (Hadoop & MapReduce)', credits: 3, type: 'Theory' },
-        { code: 'DS-405', name: 'Machine Learning & Predictive Modeling Lab', credits: 2, type: 'Practical' },
-      ],
-      5: [
-        { code: 'DS-501', name: 'Deep Learning & Cognitive Computing', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-502', name: 'Apache Spark & Real-Time Stream Processing', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-503', name: 'Data Mining, Text Analytics & Scraping', credits: 3, type: 'Theory' },
-        { code: 'DS-504', name: 'Cloud Computing & Data Infrastructure (AWS/GCP)', credits: 3, type: 'Theory' },
-        { code: 'DS-505', name: 'Distributed Big Data Lab (PySpark)', credits: 2, type: 'Practical' },
-      ],
-      6: [
-        { code: 'DS-601', name: 'Time-Series Analysis & Financial Forecasting', credits: 4, type: 'Theory + Lab' },
-        { code: 'DS-602', name: 'MLOps, Continuous Integration & Pipeline Automation', credits: 3, type: 'Theory' },
-        { code: 'DS-603', name: 'Data Governance, Privacy, GDPR & Ethics', credits: 3, type: 'Theory' },
-        { code: 'DS-604', name: 'Elective-I (Graph Analytics / Recommender Systems)', credits: 3, type: 'Elective' },
-        { code: 'DS-605', name: 'MLOps Pipeline Deployment Lab', credits: 2, type: 'Practical' },
-      ],
-      7: [
-        { code: 'DS-701', name: 'Applied Natural Language Processing & Sentiment Mining', credits: 3, type: 'Theory' },
-        { code: 'DS-702', name: 'Elective-II (High Performance Computing)', credits: 3, type: 'Elective' },
-        { code: 'DS-703', name: 'Capstone Data Science Project Phase-I', credits: 3, type: 'Project' },
-        { code: 'DS-704', name: 'Industrial Summer Internship Evaluation', credits: 2, type: 'Internship' },
-      ],
-      8: [
-        { code: 'DS-801', name: 'Major Industry Capstone Project Execution', credits: 8, type: 'Project' },
-        { code: 'DS-802', name: 'Technical Paper Presentation & Seminar', credits: 2, type: 'Seminar' },
-        { code: 'DS-803', name: 'Comprehensive Degree Viva-Voce', credits: 2, type: 'Viva' },
-      ]
-    };
-    return subjects[sem] || subjects[1];
-  }
-
-  if (name.includes('mba') || name.includes('management')) {
-    const subjects = {
-      1: [
-        { code: 'MBA-101', name: 'Management Principles & Organizational Behavior', credits: 3, type: 'Core' },
-        { code: 'MBA-102', name: 'Managerial Economics & Decision Science', credits: 3, type: 'Core' },
-        { code: 'MBA-103', name: 'Accounting for Managers & Financial Reporting', credits: 3, type: 'Core' },
-        { code: 'MBA-104', name: 'Business Communication & Executive Soft Skills', credits: 2, type: 'Core' },
-        { code: 'MBA-105', name: 'Marketing Management Foundations', credits: 3, type: 'Core' },
-        { code: 'MBA-106', name: 'Quantitative Techniques for Business', credits: 3, type: 'Core' },
-      ],
-      2: [
-        { code: 'MBA-201', name: 'Financial Management & Corporate Finance', credits: 3, type: 'Core' },
-        { code: 'MBA-202', name: 'Human Resource Management & Talent Strategy', credits: 3, type: 'Core' },
-        { code: 'MBA-203', name: 'Production, Operations & Supply Chain Management', credits: 3, type: 'Core' },
-        { code: 'MBA-204', name: 'Business Research Methods & Statistical Packages', credits: 3, type: 'Core' },
-        { code: 'MBA-205', name: 'Information Systems & Digital Enterprise Strategy', credits: 3, type: 'Core' },
-        { code: 'MBA-206', name: 'Business Environment & Legal Regulatory Framework', credits: 2, type: 'Core' },
-      ],
-      3: [
-        { code: 'MBA-301', name: 'Strategic Management & Global Business Policy', credits: 3, type: 'Core' },
-        { code: 'MBA-302', name: 'Specialization Subject I (Domain Core)', credits: 3, type: 'Specialization' },
-        { code: 'MBA-303', name: 'Specialization Subject II (Advanced Functional)', credits: 3, type: 'Specialization' },
-        { code: 'MBA-304', name: 'Business Analytics & Decision Support Systems', credits: 3, type: 'Core' },
-        { code: 'MBA-305', name: 'Summer Internship Project Report & Corporate Defense', credits: 4, type: 'Project' },
-      ],
-      4: [
-        { code: 'MBA-401', name: 'Corporate Governance, Business Ethics & CSR', credits: 3, type: 'Core' },
-        { code: 'MBA-402', name: 'Specialization Elective III (Strategic Domain)', credits: 3, type: 'Specialization' },
-        { code: 'MBA-403', name: 'Specialization Elective IV (Emerging Trends)', credits: 3, type: 'Specialization' },
-        { code: 'MBA-404', name: 'Entrepreneurship & New Venture Creation', credits: 2, type: 'Core' },
-        { code: 'MBA-405', name: 'Major Capstone Dissertation & Comprehensive Viva', credits: 4, type: 'Dissertation' },
-      ]
-    };
-    return subjects[sem] || subjects[1];
-  }
-
-  // Default Standard B.Tech (CSE, Civil, Mechanical, EEE, Agri, Mining etc.)
+  // Default Standard B.Tech
   const defaultBTech = {
     1: [
       { code: 'ENG-101', name: 'Engineering Mathematics-I', credits: 4, type: 'Theory' },
@@ -463,7 +369,7 @@ const getCurriculumSubjects = (courseName = '', semNum = '1') => {
       { code: 'ENG-205', name: 'Branch Core Laboratory-I', credits: 2, type: 'Practical' },
     ],
     3: [
-      { code: 'ENG-301', name: 'Advanced Engineering Mathematics / Discrete Math', credits: 4, type: 'Theory' },
+      { code: 'ENG-301', name: 'Advanced Engineering Mathematics', credits: 4, type: 'Theory' },
       { code: 'ENG-302', name: 'Core Branch Technology-I', credits: 4, type: 'Theory + Lab' },
       { code: 'ENG-303', name: 'Systems Architecture & Modeling', credits: 3, type: 'Theory' },
       { code: 'ENG-304', name: 'Measurement, Instrumentation & Testing', credits: 3, type: 'Theory' },
@@ -506,8 +412,8 @@ const getCurriculumSubjects = (courseName = '', semNum = '1') => {
 };
 
 export default function SyllabusManager({ courses: initialPropCourses, onRefreshCourses }) {
-  // Navigation Sub-tab: 'universities' | 'colleges' | 'courses' | 'syllabus'
-  const [activeSubTab, setActiveSubTab] = useState('courses');
+  // Navigation Sub-tab: 'universities' (Default: only universities show first) | 'colleges' | 'courses' | 'syllabus'
+  const [activeSubTab, setActiveSubTab] = useState('universities');
 
   // Master Data States
   const [universities, setUniversities] = useState(INITIAL_UNIVERSITIES);
@@ -544,7 +450,6 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       const res = await fetch('/api/courses');
       const data = await res.json();
       if (data.success && data.courses && data.courses.length > 0) {
-        // Filter strictly to B.Tech and MBA
         const filtered = data.courses.filter(c => 
           c.name?.toLowerCase().includes('b.tech') || 
           c.code?.toLowerCase().includes('btech') ||
@@ -566,10 +471,13 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
     fetchCourses();
   }, []);
 
-  // Filter States (Default to B.Tech so all 13 branches are immediately visible!)
+  // Filter States
   const [selectedUnivFilter, setSelectedUnivFilter] = useState('all');
-  const [selectedDegreeFilter, setSelectedDegreeFilter] = useState('B.Tech'); // 'B.Tech' | 'MBA' | 'all'
+  const [selectedDegreeFilter, setSelectedDegreeFilter] = useState('B.Tech');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Selected University object
+  const selectedUniversity = universities.find(u => u.id === selectedUnivFilter) || null;
 
   // Notification Messages
   const [successMsg, setSuccessMsg] = useState(null);
@@ -1085,16 +993,34 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
     setActiveSubTab('syllabus');
   };
 
-  // Filtered Colleges list (Default to 'all' so all universities and colleges are visible)
+  // Helper to get colleges under a specific university
+  const getCollegesForUniv = (univ) => {
+    if (!univ) return [];
+    return colleges.filter(c => 
+      c.universityId === univ.id || 
+      (c.universityName || '').toLowerCase().includes((univ.shortName || univ.name).toLowerCase())
+    );
+  };
+
+  // Filtered Colleges list for Tab 2
   const filteredColleges = colleges.filter(c => {
-    const matchesUniv = selectedUnivFilter === 'all' || c.universityId === selectedUnivFilter || (c.universityName || '').toLowerCase().includes(selectedUnivFilter.toLowerCase());
+    const matchesUniv = selectedUnivFilter === 'all' || 
+      c.universityId === selectedUnivFilter || 
+      (c.universityName || '').toLowerCase().includes((selectedUniversity?.shortName || selectedUniversity?.name || '').toLowerCase());
+    
     const matchesSearch = !searchTerm.trim() || 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.district.toLowerCase().includes(searchTerm.toLowerCase());
+    
     return matchesUniv && matchesSearch;
   });
+
+  // Dynamic count of colleges to show in banner based on selection:
+  const displayedCollegesCount = selectedUnivFilter === 'all' || !selectedUniversity 
+    ? colleges.length 
+    : getCollegesForUniv(selectedUniversity).length;
 
   // Filtered Courses list: Strictly B.Tech and MBA
   const btechCourses = coursesList.filter(c => c.name?.toLowerCase().includes('b.tech') || c.code?.toLowerCase().includes('btech') || c.degree === 'B.Tech');
@@ -1118,7 +1044,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-slate-900">
       
       {/* ========================================================================= */}
-      {/* 1. ACADEMIC HEADER BANNER */}
+      {/* 1. ACADEMIC HEADER BANNER - STRICTLY ONLY 2 PARTS (Universities & Colleges) */}
       {/* ========================================================================= */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1129,40 +1055,77 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-                  Affiliation &amp; Academic Programs Hub
+                  Affiliation &amp; University Hub
                 </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                  B.Tech &amp; MBA Programs
-                </span>
+                {selectedUniversity && (
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                    Active: {selectedUniversity.shortName || selectedUniversity.code}
+                  </span>
+                )}
               </div>
               <h1 className="text-xl sm:text-2xl font-black mt-1 text-white">
-                Universities, Colleges &amp; Programs Master Hub
+                Universities &amp; Affiliated Colleges Hub
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                Centralized master directory for partner universities, affiliated colleges, <strong>B.Tech ({btechCourses.length} Branches)</strong>, and <strong>MBA ({mbaCourses.length} Specializations)</strong>.
+                {selectedUniversity 
+                  ? `Selected: ${selectedUniversity.name} — viewing its affiliated colleges and academic network.`
+                  : 'Select any university below to view and manage its affiliated colleges.'}
               </p>
             </div>
           </div>
 
-          {/* Metric Badges */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[100px]">
-              <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider block">Universities</span>
-              <span className="text-xl font-black text-white">{universities.length}</span>
+          {/* Metric Badges: EXACTLY 2 PARTS (Universities & Colleges) - Dynamic by selection */}
+          <div className="flex items-center gap-3">
+            {/* Part 1: Universities */}
+            <div 
+              onClick={() => {
+                setSelectedUnivFilter('all');
+                setActiveSubTab('universities');
+              }}
+              className={`px-5 py-3 rounded-2xl border text-center min-w-[120px] transition-all cursor-pointer shadow-sm ${
+                selectedUnivFilter === 'all' || activeSubTab === 'universities'
+                  ? 'bg-white/20 border-amber-400/60 ring-2 ring-amber-400/30'
+                  : 'bg-white/10 hover:bg-white/15 border-white/10'
+              }`}
+              title="Click to view all Universities"
+            >
+              <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider block">
+                Universities
+              </span>
+              <span className="text-2xl font-black text-white">
+                {universities.length}
+              </span>
+              <span className="text-[10px] text-slate-300 block font-medium">
+                {selectedUniversity ? (selectedUniversity.shortName || selectedUniversity.code) : 'Partner Hubs'}
+              </span>
             </div>
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[100px]">
-              <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">Colleges</span>
-              <span className="text-xl font-black text-white">{colleges.length}</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[100px]">
-              <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider block">B.Tech</span>
-              <span className="text-xl font-black text-white">{btechCourses.length} Branches</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[100px]">
-              <span className="text-[10px] text-purple-300 font-bold uppercase tracking-wider block">MBA</span>
-              <span className="text-xl font-black text-white">{mbaCourses.length} Streams</span>
+
+            {/* Part 2: Colleges - Dynamically changes based on selected university! */}
+            <div 
+              onClick={() => {
+                setActiveSubTab('colleges');
+              }}
+              className={`px-5 py-3 rounded-2xl border text-center min-w-[140px] transition-all cursor-pointer shadow-sm ${
+                activeSubTab === 'colleges'
+                  ? 'bg-white/20 border-indigo-400/60 ring-2 ring-indigo-400/30'
+                  : 'bg-white/10 hover:bg-white/15 border-white/10'
+              }`}
+              title="Click to view Affiliated Colleges"
+            >
+              <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">
+                Colleges
+              </span>
+              <span className="text-2xl font-black text-white">
+                {displayedCollegesCount}
+              </span>
+              <span className="text-[10px] text-indigo-200 block truncate max-w-[140px] font-medium">
+                {selectedUniversity 
+                  ? `under ${selectedUniversity.shortName || selectedUniversity.code}` 
+                  : 'All 18 Colleges'}
+              </span>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -1213,7 +1176,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
               activeSubTab === 'colleges' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
             }`}>
-              {colleges.length}
+              {displayedCollegesCount}
             </span>
           </button>
 
@@ -1262,7 +1225,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
           </button>
         </div>
 
-        {/* Quick Add Buttons */}
+        {/* Quick Action Buttons */}
         <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0">
           <button
             type="button"
@@ -1276,22 +1239,12 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
           <button
             type="button"
-            onClick={() => handleOpenAddCourse('B.Tech')}
+            onClick={() => handleOpenAddCollege(selectedUnivFilter !== 'all' ? selectedUnivFilter : 'univ-mpu')}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
-            title="Add B.Tech Branch"
+            title="Register College"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Add B.Tech Branch</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleOpenAddCourse('MBA')}
-            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
-            title="Add MBA Stream"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Add MBA Stream</span>
+            <span>+ Add College</span>
           </button>
         </div>
 
@@ -1315,7 +1268,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 1: UNIVERSITIES DIRECTORY */}
+      {/* TAB 1: UNIVERSITIES DIRECTORY (Only Universities Shown Here!) */}
       {/* ========================================================================= */}
       {activeSubTab === 'universities' && (
         <div className="space-y-6">
@@ -1323,10 +1276,10 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             <div>
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-indigo-600" />
-                <span>Affiliated Universities Directory ({universities.length})</span>
+                <span>Partner Universities ({universities.length})</span>
               </h2>
               <p className="text-xs text-slate-500">
-                All partner universities offering authorized B.Tech and MBA programs through PKC Institute.
+                Click on any university to view all its affiliated colleges and managed programs.
               </p>
             </div>
 
@@ -1342,9 +1295,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {universities.map((univ) => {
-              const univColleges = colleges.filter(
-                c => c.universityId === univ.id || (c.universityName || '').toLowerCase().includes((univ.shortName || univ.name).toLowerCase())
-              );
+              const univColleges = getCollegesForUniv(univ);
 
               return (
                 <div 
@@ -1377,7 +1328,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                     {/* Meta info */}
                     <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs">
                       <div>
-                        <span className="text-slate-400 block font-medium">Location</span>
+                        <span className="text-slate-400 block font-medium">City / State</span>
                         <strong className="text-slate-800 flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400" />
                           <span>{univ.city}, {univ.state}</span>
@@ -1385,24 +1336,9 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                       </div>
                       <div>
                         <span className="text-slate-400 block font-medium">Affiliated Colleges</span>
-                        <strong className="text-indigo-900 font-extrabold">
+                        <strong className="text-indigo-900 font-extrabold text-sm">
                           {univColleges.length} Colleges
                         </strong>
-                      </div>
-                    </div>
-
-                    {/* Offered Programs Badge */}
-                    <div className="bg-gradient-to-r from-indigo-50/60 to-purple-50/60 p-3 rounded-2xl border border-indigo-100/80 text-xs space-y-1.5">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900 block">
-                        Offered Degrees &amp; Branches:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="bg-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                          B.Tech ({btechCourses.length} Branches)
-                        </span>
-                        <span className="bg-purple-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                          MBA ({mbaCourses.length} Specializations)
-                        </span>
                       </div>
                     </div>
 
@@ -1424,34 +1360,20 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                     )}
                   </div>
 
-                  {/* Actions */}
+                  {/* Primary Action: VIEW COLLEGES UNDER THIS UNIVERSITY */}
                   <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUnivFilter(univ.id);
-                          setActiveSubTab('colleges');
-                        }}
-                        className="flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
-                      >
-                        <Landmark className="w-3.5 h-3.5" />
-                        <span>Colleges</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSubTab('courses');
-                        }}
-                        className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
-                      >
-                        <GraduationCap className="w-3.5 h-3.5" />
-                        <span>View Programs</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedUnivFilter(univ.id);
+                        setActiveSubTab('colleges');
+                      }}
+                      className="flex items-center gap-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      <Landmark className="w-4 h-4" />
+                      <span>View Affiliated Colleges ({univColleges.length})</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
 
                     <div className="flex items-center gap-1">
                       <button
@@ -1481,58 +1403,114 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: AFFILIATED COLLEGES */}
+      {/* TAB 2: AFFILIATED COLLEGES (Drill-down: Colleges Under Selected University) */}
       {/* ========================================================================= */}
       {activeSubTab === 'colleges' && (
         <div className="space-y-6">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Landmark className="w-5 h-5 text-indigo-600" />
-                <span>Affiliated Colleges Directory ({filteredColleges.length})</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Directory of all affiliated institutions under partner universities. Select any university to filter colleges.
-              </p>
+          {/* Active University Breadcrumb & Switcher Header */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUnivFilter('all');
+                      setActiveSubTab('universities');
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-indigo-600 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Universities</span>
+                  </button>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-xs font-bold text-indigo-700">
+                    {selectedUniversity ? (selectedUniversity.shortName || selectedUniversity.name) : 'All Partner Colleges'}
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-indigo-600" />
+                  <span>
+                    {selectedUniversity 
+                      ? `Colleges Under ${selectedUniversity.shortName || selectedUniversity.name} (${filteredColleges.length})`
+                      : `All Affiliated Colleges Directory (${filteredColleges.length})`}
+                  </span>
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenAddCollege(selectedUnivFilter !== 'all' ? selectedUnivFilter : 'univ-mpu')}
+                  className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Register New College</span>
+                </button>
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleOpenAddCollege(selectedUnivFilter !== 'all' ? selectedUnivFilter : 'univ-mpu')}
-              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Register New College</span>
-            </button>
+            {/* University Filter Pills - Click to instantly switch university and see its colleges */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-400 whitespace-nowrap mr-1">
+                Filter by University:
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setSelectedUnivFilter('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                  selectedUnivFilter === 'all'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                All Universities ({colleges.length})
+              </button>
+
+              {universities.map(u => {
+                const isCurrent = selectedUnivFilter === u.id;
+                const count = getCollegesForUniv(u).length;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => setSelectedUnivFilter(u.id)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                      isCurrent
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-400/30'
+                        : 'bg-indigo-50/70 hover:bg-indigo-100 text-indigo-800 border-indigo-200'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>{u.shortName || u.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      isCurrent ? 'bg-white/20 text-white' : 'bg-indigo-200 text-indigo-900'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Search & University Filter */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                placeholder="Search college name, code (e.g. BED121, N462)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 font-medium"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Filter University:</span>
-              <select
-                value={selectedUnivFilter}
-                onChange={(e) => setSelectedUnivFilter(e.target.value)}
-                className="p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-600"
-              >
-                <option value="all">All Universities ({colleges.length} Colleges)</option>
-                {universities.map(u => (
-                  <option key={u.id} value={u.id}>{u.shortName || u.name}</option>
-                ))}
-              </select>
-            </div>
+          {/* Search Bar */}
+          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+            <Search className="w-4 h-4 text-slate-400 ml-2" />
+            <input
+              type="text"
+              placeholder="Search college by name, code (e.g. BED121, N462), or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full text-xs bg-transparent focus:outline-none font-medium text-slate-800"
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="p-1 text-slate-400 hover:text-slate-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Colleges Table */}
@@ -1563,7 +1541,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                           <span className="text-[11px] text-slate-500 block mt-0.5">{col.shortName}</span>
                         )}
                       </td>
-                      <td className="p-3.5 font-medium text-slate-700">
+                      <td className="p-3.5 font-bold text-slate-800">
                         {col.universityName}
                       </td>
                       <td className="p-3.5 text-slate-600">
@@ -1595,6 +1573,13 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                       </td>
                     </tr>
                   ))}
+                  {filteredColleges.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
+                        No colleges found matching the selection.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
