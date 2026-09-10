@@ -12,6 +12,7 @@ import InquiryPage from './pages/InquiryPage';
 import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
+import AIRobotAssistant from './components/AIRobotAssistant';
 
 // Helper to detect initial view based on browser URL pathname
 const getInitialView = () => {
@@ -65,6 +66,18 @@ export default function App() {
 
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // AI Robot Assistant Public Tab Action Listener
+  useEffect(() => {
+    const handleAIAction = (event) => {
+      const detail = event.detail || {};
+      if (detail.type === 'switch-public-tab' && detail.tab) {
+        setPublicTab(detail.tab);
+      }
+    };
+    window.addEventListener('ai-action', handleAIAction);
+    return () => window.removeEventListener('ai-action', handleAIAction);
   }, []);
 
   useEffect(() => {
@@ -343,6 +356,15 @@ export default function App() {
         isOpen={staffAuthModalOpen}
         onClose={() => setStaffAuthModalOpen(false)}
         onLoginSuccess={handleStaffLoginSuccess}
+      />
+
+      {/* Floating AI Robot Assistant & Voice Copilot (Full Access Control) */}
+      <AIRobotAssistant
+        onNavigate={navigateTo}
+        activeView={activeView}
+        adminUser={adminUser}
+        staffUser={staffUser}
+        studentUser={studentUser}
       />
 
     </div>

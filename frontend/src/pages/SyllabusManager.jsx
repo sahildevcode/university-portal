@@ -385,6 +385,21 @@ export default function SyllabusManager() {
     setShowUnivModal(true);
   };
 
+  // AI Robot Assistant Event Listener
+  useEffect(() => {
+    const handleAIAction = (event) => {
+      const detail = event.detail || {};
+      if (detail.type === 'open-add-university') {
+        setActiveSubTab('universities');
+        handleOpenAddUniv();
+      } else if (detail.type === 'switch-tab' && detail.tab) {
+        setActiveSubTab(detail.tab);
+      }
+    };
+    window.addEventListener('ai-action', handleAIAction);
+    return () => window.removeEventListener('ai-action', handleAIAction);
+  }, []);
+
   const handleOpenEditUniv = (u) => {
     setEditingUniv(u);
     setUnivFormData({

@@ -66,6 +66,26 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
     fetchStaffData();
   }, []);
 
+  // AI Robot Automation Action Listener
+  useEffect(() => {
+    const handleAIAction = (event) => {
+      const detail = event.detail || {};
+      if (detail.type === 'focus-fees') {
+        setActiveTab('accounts');
+      } else if (detail.type === 'open-admission') {
+        setActiveTab('admissions');
+        setAdmissionSubTab('register');
+      } else if (detail.type === 'focus-students') {
+        setActiveTab('admissions');
+        setAdmissionSubTab('directory');
+      } else if (detail.type === 'open-add-university' || detail.type === 'switch-tab') {
+        setActiveTab('syllabus');
+      }
+    };
+    window.addEventListener('ai-action', handleAIAction);
+    return () => window.removeEventListener('ai-action', handleAIAction);
+  }, []);
+
   const handleOpenAddCourse = () => {
     setEditingCourseId(null);
     setCourseForm({

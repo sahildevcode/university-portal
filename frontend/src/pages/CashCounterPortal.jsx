@@ -19,6 +19,22 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // AI Robot Automation Action Listener
+  useEffect(() => {
+    const handleAIAction = (event) => {
+      const detail = event.detail || {};
+      if (detail.type === 'focus-fees') {
+        setActiveTab('collect-fee');
+      } else if (detail.type === 'open-admission') {
+        setActiveTab('walkin-admission');
+      } else if (detail.type === 'focus-docs') {
+        setActiveTab('documents');
+      }
+    };
+    window.addEventListener('ai-action', handleAIAction);
+    return () => window.removeEventListener('ai-action', handleAIAction);
+  }, []);
+
   const staffDesks = [
     {
       id: 'collect-fee',
