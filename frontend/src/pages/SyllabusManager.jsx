@@ -1062,11 +1062,6 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                       </div>
                     </div>
 
-                    <div className="text-xs bg-indigo-50/60 border border-indigo-100 p-2.5 rounded-xl text-indigo-950">
-                      <span className="font-bold text-indigo-900">Approvals: </span>
-                      <span className="text-indigo-800">{univ.approvedBy}</span>
-                    </div>
-
                     <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                       {univ.description || 'Recognized higher education university offering degree and technical programs.'}
                     </p>
@@ -1748,21 +1743,12 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Approvals &amp; Accreditations</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Official Website URL <span className="text-slate-400 font-normal">(Optional / ऐच्छिक)</span>
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. UGC, AICTE Recognized Private University"
-                  value={univForm.approvedBy}
-                  onChange={(e) => setUnivForm({ ...univForm, approvedBy: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Official Website URL</label>
-                <input
-                  type="url"
-                  placeholder="e.g. https://mpu.ac.in"
+                  placeholder="e.g. https://mpu.ac.in (Optional - खाली छोड़ सकते हैं)"
                   value={univForm.website}
                   onChange={(e) => setUnivForm({ ...univForm, website: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
