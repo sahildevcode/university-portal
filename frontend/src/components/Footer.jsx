@@ -67,6 +67,11 @@ export default function Footer({ setActiveTab }) {
                 </button>
               </li>
               <li>
+                <button onClick={() => setActiveTab('gallery')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
+                  Campus &amp; Event Gallery
+                </button>
+              </li>
+              <li>
                 <button onClick={() => setActiveTab('inquiry')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
                   Admission Inquiry Desk
                 </button>
@@ -100,11 +105,11 @@ export default function Footer({ setActiveTab }) {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#C59B27] shrink-0" />
-                <span>Helpline: +91 98765 43210</span>
+                <a href="tel:+917000212637" className="hover:text-white transition-colors">Helpline: +91 7000212637</a>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#C59B27] shrink-0" />
-                <span>admissions@pkceducation.org</span>
+                <a href="mailto:pkcinstituteaiu@gmail.com" className="hover:text-white transition-colors">pkcinstituteaiu@gmail.com</a>
               </div>
             </div>
           </div>

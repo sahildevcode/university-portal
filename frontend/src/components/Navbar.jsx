@@ -39,6 +39,15 @@ export default function Navbar({
 }) {
   const t = translations[lang] || translations.hi;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleLanguage = () => {
     if (setLang) {
@@ -53,7 +62,11 @@ export default function Navbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-xs border-b border-slate-200 transition-all font-sans">
+    <header className={`sticky top-0 z-40 transition-all duration-300 font-sans ${
+      isScrolled 
+        ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200/90' 
+        : 'bg-white shadow-xs border-b border-slate-200'
+    }`}>
       
       {/* 1. TOP UTILITY STRIP (Deep Midnight Navy - Exact Northfield Style) */}
       <div className="bg-[#071530] text-slate-200 text-[11px] py-1.5 px-4 sm:px-8 border-b border-slate-800/80">
@@ -200,7 +213,19 @@ export default function Navbar({
               {t.courses}
             </button>
 
-            {/* 4. ADMISSION INQUIRY */}
+            {/* 4. CAMPUS GALLERY */}
+            <button
+              onClick={() => handleNavClick('gallery')}
+              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+                activeView === 'public' && publicTab === 'gallery'
+                  ? 'text-[#071530] border-amber-500 font-extrabold'
+                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
+              }`}
+            >
+              {t.gallery || (lang === 'hi' ? 'गैलरी' : 'Gallery')}
+            </button>
+
+            {/* 5. ADMISSION INQUIRY */}
             <button
               onClick={() => handleNavClick('inquiry')}
               className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
@@ -265,6 +290,14 @@ export default function Navbar({
               }`}
             >
               {t.courses}
+            </button>
+            <button
+              onClick={() => handleNavClick('gallery')}
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                publicTab === 'gallery' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {t.gallery || (lang === 'hi' ? 'गैलरी' : 'Gallery')}
             </button>
             <button
               onClick={() => handleNavClick('inquiry')}

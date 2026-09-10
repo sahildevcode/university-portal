@@ -9,8 +9,10 @@ import MainUniversityHome from './pages/MainUniversityHome';
 import AboutPage from './pages/AboutPage';
 import PublicCourseCatalog from './pages/PublicCourseCatalog';
 import InquiryPage from './pages/InquiryPage';
+import GalleryPage from './pages/GalleryPage';
 import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
+import FloatingContactWidget from './components/FloatingContactWidget';
 
 // Helper to detect initial view based on browser URL pathname
 const getInitialView = () => {
@@ -246,6 +248,13 @@ export default function App() {
               />
             )}
 
+            {publicTab === 'gallery' && (
+              <GalleryPage 
+                lang={lang}
+                onNavigateTab={setPublicTab}
+              />
+            )}
+
             {publicTab === 'inquiry' && (
               <InquiryPage 
                 courses={courses}
@@ -322,8 +331,11 @@ export default function App() {
 
       </main>
 
-      {/* Footer (Rendered on Public Sub-Pages) */}
-      {activeView === 'public' && publicTab !== 'home' && <Footer setActiveTab={setPublicTab} />}
+      {/* Footer (Rendered on Public Portal) */}
+      {activeView === 'public' && <Footer setActiveTab={setPublicTab} />}
+
+      {/* Floating WhatsApp and Email Contact Widget */}
+      {activeView === 'public' && <FloatingContactWidget />}
 
       {/* Student Login / Sign Up Modal */}
       <StudentAuthModal

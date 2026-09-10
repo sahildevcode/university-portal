@@ -3,7 +3,7 @@ export const translations = {
     // Top Bar
     admissionsOpen: 'Admissions Open 2026-27',
     societyReg: 'Approved & Registered Society • Reg No. 06/03/01/12345/18',
-    helpline: 'Helpline: 1800-120-8899 / +91 98765 43210',
+    helpline: 'Helpline: +91 7000212637',
     location: 'Chhatarpur, Madhya Pradesh',
     
     // Navbar
@@ -13,6 +13,7 @@ export const translations = {
     home: 'Home',
     about: 'About Us',
     courses: 'Courses & Syllabi',
+    gallery: 'Campus Gallery',
     inquiry: 'Admission Inquiry',
     student: 'Student Portal',
     admin: 'Admin Panel',
@@ -107,7 +108,7 @@ export const translations = {
     // Top Bar
     admissionsOpen: 'प्रवेश प्रारंभ सत्र 2026-27',
     societyReg: 'मान्यता प्राप्त एवं पंजीकृत समिति • पंजीयन क्र. 06/03/01/12345/18',
-    helpline: 'हेल्पलाइन: 1800-120-8899 / +91 98765 43210',
+    helpline: 'हेल्पलाइन: +91 7000212637',
     location: 'छतरपुर, मध्य प्रदेश',
     
     // Navbar
@@ -117,6 +118,7 @@ export const translations = {
     home: 'मुख्य पृष्ठ',
     about: 'हमारे बारे में',
     courses: 'कोर्स एवं सिलेबस',
+    gallery: 'गैलरी',
     inquiry: 'पूछताछ / इंक्वायरी',
     student: 'छात्र पोर्टल',
     admin: 'एडमिन पैनल',
