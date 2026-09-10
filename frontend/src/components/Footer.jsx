@@ -71,6 +71,16 @@ export default function Footer({ setActiveTab }) {
                   Admission Inquiry Desk
                 </button>
               </li>
+              <li className="pt-2 border-t border-slate-800/80">
+                <a href="/admin" className="text-amber-400 hover:text-amber-300 font-bold transition-colors flex items-center gap-1.5">
+                  <span>🛡️ Admin Portal</span>
+                </a>
+              </li>
+              <li>
+                <a href="/staff" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1.5">
+                  <span>💼 Staff Counter</span>
+                </a>
+              </li>
             </ul>
           </div>
 
