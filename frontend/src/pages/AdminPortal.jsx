@@ -159,23 +159,11 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
     } catch (err) { alert('Failed to delete staff member'); }
   };
 
-  const [isNavDropdownOpen, setIsNavDropdownOpen] = useState(false);
-  const navDropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (navDropdownRef.current && !navDropdownRef.current.contains(event.target)) {
-        setIsNavDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const adminModules = [
     { 
       id: 'syllabus', 
-      label: '1. Courses & Syllabus Master Hub', 
+      label: 'Courses & Syllabus', 
+      fullName: 'Courses & Syllabus Master Hub',
       sub: 'कोर्स, ब्रांच व फीस स्ट्रक्चर प्रबंधन',
       icon: Layers, 
       color: 'text-indigo-600',
@@ -183,31 +171,35 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
     },
     { 
       id: 'cashcounter', 
-      label: '2. Cash Counter Fee & Accounts Layer', 
+      label: 'Fee & Cash Counter', 
+      fullName: 'Cash Counter Fee & Accounts Layer',
       sub: 'छात्र फीस रसीद, बकाया व खजाना लेजर',
       icon: CreditCard, 
       color: 'text-emerald-600',
-      badge: 'Treasury Live'
+      badge: 'Live Counter'
     },
     { 
       id: 'admissions', 
-      label: '3. Enrolled Students Directory', 
+      label: 'Student Admissions', 
+      fullName: 'Enrolled Students Directory & Admissions',
       sub: 'सभी नामांकित छात्र व नए प्रवेश रिकॉर्ड',
       icon: Users, 
       color: 'text-blue-600',
-      badge: 'Central Directory'
+      badge: 'Admissions'
     },
     { 
       id: 'documents', 
-      label: '4. Student Documents Tracker', 
+      label: 'Documents Tracker', 
+      fullName: 'Student Documents Tracker & Verification Desk',
       sub: 'दस्तावेज़ सत्यापन डेस्क व पेंडिंग फाइल्स',
       icon: FolderCheck, 
       color: 'text-purple-600',
-      badge: 'Verification'
+      badge: 'KYC Desk'
     },
     { 
       id: 'staff', 
-      label: `5. Staff & Operator Credentials (${staffList.length})`, 
+      label: 'Staff Management', 
+      fullName: 'Staff & Operator Credentials Manager',
       sub: 'कैशियर व ऑपरेटर लॉगिन पासवर्ड नियंत्रण',
       icon: UserCheck, 
       color: 'text-amber-600',
@@ -215,23 +207,25 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
     },
     { 
       id: 'cms', 
-      label: '6. Website CMS & Inquiries', 
-      sub: 'मुख्य वेबसाइट कंटेंट, इवेंट फोटो व पूछताछ',
+      label: 'Website CMS & Inquiries', 
+      fullName: 'Website CMS & Inquiries Manager',
+      sub: 'मुख्य वेबसाइट कंटेंट व पूछताछ',
       icon: Globe, 
       color: 'text-sky-600',
-      badge: 'Public Website'
+      badge: 'CMS'
     },
     { 
       id: 'university-paid', 
-      label: '7. 🏛️ University Paid & Settlement', 
+      label: 'University Settlement', 
+      fullName: 'University Paid & Settlement Ledger',
       sub: 'यूनिवर्सिटी फीस भुगतान, बकाया व कंसल्टेंसी मार्जिन हिसाब',
       icon: Building2, 
       color: 'text-amber-600',
-      badge: 'Counselor Ledger'
+      badge: 'Settlement'
     }
   ];
 
-  const activeModule = adminModules.find(m => m.id === activeTab) || adminModules[0];
+  const activeModule = adminModules.find(m => m.id === activeTab || (m.id === 'syllabus' && activeTab === 'courses')) || adminModules[0];
   const ActiveIcon = activeModule.icon;
 
   return (
@@ -297,80 +291,64 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         </div>
       )}
 
-      {/* Admin Managing Features Dropdown Selector */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
-            <ActiveIcon className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Administrative Control Hub (प्रबंधन अनुभाग चुनें):
-            </span>
-            <div className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <span>{activeModule.label}</span>
-              <span className="text-[11px] font-bold text-slate-500 hidden md:inline">({activeModule.sub})</span>
-            </div>
-          </div>
+      {/* Administrative Top Navigation Bar */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-3 sm:p-4 space-y-3">
+        {/* Module Selector Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-thin">
+          {adminModules.map((mod) => {
+            const Icon = mod.icon;
+            const isSelected = activeTab === mod.id || (mod.id === 'syllabus' && activeTab === 'courses');
+            return (
+              <button
+                key={mod.id}
+                type="button"
+                onClick={() => setActiveTab(mod.id)}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+                  isSelected
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/50'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-950 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    isSelected
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span>{mod.label}</span>
+                {mod.badge && (
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                      isSelected
+                        ? 'bg-white/20 text-amber-300'
+                        : 'bg-slate-200/80 text-slate-600'
+                    }`}
+                  >
+                    {mod.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Interactive Custom Dropdown Menu */}
-        <div className="relative min-w-[280px] sm:min-w-[360px]" ref={navDropdownRef}>
-          <button
-            type="button"
-            onClick={() => setIsNavDropdownOpen(!isNavDropdownOpen)}
-            className="w-full flex items-center justify-between gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-300 p-2.5 sm:px-4 rounded-2xl text-xs font-extrabold text-slate-800 transition-all cursor-pointer shadow-xs"
-          >
-            <div className="flex items-center gap-2.5 truncate">
-              <ActiveIcon className={`w-4 h-4 shrink-0 ${activeModule.color}`} />
-              <span className="truncate">{activeModule.label}</span>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${isNavDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Floating Menu */}
-          {isNavDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-full sm:w-[400px] bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-fadeIn">
-              <div className="px-4 py-2 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                <span>Select Administrative Feature:</span>
-                <span className="text-[10px] text-indigo-600 font-extrabold">6 Modules</span>
-              </div>
-              <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
-                {adminModules.map((mod) => {
-                  const Icon = mod.icon;
-                  const isSelected = activeTab === mod.id;
-                  return (
-                    <button
-                      key={mod.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveTab(mod.id);
-                        setIsNavDropdownOpen(false);
-                      }}
-                      className={`w-full text-left p-3 sm:px-4 flex items-start gap-3 transition-colors cursor-pointer ${
-                        isSelected ? 'bg-indigo-50/80 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${isSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold truncate">{mod.label}</span>
-                          {isSelected ? (
-                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full shrink-0">Active</span>
-                          ) : (
-                            <span className="text-[10px] text-slate-400 font-medium shrink-0">{mod.badge}</span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 truncate mt-0.5">{mod.sub}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+        {/* Current Active Section Status Strip */}
+        <div className="pt-2.5 px-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Active Screen
+            </span>
+            <strong className="text-slate-900 font-extrabold text-xs">{activeModule.fullName || activeModule.label}</strong>
+            <span className="text-slate-300 hidden md:inline">•</span>
+            <span className="text-slate-500 text-[11px] hidden md:inline">{activeModule.sub}</span>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-400">
+            Click any module tab to switch view
+          </span>
         </div>
       </div>
 
