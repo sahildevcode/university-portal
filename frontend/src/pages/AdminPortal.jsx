@@ -78,7 +78,12 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       } else if (detail.type === 'focus-students') {
         setActiveTab('admissions');
         setAdmissionSubTab('directory');
-      } else if (detail.type === 'open-add-university' || detail.type === 'switch-tab') {
+      } else if (
+        detail.type === 'open-add-university' || 
+        detail.type === 'open-add-college' || 
+        detail.type === 'prefill-upload-syllabus' || 
+        detail.type === 'switch-tab'
+      ) {
         setActiveTab('syllabus');
       }
     };

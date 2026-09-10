@@ -315,6 +315,35 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     fetchUniversitiesAndColleges();
   }, []);
 
+  // AI Robot Assistant Event Listener for Pre-filling
+  useEffect(() => {
+    const handleAIAction = (event) => {
+      const detail = event.detail || {};
+      if (detail.type === 'open-admission') {
+        if (detail.courseName) {
+          setFormData(prev => ({
+            ...prev,
+            Course_Name: detail.courseName,
+            Branch: detail.courseName
+          }));
+          if (detail.courseName.includes('MBA')) {
+            setSelectedDegree('MBA');
+          } else if (detail.courseName.includes('B.Tech')) {
+            setSelectedDegree('B.Tech');
+          } else if (detail.courseName.includes('B.Ed')) {
+            setSelectedDegree('B.Ed');
+          } else if (detail.courseName.includes('BCA')) {
+            setSelectedDegree('BCA');
+          } else if (detail.courseName.includes('BBA')) {
+            setSelectedDegree('BBA');
+          }
+        }
+      }
+    };
+    window.addEventListener('ai-action', handleAIAction);
+    return () => window.removeEventListener('ai-action', handleAIAction);
+  }, []);
+
   // Set attending operator
   useEffect(() => {
     if (staffUser) {

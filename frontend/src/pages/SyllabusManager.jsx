@@ -391,14 +391,50 @@ export default function SyllabusManager() {
       const detail = event.detail || {};
       if (detail.type === 'open-add-university') {
         setActiveSubTab('universities');
-        handleOpenAddUniv();
+        setEditingUniv(null);
+        setUnivFormData({
+          name: detail.name || '',
+          shortName: detail.shortName || (detail.name ? detail.name.substring(0, 10).toUpperCase() : ''),
+          code: detail.code || '',
+          city: detail.city || 'Bhopal',
+          state: detail.state || 'Madhya Pradesh',
+          website: detail.website || '',
+          establishedYear: new Date().getFullYear(),
+          description: detail.description || ''
+        });
+        setShowUnivModal(true);
+      } else if (detail.type === 'open-add-college') {
+        setActiveSubTab('colleges');
+        setEditingCollege(null);
+        let targetUniv = universities[0];
+        if (detail.universityId) {
+          targetUniv = universities.find(u => u.id === detail.universityId) || targetUniv;
+        } else if (detail.univName) {
+          targetUniv = universities.find(u => (u.name || '').toLowerCase().includes(detail.univName.toLowerCase()) || (u.shortName || '').toLowerCase().includes(detail.univName.toLowerCase())) || targetUniv;
+        }
+        setCollegeFormData({
+          name: detail.collegeName || '',
+          shortName: detail.shortName || '',
+          code: detail.code || '',
+          universityId: targetUniv ? targetUniv.id : 'univ-mpu',
+          universityName: targetUniv ? targetUniv.name : 'Madhyanchal Professional University Bhopal',
+          district: detail.district || 'Bhopal',
+          state: 'Madhya Pradesh'
+        });
+        setShowCollegeModal(true);
+      } else if (detail.type === 'prefill-upload-syllabus') {
+        setActiveSubTab('upload_syllabus');
+        if (detail.universityId) setUploadUnivId(detail.universityId);
+        if (detail.collegeId) setUploadCollegeId(detail.collegeId);
+        if (detail.branchCode) setUploadBranchCode(detail.branchCode);
+        if (detail.semester) setUploadSemester(String(detail.semester));
       } else if (detail.type === 'switch-tab' && detail.tab) {
         setActiveSubTab(detail.tab);
       }
     };
     window.addEventListener('ai-action', handleAIAction);
     return () => window.removeEventListener('ai-action', handleAIAction);
-  }, []);
+  }, [universities, colleges]);
 
   const handleOpenEditUniv = (u) => {
     setEditingUniv(u);
