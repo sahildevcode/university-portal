@@ -2,11 +2,206 @@ import React, { useState, useEffect } from 'react';
 import { 
   UserPlus, Upload, FileText, CheckCircle2, AlertCircle, Printer, 
   CreditCard, Image as ImageIcon, FileCheck, Building, ShieldCheck,
-  Calendar, Key, Hash, School, BookOpen, Layers, CheckSquare, Square
+  Calendar, Key, Hash, School, BookOpen, Layers, CheckSquare, Square,
+  Trash2, X, RefreshCw
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 
+// Initial Fallback Partner Universities
+const FALLBACK_UNIVERSITIES = [
+  {
+    id: 'univ-mpu',
+    name: 'Madhyanchal Professional University Bhopal',
+    shortName: 'MPU Bhopal',
+    code: 'MPU01',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-mcbu',
+    name: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
+    shortName: 'MCU Chhatarpur',
+    code: 'MCU01',
+    city: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  }
+];
+
+// Initial Fallback Affiliated Colleges mapped by University
+const FALLBACK_COLLEGES = [
+  // 12 Colleges under Madhyanchal Professional University Bhopal (univ-mpu)
+  { id: 'col-bed121', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED121', name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA', shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+  { id: 'col-bed2097', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2097', name: 'BED2097 - Sita Ram College Of Education', shortName: 'Sita Ram College Of Education', district: 'Chhatarpur' },
+  { id: 'col-bed2140', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2140', name: 'BED2140 - J J COLLEGE OF EDUCATION', shortName: 'J J College of Education', district: 'Chhatarpur' },
+  { id: 'col-bed2266', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2266', name: 'BED2266 - R.D College', shortName: 'R.D College', district: 'Chhatarpur' },
+  { id: 'col-bed2303', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2303', name: 'BED2303 - Bapu Mahavidyalaya Nowgong', shortName: 'Bapu Mahavidyalaya Nowgong', district: 'Chhatarpur' },
+  { id: 'col-bed2385', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2385', name: 'BED2385 - SIDDHARTH SHIKSHA MAHAVIDYALAYA', shortName: 'Siddharth Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+  { id: 'col-bed2387', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2387', name: 'BED2387 - SHIV SHAKTI COLLEGE OF EDUCATION', shortName: 'Shiv Shakti College Of Education', district: 'Chhatarpur' },
+  { id: 'col-bed2474', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2474', name: 'BED2474 - CHHATRASAL MAHAVIDHYALAY', shortName: 'Chhatrasal Mahavidhyalay', district: 'Chhatarpur' },
+  { id: 'col-bed2501', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2501', name: 'BED2501 - SHRI RAJENDRA PRASAD SMARAK SHIKSHA MAHAVIDYALAYA', shortName: 'Shri Rajendra Prasad Smarak Shiksha', district: 'Chhatarpur' },
+  { id: 'col-bed2526', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2526', name: 'BED2526 - SWAMI VIVEKANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Swami Vivekanand Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+  { id: 'col-bed2555', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2555', name: 'BED2555 - ANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Anand Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+  { id: 'col-bed2568', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2568', name: 'BED2568 - S.V.N SHIKSHA MAHAVIDYALAYA', shortName: 'S.V.N Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+
+  // 6 Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
+  { id: 'col-beled005', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'BELED005', name: 'BELED005 - GOVERNMENT POST GRADUATE COLLEGE CHHATARPUR', shortName: 'Govt PG College Chhatarpur', district: 'Chhatarpur' },
+  { id: 'col-n462', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'N462', name: 'N462 - Govt Maharaja Post Graduate College, Chhatarpur', shortName: 'Govt Maharaja PG College', district: 'Chhatarpur' },
+  { id: 'col-mcsm', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'MCSM', name: 'MCSM - Maharaja Chhatrasal Shiksha Mahavidyalaya', shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya', district: 'Chhatarpur' },
+  { id: 'col-svn01', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SVN01', name: 'SVN01 - SVN Post Graduate College, Chhatarpur', shortName: 'SVN Post Graduate College', district: 'Chhatarpur' },
+  { id: 'col-src-khop', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SRC-KHOP', name: 'SRC-KHOP - Shri Ram College of Higher Education, Khop', shortName: 'Shri Ram College Khop', district: 'Chhatarpur' },
+  { id: 'col-skce-orchha', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SKCE-ORCHHA', name: 'SKCE-ORCHHA - Shri Krishna College of Education, Orchha', shortName: 'Shri Krishna College Orchha', district: 'Niwari' }
+];
+
+// Academic Degree Programs & Structured Branches
+const ACADEMIC_PROGRAMS = [
+  {
+    degree: 'B.Tech',
+    name: 'B.Tech (Bachelor of Technology)',
+    courseType: 'UG',
+    defaultFee: 280000,
+    branches: [
+      { name: 'Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', fullName: 'B.Tech- Artificial Intelligence & Machine Learning (A)', fee: 280000 },
+      { name: 'Computer Science & Engineering (A)', code: 'BTECH-CSE-A', fullName: 'B.Tech- Computer Science & Engineering (A)', fee: 280000 },
+      { name: 'Computer Science & Engineering (B)', code: 'BTECH-CSE-B', fullName: 'B.Tech- Computer Science & Engineering (B)', fee: 280000 },
+      { name: 'Data Science (A)', code: 'BTECH-DS', fullName: 'B.Tech- Data Science (A)', fee: 280000 },
+      { name: 'Electrical and Electronics Engineering', code: 'BTECH-EEE', fullName: 'B.Tech- Electrical and Electronics Engineering', fee: 280000 },
+      { name: 'Electrical Engineering', code: 'BTECH-EE', fullName: 'B.Tech- Electrical Engineering', fee: 280000 },
+      { name: 'Electronics & Communication Engineering (A)', code: 'BTECH-ECE-A', fullName: 'B.Tech- Electronics & Communication Engineering (A)', fee: 280000 },
+      { name: 'Agricultural Engineering', code: 'BTECH-AGRI', fullName: 'B.Tech- Agricultural Engineering', fee: 280000 },
+      { name: 'Civil Engineering', code: 'BTECH-CIVIL', fullName: 'B.Tech- Civil Engineering', fee: 280000 },
+      { name: 'Electronics and Communication Engineering', code: 'BTECH-EC', fullName: 'B.Tech- Electronics and Communication Engineering', fee: 280000 },
+      { name: 'Mechanical Engineering (A)', code: 'BTECH-ME-A', fullName: 'B.Tech- Mechanical Engineering (A)', fee: 280000 },
+      { name: 'Mechanical Engineering (B)', code: 'BTECH-ME-B', fullName: 'B.Tech- Mechanical Engineering (B)', fee: 280000 },
+      { name: 'Mining Engineering', code: 'BTECH-MINING', fullName: 'B.Tech- Mining Engineering', fee: 280000 }
+    ]
+  },
+  {
+    degree: 'MBA',
+    name: 'MBA (Master of Business Administration)',
+    courseType: 'PG',
+    defaultFee: 120000,
+    branches: [
+      { name: 'Agri Business Management', code: 'MBA-AGRI', fullName: 'MBA- Agri Business Management', fee: 120000 },
+      { name: 'Banking Insurance', code: 'MBA-BANK', fullName: 'MBA- Banking Insurance', fee: 120000 },
+      { name: 'Entrepreneurship', code: 'MBA-ENTR', fullName: 'MBA- Entrepreneurship', fee: 120000 },
+      { name: 'Hospital Administration', code: 'MBA-HOSP', fullName: 'MBA- Hospital Administration', fee: 120000 },
+      { name: 'IT', code: 'MBA-IT', fullName: 'MBA- IT', fee: 120000 },
+      { name: 'NGO', code: 'MBA-NGO', fullName: 'MBA- NGO', fee: 120000 },
+      { name: 'Plain', code: 'MBA-PLAIN', fullName: 'MBA- Plain', fee: 120000 },
+      { name: 'Retail', code: 'MBA-RETAIL', fullName: 'MBA- Retail', fee: 120000 }
+    ]
+  },
+  {
+    degree: 'B.Ed',
+    name: 'B.Ed (Bachelor of Education)',
+    courseType: 'UG',
+    defaultFee: 80000,
+    branches: [
+      { name: 'Teacher Education & Pedagogy', code: 'BED-EDU', fullName: 'B.Ed Teacher Education & Pedagogy', fee: 80000 },
+      { name: 'Elementary Education', code: 'BED-ELEM', fullName: 'B.Ed Elementary Education', fee: 80000 },
+      { name: 'Special Education', code: 'BED-SPEC', fullName: 'B.Ed Special Education', fee: 85000 }
+    ]
+  },
+  {
+    degree: 'B.El.Ed',
+    name: 'B.El.Ed (Bachelor of Elementary Education)',
+    courseType: 'UG',
+    defaultFee: 85000,
+    branches: [
+      { name: 'Elementary Education & Child Pedagogy', code: 'BELED-01', fullName: 'B.El.Ed Elementary Education', fee: 85000 }
+    ]
+  },
+  {
+    degree: 'BCA',
+    name: 'BCA (Bachelor of Computer Applications)',
+    courseType: 'UG',
+    defaultFee: 90000,
+    branches: [
+      { name: 'Computer Applications & Software Development', code: 'BCA-CS', fullName: 'BCA Computer Applications', fee: 90000 },
+      { name: 'Data Science & Web Technologies', code: 'BCA-DS', fullName: 'BCA Data Science & Web Tech', fee: 95000 }
+    ]
+  },
+  {
+    degree: 'BBA',
+    name: 'BBA (Bachelor of Business Administration)',
+    courseType: 'UG',
+    defaultFee: 90000,
+    branches: [
+      { name: 'General Business Management', code: 'BBA-GEN', fullName: 'BBA Business Administration', fee: 90000 },
+      { name: 'Marketing & Digital Sales', code: 'BBA-MKT', fullName: 'BBA Marketing & Digital Sales', fee: 95000 }
+    ]
+  },
+  {
+    degree: 'B.Sc',
+    name: 'B.Sc (Bachelor of Science)',
+    courseType: 'UG',
+    defaultFee: 60000,
+    branches: [
+      { name: 'Computer Science', code: 'BSC-CS', fullName: 'B.Sc Computer Science', fee: 65000 },
+      { name: 'Mathematics, Physics & Chemistry (PCM)', code: 'BSC-PCM', fullName: 'B.Sc PCM', fee: 60000 },
+      { name: 'Biology, Chemistry & Botany (CBZ)', code: 'BSC-CBZ', fullName: 'B.Sc CBZ', fee: 60000 }
+    ]
+  },
+  {
+    degree: 'B.Com',
+    name: 'B.Com (Bachelor of Commerce)',
+    courseType: 'UG',
+    defaultFee: 50000,
+    branches: [
+      { name: 'Computer Applications', code: 'BCOM-CA', fullName: 'B.Com Computer Applications', fee: 55000 },
+      { name: 'Taxation & Financial Accounting', code: 'BCOM-TAX', fullName: 'B.Com Taxation & Accounting', fee: 50000 }
+    ]
+  },
+  {
+    degree: 'B.A.',
+    name: 'B.A. (Bachelor of Arts)',
+    courseType: 'UG',
+    defaultFee: 40000,
+    branches: [
+      { name: 'Humanities & Social Sciences', code: 'BA-HUM', fullName: 'B.A. Humanities & Social Sciences', fee: 40000 },
+      { name: 'History, Political Science & Economics', code: 'BA-GEN', fullName: 'B.A. General Studies', fee: 40000 }
+    ]
+  },
+  {
+    degree: 'MCA',
+    name: 'MCA (Master of Computer Applications)',
+    courseType: 'PG',
+    defaultFee: 120000,
+    branches: [
+      { name: 'Cloud Computing & Full Stack Development', code: 'MCA-CS', fullName: 'MCA Cloud & Full Stack', fee: 120000 },
+      { name: 'Artificial Intelligence & Machine Learning', code: 'MCA-AI', fullName: 'MCA AI & Machine Learning', fee: 130000 }
+    ]
+  },
+  {
+    degree: 'DCA',
+    name: 'DCA (Diploma in Computer Applications)',
+    courseType: 'Diploma',
+    defaultFee: 25000,
+    branches: [
+      { name: 'Computer Applications & Office Suite', code: 'DCA-GEN', fullName: 'DCA Computer Applications', fee: 25000 }
+    ]
+  },
+  {
+    degree: 'PGDCA',
+    name: 'PGDCA (Post Graduate Diploma in Computer Applications)',
+    courseType: 'PG Diploma',
+    defaultFee: 30000,
+    branches: [
+      { name: 'Advanced Computer Applications & IT', code: 'PGDCA-IT', fullName: 'PGDCA Advanced Computer Applications', fee: 30000 }
+    ]
+  }
+];
+
 export default function StudentRegistration({ courses = [], onStudentCreated, defaultCourseId, staffUser, adminUser }) {
+  // Universities & Colleges list from API with database fallbacks
+  const [universitiesList, setUniversitiesList] = useState(FALLBACK_UNIVERSITIES);
+  const [collegesList, setCollegesList] = useState(FALLBACK_COLLEGES);
+
+  // Cascading Selection State
+  const [selectedDegree, setSelectedDegree] = useState('B.Tech');
+
   const [formData, setFormData] = useState({
     // 1. Personal & Contact
     Student_Name: '',
@@ -31,26 +226,26 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Scholer_id: '',
     User_id: '',
 
-    // 3. Academic & Institutional
-    Medium: 'Hindi',
-    Admission_Session: '2026-2027',
-    Admission_Satra: 'July',
-    Admission_Date: new Date().toISOString().split('T')[0],
-    University_Name: 'Barkatullah University (BU Bhopal)',
-    College_Name: 'PKC Education Learning Institute & Consultancy',
-    Course_Name: courses[0]?.name || 'B.Tech Computer Science & Engineering',
-    Branch: 'Computer Science & Engineering',
+    // 3. Academic & Institutional (Cascading)
+    University_Name: FALLBACK_UNIVERSITIES[0].name,
+    College_Name: FALLBACK_COLLEGES[0].name,
+    Course_Name: 'B.Tech- Artificial Intelligence & Machine Learning (A)',
+    Branch: 'Artificial Intelligence & Machine Learning (A)',
     Course_Type: 'UG',
     Course_Mode: 'Regular',
+    Medium: 'English',
     Social_category: 'General',
 
     // 4. Session & Class Particulars
+    Admission_Session: '2026-2027',
+    Admission_Satra: 'July',
+    Admission_Date: new Date().toISOString().split('T')[0],
     Current_session: '2026-2027',
     Current_satra: 'July',
     Current_class: 'SEM-1',
 
     // 5. Fees & Administration
-    Student_fee: courses[0]?.totalFee || '100000',
+    Student_fee: '280000',
     Initial_Payment: '',
     Payment_Mode: 'Cash / Desk',
     Transaction_Ref: '',
@@ -62,27 +257,53 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
   // Selected Documents Submitted Checklist (100% Optional at Admission)
   const [submittedDocs, setSubmittedDocs] = useState([]);
+  const [docModes, setDocModes] = useState({});
+  const [docFiles, setDocFiles] = useState({});
 
+  // Student Photo Upload State with Cancel/Remove
   const [studentImageFile, setStudentImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successData, setSuccessData] = useState(null);
   const [showAdmissionSlip, setShowAdmissionSlip] = useState(false);
 
+  // 1. Fetch live Universities and Colleges from API (created in University section)
   useEffect(() => {
-    if (defaultCourseId) {
-      const match = courses.find(c => c.id === defaultCourseId);
-      if (match) {
-        setFormData(prev => ({
-          ...prev,
-          Course_Name: match.name,
-          Student_fee: match.totalFee || prev.Student_fee
-        }));
-      }
-    }
-  }, [defaultCourseId, courses]);
+    const fetchUniversitiesAndColleges = async () => {
+      try {
+        const [uRes, cRes] = await Promise.all([
+          fetch('/api/universities'),
+          fetch('/api/colleges')
+        ]);
+        const uData = await uRes.json();
+        const cData = await cRes.json();
 
+        if (uData.success && Array.isArray(uData.universities) && uData.universities.length > 0) {
+          setUniversitiesList(uData.universities);
+          // If current selected university isn't in fetched list, set to first
+          if (!uData.universities.some(u => u.name === formData.University_Name)) {
+            const firstUniv = uData.universities[0];
+            setFormData(prev => ({
+              ...prev,
+              University_Name: firstUniv.name
+            }));
+          }
+        }
+
+        if (cData.success && Array.isArray(cData.colleges) && cData.colleges.length > 0) {
+          setCollegesList(cData.colleges);
+        }
+      } catch (err) {
+        console.warn('Could not fetch live universities/colleges, using database fallback:', err);
+      }
+    };
+
+    fetchUniversitiesAndColleges();
+  }, []);
+
+  // Set attending operator
   useEffect(() => {
     if (staffUser) {
       setFormData(prev => ({
@@ -97,22 +318,78 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
   }, [staffUser, adminUser]);
 
+  // Derive affiliated colleges for current selected university
+  const selectedUnivObj = universitiesList.find(u => 
+    u.name === formData.University_Name ||
+    (u.shortName && formData.University_Name.includes(u.shortName))
+  ) || universitiesList[0];
+
+  const affiliatedColleges = collegesList.filter(c => {
+    if (!selectedUnivObj) return true;
+    return c.universityId === selectedUnivObj.id || 
+           (c.universityName && c.universityName.toLowerCase() === selectedUnivObj.name.toLowerCase());
+  });
+
+  // Current program metadata (branches under selected degree)
+  const currentProgram = ACADEMIC_PROGRAMS.find(p => p.degree === selectedDegree) || ACADEMIC_PROGRAMS[0];
+  const availableBranches = currentProgram.branches;
+
+  // Handle University Change -> filters colleges and defaults to first affiliated college
+  const handleUniversityChange = (e) => {
+    const newUnivName = e.target.value;
+    const targetUniv = universitiesList.find(u => u.name === newUnivName);
+    const targetId = targetUniv?.id;
+
+    const newAffiliated = collegesList.filter(c => 
+      c.universityId === targetId || 
+      (c.universityName && c.universityName.toLowerCase() === newUnivName.toLowerCase())
+    );
+
+    const firstCollegeName = newAffiliated[0]?.name || (targetUniv ? `${targetUniv.name} Campus` : '');
+
+    setFormData(prev => ({
+      ...prev,
+      University_Name: newUnivName,
+      College_Name: firstCollegeName
+    }));
+  };
+
+  // Handle Degree Change (e.g. B.Tech, MBA) -> updates branches, course name, fee, type
+  const handleDegreeChange = (e) => {
+    const newDegree = e.target.value;
+    setSelectedDegree(newDegree);
+
+    const prog = ACADEMIC_PROGRAMS.find(p => p.degree === newDegree) || ACADEMIC_PROGRAMS[0];
+    const firstBranch = prog.branches[0];
+
+    setFormData(prev => ({
+      ...prev,
+      Course_Name: firstBranch?.fullName || `${newDegree} - ${firstBranch?.name || 'General'}`,
+      Branch: firstBranch?.name || 'General',
+      Course_Type: prog.courseType,
+      Student_fee: String(firstBranch?.fee || prog.defaultFee)
+    }));
+  };
+
+  // Handle Branch Change -> updates course name and course fee
+  const handleBranchChange = (e) => {
+    const newBranchName = e.target.value;
+    const branchObj = availableBranches.find(b => b.name === newBranchName);
+
+    setFormData(prev => ({
+      ...prev,
+      Branch: newBranchName,
+      Course_Name: branchObj?.fullName || `${selectedDegree}- ${newBranchName}`,
+      Student_fee: String(branchObj?.fee || prev.Student_fee)
+    }));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Auto update fee if Course_Name matches a known course
-    if (name === 'Course_Name') {
-      const found = courses.find(c => c.name === value);
-      if (found && found.totalFee) {
-        setFormData(prev => ({ ...prev, Student_fee: found.totalFee }));
-      }
-    }
   };
 
-  const [docModes, setDocModes] = useState({});
-  const [docFiles, setDocFiles] = useState({});
-
+  // Document Modes & Attachments
   const handleDocModeSelect = (docName, mode) => {
     setDocModes(prev => ({ ...prev, [docName]: mode }));
     if (mode === 'Pending') {
@@ -130,17 +407,22 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
   };
 
-  const handleDocToggle = (docName) => {
-    setSubmittedDocs(prev => 
-      prev.includes(docName) ? prev.filter(d => d !== docName) : [...prev, docName]
-    );
-  };
-
+  // Image Selection Handler
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setStudentImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Image Removal / Cancel Handler (Allows user to cancel wrongly uploaded photo)
+  const handleRemoveImage = () => {
+    setStudentImageFile(null);
+    setImagePreview(null);
+    const fileInput = document.getElementById('student_photo_input');
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -156,6 +438,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (!formData.Date_Of_Birth) throw new Error('Date Of Birth is required.');
       if (!formData.Aadhaar_No.trim()) throw new Error('Aadhaar_No is required.');
       if (!formData.Admission_Satra) throw new Error('Admission_Satra is required.');
+      if (!formData.University_Name) throw new Error('Please select a valid University.');
+      if (!formData.College_Name) throw new Error('Please select an affiliated College.');
 
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
@@ -166,7 +450,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         const mode = docModes[doc] || (submittedDocs.includes(doc) ? 'Manually' : 'Pending');
         docStatusMap[doc] = {
           docName: doc,
-          mode: mode === 'PDF' ? 'PDF / Digital Upload' : (mode === 'Manually' ? 'Manually (Physical Hardcopy)' : 'Not Submitted'),
+          mode: mode === 'PDF' ? 'PDF / Digital Upload' : (mode === 'Manually' ? 'Hardcopy (Physical)' : 'Not Submitted'),
           status: mode === 'PDF' ? 'submitted_pdf' : (mode === 'Manually' ? 'submitted_manual' : 'pending'),
           updatedAt: new Date().toISOString()
         };
@@ -206,8 +490,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
   const resetForm = () => {
     setSuccessData(null);
-    setStudentImageFile(null);
-    setImagePreview(null);
+    handleRemoveImage();
+    setSubmittedDocs([]);
+    setDocModes({});
+    setDocFiles({});
     setFormData(prev => ({
       ...prev,
       Student_Name: '',
@@ -233,17 +519,17 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   };
 
   const standardDocuments = [
-    '10th Marksheet (10वीं अंकसूची)',
-    '12th Marksheet (12वीं अंकसूची)',
-    'Graduation Marksheet (स्नातक)',
-    'Aadhaar Card Copy (आधार कार्ड)',
-    'Samagra ID Copy (समग्र आईडी)',
-    'M.P. Domicile (मूल निवास प्रमाण पत्र)',
-    'Caste Certificate (जाति प्रमाण पत्र)',
-    'Income Certificate (आय प्रमाण पत्र)',
+    '10th Marksheet',
+    '12th Marksheet',
+    'Graduation Marksheet',
+    'Aadhaar Card Copy',
+    'Samagra ID Copy',
+    'M.P. Domicile Certificate',
+    'Caste Certificate',
+    'Income Certificate',
     'TC / Migration Certificate',
-    'Gap Certificate (यदि लागू हो)',
-    'Passport Photos (4 प्रतियां)'
+    'Gap Certificate (if applicable)',
+    'Passport Photos (4 Copies)'
   ];
 
   return (
@@ -261,10 +547,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            New Student Admission &amp; Document Upload
+            New Student Admission Registration
           </h1>
           <p className="text-xs text-indigo-200 max-w-2xl">
-            Official University &amp; Scholarship Enrollment Form. Supports Samagra, MPTASS, ABC ID, OTR ID, DEB ID, Course particulars, and initial fee collection with instant admission slips.
+            Official University &amp; Scholarship Enrollment Form. Supports Cascading University, Affiliated College, Course Degree &amp; Branch selection with instant admission slips.
           </p>
         </div>
 
@@ -403,9 +689,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
               >
-                <option value="Male">Male (पुरुष)</option>
-                <option value="Female">Female (महिला)</option>
-                <option value="Other">Other (अन्य)</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -508,7 +794,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             {/* Samagra_id */}
             <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Samagra_id (समग्र आईडी)
+                Samagra_id (MP Samagra ID)
               </label>
               <input
                 type="text"
@@ -643,107 +929,121 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 3: UNIVERSITY, COLLEGE & ACADEMIC PROGRAM */}
+        {/* SECTION 3: UNIVERSITY, AFFILIATED COLLEGE, DEGREE & BRANCH (CASCADING) */}
         {/* ========================================================================= */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
-            <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-extrabold text-xs">3</span>
-            <span>University, College &amp; Academic Program Selection</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base">
+              <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-extrabold text-xs">3</span>
+              <span>Academic Program &amp; Institutional Cascading Selection</span>
+            </div>
+            <span className="text-[11px] bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold px-2.5 py-0.5 rounded-md">
+              University ➔ Affiliated College ➔ Course ➔ Branch Hierarchy
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
-            {/* University_Name */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                University_Name
+            {/* 1. UNIVERSITY_NAME (Only universities created in University Section) */}
+            <div className="lg:col-span-1">
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>University_Name *</span>
+                <span className="text-[10px] text-indigo-600 font-semibold lowercase">
+                  ({universitiesList.length} registered)
+                </span>
               </label>
               <select
                 name="University_Name"
                 value={formData.University_Name}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
+                onChange={handleUniversityChange}
+                className="w-full p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-950 shadow-2xs"
+                required
               >
-                <option value="Barkatullah University (BU Bhopal)">Barkatullah University (BU Bhopal)</option>
-                <option value="Jiwaji University, Gwalior">Jiwaji University, Gwalior</option>
-                <option value="RGPV Bhopal (Rajiv Gandhi Proudyogiki Vishwavidyalaya)">RGPV Bhopal (Engineering &amp; Tech)</option>
-                <option value="Maharaja Chhatrasal Bundelkhand University (MCBU Chhatarpur)">MCBU Chhatarpur (Bundelkhand Univ)</option>
-                <option value="Rani Durgavati Vishwavidyalaya (RDVV Jabalpur)">RDVV Jabalpur</option>
-                <option value="Vikram University, Ujjain">Vikram University, Ujjain</option>
-                <option value="Awadhesh Pratap Singh University (APSU Rewa)">APSU Rewa</option>
-                <option value="Dr. Harisingh Gour Central University, Sagar">Dr. Harisingh Gour University, Sagar</option>
-                <option value="PKC Consultancy Affiliated University">PKC Consultancy Affiliated University</option>
+                {universitiesList.map(u => (
+                  <option key={u.id} value={u.name}>
+                    {u.name} {u.shortName ? `(${u.shortName})` : ''}
+                  </option>
+                ))}
               </select>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Shows partner universities registered in the University Management desk.
+              </p>
             </div>
 
-            {/* College_Name */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                College_Name
+            {/* 2. COLLEGE_NAME (Only colleges under selected university) */}
+            <div className="lg:col-span-1">
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>College_Name *</span>
+                <span className="text-[10px] text-emerald-600 font-semibold">
+                  ({affiliatedColleges.length} affiliated)
+                </span>
               </label>
               <select
                 name="College_Name"
                 value={formData.College_Name}
                 onChange={handleInputChange}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
+                className="w-full p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl focus:bg-white focus:outline-none font-semibold text-emerald-950 shadow-2xs"
+                required
               >
-                <option value="PKC Education Learning Institute & Consultancy, Chhatarpur">PKC Education Learning Institute &amp; Consultancy, Chhatarpur</option>
-                <option value="Govt. Maharaja Post Graduate College, Chhatarpur">Govt. Maharaja Post Graduate College, Chhatarpur</option>
-                <option value="Govt. Girls College, Chhatarpur">Govt. Girls College, Chhatarpur</option>
-                <option value="Pt. L.L.N. Post Graduate College, Chhatarpur">Pt. L.L.N. Post Graduate College, Chhatarpur</option>
-                <option value="Govt. Polytechnic College, Nowgong">Govt. Polytechnic College, Nowgong</option>
-                <option value="Bhavani Shiksha Mahavidyalaya, Chhatarpur">Bhavani Shiksha Mahavidyalaya, Chhatarpur</option>
-                <option value="Other Affiliated Campus / College">Other Affiliated Campus / College</option>
+                {affiliatedColleges.length > 0 ? (
+                  affiliatedColleges.map(c => (
+                    <option key={c.id} value={c.name}>
+                      {c.code ? `[${c.code}] ` : ''}{c.shortName || c.name} {c.district ? `(${c.district})` : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No affiliated colleges registered under this university</option>
+                )}
               </select>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Filtered strictly to colleges affiliated with {selectedUnivObj?.shortName || formData.University_Name}.
+              </p>
             </div>
 
-            {/* Course_Name */}
-            <div>
+            {/* 3. DEGREE PROGRAM SELECTION (B.Tech, MBA, etc.) */}
+            <div className="lg:col-span-1">
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Course_Name *
+                Course Program (Degree) *
               </label>
               <select
-                name="Course_Name"
-                value={formData.Course_Name}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-900"
+                value={selectedDegree}
+                onChange={handleDegreeChange}
+                className="w-full p-2.5 bg-purple-50/60 border border-purple-200 rounded-xl focus:bg-white focus:outline-none font-bold text-purple-950 shadow-2xs"
               >
-                {courses.map(c => (
-                  <option key={c.id} value={c.name}>{c.name} ({c.code})</option>
+                {ACADEMIC_PROGRAMS.map(prog => (
+                  <option key={prog.degree} value={prog.degree}>
+                    {prog.name} ({prog.branches.length} Branches/Streams)
+                  </option>
                 ))}
-                <option value="Bachelor of Computer Applications (BCA)">Bachelor of Computer Applications (BCA)</option>
-                <option value="Bachelor of Business Administration (BBA)">Bachelor of Business Administration (BBA)</option>
-                <option value="Master of Business Administration (MBA)">Master of Business Administration (MBA)</option>
-                <option value="Bachelor of Science (B.Sc Computer Science)">B.Sc Computer Science</option>
-                <option value="Bachelor of Commerce (B.Com Computer)">B.Com Computer Application</option>
-                <option value="Bachelor of Arts (B.A.)">Bachelor of Arts (B.A.)</option>
-                <option value="Master of Computer Applications (MCA)">Master of Computer Applications (MCA)</option>
-                <option value="Diploma in Computer Applications (DCA)">Diploma in Computer Applications (DCA)</option>
-                <option value="Post Graduate Diploma in Computer (PGDCA)">PGDCA</option>
               </select>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Selecting B.Tech / MBA reveals its full catalog of branch specializations.
+              </p>
             </div>
 
-            {/* Branch */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Branch
+            {/* 4. BRANCH (Dynamically shows all 13 B.Tech branches or 8 MBA streams) */}
+            <div className="lg:col-span-2">
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Branch / Specialization *</span>
+                <span className="text-[10px] text-indigo-700 font-bold">
+                  {availableBranches.length} Branches available under {selectedDegree}
+                </span>
               </label>
               <select
                 name="Branch"
                 value={formData.Branch}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
+                onChange={handleBranchChange}
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-900"
+                required
               >
-                <option value="Computer Science & Engineering">Computer Science &amp; Engineering</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Mechanical Engineering">Mechanical Engineering</option>
-                <option value="Electrical Engineering">Electrical Engineering</option>
-                <option value="Finance & Accounts">Finance &amp; Accounts</option>
-                <option value="Human Resource / Marketing">Human Resource / Marketing</option>
-                <option value="Commerce / Taxation">Commerce / Taxation</option>
-                <option value="Humanities & Social Sciences">Humanities &amp; Social Sciences</option>
-                <option value="General Studies">General Studies</option>
+                {availableBranches.map((b, idx) => (
+                  <option key={b.code || idx} value={b.name}>
+                    {b.name} {b.code ? `[${b.code}]` : ''} - ₹{(b.fee || currentProgram.defaultFee).toLocaleString('en-IN')}
+                  </option>
+                ))}
               </select>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Selected branch links automatically to official syllabus and curriculum modules.
+              </p>
             </div>
 
             {/* Course_Type */}
@@ -757,10 +1057,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
               >
-                <option value="UG">UG (Undergraduate / स्नातक)</option>
-                <option value="PG">PG (Postgraduate / स्नातकोत्तर)</option>
-                <option value="Diploma">Diploma (डिप्लोमा)</option>
-                <option value="PG Diploma">PG Diploma (पीजी डिप्लोमा)</option>
+                <option value="UG">UG (Undergraduate)</option>
+                <option value="PG">PG (Postgraduate)</option>
+                <option value="Diploma">Diploma</option>
+                <option value="PG Diploma">PG Diploma</option>
                 <option value="Certificate">Certificate Course</option>
                 <option value="Doctorate">Doctorate / Ph.D.</option>
               </select>
@@ -777,9 +1077,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
               >
-                <option value="Regular">Regular (नियमित)</option>
-                <option value="Private">Private (स्वाध्यायी)</option>
-                <option value="Distance Education">Distance Education (दूरस्थ शिक्षा)</option>
+                <option value="Regular">Regular</option>
+                <option value="Private">Private</option>
+                <option value="Distance Education">Distance Education</option>
                 <option value="Online / Hybrid">Online / Hybrid Mode</option>
               </select>
             </div>
@@ -795,9 +1095,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
               >
-                <option value="Hindi">Hindi (हिंदी माध्यम)</option>
-                <option value="English">English (अंग्रेजी माध्यम)</option>
-                <option value="Bilingual / Both">Bilingual / Both (हिंदी एवं अंग्रेजी)</option>
+                <option value="English">English Medium</option>
+                <option value="Hindi">Hindi Medium</option>
+                <option value="Bilingual / Both">Bilingual / Both</option>
               </select>
             </div>
 
@@ -812,11 +1112,11 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium"
               >
-                <option value="General">General (सामान्य)</option>
-                <option value="OBC">OBC (अन्य पिछड़ा वर्ग)</option>
-                <option value="SC">SC (अनुसूचित जाति)</option>
-                <option value="ST">ST (अनुसूचित जनजाति)</option>
-                <option value="EWS">EWS (आर्थिक रूप से कमजोर)</option>
+                <option value="General">General</option>
+                <option value="OBC">OBC</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+                <option value="EWS">EWS</option>
               </select>
             </div>
           </div>
@@ -855,7 +1155,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             {/* Admission_Satra* */}
             <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Admission_Satra * (सत्र)
+                Admission_Satra * (Academic Term)
               </label>
               <select
                 name="Admission_Satra"
@@ -864,9 +1164,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-900"
                 required
               >
-                <option value="July">July (जुलाई सत्र)</option>
-                <option value="January">January (जनवरी सत्र)</option>
-                <option value="Annual">Annual (वार्षिक सत्र)</option>
+                <option value="July">July (Main Session)</option>
+                <option value="January">January (Winter Session)</option>
+                <option value="Annual">Annual (Yearly Mode)</option>
               </select>
             </div>
 
@@ -924,7 +1224,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             {/* Current_class */}
             <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Current_class (सेमेस्टर / वर्ष)
+                Current_class (Semester / Year)
               </label>
               <select
                 name="Current_class"
@@ -940,9 +1240,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 <option value="SEM-6">SEM-6 (6th Semester)</option>
                 <option value="SEM-7">SEM-7 (7th Semester)</option>
                 <option value="SEM-8">SEM-8 (8th Semester)</option>
-                <option value="1st Year">1st Year (प्रथम वर्ष)</option>
-                <option value="2nd Year">2nd Year (द्वितीय वर्ष)</option>
-                <option value="3rd Year">3rd Year (तृतीय वर्ष)</option>
+                <option value="1st Year">1st Year (Annual)</option>
+                <option value="2nd Year">2nd Year (Annual)</option>
+                <option value="3rd Year">3rd Year (Annual)</option>
               </select>
             </div>
           </div>
@@ -968,7 +1268,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 name="Student_fee"
                 value={formData.Student_fee}
                 onChange={handleInputChange}
-                placeholder="100000"
+                placeholder="280000"
                 className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-900 focus:outline-none"
               />
             </div>
@@ -999,8 +1299,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none font-medium"
               >
-                <option value="Cash / Desk">Cash (नकद)</option>
-                <option value="UPI / QR Scan">UPI / QR Scan / PhonePe / GPay</option>
+                <option value="Cash / Desk">Cash / Desk</option>
+                <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
                 <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
                 <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
                 <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
@@ -1018,10 +1318,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 onChange={handleInputChange}
                 className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none font-bold text-emerald-800"
               >
-                <option value="Active">Active (सक्रिय)</option>
-                <option value="Admitted">Admitted (प्रवेशित)</option>
-                <option value="Under Verification">Under Verification (दस्तावेज सत्यापन)</option>
-                <option value="Pending">Pending (प्रतीक्षारत)</option>
+                <option value="Active">Active</option>
+                <option value="Admitted">Admitted</option>
+                <option value="Under Verification">Under Verification</option>
+                <option value="Pending">Pending</option>
               </select>
             </div>
 
@@ -1078,21 +1378,21 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 6: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE */}
+        {/* SECTION 6: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE REMOVE/CANCEL */}
         {/* ========================================================================= */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2.5">
               <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-extrabold text-xs">6</span>
-              <span>Document Submission (100% Optional) &amp; Student_image Upload</span>
+              <span>Document Submission (100% Optional) &amp; Student Photo Upload</span>
             </div>
-            <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 font-bold px-3 py-1 rounded-full">
-              ★ सभी दस्तावेज वैकल्पिक हैं — बिना दस्तावेज के भी एडमिशन किया जा सकता है
+            <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-full">
+              ★ All documents are 100% optional — admission can be registered without immediate documents
             </span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Dual Mode Document Submission (PDF vs Manually) */}
+            {/* Dual Mode Document Submission (PDF vs Hardcopy) */}
             <div className="lg:col-span-2 space-y-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -1100,7 +1400,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                     Document_Submit (Choose submission mode for each document)
                   </label>
                   <p className="text-[11px] text-slate-500">
-                    विद्यार्थी के पास जो दस्तावेज अभी उपलब्ध हैं उन्हें <strong className="text-indigo-700">PDF</strong> या <strong className="text-emerald-700">Manually (हार्डकॉपी)</strong> के रूप में दर्ज करें, बाकी <strong className="text-slate-500">Pending</strong> रहने दें।
+                    Record documents currently submitted by candidate as <strong className="text-indigo-700">PDF</strong> or <strong className="text-emerald-700">Hardcopy (Physical)</strong>, leave others as <strong className="text-slate-500">Pending</strong>.
                   </p>
                 </div>
               </div>
@@ -1141,10 +1441,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                                 : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
                             }`}
                           >
-                            Pending (बाद में)
+                            Pending (Later)
                           </button>
 
-                          {/* Manually (Hardcopy) Option */}
+                          {/* Hardcopy (Physical) Option */}
                           <button
                             type="button"
                             onClick={() => handleDocModeSelect(doc, 'Manually')}
@@ -1154,7 +1454,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                                 : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                             }`}
                           >
-                            ✓ Manually (हार्डकॉपी)
+                            ✓ Hardcopy (Physical)
                           </button>
 
                           {/* PDF Upload Option */}
@@ -1193,11 +1493,11 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
               </div>
             </div>
 
-            {/* Student_image Upload */}
+            {/* Student Photo Upload with CANCEL & REMOVE Option */}
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
               <div>
                 <label className="block font-bold text-slate-800 uppercase tracking-wider text-xs mb-1">
-                  Student_image (पासपोर्ट फोटो)
+                  Student Photo (Passport Size)
                 </label>
                 <p className="text-[11px] text-slate-400">
                   Accepts JPG, PNG up to 5MB. Photo will print on official admission confirmation slip.
@@ -1206,26 +1506,59 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
               <div className="flex flex-col items-center justify-center gap-3">
                 {imagePreview ? (
-                  <div className="w-24 h-28 rounded-xl overflow-hidden border-2 border-indigo-600 shadow-md bg-white">
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="relative group w-28 h-32 rounded-xl overflow-hidden border-2 border-indigo-600 shadow-md bg-white">
+                    <img src={imagePreview} alt="Student Preview" className="w-full h-full object-cover" />
+                    {/* Quick Cross Button to cancel / remove photo */}
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      title="Remove / Cancel this photo"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-md transition-transform hover:scale-110 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ) : (
-                  <div className="w-24 h-28 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
+                  <div className="w-28 h-32 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
                     <ImageIcon className="w-8 h-8 mb-1" />
-                    <span className="text-[10px] font-semibold">No Image</span>
+                    <span className="text-[10px] font-semibold">No Photo Selected</span>
                   </div>
                 )}
 
-                <label className="cursor-pointer bg-white hover:bg-indigo-50 text-indigo-700 font-bold border border-indigo-300 px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-2xs transition-all">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{studentImageFile ? 'Change Photo' : 'Upload Student Photo'}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
+                {/* Upload / Change & Remove Action Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <label className="cursor-pointer bg-white hover:bg-indigo-50 text-indigo-700 font-bold border border-indigo-300 px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-2xs transition-all">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{studentImageFile ? 'Change Photo' : 'Upload Student Photo'}</span>
+                    <input
+                      type="file"
+                      id="student_photo_input"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Explicit Remove / Cancel Photo Button if photo selected */}
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-300 px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-2xs transition-all"
+                      title="Remove / Cancel selected photo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove / Cancel</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* File Details Indicator */}
+                {imagePreview && studentImageFile && (
+                  <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 text-center truncate max-w-full">
+                    📎 {studentImageFile.name} ({(studentImageFile.size / 1024).toFixed(1)} KB)
+                  </div>
+                )}
               </div>
             </div>
           </div>

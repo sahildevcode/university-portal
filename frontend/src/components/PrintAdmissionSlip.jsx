@@ -35,7 +35,7 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
               title="Back"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back / Wapas</span>
+              <span>Back</span>
             </button>
             <span className="hidden sm:inline-flex items-center gap-1 font-semibold text-xs text-emerald-400">
               <CheckCircle2 className="w-4 h-4" /> Registration Slip
@@ -75,7 +75,7 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
                   PKC Education Learning Institute & Consultancy
                 </p>
                 <p className="text-[10px] text-slate-500">
-                  Campus: छतरपुर (M.P.) | Contact: +91 99882 23344
+                  Campus: Chhatarpur (M.P.) | Contact: +91 99882 23344
                 </p>
               </div>
             </div>
