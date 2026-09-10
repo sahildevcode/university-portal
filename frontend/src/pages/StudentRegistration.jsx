@@ -198,6 +198,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   // Universities & Colleges list from API with database fallbacks
   const [universitiesList, setUniversitiesList] = useState(FALLBACK_UNIVERSITIES);
   const [collegesList, setCollegesList] = useState(FALLBACK_COLLEGES);
+  const [allCoursesList, setAllCoursesList] = useState(courses.length > 0 ? courses : []);
 
   // Cascading Selection State
   const [selectedDegree, setSelectedDegree] = useState('B.Tech');
@@ -273,12 +274,14 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   useEffect(() => {
     const fetchUniversitiesAndColleges = async () => {
       try {
-        const [uRes, cRes] = await Promise.all([
+        const [uRes, cRes, crsRes] = await Promise.all([
           fetch('/api/universities'),
-          fetch('/api/colleges')
+          fetch('/api/colleges'),
+          fetch('/api/courses')
         ]);
         const uData = await uRes.json();
         const cData = await cRes.json();
+        const crsData = await crsRes.json();
 
         if (uData.success && Array.isArray(uData.universities) && uData.universities.length > 0) {
           setUniversitiesList(uData.universities);
@@ -294,6 +297,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
         if (cData.success && Array.isArray(cData.colleges) && cData.colleges.length > 0) {
           setCollegesList(cData.colleges);
+        }
+
+        if (crsData.success && Array.isArray(crsData.courses) && crsData.courses.length > 0) {
+          setAllCoursesList(crsData.courses);
         }
       } catch (err) {
         console.warn('Could not fetch live universities/colleges, using database fallback:', err);
@@ -332,7 +339,27 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
   // Current program metadata (branches under selected degree)
   const currentProgram = ACADEMIC_PROGRAMS.find(p => p.degree === selectedDegree) || ACADEMIC_PROGRAMS[0];
-  const availableBranches = currentProgram.branches;
+
+  // Dynamically derive branches for selected degree from admin / courses database
+  const dbBranchesForDegree = allCoursesList
+    .filter(c => (c.degree && c.degree.toLowerCase() === selectedDegree.toLowerCase()) || 
+                 (c.name && c.name.toLowerCase().startsWith(selectedDegree.toLowerCase())))
+    .map(c => {
+      let branchName = c.name;
+      if (branchName.toLowerCase().startsWith(selectedDegree.toLowerCase())) {
+        branchName = branchName.slice(selectedDegree.length).replace(/^[\s\-–—:]+/, '');
+      }
+      return {
+        name: branchName.trim() || c.name,
+        code: c.code,
+        fullName: c.name,
+        fee: c.totalFee
+      };
+    });
+
+  const availableBranches = dbBranchesForDegree.length > 0 
+    ? dbBranchesForDegree 
+    : (currentProgram?.branches || []);
 
   // Handle University Change -> filters colleges and defaults to first affiliated college
   const handleUniversityChange = (e) => {
@@ -1011,7 +1038,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
               >
                 {ACADEMIC_PROGRAMS.map(prog => (
                   <option key={prog.degree} value={prog.degree}>
-                    {prog.name} ({prog.branches.length} Branches/Streams)
+                    {prog.name}
                   </option>
                 ))}
               </select>
@@ -1037,7 +1064,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
               >
                 {availableBranches.map((b, idx) => (
                   <option key={b.code || idx} value={b.name}>
-                    {b.name} {b.code ? `[${b.code}]` : ''} - ₹{(b.fee || currentProgram.defaultFee).toLocaleString('en-IN')}
+                    {b.name} {b.code ? `[${b.code}]` : ''}
                   </option>
                 ))}
               </select>
