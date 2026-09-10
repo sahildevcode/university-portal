@@ -164,7 +164,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'syllabus', 
       label: 'Universities & Courses', 
       fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
-      sub: 'यूनिवर्सिटीज, संबद्ध कॉलेज, ब्रांच/कोर्स व सिलेबस प्रबंधन',
+      sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
       icon: Building2, 
       color: 'text-indigo-600',
       badge: 'MPU • 18 Colleges'
@@ -173,7 +173,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'cashcounter', 
       label: 'Fee & Cash Counter', 
       fullName: 'Cash Counter Fee & Accounts Layer',
-      sub: 'छात्र फीस रसीद, बकाया व खजाना लेजर',
+      sub: 'Student fee receipts, pending dues & collection registers',
       icon: CreditCard, 
       color: 'text-emerald-600',
       badge: 'Live Counter'
@@ -182,7 +182,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'admissions', 
       label: 'Student Admissions', 
       fullName: 'Enrolled Students Directory & Admissions',
-      sub: 'सभी नामांकित छात्र व नए प्रवेश रिकॉर्ड',
+      sub: 'All enrolled students records & new admissions',
       icon: Users, 
       color: 'text-blue-600',
       badge: 'Admissions'
@@ -191,7 +191,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'documents', 
       label: 'Documents Tracker', 
       fullName: 'Student Documents Tracker & Verification Desk',
-      sub: 'दस्तावेज़ सत्यापन डेस्क व पेंडिंग फाइल्स',
+      sub: 'Student documents verification & KYC compliance desk',
       icon: FolderCheck, 
       color: 'text-purple-600',
       badge: 'KYC Desk'
@@ -200,7 +200,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'staff', 
       label: 'Staff Management', 
       fullName: 'Staff & Operator Credentials Manager',
-      sub: 'कैशियर व ऑपरेटर लॉगिन पासवर्ड नियंत्रण',
+      sub: 'Cashier and counselor login password control',
       icon: UserCheck, 
       color: 'text-amber-600',
       badge: `${staffList.length} Staff`
@@ -209,7 +209,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'cms', 
       label: 'Website CMS & Inquiries', 
       fullName: 'Website CMS & Inquiries Manager',
-      sub: 'मुख्य वेबसाइट कंटेंट व पूछताछ',
+      sub: 'Main website content, banners & student inquiries',
       icon: Globe, 
       color: 'text-sky-600',
       badge: 'CMS'
@@ -218,7 +218,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       id: 'university-paid', 
       label: 'University Settlement', 
       fullName: 'University Paid & Settlement Ledger',
-      sub: 'यूनिवर्सिटी फीस भुगतान, बकाया व कंसल्टेंसी मार्जिन हिसाब',
+      sub: 'University official fees paid, outstanding dues & margin ledger',
       icon: Building2, 
       color: 'text-amber-600',
       badge: 'Settlement'

@@ -28,7 +28,7 @@ export default function Navbar({
   studentUser, 
   adminUser, 
   staffUser, 
-  lang = 'hi',
+  lang = 'en',
   setLang,
   onOpenStudentAuth, 
   onOpenStaffAuth, 
@@ -235,7 +235,7 @@ export default function Navbar({
               onClick={() => handleNavClick('inquiry')}
               className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-md shadow-sm transition-all duration-200 cursor-pointer flex items-center gap-1.5"
             >
-              <span>{lang === 'hi' ? 'प्रवेश पूछताछ / APPLY NOW' : 'APPLY NOW'}</span>
+              <span>APPLY NOW</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -292,7 +292,7 @@ export default function Navbar({
                 onClick={() => handleNavClick('inquiry')}
                 className="w-full bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-md shadow-sm text-center"
               >
-                {lang === 'hi' ? 'प्रवेश पूछताछ / APPLY NOW' : 'APPLY NOW'}
+                APPLY NOW
               </button>
             </div>
           </div>

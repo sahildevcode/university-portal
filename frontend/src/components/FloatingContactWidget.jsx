@@ -3,9 +3,9 @@ import { Mail, MessageCircle, X } from 'lucide-react';
 
 export default function FloatingContactWidget() {
   const whatsappNumber = '917000212637';
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('नमस्ते PKC Education Institute, मुझे नए एडमिशन एवं कोर्सेज के संबंध में जानकारी चाहिए।')}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hello PKC Education Institute, I would like to inquire about admissions and degree courses.')}`;
   const emailAddress = 'pkcinstituteaiu@gmail.com';
-  const emailUrl = `mailto:${emailAddress}?subject=${encodeURIComponent('Admission Inquiry - PKC Education Learning Institute')}&body=${encodeURIComponent('नमस्ते, मुझे पी.के.सी. एजुकेशन इंस्टीट्यूट में एडमिशन एवं कोर्सेज की जानकारी चाहिए। कृपया मार्गदर्शन प्रदान करें।')}`;
+  const emailUrl = `mailto:${emailAddress}?subject=${encodeURIComponent('Admission Inquiry - PKC Education Learning Institute')}&body=${encodeURIComponent('Hello, I would like to inquire about degree course admissions and details at PKC Education Learning Institute. Please provide guidance.')}`;
 
   return (
     <aside aria-label="Quick Contact Options" className="fixed bottom-6 right-5 sm:right-7 z-50 flex flex-col items-end gap-2.5 select-none print:hidden">

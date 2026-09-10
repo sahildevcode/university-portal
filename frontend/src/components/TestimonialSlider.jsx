@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, Quote, Award, Sparkles } from 'lucide-react';
 
-export default function TestimonialSlider({ lang = 'hi' }) {
+export default function TestimonialSlider({ lang = 'en' }) {
   const [slides, setSlides] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);

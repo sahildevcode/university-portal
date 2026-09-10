@@ -30,12 +30,12 @@ export default function App() {
   // Active Sub-Tab in Public Portal: 'home' | 'about' | 'courses' | 'inquiry'
   const [publicTab, setPublicTab] = useState('home');
 
-  // Language state: 'hi' (Hindi default) | 'en' (English)
+  // Language state: 'en' (English default) | 'hi' (Hindi)
   const [lang, setLang] = useState(() => {
     try {
-      return localStorage.getItem('pkc_lang') || 'hi';
+      return localStorage.getItem('pkc_lang') || 'en';
     } catch {
-      return 'hi';
+      return 'en';
     }
   });
 

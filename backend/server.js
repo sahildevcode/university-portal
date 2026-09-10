@@ -417,15 +417,15 @@ app.put('/api/courses/:id', (req, res) => {
 });
 
 // Upload Syllabus File (PDF/Excel) for Degree & Semester
-app.post('/api/courses/:courseId/syllabus-file', syllabusUpload.single('file'), (req, res) => {
+const handleSyllabusUpload = (req, res) => {
   try {
     const { courseId } = req.params;
-    const { semester } = req.body;
-    if (!req.file) {
+    const file = req.file || (req.files && req.files[0]);
+    if (!file) {
       return res.status(400).json({ success: false, message: 'Please select a PDF or Excel syllabus file to upload.' });
     }
 
-    const sem = String(semester || '1');
+    const sem = String(req.params.semester || req.body.semester || '1');
     const db = readDB();
     const course = db.courses.find(c => c.id === courseId);
     if (!course) {
@@ -444,9 +444,9 @@ app.post('/api/courses/:courseId/syllabus-file', syllabusUpload.single('file'), 
     }
 
     const fileRecord = {
-      fileName: req.file.originalname,
-      fileUrl: `/uploads/syllabus/${req.file.filename}`,
-      fileSize: req.file.size,
+      fileName: file.originalname,
+      fileUrl: `/uploads/syllabus/${file.filename}`,
+      fileSize: file.size,
       uploadedAt: new Date().toISOString()
     };
 
@@ -463,7 +463,10 @@ app.post('/api/courses/:courseId/syllabus-file', syllabusUpload.single('file'), 
     console.error('Syllabus upload error:', err);
     res.status(500).json({ success: false, message: 'Error uploading syllabus file: ' + err.message });
   }
-});
+};
+
+app.post('/api/courses/:courseId/syllabus-file', syllabusUpload.any(), handleSyllabusUpload);
+app.post('/api/courses/:courseId/syllabus-file/:semester', syllabusUpload.any(), handleSyllabusUpload);
 
 // Delete Syllabus File
 app.delete('/api/courses/:courseId/syllabus-file/:semester', (req, res) => {

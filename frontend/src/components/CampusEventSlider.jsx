@@ -62,7 +62,7 @@ const DEFAULT_EVENT_PHOTOS = [
   }
 ];
 
-export default function CampusEventSlider({ lang = 'hi' }) {
+export default function CampusEventSlider({ lang = 'en' }) {
   const [photos, setPhotos] = useState(DEFAULT_EVENT_PHOTOS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);

@@ -76,7 +76,7 @@ export default function PageIntroSplash({ onFinish }) {
           </h1>
 
           <p className="text-xs sm:text-sm text-indigo-200 font-medium">
-            पी.के.सी. शिक्षा प्रसार एवं जनकल्याण समिति, छतरपुर (म.प्र.)
+            PKC Shiksha Prasar &amp; Jan Kalyan Samiti, Chhatarpur (M.P.)
           </p>
         </div>
 

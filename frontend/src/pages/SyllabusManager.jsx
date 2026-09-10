@@ -23,7 +23,8 @@ import {
   MapPin,
   Globe,
   Briefcase,
-  Check
+  Check,
+  Eye
 } from 'lucide-react';
 
 // Default initial universities
@@ -38,7 +39,7 @@ const INITIAL_UNIVERSITIES = [
     website: 'https://mpu.ac.in',
     establishedYear: 2018,
     status: 'Active',
-    description: 'Premier private university offering multidisciplinary engineering (B.Tech) and management (MBA) programs.'
+    description: 'Premier university offering multidisciplinary engineering (B.Tech) and management (MBA) programs.'
   },
   {
     id: 'univ-mcbu',
@@ -284,9 +285,229 @@ const INITIAL_COURSES = [
   { id: 'mba-retail', degree: 'MBA', name: 'MBA- Retail', code: 'MBA-RETAIL', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Retail Management covering Merchandising, Supply Chain, E-Commerce, Consumer Behavior & Store Operations.' }
 ];
 
+// Helper to provide realistic semester curriculum subjects
+const getCurriculumSubjects = (courseName = '', semNum = '1') => {
+  const sem = parseInt(semNum, 10) || 1;
+  const name = (courseName || '').toLowerCase();
+  
+  if (name.includes('artificial intelligence') || name.includes('ai & ml') || name.includes('aiml')) {
+    const subjects = {
+      1: [
+        { code: 'AIML-101', name: 'Engineering Mathematics-I (Calculus & Linear Algebra)', credits: 4, type: 'Theory' },
+        { code: 'AIML-102', name: 'Engineering Physics & Quantum Principles', credits: 3, type: 'Theory' },
+        { code: 'AIML-103', name: 'Programming for Problem Solving using Python', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-104', name: 'Basic Electrical & Electronics Engineering', credits: 3, type: 'Theory' },
+        { code: 'AIML-105', name: 'Python Programming for AI Lab', credits: 2, type: 'Practical' },
+      ],
+      2: [
+        { code: 'AIML-201', name: 'Engineering Mathematics-II (Probability & Statistics)', credits: 4, type: 'Theory' },
+        { code: 'AIML-202', name: 'Data Structures & Algorithms using C++', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-203', name: 'Digital Logic & Computer Design', credits: 3, type: 'Theory' },
+        { code: 'AIML-204', name: 'Foundations of Artificial Intelligence', credits: 3, type: 'Theory' },
+        { code: 'AIML-205', name: 'Data Structures Laboratory', credits: 2, type: 'Practical' },
+      ],
+      3: [
+        { code: 'AIML-301', name: 'Discrete Mathematical Structures', credits: 4, type: 'Theory' },
+        { code: 'AIML-302', name: 'Object-Oriented Programming with Java', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-303', name: 'Database Management Systems & SQL', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-304', name: 'Computer Organization & Architecture', credits: 3, type: 'Theory' },
+        { code: 'AIML-305', name: 'Database & Backend Lab', credits: 2, type: 'Practical' },
+      ],
+      4: [
+        { code: 'AIML-401', name: 'Design & Analysis of Algorithms', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-402', name: 'Operating Systems & System Programming', credits: 3, type: 'Theory' },
+        { code: 'AIML-403', name: 'Machine Learning Foundations & Supervised Learning', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-404', name: 'Theory of Computation & Automata', credits: 3, type: 'Theory' },
+        { code: 'AIML-405', name: 'Machine Learning Tools & Scikit-Learn Lab', credits: 2, type: 'Practical' },
+      ],
+      5: [
+        { code: 'AIML-501', name: 'Deep Learning & Artificial Neural Networks', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-502', name: 'Computer Vision & Image Processing', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-503', name: 'Web Technologies & REST API Architecture', credits: 3, type: 'Theory' },
+        { code: 'AIML-504', name: 'Software Engineering & Agile Methodologies', credits: 3, type: 'Theory' },
+        { code: 'AIML-505', name: 'PyTorch / TensorFlow Deep Learning Lab', credits: 2, type: 'Practical' },
+      ],
+      6: [
+        { code: 'AIML-601', name: 'Natural Language Processing & LLM Architecture', credits: 4, type: 'Theory + Lab' },
+        { code: 'AIML-602', name: 'Big Data Analytics & Cloud Computing', credits: 3, type: 'Theory' },
+        { code: 'AIML-603', name: 'Reinforcement Learning & Decision Systems', credits: 3, type: 'Theory' },
+        { code: 'AIML-604', name: 'Information & Network Security', credits: 3, type: 'Theory' },
+        { code: 'AIML-605', name: 'NLP & Generative AI Studio Lab', credits: 2, type: 'Practical' },
+      ],
+      7: [
+        { code: 'AIML-701', name: 'Robotics, Sensors & Autonomous Systems', credits: 3, type: 'Theory' },
+        { code: 'AIML-702', name: 'AI Ethics, Safety & Explainable AI (XAI)', credits: 3, type: 'Theory' },
+        { code: 'AIML-703', name: 'Departmental Elective-I (MLOps / Edge AI)', credits: 3, type: 'Elective' },
+        { code: 'AIML-704', name: 'Capstone Minor Project & Prototype', credits: 3, type: 'Project' },
+        { code: 'AIML-705', name: 'Industrial Summer Internship Evaluation', credits: 2, type: 'Internship' },
+      ],
+      8: [
+        { code: 'AIML-801', name: 'Major Capstone AI System Implementation', credits: 8, type: 'Project' },
+        { code: 'AIML-802', name: 'Departmental Elective-II (Quantum AI / Bio-AI)', credits: 3, type: 'Elective' },
+        { code: 'AIML-803', name: 'Technical Seminar & Research Publication', credits: 2, type: 'Seminar' },
+        { code: 'AIML-804', name: 'Comprehensive Academic Viva-Voce', credits: 2, type: 'Viva' },
+      ]
+    };
+    return subjects[sem] || subjects[1];
+  }
+
+  if (name.includes('data science')) {
+    const subjects = {
+      1: [
+        { code: 'DS-101', name: 'Calculus, Linear Algebra & Analytical Geometry', credits: 4, type: 'Theory' },
+        { code: 'DS-102', name: 'Physics for Data & Computing Systems', credits: 3, type: 'Theory' },
+        { code: 'DS-103', name: 'Python for Data Science & Numerical Computing', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-104', name: 'Basic Electrical & Electronic Engineering', credits: 3, type: 'Theory' },
+        { code: 'DS-105', name: 'Python NumPy & Pandas Laboratory', credits: 2, type: 'Practical' },
+      ],
+      2: [
+        { code: 'DS-201', name: 'Probability, Random Variables & Statistics', credits: 4, type: 'Theory' },
+        { code: 'DS-202', name: 'Data Structures & Algorithms with Python', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-203', name: 'Relational Database Management Systems & SQL', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-204', name: 'Data Visualization & Storytelling (PowerBI / Tableau)', credits: 3, type: 'Theory' },
+        { code: 'DS-205', name: 'SQL & Database Architecture Lab', credits: 2, type: 'Practical' },
+      ],
+      3: [
+        { code: 'DS-301', name: 'Multivariate Analysis & Statistical Inference', credits: 4, type: 'Theory' },
+        { code: 'DS-302', name: 'Object-Oriented Programming & Systems', credits: 3, type: 'Theory' },
+        { code: 'DS-303', name: 'Operating Systems & File Systems', credits: 3, type: 'Theory' },
+        { code: 'DS-304', name: 'NoSQL Databases & Distributed Storage', credits: 3, type: 'Theory' },
+        { code: 'DS-305', name: 'Statistical Modeling Lab with R & Python', credits: 2, type: 'Practical' },
+      ],
+      4: [
+        { code: 'DS-401', name: 'Machine Learning Algorithms & Optimization', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-402', name: 'Data Warehousing & Business Intelligence ETL', credits: 3, type: 'Theory' },
+        { code: 'DS-403', name: 'Computer Networks & Distributed Systems', credits: 3, type: 'Theory' },
+        { code: 'DS-404', name: 'Big Data Architectures (Hadoop & MapReduce)', credits: 3, type: 'Theory' },
+        { code: 'DS-405', name: 'Machine Learning & Predictive Modeling Lab', credits: 2, type: 'Practical' },
+      ],
+      5: [
+        { code: 'DS-501', name: 'Deep Learning & Cognitive Computing', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-502', name: 'Apache Spark & Real-Time Stream Processing', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-503', name: 'Data Mining, Text Analytics & Scraping', credits: 3, type: 'Theory' },
+        { code: 'DS-504', name: 'Cloud Computing & Data Infrastructure (AWS/GCP)', credits: 3, type: 'Theory' },
+        { code: 'DS-505', name: 'Distributed Big Data Lab (PySpark)', credits: 2, type: 'Practical' },
+      ],
+      6: [
+        { code: 'DS-601', name: 'Time-Series Analysis & Financial Forecasting', credits: 4, type: 'Theory + Lab' },
+        { code: 'DS-602', name: 'MLOps, Continuous Integration & Pipeline Automation', credits: 3, type: 'Theory' },
+        { code: 'DS-603', name: 'Data Governance, Privacy, GDPR & Ethics', credits: 3, type: 'Theory' },
+        { code: 'DS-604', name: 'Elective-I (Graph Analytics / Recommender Systems)', credits: 3, type: 'Elective' },
+        { code: 'DS-605', name: 'MLOps Pipeline Deployment Lab', credits: 2, type: 'Practical' },
+      ],
+      7: [
+        { code: 'DS-701', name: 'Applied Natural Language Processing & Sentiment Mining', credits: 3, type: 'Theory' },
+        { code: 'DS-702', name: 'Elective-II (High Performance Computing)', credits: 3, type: 'Elective' },
+        { code: 'DS-703', name: 'Capstone Data Science Project Phase-I', credits: 3, type: 'Project' },
+        { code: 'DS-704', name: 'Industrial Summer Internship Evaluation', credits: 2, type: 'Internship' },
+      ],
+      8: [
+        { code: 'DS-801', name: 'Major Industry Capstone Project Execution', credits: 8, type: 'Project' },
+        { code: 'DS-802', name: 'Technical Paper Presentation & Seminar', credits: 2, type: 'Seminar' },
+        { code: 'DS-803', name: 'Comprehensive Degree Viva-Voce', credits: 2, type: 'Viva' },
+      ]
+    };
+    return subjects[sem] || subjects[1];
+  }
+
+  if (name.includes('mba') || name.includes('management')) {
+    const subjects = {
+      1: [
+        { code: 'MBA-101', name: 'Management Principles & Organizational Behavior', credits: 3, type: 'Core' },
+        { code: 'MBA-102', name: 'Managerial Economics & Decision Science', credits: 3, type: 'Core' },
+        { code: 'MBA-103', name: 'Accounting for Managers & Financial Reporting', credits: 3, type: 'Core' },
+        { code: 'MBA-104', name: 'Business Communication & Executive Soft Skills', credits: 2, type: 'Core' },
+        { code: 'MBA-105', name: 'Marketing Management Foundations', credits: 3, type: 'Core' },
+        { code: 'MBA-106', name: 'Quantitative Techniques for Business', credits: 3, type: 'Core' },
+      ],
+      2: [
+        { code: 'MBA-201', name: 'Financial Management & Corporate Finance', credits: 3, type: 'Core' },
+        { code: 'MBA-202', name: 'Human Resource Management & Talent Strategy', credits: 3, type: 'Core' },
+        { code: 'MBA-203', name: 'Production, Operations & Supply Chain Management', credits: 3, type: 'Core' },
+        { code: 'MBA-204', name: 'Business Research Methods & Statistical Packages', credits: 3, type: 'Core' },
+        { code: 'MBA-205', name: 'Information Systems & Digital Enterprise Strategy', credits: 3, type: 'Core' },
+        { code: 'MBA-206', name: 'Business Environment & Legal Regulatory Framework', credits: 2, type: 'Core' },
+      ],
+      3: [
+        { code: 'MBA-301', name: 'Strategic Management & Global Business Policy', credits: 3, type: 'Core' },
+        { code: 'MBA-302', name: 'Specialization Subject I (Domain Core)', credits: 3, type: 'Specialization' },
+        { code: 'MBA-303', name: 'Specialization Subject II (Advanced Functional)', credits: 3, type: 'Specialization' },
+        { code: 'MBA-304', name: 'Business Analytics & Decision Support Systems', credits: 3, type: 'Core' },
+        { code: 'MBA-305', name: 'Summer Internship Project Report & Corporate Defense', credits: 4, type: 'Project' },
+      ],
+      4: [
+        { code: 'MBA-401', name: 'Corporate Governance, Business Ethics & CSR', credits: 3, type: 'Core' },
+        { code: 'MBA-402', name: 'Specialization Elective III (Strategic Domain)', credits: 3, type: 'Specialization' },
+        { code: 'MBA-403', name: 'Specialization Elective IV (Emerging Trends)', credits: 3, type: 'Specialization' },
+        { code: 'MBA-404', name: 'Entrepreneurship & New Venture Creation', credits: 2, type: 'Core' },
+        { code: 'MBA-405', name: 'Major Capstone Dissertation & Comprehensive Viva', credits: 4, type: 'Dissertation' },
+      ]
+    };
+    return subjects[sem] || subjects[1];
+  }
+
+  // Default Standard B.Tech (CSE, Civil, Mechanical, EEE, Agri, Mining etc.)
+  const defaultBTech = {
+    1: [
+      { code: 'ENG-101', name: 'Engineering Mathematics-I', credits: 4, type: 'Theory' },
+      { code: 'ENG-102', name: 'Engineering Physics / Chemistry', credits: 3, type: 'Theory' },
+      { code: 'ENG-103', name: 'Programming for Problem Solving (C / Python)', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-104', name: 'Basic Electrical / Electronics Systems', credits: 3, type: 'Theory' },
+      { code: 'ENG-105', name: 'Engineering Workshop & Computer Drawing Lab', credits: 2, type: 'Practical' },
+    ],
+    2: [
+      { code: 'ENG-201', name: 'Engineering Mathematics-II', credits: 4, type: 'Theory' },
+      { code: 'ENG-202', name: 'Branch Fundamentals & Applied Science', credits: 3, type: 'Theory' },
+      { code: 'ENG-203', name: 'Data Structures & Problem Solving', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-204', name: 'Digital Systems & Branch Circuitry', credits: 3, type: 'Theory' },
+      { code: 'ENG-205', name: 'Branch Core Laboratory-I', credits: 2, type: 'Practical' },
+    ],
+    3: [
+      { code: 'ENG-301', name: 'Advanced Engineering Mathematics / Discrete Math', credits: 4, type: 'Theory' },
+      { code: 'ENG-302', name: 'Core Branch Technology-I', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-303', name: 'Systems Architecture & Modeling', credits: 3, type: 'Theory' },
+      { code: 'ENG-304', name: 'Measurement, Instrumentation & Testing', credits: 3, type: 'Theory' },
+      { code: 'ENG-305', name: 'Branch Core Laboratory-II', credits: 2, type: 'Practical' },
+    ],
+    4: [
+      { code: 'ENG-401', name: 'Design & Analysis of Core Systems', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-402', name: 'Control Systems & Instrumentation', credits: 3, type: 'Theory' },
+      { code: 'ENG-403', name: 'Core Branch Technology-II', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-404', name: 'Computational Tools & Software Simulation', credits: 3, type: 'Theory' },
+      { code: 'ENG-405', name: 'Software Simulation & CAD Lab', credits: 2, type: 'Practical' },
+    ],
+    5: [
+      { code: 'ENG-501', name: 'Advanced Branch Applications-I', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-502', name: 'Modern Engineering Materials & Processes', credits: 3, type: 'Theory' },
+      { code: 'ENG-503', name: 'Professional Elective-I', credits: 3, type: 'Elective' },
+      { code: 'ENG-504', name: 'Management & Industrial Economics', credits: 3, type: 'Theory' },
+      { code: 'ENG-505', name: 'Advanced Branch Laboratory', credits: 2, type: 'Practical' },
+    ],
+    6: [
+      { code: 'ENG-601', name: 'Advanced Branch Applications-II', credits: 4, type: 'Theory + Lab' },
+      { code: 'ENG-602', name: 'Embedded Systems & Automation', credits: 3, type: 'Theory' },
+      { code: 'ENG-603', name: 'Professional Elective-II', credits: 3, type: 'Elective' },
+      { code: 'ENG-604', name: 'Open Interdisciplinary Elective', credits: 3, type: 'Elective' },
+      { code: 'ENG-605', name: 'Design Project & Fabrication Lab', credits: 2, type: 'Practical' },
+    ],
+    7: [
+      { code: 'ENG-701', name: 'System Optimization & Quality Engineering', credits: 3, type: 'Theory' },
+      { code: 'ENG-702', name: 'Professional Elective-III', credits: 3, type: 'Elective' },
+      { code: 'ENG-703', name: 'Capstone Minor Project & Research Review', credits: 3, type: 'Project' },
+      { code: 'ENG-704', name: 'Summer Industrial Training Presentation', credits: 2, type: 'Training' },
+    ],
+    8: [
+      { code: 'ENG-801', name: 'Major Capstone Engineering Project', credits: 8, type: 'Project' },
+      { code: 'ENG-802', name: 'Technical Seminar & Paper Publication', credits: 2, type: 'Seminar' },
+      { code: 'ENG-803', name: 'Comprehensive Degree Viva-Voce', credits: 2, type: 'Viva' },
+    ]
+  };
+  return defaultBTech[sem] || defaultBTech[1];
+};
+
 export default function SyllabusManager({ courses: initialPropCourses, onRefreshCourses }) {
   // Navigation Sub-tab: 'universities' | 'colleges' | 'courses' | 'syllabus'
-  const [activeSubTab, setActiveSubTab] = useState('universities');
+  const [activeSubTab, setActiveSubTab] = useState('courses');
 
   // Master Data States
   const [universities, setUniversities] = useState(INITIAL_UNIVERSITIES);
@@ -345,14 +566,93 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
     fetchCourses();
   }, []);
 
-  // Filter States
+  // Filter States (Default to B.Tech so all 13 branches are immediately visible!)
   const [selectedUnivFilter, setSelectedUnivFilter] = useState('all');
-  const [selectedDegreeFilter, setSelectedDegreeFilter] = useState('all'); // 'all' | 'B.Tech' | 'MBA'
+  const [selectedDegreeFilter, setSelectedDegreeFilter] = useState('B.Tech'); // 'B.Tech' | 'MBA' | 'all'
   const [searchTerm, setSearchTerm] = useState('');
 
   // Notification Messages
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // ----------------------------------------------------
+  // INTERACTIVE VIEW SYLLABUS MODAL STATE
+  // ----------------------------------------------------
+  const [viewingSyllabusCourse, setViewingSyllabusCourse] = useState(null);
+  const [viewerActiveSem, setViewerActiveSem] = useState('1');
+  const [modalFileToUpload, setModalFileToUpload] = useState(null);
+  const [modalUploading, setModalUploading] = useState(false);
+
+  const handleOpenViewSyllabus = (course, sem = '1') => {
+    setViewingSyllabusCourse(course);
+    setViewerActiveSem(sem);
+    setModalFileToUpload(null);
+    setErrorMsg(null);
+  };
+
+  const handleModalFileUpload = async (e) => {
+    e.preventDefault();
+    if (!modalFileToUpload || !viewingSyllabusCourse) {
+      setErrorMsg('Please select a syllabus document file to upload.');
+      return;
+    }
+
+    setModalUploading(true);
+    setErrorMsg(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', modalFileToUpload);
+      formData.append('semester', viewerActiveSem);
+
+      const res = await fetch(`/api/courses/${viewingSyllabusCourse.id}/syllabus-file`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to upload syllabus.');
+      }
+
+      const updatedCourse = data.course || {
+        ...viewingSyllabusCourse,
+        syllabusFiles: {
+          ...(viewingSyllabusCourse.syllabusFiles || {}),
+          [viewerActiveSem]: data.syllabusFile
+        }
+      };
+
+      setCoursesList(prev => prev.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+      setViewingSyllabusCourse(updatedCourse);
+      setSuccessMsg(`Semester ${viewerActiveSem} syllabus file uploaded successfully!`);
+      setModalFileToUpload(null);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      if (onRefreshCourses) onRefreshCourses();
+    } catch (err) {
+      setErrorMsg(err.message || 'Upload failed');
+    } finally {
+      setModalUploading(false);
+    }
+  };
+
+  const handleModalDeleteFile = async (courseId, sem) => {
+    if (!window.confirm(`Are you sure you want to remove the syllabus document for Semester ${sem}?`)) return;
+    try {
+      const res = await fetch(`/api/courses/${courseId}/syllabus-file/${sem}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        const updatedFiles = { ...(viewingSyllabusCourse.syllabusFiles || {}) };
+        delete updatedFiles[sem];
+        const updatedCourse = { ...viewingSyllabusCourse, syllabusFiles: updatedFiles };
+        setCoursesList(prev => prev.map(c => c.id === courseId ? updatedCourse : c));
+        setViewingSyllabusCourse(updatedCourse);
+        setSuccessMsg(`Semester ${sem} syllabus document removed.`);
+        setTimeout(() => setSuccessMsg(null), 4000);
+        if (onRefreshCourses) onRefreshCourses();
+      }
+    } catch (err) {
+      setErrorMsg('Failed to remove syllabus file.');
+    }
+  };
 
   // ----------------------------------------------------
   // ADD / EDIT UNIVERSITY MODAL STATE
@@ -459,7 +759,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
         setUniversities(prev => [newUniv, ...prev]);
       }
       setShowUnivModal(false);
-      setSuccessMsg(`University saved successfully!`);
+      setSuccessMsg('University saved successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } finally {
       setSavingUniv(false);
@@ -545,7 +845,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       };
       setColleges(prev => [newCol, ...prev]);
       setShowCollegeModal(false);
-      setSuccessMsg(`College registered successfully!`);
+      setSuccessMsg('College registered successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } finally {
       setSavingCollege(false);
@@ -558,7 +858,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       await fetch(`/api/colleges/${id}`, { method: 'DELETE' });
     } catch (err) {}
     setColleges(prev => prev.filter(c => c.id !== id));
-    setSuccessMsg(`College removed.`);
+    setSuccessMsg('College removed.');
     setTimeout(() => setSuccessMsg(null), 4000);
   };
 
@@ -679,7 +979,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
         setCoursesList(prev => [newC, ...prev]);
       }
       setShowCourseModal(false);
-      setSuccessMsg(`Course saved successfully!`);
+      setSuccessMsg('Course saved successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } finally {
       setSavingCourse(false);
@@ -698,7 +998,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
   };
 
   // ----------------------------------------------------
-  // SYLLABUS UPLOAD STATE & HANDLERS
+  // SYLLABUS UPLOAD STATE & HANDLERS (Full Page Tab 4)
   // ----------------------------------------------------
   const [selectedCourseId, setSelectedCourseId] = useState(coursesList[0]?.id || 'btech-aiml');
   const [selectedSemester, setSelectedSemester] = useState('1');
@@ -723,9 +1023,10 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
     try {
       const formData = new FormData();
-      formData.append('syllabusFile', fileToUpload);
+      formData.append('file', fileToUpload);
+      formData.append('semester', selectedSemester);
 
-      const res = await fetch(`/api/courses/${selectedCourse.id}/syllabus-file/${selectedSemester}`, {
+      const res = await fetch(`/api/courses/${selectedCourse.id}/syllabus-file`, {
         method: 'POST',
         body: formData
       });
@@ -739,6 +1040,9 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       const inputEl = document.getElementById('syllabus-file-input');
       if (inputEl) inputEl.value = '';
 
+      if (data.course) {
+        setCoursesList(prev => prev.map(c => c.id === data.course.id ? data.course : c));
+      }
       if (onRefreshCourses) await onRefreshCourses();
     } catch (err) {
       setErrorMsg(err.message);
@@ -764,6 +1068,9 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       }
 
       setSuccessMsg(`Semester ${selectedSemester} syllabus removed.`);
+      if (data.course) {
+        setCoursesList(prev => prev.map(c => c.id === data.course.id ? data.course : c));
+      }
       if (onRefreshCourses) await onRefreshCourses();
     } catch (err) {
       setErrorMsg(err.message);
@@ -832,7 +1139,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 Universities, Colleges &amp; Programs Master Hub
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                यूनिवर्सिटीज, संबद्ध कॉलेज और उनके द्वारा संचालित <strong>B.Tech (13 Branches)</strong> व <strong>MBA (8 Specializations)</strong> का केंद्रीय मास्टर हब।
+                Centralized master directory for partner universities, affiliated colleges, <strong>B.Tech ({btechCourses.length} Branches)</strong>, and <strong>MBA ({mbaCourses.length} Specializations)</strong>.
               </p>
             </div>
           </div>
@@ -880,7 +1187,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             }`}
           >
             <Building2 className={`w-4 h-4 ${activeSubTab === 'universities' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>1. Universities (यूनिवर्सिटी)</span>
+            <span>1. Universities</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
               activeSubTab === 'universities' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
             }`}>
@@ -902,7 +1209,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             }`}
           >
             <Landmark className={`w-4 h-4 ${activeSubTab === 'colleges' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>2. Affiliated Colleges (कॉलेज)</span>
+            <span>2. Affiliated Colleges</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
               activeSubTab === 'colleges' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
             }`}>
@@ -924,7 +1231,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             }`}
           >
             <GraduationCap className={`w-4 h-4 ${activeSubTab === 'courses' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>3. B.Tech &amp; MBA Programs (कोर्स/ब्रांच)</span>
+            <span>3. B.Tech &amp; MBA Programs</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
               activeSubTab === 'courses' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
             }`}>
@@ -946,7 +1253,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             }`}
           >
             <Upload className={`w-4 h-4 ${activeSubTab === 'syllabus' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>4. Syllabus Manager (सिलेबस)</span>
+            <span>4. Upload Syllabus</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
               activeSubTab === 'syllabus' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
             }`}>
@@ -964,7 +1271,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             title="Add a new University"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add University (नई यूनिवर्सिटी)</span>
+            <span>+ Add University</span>
           </button>
 
           <button
@@ -1019,7 +1326,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 <span>Affiliated Universities Directory ({universities.length})</span>
               </h2>
               <p className="text-xs text-slate-500">
-                वे सभी यूनिवर्सिटीज जिनके अंतर्गत PKC Institute द्वारा B.Tech व MBA कोर्सेज संचालित कराए जा रहे हैं।
+                All partner universities offering authorized B.Tech and MBA programs through PKC Institute.
               </p>
             </div>
 
@@ -1029,7 +1336,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
               className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New University (नई यूनिवर्सिटी जोड़ें)</span>
+              <span>+ Add New University</span>
             </button>
           </div>
 
@@ -1186,7 +1493,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 <span>Affiliated Colleges Directory ({filteredColleges.length})</span>
               </h2>
               <p className="text-xs text-slate-500">
-                यूनिवर्सिटीज के अंतर्गत आने वाले सभी संबद्ध कॉलेज। किसी भी यूनिवर्सिटी का चयन करके उसके कॉलेज देख सकते हैं।
+                Directory of all affiliated institutions under partner universities. Select any university to filter colleges.
               </p>
             </div>
 
@@ -1196,7 +1503,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
               className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Register New College (नया कॉलेज जोड़ें)</span>
+              <span>+ Register New College</span>
             </button>
           </div>
 
@@ -1297,7 +1604,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: B.TECH (13 Branches) & MBA (8 Streams) ONLY */}
+      {/* TAB 3: B.TECH (13 Branches) & MBA (8 Streams) - CLEAN COMPACT VIEW */}
       {/* ========================================================================= */}
       {activeSubTab === 'courses' && (
         <div className="space-y-6">
@@ -1306,10 +1613,16 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             <div>
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-indigo-600" />
-                <span>B.Tech Engineering &amp; MBA Programs ({filteredCourses.length})</span>
+                <span>
+                  {selectedDegreeFilter === 'B.Tech' 
+                    ? `B.Tech Engineering (${btechCourses.length} Branches)` 
+                    : selectedDegreeFilter === 'MBA' 
+                    ? `MBA Management (${mbaCourses.length} Specializations)` 
+                    : `Academic Programs & Branches (${filteredCourses.length})`}
+                </span>
               </h2>
               <p className="text-xs text-slate-500">
-                स्क्रीनशॉट्स के अनुसार <strong>B.Tech की सभी 13 इंजीनियरिंग ब्रांचेज</strong> और <strong>MBA के सभी 8 स्पेशलाइजेशन</strong>।
+                Official degree branches with semester durations and academic syllabus documents.
               </p>
             </div>
 
@@ -1336,25 +1649,13 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
           {/* Program Toggle & Search Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             {/* Degree Pill Toggles */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => setSelectedDegreeFilter('all')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  selectedDegreeFilter === 'all'
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                All Programs ({coursesList.length})
-              </button>
-
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
               <button
                 type="button"
                 onClick={() => setSelectedDegreeFilter('B.Tech')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   selectedDegreeFilter === 'B.Tech'
-                    ? 'bg-indigo-600 text-white shadow-md'
+                    ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400/30'
                     : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
                 }`}
               >
@@ -1365,14 +1666,26 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
               <button
                 type="button"
                 onClick={() => setSelectedDegreeFilter('MBA')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   selectedDegreeFilter === 'MBA'
-                    ? 'bg-purple-600 text-white shadow-md'
+                    ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400/30'
                     : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
                 }`}
               >
                 <Briefcase className="w-4 h-4" />
                 <span>MBA Management ({mbaCourses.length} Specializations)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDegreeFilter('all')}
+                className={`px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedDegreeFilter === 'all'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                All Programs ({coursesList.length})
               </button>
             </div>
 
@@ -1389,8 +1702,8 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
             </div>
           </div>
 
-          {/* Courses Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Clean Compact Cards Grid - No Price, Clear Duration, Side-by-Side View & Upload buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredCourses.map((c) => {
               const isMba = c.name?.toLowerCase().includes('mba') || c.degree === 'MBA';
               const uploadedCount = c.syllabusFiles ? Object.keys(c.syllabusFiles).length : 0;
@@ -1399,138 +1712,104 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
               return (
                 <div 
                   key={c.id} 
-                  className={`bg-white rounded-3xl border p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between ${
-                    isMba ? 'border-purple-200 hover:border-purple-300' : 'border-indigo-200 hover:border-indigo-300'
+                  className={`bg-white rounded-2xl border p-4.5 shadow-xs hover:shadow-md transition-all space-y-3.5 flex flex-col justify-between ${
+                    isMba ? 'border-purple-200 hover:border-purple-300' : 'border-slate-200 hover:border-indigo-300'
                   }`}
                 >
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`font-mono font-bold text-xs uppercase px-2.5 py-0.5 rounded-md border ${
-                            isMba 
-                              ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                          }`}>
-                            {c.code}
-                          </span>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                            isMba 
-                              ? 'bg-purple-100 text-purple-800' 
-                              : 'bg-indigo-100 text-indigo-800'
-                          }`}>
-                            {isMba ? 'MBA Degree' : 'B.Tech Engineering'}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                          {c.name}
-                        </h3>
+                  <div className="space-y-2">
+                    {/* Header Badges */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono font-bold text-[11px] uppercase px-2 py-0.5 rounded-md border ${
+                          isMba 
+                            ? 'bg-purple-50 text-purple-700 border-purple-200' 
+                            : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                        }`}>
+                          {c.code}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isMba 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}>
+                          {isMba ? 'MBA Stream' : 'B.Tech Branch'}
+                        </span>
                       </div>
 
                       {/* Syllabus Status Pill */}
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                         uploadedCount > 0 
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200'
                       }`}>
-                        {uploadedCount > 0 ? `${uploadedCount}/${totalSem} Syllabus Files` : 'No Syllabus'}
+                        {uploadedCount > 0 ? `✅ ${uploadedCount}/${totalSem} Sem Uploaded` : `📄 ${totalSem} Sem Syllabus`}
                       </span>
                     </div>
 
-                    {/* Metrics */}
-                    <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs">
-                      <div>
-                        <span className="text-slate-400 block font-medium">Duration</span>
-                        <strong className="text-slate-800">
-                          {c.durationYears >= 1 ? `${c.durationYears} Year(s)` : `${c.durationYears * 12} Months`}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">Total Semesters</span>
-                        <strong className="text-slate-800">{totalSem} Semester(s)</strong>
-                      </div>
-                    </div>
+                    {/* Branch Title */}
+                    <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
+                      {c.name}
+                    </h3>
 
-                    {/* INTERNAL CONSULTANT FEE BLOCK */}
-                    <div className="bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-slate-200/90 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                            <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>कंसल्टेंसी फीस (Internal Record):</span>
-                          </span>
-                          <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
-                            🔒 छात्रों से छुपी हुई
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs">
-                          <span className="text-slate-600">
-                            Total Fee: <strong className="text-indigo-950 font-black text-sm">₹{Number(c.totalFee || 0).toLocaleString('en-IN')}</strong>
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-slate-600">
-                            Per Sem: <strong className="text-emerald-700 font-bold">₹{Number(c.feePerSemester || 0).toLocaleString('en-IN')}</strong>
-                          </span>
-                        </div>
-                      </div>
+                    {/* Duration & Semesters & Department */}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+                      <span className="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
+                        ⏱️ {c.durationYears} Years
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
+                        📚 {totalSem} Semesters
+                      </span>
+                      <span className="text-slate-400 font-normal">
+                        • {c.department}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions: View Syllabus + Upload Syllabus + Edit/Delete */}
+                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenViewSyllabus(c, '1')}
+                        className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer shadow-2xs ${
+                          isMba
+                            ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
+                            : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                        }`}
+                        title="View Semester Wise Syllabus & Curriculum"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>View Syllabus</span>
+                      </button>
 
                       <button
                         type="button"
-                        onClick={() => handleOpenEditCourse(c)}
-                        className="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white hover:bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0"
+                        onClick={() => handleJumpToSyllabus(c.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+                        title="Upload Syllabus PDF Document"
                       >
-                        ✏️ फीस एडिट
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload</span>
                       </button>
                     </div>
 
-                    {/* Eligibility */}
-                    <div className="text-xs bg-amber-50/60 border border-amber-100 p-2.5 rounded-xl text-amber-950">
-                      <span className="font-bold text-amber-900">Eligibility: </span>
-                      <span className="text-amber-800">{c.eligibility}</span>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                      {c.description}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleJumpToSyllabus(c.id)}
-                      className={`flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border transition-colors cursor-pointer ${
-                        isMba
-                          ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
-                          : 'text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border-indigo-100'
-                      }`}
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload Syllabus</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => handleOpenEditCourse(c)}
-                        className="flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                        title="Edit Course Information and Fees"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Branch Information"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleDeleteCourse(c.id, c.name)}
-                        className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl border border-rose-100 transition-colors cursor-pointer"
-                        title="Delete Course"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Branch"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -1544,7 +1823,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: SYLLABUS UPLOAD & MANAGE */}
+      {/* TAB 4: SYLLABUS UPLOAD & MANAGE (Full Dedicated Tool) */}
       {/* ========================================================================= */}
       {activeSubTab === 'syllabus' && (
         <div className="space-y-8">
@@ -1557,7 +1836,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 <span>Upload Official Semester Syllabus Document</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                B.Tech या MBA की ब्रांच और सेमेस्टर चुनें, फिर उसका सिलेबस (PDF / Excel) अपलोड करें।
+                Select degree branch and semester, then upload official curriculum document (PDF / Excel).
               </p>
             </div>
 
@@ -1747,7 +2026,225 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: ADD / EDIT UNIVERSITY (Without Approvals field, optional website) */}
+      {/* MODAL 0: INTERACTIVE SEMESTER SYLLABUS VIEWER */}
+      {/* ========================================================================= */}
+      {viewingSyllabusCourse && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setViewingSyllabusCourse(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-3xl rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl text-slate-900 border border-slate-200 animate-fadeIn my-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono font-bold text-xs uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {viewingSyllabusCourse.code}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                      {viewingSyllabusCourse.durationYears} Years ({viewingSyllabusCourse.totalSemesters} Semesters)
+                    </span>
+                  </div>
+                  <h3 className="font-black text-base sm:text-lg text-slate-900 mt-1">
+                    {viewingSyllabusCourse.name} — Syllabus &amp; Curricula
+                  </h3>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setViewingSyllabusCourse(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Semester Selector Tabs */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
+                Select Semester to View / Upload Syllabus:
+              </label>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {Array.from({ length: viewingSyllabusCourse.totalSemesters || 8 }, (_, i) => String(i + 1)).map((sem) => {
+                  const isCurrent = viewerActiveSem === sem;
+                  const hasFile = viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[sem];
+                  return (
+                    <button
+                      key={sem}
+                      type="button"
+                      onClick={() => {
+                        setViewerActiveSem(sem);
+                        setModalFileToUpload(null);
+                      }}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                        isCurrent
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-400/30'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      <span>Semester {sem}</span>
+                      {hasFile && (
+                        <Check className={`w-3.5 h-3.5 ${isCurrent ? 'text-emerald-300' : 'text-emerald-600'}`} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Semester Content */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4">
+              
+              {/* Document Download / View Section */}
+              <div className="space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block">
+                  1. Official Syllabus Document (Semester {viewerActiveSem})
+                </span>
+
+                {viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[viewerActiveSem] ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2">
+                          <span>{viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileName}</span>
+                          <span className="text-[9px] font-mono bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-bold">
+                            ATTACHED
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Uploaded: {new Date(viewingSyllabusCourse.syllabusFiles[viewerActiveSem].uploadedAt).toLocaleDateString()}
+                          {viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileSize && (
+                            <span> • {(viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileSize / 1024).toFixed(1)} KB</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>View / Download PDF</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleModalDeleteFile(viewingSyllabusCourse.id, viewerActiveSem)}
+                        className="p-2 text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+                        title="Remove Document"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5 text-slate-600">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>No syllabus document file uploaded for Semester {viewerActiveSem} yet.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Document for Current Semester */}
+              <form onSubmit={handleModalFileUpload} className="space-y-2 pt-2 border-t border-slate-200/80">
+                <label className="text-xs font-bold text-slate-700 block">
+                  {viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[viewerActiveSem] 
+                    ? `Replace Semester ${viewerActiveSem} Syllabus Document (PDF / Excel):` 
+                    : `Upload Semester ${viewerActiveSem} Syllabus Document (PDF / Excel):`}
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.xlsx,.xls,.doc,.docx,.csv"
+                    onChange={(e) => setModalFileToUpload(e.target.files[0] || null)}
+                    className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer bg-white border border-slate-200 rounded-xl p-1"
+                  />
+                  <button
+                    type="submit"
+                    disabled={modalUploading || !modalFileToUpload}
+                    className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{modalUploading ? 'Uploading...' : `Upload for Sem ${viewerActiveSem}`}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Structured Curriculum Subjects List */}
+              <div className="space-y-2 pt-3 border-t border-slate-200/80">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block">
+                  2. Semester {viewerActiveSem} Academic Curriculum &amp; Modules
+                </span>
+                
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="p-2.5">Subject Code</th>
+                        <th className="p-2.5">Subject / Course Module</th>
+                        <th className="p-2.5">Credits</th>
+                        <th className="p-2.5">Course Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {getCurriculumSubjects(viewingSyllabusCourse.name, viewerActiveSem).map((sub, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-2.5 font-mono font-bold text-indigo-700">
+                            {sub.code}
+                          </td>
+                          <td className="p-2.5 font-bold text-slate-900">
+                            {sub.name}
+                          </td>
+                          <td className="p-2.5 text-slate-600 font-semibold">
+                            {sub.credits} Credits
+                          </td>
+                          <td className="p-2.5">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                              {sub.type}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setViewingSyllabusCourse(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs cursor-pointer shadow-sm"
+              >
+                Close Syllabus Viewer
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: ADD / EDIT UNIVERSITY */}
       {/* ========================================================================= */}
       {showUnivModal && (
         <div 
@@ -1765,10 +2262,10 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 </div>
                 <div>
                   <h3 className="font-black text-base text-slate-900">
-                    {editingUniv ? 'Edit University Details' : 'Add New University (नई यूनिवर्सिटी जोड़ें)'}
+                    {editingUniv ? 'Edit University Details' : 'Add New University'}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    यूनिवर्सिटी का नाम और विवरण दर्ज करें।
+                    Enter official university details and city location.
                   </p>
                 </div>
               </div>
@@ -1842,11 +2339,11 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Official Website URL <span className="text-slate-400 font-normal">(Optional / ऐच्छिक)</span>
+                  Official Website URL <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. https://mcbu.ac.in (Optional - खाली छोड़ सकते हैं)"
+                  placeholder="e.g. https://mcbu.ac.in (Optional - can be left blank)"
                   value={univForm.website}
                   onChange={(e) => setUnivForm({ ...univForm, website: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
@@ -1904,7 +2401,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                 </div>
                 <div>
                   <h3 className="font-black text-base text-slate-900">
-                    Register New Affiliated College (संबद्ध कॉलेज जोड़ें)
+                    Register New Affiliated College
                   </h3>
                   <p className="text-[11px] text-slate-500">
                     Affiliate a college to a university with its official code.
@@ -2044,7 +2541,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                     {editingCourse ? `Edit ${courseForm.degree} Branch / Stream` : `Add New ${courseForm.degree} Program`}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {courseForm.degree === 'MBA' ? 'MBA स्पेशलाइजेशन व कंसल्टेंसी फीस' : 'B.Tech इंजीनियरिंग ब्रांच व कंसल्टेंसी फीस'}
+                    Configure degree branch duration and academic details.
                   </p>
                 </div>
               </div>
@@ -2154,63 +2651,6 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                   />
                 </div>
 
-                {/* FEES SECTION */}
-                <div className="sm:col-span-2 bg-gradient-to-r from-slate-50 to-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-xs uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
-                      <CreditCard className="w-4 h-4 text-indigo-600" />
-                      <span>कंसल्टेंसी व पैकेज फीस (Private Admin Record):</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
-                      🔒 छात्रों से छुपी रहेगी
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-bold text-slate-700 block mb-1">
-                        Total Course Package Fee (कुल फीस ₹) *
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1000"
-                          placeholder="e.g. 240000"
-                          value={courseForm.totalFee}
-                          onChange={(e) => {
-                            const tot = Number(e.target.value);
-                            const sem = courseForm.totalSemesters > 0 ? Math.round(tot / courseForm.totalSemesters) : 0;
-                            setCourseForm({ ...courseForm, totalFee: tot, feePerSemester: sem });
-                          }}
-                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-950 text-sm focus:outline-none focus:border-indigo-600"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-slate-700 block mb-1">
-                        Fee Per Semester (प्रति सेमेस्टर फीस ₹) *
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="500"
-                          placeholder="e.g. 30000"
-                          value={courseForm.feePerSemester}
-                          onChange={(e) => setCourseForm({ ...courseForm, feePerSemester: Number(e.target.value) })}
-                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-emerald-700 focus:outline-none focus:border-indigo-600"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Eligibility Criteria */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="font-bold text-slate-700 block">
@@ -2255,7 +2695,7 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
                   className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md cursor-pointer disabled:opacity-50"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>{savingCourse ? 'Saving...' : editingCourse ? 'Save Changes & Fees' : 'Create & Publish Program'}</span>
+                  <span>{savingCourse ? 'Saving...' : editingCourse ? 'Save Changes' : 'Create & Publish Program'}</span>
                 </button>
               </div>
 
