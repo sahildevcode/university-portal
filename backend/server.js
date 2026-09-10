@@ -929,7 +929,10 @@ app.post(
         universityPaid: Number(body.universityPaid) || 0,
         universityDue: Math.max(0, (Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5)) - (Number(body.universityPaid) || 0)),
         remark: body.Remark || body.remark || '',
-        status: body.Status || body.status || 'Active',
+        status: body.Status && !['Cashier', 'Accounts', 'Admin'].includes(body.Status) ? body.Status : 'Active',
+        feeType: body.Fee_Type || body.feeType || 'Admission Fee',
+        feeCollectedBy: body.Fee_Collected_By || body.feeCollectedBy || body.operatorName || 'Cashier',
+        paymentMode: body.Payment_Mode || body.paymentMode || 'Cash / Desk',
         reference: body.Reference || body.reference || 'Direct Walk-in',
         studentImage: studentImgUrl,
         documents: documents,
@@ -976,14 +979,15 @@ app.post(
           studentName: newStudent.fullName,
           courseName: newStudent.courseName,
           amountPaid: initialPaid,
-          paymentMode: body.paymentMode || 'Cash', // Cash, Card, Online UPI
-          transactionRef: body.transactionRef || `ADM-INIT-${Math.floor(100000 + Math.random() * 900000)}`,
-          paidFor: 'Admission Fee & Semester 1 Initial Installment',
+          feeType: body.Fee_Type || body.feeType || 'Admission Fee',
+          paymentMode: body.Payment_Mode || body.paymentMode || 'Cash / Desk',
+          transactionRef: body.Transaction_Ref || body.transactionRef || `ADM-INIT-${Math.floor(100000 + Math.random() * 900000)}`,
+          paidFor: `${body.Fee_Type || body.feeType || 'Admission Fee'} Deposit`,
           paymentDate: new Date().toISOString(),
           totalFee: courseFee,
           totalPaidToDate: initialPaid,
           balanceRemaining: balanceDue,
-          receivedBy: body.operatorName || 'Campus Cash Counter'
+          receivedBy: body.Fee_Collected_By || body.feeCollectedBy || body.operatorName || 'Cashier'
         };
         db.fee_payments.unshift(initialReceipt);
       }

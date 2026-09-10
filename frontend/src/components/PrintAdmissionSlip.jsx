@@ -200,18 +200,26 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
           </div>
 
           {/* Fee Summary */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center text-[11px]">
-            <div>
-              <span className="text-slate-500">Initial Paid:</span>
-              <span className="font-bold text-emerald-700 ml-1">₹{Number(student.totalPaid || 0).toLocaleString('en-IN')}</span>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-[11px]">
+            <div className="grid grid-cols-3 gap-2 pb-1.5 border-b border-slate-200">
+              <div>
+                <span className="text-slate-500 block text-[10px]">Fee Head / Type</span>
+                <strong className="text-indigo-950 font-bold">{student.feeType || receipt?.feeType || 'Admission Fee'}</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Amount Paid</span>
+                <span className="font-extrabold text-emerald-700">₹{Number(student.totalPaid || student.initialPayment || receipt?.amountPaid || 0).toLocaleString('en-IN')}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Remaining Balance</span>
+                <span className="font-extrabold text-rose-700">₹{Number(student.balanceDue || 0).toLocaleString('en-IN')}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-500">Remaining Balance:</span>
-              <span className="font-bold text-rose-700 ml-1">₹{Number(student.balanceDue || 0).toLocaleString('en-IN')}</span>
-            </div>
-            <div>
-              <span className="text-slate-500">Status:</span>
-              <span className="font-bold text-indigo-900 ml-1">{student.balanceDue <= 0 ? 'Fully Paid' : 'Installment Active'}</span>
+
+            <div className="flex flex-wrap items-center justify-between text-[10px] text-slate-600 pt-0.5">
+              <span>Payment Mode: <strong className="text-slate-800">{student.paymentMode || receipt?.paymentMode || 'Cash / Desk'}</strong></span>
+              <span>Collected By: <strong className="text-slate-800">{student.feeCollectedBy || receipt?.receivedBy || 'Cashier'}</strong></span>
+              <span>Referred By: <strong className="text-slate-800">{student.reference || 'Direct Walk-in'}</strong></span>
             </div>
           </div>
 

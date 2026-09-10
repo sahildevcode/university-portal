@@ -246,12 +246,14 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Current_class: 'SEM-1',
 
     // 5. Fees & Administration
-    Student_fee: '280000',
-    Initial_Payment: '',
+    Student_fee: '30000',
+    Fee_Type: 'Admission Fee',
+    Initial_Payment: '2500',
     Payment_Mode: 'Cash / Desk',
+    Fee_Collected_By: 'Cashier',
     Transaction_Ref: '',
     Status: 'Active',
-    Reference: 'Direct Walk-in',
+    Reference: '',
     Remark: '',
     operatorName: staffUser ? `${staffUser.name} (${staffUser.role || 'Cashier'})` : (adminUser ? 'Institute Administrator' : 'Admissions Authority')
   });
@@ -540,7 +542,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Deb_id: '',
       Scholer_id: '',
       User_id: '',
-      Initial_Payment: '',
+      Initial_Payment: '2500',
+      Fee_Type: 'Admission Fee',
+      Fee_Collected_By: 'Cashier',
+      Reference: '',
       Remark: ''
     }));
   };
@@ -1279,128 +1284,214 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         {/* SECTION 5: FEES, PAYMENT, STATUS & REFERENCE */}
         {/* ========================================================================= */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
-            <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-extrabold text-xs">5</span>
-            <span>Fee Structure, Initial Deposit &amp; Administrative Controls</span>
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base">
+              <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-extrabold text-xs">5</span>
+              <span>Fee Particulars, Admission Deposit &amp; Collection Desk</span>
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              Flexible Course &amp; Admission Fee Entry
+            </span>
           </div>
 
-          <div className="bg-emerald-50/50 border border-emerald-200 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            {/* Student_fee */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Student_fee (Total Course Fee ₹)
-              </label>
-              <input
-                type="number"
-                name="Student_fee"
-                value={formData.Student_fee}
-                onChange={handleInputChange}
-                placeholder="280000"
-                className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-900 focus:outline-none"
-              />
+          <div className="bg-emerald-50/50 border border-emerald-200 p-5 rounded-2xl space-y-4 text-xs">
+            
+            {/* Top Row: Course Fee -> Fee Head/Type -> Paid Amount -> Payment Mode */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* 1. Course Fee (Total Fee) */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Course Fee (Total ₹) *
+                </label>
+                <input
+                  type="number"
+                  name="Student_fee"
+                  value={formData.Student_fee}
+                  onChange={handleInputChange}
+                  placeholder="30000"
+                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                  required
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Total program course package</span>
+              </div>
+
+              {/* 2. Fee Type / Head (Admission Fee, Late Exam Fee, etc.) */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Fee Type / Head *
+                </label>
+                <input
+                  type="text"
+                  list="feeTypeOptions"
+                  name="Fee_Type"
+                  value={formData.Fee_Type}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Admission Fee, Late Exam Fee"
+                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-bold text-xs text-indigo-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+                  required
+                />
+                <datalist id="feeTypeOptions">
+                  <option value="Admission Fee" />
+                  <option value="Late Exam Fee" />
+                  <option value="Registration Fee" />
+                  <option value="Exam Fee" />
+                  <option value="Tuition Installment" />
+                  <option value="Enrollment Fee" />
+                  <option value="Caution Deposit" />
+                  <option value="Miscellaneous Fee" />
+                </datalist>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Type or choose fee category</span>
+              </div>
+
+              {/* 3. Fee Amount / Paid Amount (₹) */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Fee Amount Paid (₹) *
+                </label>
+                <input
+                  type="number"
+                  name="Initial_Payment"
+                  value={formData.Initial_Payment}
+                  onChange={handleInputChange}
+                  placeholder="2000 or 2500"
+                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Amount being paid right now</span>
+              </div>
+
+              {/* 4. Payment Mode */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Payment Mode *
+                </label>
+                <select
+                  name="Payment_Mode"
+                  value={formData.Payment_Mode}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-slate-800 shadow-2xs cursor-pointer"
+                >
+                  <option value="Cash / Desk">Cash / Desk</option>
+                  <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
+                  <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
+                  <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
+                  <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
+                </select>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Collection transaction channel</span>
+              </div>
+
             </div>
 
-            {/* Initial Paid Amount */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Initial Paid Amount (₹)
-              </label>
-              <input
-                type="number"
-                name="Initial_Payment"
-                value={formData.Initial_Payment}
-                onChange={handleInputChange}
-                placeholder="Initial admission deposit"
-                className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-bold text-sm text-emerald-800 focus:outline-none"
-              />
+            {/* Bottom Row: Fee Collected By (replaces Status) -> Reference (Typeable text!) -> Remark -> Attending Officer */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 border-t border-emerald-100">
+              
+              {/* 5. Fee Collected By (Typeable, replaces Status dropdown) */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Fee Collected By *
+                </label>
+                <input
+                  type="text"
+                  list="collectedByList"
+                  name="Fee_Collected_By"
+                  value={formData.Fee_Collected_By}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Cashier, Accounts, Admin"
+                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-bold text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                  required
+                />
+                <datalist id="collectedByList">
+                  <option value="Cashier" />
+                  <option value="Accounts" />
+                  <option value="Admin" />
+                  <option value="Desk Counter" />
+                  <option value="Counselor" />
+                </datalist>
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Type Cashier, Accounts, Admin etc.</span>
+              </div>
+
+              {/* 6. Reference (Typeable text input - No dropdown!) */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Reference (Referred By)
+                </label>
+                <input
+                  type="text"
+                  name="Reference"
+                  value={formData.Reference}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Direct Walk-in, Rahul Sharma, Agent..."
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold text-xs text-slate-800 shadow-2xs"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Type reference name or source</span>
+              </div>
+
+              {/* 7. Remark */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Remark
+                </label>
+                <input
+                  type="text"
+                  name="Remark"
+                  value={formData.Remark}
+                  onChange={handleInputChange}
+                  placeholder="Special notes / scholarship remark"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium text-xs shadow-2xs"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Official admission notes</span>
+              </div>
+
+              {/* 8. Attending Officer */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Attending Officer
+                </label>
+                <input
+                  type="text"
+                  name="operatorName"
+                  value={formData.operatorName}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl focus:outline-none font-semibold text-slate-700 text-xs shadow-2xs"
+                />
+                <span className="text-[10px] text-slate-500 mt-0.5 block">Logged-in desk authority</span>
+              </div>
+
             </div>
 
-            {/* Payment Mode */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Payment Mode
-              </label>
-              <select
-                name="Payment_Mode"
-                value={formData.Payment_Mode}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none font-medium"
-              >
-                <option value="Cash / Desk">Cash / Desk</option>
-                <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
-                <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
-                <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
-                <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
-              </select>
+            {/* Live Fee Calculation & Accounting Strip */}
+            <div className="bg-white p-3.5 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 font-semibold">Total Course Fee:</span>
+                <span className="font-extrabold text-emerald-950 text-sm">
+                  ₹{Number(formData.Student_fee || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 font-semibold">
+                  {formData.Fee_Type || 'Admission Fee'} Paid:
+                </span>
+                <span className="font-extrabold text-emerald-700 text-sm">
+                  ₹{Number(formData.Initial_Payment || 0).toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                  via {formData.Payment_Mode}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 font-semibold">Remaining Balance:</span>
+                <span className="font-extrabold text-rose-700 text-sm">
+                  ₹{Math.max(0, (Number(formData.Student_fee) || 0) - (Number(formData.Initial_Payment) || 0)).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="text-[11px] font-semibold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                Collected By: <strong>{formData.Fee_Collected_By || 'Cashier'}</strong>
+              </div>
             </div>
 
-            {/* Status */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Status
-              </label>
-              <select
-                name="Status"
-                value={formData.Status}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none font-bold text-emerald-800"
-              >
-                <option value="Active">Active</option>
-                <option value="Admitted">Admitted</option>
-                <option value="Under Verification">Under Verification</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
-
-            {/* Reference */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Reference
-              </label>
-              <select
-                name="Reference"
-                value={formData.Reference}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none font-medium text-xs"
-              >
-                <option value="Direct Walk-in">Direct Walk-in</option>
-                <option value="Admission Counseling Desk">Admission Counseling Desk</option>
-                <option value="Staff / Faculty Reference">Staff / Faculty Reference</option>
-                <option value="Friend / Student Referral">Friend / Student Referral</option>
-                <option value="Banner / Hoarding / Advertisement">Banner / Hoarding / Advertisement</option>
-                <option value="Online Portal / Website">Online Portal / Website</option>
-                <option value="Consultant / Education Partner">Consultant / Education Partner</option>
-              </select>
-            </div>
-
-            {/* Remark */}
-            <div className="sm:col-span-2">
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Remark
-              </label>
-              <input
-                type="text"
-                name="Remark"
-                value={formData.Remark}
-                onChange={handleInputChange}
-                placeholder="Special notes / scholarship remark"
-                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none font-medium"
-              />
-            </div>
-
-            {/* Attending Desk Officer */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Attending Officer
-              </label>
-              <input
-                type="text"
-                name="operatorName"
-                value={formData.operatorName}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl focus:outline-none font-semibold text-slate-700"
-              />
-            </div>
           </div>
         </div>
 
