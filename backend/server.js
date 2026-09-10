@@ -490,6 +490,161 @@ app.delete('/api/courses/:courseId/syllabus-file/:semester', (req, res) => {
   res.json({ success: true, message: `Semester ${semester} syllabus file removed.`, course });
 });
 
+// 1.2 Unified Syllabi Directory APIs (University + College + Branch + Semester)
+app.get('/api/syllabi', (req, res) => {
+  try {
+    const db = readDB();
+    const { universityId, collegeId, courseId, semester, search } = req.query;
+    let list = db.syllabi || [];
+
+    if (universityId && universityId !== 'ALL') {
+      list = list.filter(s => s.universityId === universityId);
+    }
+    if (collegeId && collegeId !== 'ALL') {
+      list = list.filter(s => s.collegeId === collegeId);
+    }
+    if (courseId && courseId !== 'ALL') {
+      list = list.filter(s => s.courseId === courseId || s.branch === courseId);
+    }
+    if (semester && semester !== 'ALL') {
+      list = list.filter(s => String(s.semester) === String(semester));
+    }
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(s => 
+        (s.branch || '').toLowerCase().includes(q) ||
+        (s.courseName || '').toLowerCase().includes(q) ||
+        (s.collegeName || '').toLowerCase().includes(q) ||
+        (s.universityName || '').toLowerCase().includes(q) ||
+        (s.fileName || '').toLowerCase().includes(q)
+      );
+    }
+
+    res.json({ success: true, count: list.length, syllabi: list });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/syllabi/upload', syllabusUpload.any(), (req, res) => {
+  try {
+    const file = req.file || (req.files && req.files[0]);
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'Please select a PDF or Excel syllabus file to upload.' });
+    }
+
+    const {
+      universityId,
+      universityName,
+      collegeId,
+      collegeName,
+      courseId,
+      courseName,
+      branch,
+      semester
+    } = req.body;
+
+    const sem = String(semester || '1');
+    const db = readDB();
+    if (!db.syllabi) db.syllabi = [];
+
+    // Replace if exact match exists for this university + college + branch + semester
+    const branchKey = (branch || courseName || '').trim().toLowerCase();
+    const existingIndex = db.syllabi.findIndex(s => 
+      s.universityId === universityId &&
+      s.collegeId === collegeId &&
+      ((s.branch || '').toLowerCase() === branchKey || (s.courseName || '').toLowerCase() === branchKey) &&
+      String(s.semester) === sem
+    );
+
+    if (existingIndex !== -1) {
+      const prev = db.syllabi[existingIndex];
+      if (prev.fileUrl) {
+        const prevPath = path.join(__dirname, prev.fileUrl);
+        if (fs.existsSync(prevPath)) {
+          try { fs.unlinkSync(prevPath); } catch (e) {}
+        }
+      }
+      db.syllabi.splice(existingIndex, 1);
+    }
+
+    const ext = path.extname(file.originalname).toLowerCase();
+    const fileType = (ext.includes('xls') || ext.includes('csv')) ? 'Excel' : (ext.includes('doc') ? 'Word' : 'PDF');
+
+    const syllabusRecord = {
+      id: `syl-${Date.now()}`,
+      universityId: universityId || 'univ-mpu',
+      universityName: universityName || 'Madhyanchal Professional University Bhopal',
+      collegeId: collegeId || '',
+      collegeName: collegeName || 'Affiliated College',
+      courseId: courseId || '',
+      courseName: courseName || branch || 'B.Tech Program',
+      branch: branch || courseName || 'General',
+      semester: sem,
+      fileUrl: `/uploads/syllabus/${file.filename}`,
+      fileName: file.originalname,
+      fileSize: file.size,
+      fileType: fileType,
+      uploadedAt: new Date().toISOString()
+    };
+
+    db.syllabi.unshift(syllabusRecord);
+
+    // Also update legacy course object if courseId matches
+    if (courseId && db.courses) {
+      const c = db.courses.find(cr => cr.id === courseId);
+      if (c) {
+        if (!c.syllabusFiles) c.syllabusFiles = {};
+        c.syllabusFiles[sem] = {
+          fileName: file.originalname,
+          fileUrl: syllabusRecord.fileUrl,
+          fileSize: file.size,
+          uploadedAt: syllabusRecord.uploadedAt
+        };
+      }
+    }
+
+    writeDB(db);
+
+    res.status(201).json({
+      success: true,
+      message: `Syllabus for ${syllabusRecord.branch} (Sem ${sem}) uploaded successfully!`,
+      syllabus: syllabusRecord
+    });
+  } catch (err) {
+    console.error('Syllabus upload error:', err);
+    res.status(500).json({ success: false, message: 'Error uploading syllabus: ' + err.message });
+  }
+});
+
+app.delete('/api/syllabi/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.syllabi) db.syllabi = [];
+
+    const index = db.syllabi.findIndex(s => s.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Syllabus not found.' });
+    }
+
+    const item = db.syllabi[index];
+    if (item.fileUrl) {
+      const p = path.join(__dirname, item.fileUrl);
+      if (fs.existsSync(p)) {
+        try { fs.unlinkSync(p); } catch (e) {}
+      }
+    }
+
+    db.syllabi.splice(index, 1);
+    writeDB(db);
+
+    res.json({ success: true, message: 'Syllabus file deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Delete Course (Admin Panel)
 app.delete('/api/courses/:id', (req, res) => {
   const db = readDB();

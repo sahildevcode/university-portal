@@ -19,13 +19,14 @@ import {
   Search,
   ChevronRight,
   ExternalLink,
-  CreditCard,
   MapPin,
   Globe,
-  Briefcase,
-  Check,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Filter,
+  Clock,
+  Layers,
+  FileDown
 } from 'lucide-react';
 
 // Default initial universities
@@ -49,387 +50,143 @@ const INITIAL_UNIVERSITIES = [
     code: 'MCU01',
     city: 'Chhatarpur',
     state: 'Madhya Pradesh',
-    website: 'https://mcbu.ac.in',
-    establishedYear: 2015,
-    status: 'Active',
-    description: 'State University in Chhatarpur district offering recognized degree & professional technical courses.'
+    status: 'Active'
   }
 ];
 
 // Default 18 colleges accurately affiliated
 const INITIAL_COLLEGES = [
-  {
-    id: 'col-bed121',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED121',
-    name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA (RUN BY- JEEVAN JYOTI SHIKSHA PRASAR AND JAN KALYAN SAMITI)',
-    shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed2097',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED2097',
-    name: 'BED2097 - Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti',
-    shortName: 'Sita Ram College Of Education',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed2140',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED2140',
-    name: 'BED2140 - J J COLLEGE OF EDUCATION RUN BY R D EDUCATION SOCIETY',
-    shortName: 'J J College of Education',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed2266',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED2266',
-    name: 'BED2266 - R.D College',
-    shortName: 'R.D College',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed373',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED373',
-    name: 'BED373 - Shri Krishna College Of Education',
-    shortName: 'Shri Krishna College Of Education',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed455',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED455',
-    name: 'BED455 - Swami Vivekanand Mahavidyalaya',
-    shortName: 'Swami Vivekanand Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-bed914',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BED914',
-    name: 'BED914 - Shri Krishna Shiksha Mahavidyalaya',
-    shortName: 'Shri Krishna Shiksha Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-beled005',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'BELED005',
-    name: 'BELED005 - MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA',
-    shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-beled006',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'BELED006',
-    name: 'BELED006 - MAA SHARDA EDUCATIONAL INSTITUTE CHHATARPUR SAMITI KHASRA',
-    shortName: 'Maa Sharda Educational Institute',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-n462',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'N462',
-    name: 'Khajuraho Institute of Pharmaceutical Sciences Kadari District Chhatarpur(N462)',
-    shortName: 'Khajuraho Institute of Pharmaceutical Sciences',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-msm1079',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'MSM-1079',
-    name: 'Ma Sharda Mahavidyalay, Plot No. 1079 Street No 75 Gatheowara, Po. Gatheowara',
-    shortName: 'Ma Sharda Mahavidyalay Gatheowara',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-msm-lakshya',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'MSM-LAKSHYA',
-    name: 'Maa Sharda Mahavidhyalaya Run By Lakshya Educational and Social Village Bajrang Nagar, Gatheowara',
-    shortName: 'Maa Sharda Mahavidhyalaya Bajrang Nagar',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-mcsm',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'MCSM',
-    name: 'MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA',
-    shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-ramdev',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'RMV1886',
-    name: 'RAMDEV MAHAVIDYALAYA, PLOT NO.: 1886',
-    shortName: 'Ramdev Mahavidyalaya',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-svn',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'SVN01',
-    name: 'S.V.N. COLLEGE, AFTER MARIA MATA SCHOOL, CHOUBEY COLONY',
-    shortName: 'S.V.N. College Choubey Colony',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-sitaram-khop',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'SRC-KHOP',
-    name: 'Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti, Plot No. 90/3, Mahoba Road, Village Khop, Chhatarpur, P.O.+Th.+ Dist. Chhatarpur 471001, M.P.',
-    shortName: 'Sita Ram College Of Education (Village Khop)',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-shrikrishna-orchha',
-    universityId: 'univ-mcbu',
-    universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    code: 'SKCE-ORCHHA',
-    name: 'Shri Krishna College Of Education near Orchha Road, Thana, Jhansi Road, Chhatarpur-471001 (M.P.)',
-    shortName: 'Shri Krishna College (Orchha Road)',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'col-crystal-harpalpur',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    code: 'CSPS-HARPALPUR',
-    name: 'Crystal Shiksha Prasar Samiti, Shri Krishna College, Behind. Old Govt. Degree College, Nowgong Road, Harpalpur, Chhatarpur, M.P.',
-    shortName: 'Shri Krishna College Harpalpur',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    status: 'Active'
-  }
+  // 12 Colleges under Madhyanchal Professional University Bhopal (univ-mpu)
+  { id: 'col-bed121', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED121', name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA (RUN BY- JEEVAN JYOTI SHIKSHA PRASAR AND JAN KALYAN SAMITI)', shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2097', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2097', name: 'BED2097 - Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti', shortName: 'Sita Ram College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2140', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2140', name: 'BED2140 - J J COLLEGE OF EDUCATION RUN BY R D EDUCATION SOCIETY', shortName: 'J J College of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2266', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2266', name: 'BED2266 - R.D College', shortName: 'R.D College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2303', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2303', name: 'BED2303 - Bapu Mahavidyalaya Nowgong', shortName: 'Bapu Mahavidyalaya Nowgong', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2385', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2385', name: 'BED2385 - SIDDHARTH SHIKSHA MAHAVIDYALAYA', shortName: 'Siddharth Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2387', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2387', name: 'BED2387 - SHIV SHAKTI COLLEGE OF EDUCATION', shortName: 'Shiv Shakti College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2474', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2474', name: 'BED2474 - CHHATRASAL MAHAVIDHYALAY', shortName: 'Chhatrasal Mahavidhyalay', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2501', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2501', name: 'BED2501 - SHRI RAJENDRA PRASAD SMARAK SHIKSHA MAHAVIDYALAYA', shortName: 'Shri Rajendra Prasad Smarak Shiksha', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2526', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2526', name: 'BED2526 - SWAMI VIVEKANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Swami Vivekanand Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2555', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2555', name: 'BED2555 - ANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Anand Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-bed2568', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2568', name: 'BED2568 - S.V.N SHIKSHA MAHAVIDYALAYA', shortName: 'S.V.N Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+
+  // 6 Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
+  { id: 'col-beled005', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'BELED005', name: 'BELED005 - GOVERNMENT POST GRADUATE COLLEGE CHHATARPUR', shortName: 'Govt PG College Chhatarpur', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-n462', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'N462', name: 'N462 - Govt Maharaja Post Graduate College, Chhatarpur', shortName: 'Govt Maharaja PG College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-mcsm', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'MCSM', name: 'MCSM - Maharaja Chhatrasal Shiksha Mahavidyalaya', shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-svn01', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SVN01', name: 'SVN01 - SVN Post Graduate College, Chhatarpur', shortName: 'SVN Post Graduate College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-src-khop', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SRC-KHOP', name: 'SRC-KHOP - Shri Ram College of Higher Education, Khop', shortName: 'Shri Ram College Khop', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
+  { id: 'col-skce-orchha', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SKCE-ORCHHA', name: 'SKCE-ORCHHA - Shri Krishna College of Education, Orchha', shortName: 'Shri Krishna College Orchha', district: 'Niwari', state: 'Madhya Pradesh', status: 'Active' }
 ];
 
-// STRICTLY B.TECH (13 Branches) & MBA (8 Specializations)
-const INITIAL_COURSES = [
-  // B.Tech (13 Branches)
-  { id: 'btech-aiml', degree: 'B.Tech', name: 'B.Tech- Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in AI & ML covering Neural Networks, Deep Learning, Natural Language Processing and Robotics.' },
-  { id: 'btech-cse-a', degree: 'B.Tech', name: 'B.Tech- Computer Science & Engineering (A)', code: 'BTECH-CSE-A', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in CSE Section A covering Algorithms, Cloud Computing, Full Stack & Software Engineering.' },
-  { id: 'btech-cse-b', degree: 'B.Tech', name: 'B.Tech- Computer Science & Engineering (B)', code: 'BTECH-CSE-B', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in CSE Section B covering Data Structures, Web Systems, DevOps & Cybersecurity.' },
-  { id: 'btech-ds', degree: 'B.Tech', name: 'B.Tech- Data Science (A)', code: 'BTECH-DS', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 280000, feePerSemester: 35000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Data Science covering Big Data Analytics, Statistical Modeling, Python & Business Intelligence.' },
-  { id: 'btech-eee', degree: 'B.Tech', name: 'B.Tech- Electrical and Electronics Engineering', code: 'BTECH-EEE', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in EEE covering Electrical Power Systems, Electronic Circuits, Microcontrollers & IoT.' },
-  { id: 'btech-ee', degree: 'B.Tech', name: 'B.Tech- Electrical Engineering', code: 'BTECH-EE', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Electrical Engineering covering High Voltage, Power Grids, Electric Vehicles & Renewable Systems.' },
-  { id: 'btech-ece', degree: 'B.Tech', name: 'B.Tech- Electronics & Communication Engineering (A)', code: 'BTECH-ECE-A', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in ECE Section A covering Wireless Networks, 5G/6G, Embedded Systems & VLSI Chip Design.' },
-  { id: 'btech-agri', degree: 'B.Tech', name: 'B.Tech- Agricultural Engineering', code: 'BTECH-AGRI', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM/PCB (Min 50%)', description: 'B.Tech in Agricultural Engineering covering Farm Machinery, Soil Hydrology, Precision Farming & Agro Processing.' },
-  { id: 'btech-civil', degree: 'B.Tech', name: 'B.Tech- Civil Engineering', code: 'BTECH-CIVIL', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Civil Engineering covering Structural Analysis, Transportation, Surveying & Construction Management.' },
-  { id: 'btech-ec', degree: 'B.Tech', name: 'B.Tech- Electronics and Communication Engineering', code: 'BTECH-EC', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Electronics & Communication covering Signal Processing, Telecommunications & Microelectronics.' },
-  { id: 'btech-me-a', degree: 'B.Tech', name: 'B.Tech- Mechanical Engineering (A)', code: 'BTECH-ME-A', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Mechanical Engineering Section A covering Thermodynamics, Fluid Dynamics, CAD/CAM & Machine Design.' },
-  { id: 'btech-me-b', degree: 'B.Tech', name: 'B.Tech- Mechanical Engineering (B)', code: 'BTECH-ME-B', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 240000, feePerSemester: 30000, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Mechanical Engineering Section B covering Robotics, Automated Manufacturing & Thermal Systems.' },
-  { id: 'btech-mining', degree: 'B.Tech', name: 'B.Tech- Mining Engineering', code: 'BTECH-MINING', department: 'School of Engineering & Technology', durationYears: 4, totalSemesters: 8, totalFee: 260000, feePerSemester: 32500, eligibility: '10+2 with PCM (Min 50%)', description: 'B.Tech in Mining Engineering covering Surface Mining, Underground Excavation, Rock Mechanics & Mineral Processing.' },
+// Standard Academic Programs & Branches Catalog
+const ACADEMIC_BRANCHES = [
+  // B.Tech Branches (13)
+  { degree: 'B.Tech', name: 'Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', semesters: 8 },
+  { degree: 'B.Tech', name: 'Computer Science & Engineering (A)', code: 'BTECH-CSE-A', semesters: 8 },
+  { degree: 'B.Tech', name: 'Computer Science & Engineering (B)', code: 'BTECH-CSE-B', semesters: 8 },
+  { degree: 'B.Tech', name: 'Data Science (A)', code: 'BTECH-DS', semesters: 8 },
+  { degree: 'B.Tech', name: 'Electrical and Electronics Engineering', code: 'BTECH-EEE', semesters: 8 },
+  { degree: 'B.Tech', name: 'Electrical Engineering', code: 'BTECH-EE', semesters: 8 },
+  { degree: 'B.Tech', name: 'Electronics & Communication Engineering (A)', code: 'BTECH-ECE-A', semesters: 8 },
+  { degree: 'B.Tech', name: 'Agricultural Engineering', code: 'BTECH-AGRI', semesters: 8 },
+  { degree: 'B.Tech', name: 'Civil Engineering', code: 'BTECH-CIVIL', semesters: 8 },
+  { degree: 'B.Tech', name: 'Electronics and Communication Engineering', code: 'BTECH-EC', semesters: 8 },
+  { degree: 'B.Tech', name: 'Mechanical Engineering (A)', code: 'BTECH-ME-A', semesters: 8 },
+  { degree: 'B.Tech', name: 'Mechanical Engineering (B)', code: 'BTECH-ME-B', semesters: 8 },
+  { degree: 'B.Tech', name: 'Mining Engineering', code: 'BTECH-MINING', semesters: 8 },
 
-  // MBA (8 Specializations)
-  { id: 'mba-agri', degree: 'MBA', name: 'MBA- Agri Business Management', code: 'MBA-AGRI', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Agri Business Management covering Commodity Trading, Rural Marketing, Supply Chain & Agricultural Finance.' },
-  { id: 'mba-bank', degree: 'MBA', name: 'MBA- Banking Insurance', code: 'MBA-BANK', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Banking & Insurance covering Financial Risk, Commercial Banking, Underwriting & Wealth Management.' },
-  { id: 'mba-entr', degree: 'MBA', name: 'MBA- Entrepreneurship', code: 'MBA-ENTR', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Entrepreneurship covering Startup Incubation, Venture Capital, Product Strategy & Business Scaling.' },
-  { id: 'mba-hosp', degree: 'MBA', name: 'MBA- Hospital Administration', code: 'MBA-HOSP', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 180000, feePerSemester: 45000, eligibility: 'Graduation in any stream / Life Sciences (Min 50%)', description: 'MBA in Hospital Administration covering Healthcare Quality, Hospital Logistics, Clinical Governance & Public Health.' },
-  { id: 'mba-it', degree: 'MBA', name: 'MBA- IT', code: 'MBA-IT', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation with IT/CS or Any Discipline (Min 50%)', description: 'MBA in Information Technology covering Enterprise Systems, IT Project Management, Cloud Strategies & Digital Transformation.' },
-  { id: 'mba-ngo', degree: 'MBA', name: 'MBA- NGO', code: 'MBA-NGO', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 140000, feePerSemester: 35000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in NGO & Social Management covering CSR Initiatives, Grant Management, Community Development & Public Policy.' },
-  { id: 'mba-plain', degree: 'MBA', name: 'MBA- Plain', code: 'MBA-PLAIN', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 140000, feePerSemester: 35000, eligibility: 'Graduation in any stream (Min 50%)', description: 'General MBA program covering Core Marketing, Human Resource Management, Corporate Finance & Operations.' },
-  { id: 'mba-retail', degree: 'MBA', name: 'MBA- Retail', code: 'MBA-RETAIL', department: 'School of Management & Business', durationYears: 2, totalSemesters: 4, totalFee: 160000, feePerSemester: 40000, eligibility: 'Graduation in any stream (Min 50%)', description: 'MBA in Retail Management covering Merchandising, Supply Chain, E-Commerce, Consumer Behavior & Store Operations.' }
+  // MBA Streams (8)
+  { degree: 'MBA', name: 'Agri Business Management', code: 'MBA-AGRI', semesters: 4 },
+  { degree: 'MBA', name: 'Banking Insurance', code: 'MBA-BANK', semesters: 4 },
+  { degree: 'MBA', name: 'Entrepreneurship', code: 'MBA-ENTR', semesters: 4 },
+  { degree: 'MBA', name: 'Hospital Administration', code: 'MBA-HOSP', semesters: 4 },
+  { degree: 'MBA', name: 'IT Management', code: 'MBA-IT', semesters: 4 },
+  { degree: 'MBA', name: 'NGO Management', code: 'MBA-NGO', semesters: 4 },
+  { degree: 'MBA', name: 'Plain Business Administration', code: 'MBA-PLAIN', semesters: 4 },
+  { degree: 'MBA', name: 'Retail Management', code: 'MBA-RETAIL', semesters: 4 },
+
+  // Education & Other Programs
+  { degree: 'B.Ed', name: 'Teacher Education & Pedagogy', code: 'BED-EDU', semesters: 4 },
+  { degree: 'B.El.Ed', name: 'Elementary Education', code: 'BELED-01', semesters: 8 },
+  { degree: 'BCA', name: 'Computer Applications & Software', code: 'BCA-CS', semesters: 6 },
+  { degree: 'BBA', name: 'Business Administration', code: 'BBA-GEN', semesters: 6 }
 ];
 
-// Helper to provide realistic semester curriculum subjects
-const getCurriculumSubjects = (courseName = '', semNum = '1') => {
-  const sem = parseInt(semNum, 10) || 1;
-  const name = (courseName || '').toLowerCase();
-  
-  if (name.includes('artificial intelligence') || name.includes('ai & ml') || name.includes('aiml')) {
-    const subjects = {
-      1: [
-        { code: 'AIML-101', name: 'Engineering Mathematics-I (Calculus & Linear Algebra)', credits: 4, type: 'Theory' },
-        { code: 'AIML-102', name: 'Engineering Physics & Quantum Principles', credits: 3, type: 'Theory' },
-        { code: 'AIML-103', name: 'Programming for Problem Solving using Python', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-104', name: 'Basic Electrical & Electronics Engineering', credits: 3, type: 'Theory' },
-        { code: 'AIML-105', name: 'Python Programming for AI Lab', credits: 2, type: 'Practical' },
-      ],
-      2: [
-        { code: 'AIML-201', name: 'Engineering Mathematics-II (Probability & Statistics)', credits: 4, type: 'Theory' },
-        { code: 'AIML-202', name: 'Data Structures & Algorithms using C++', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-203', name: 'Digital Logic & Computer Design', credits: 3, type: 'Theory' },
-        { code: 'AIML-204', name: 'Foundations of Artificial Intelligence', credits: 3, type: 'Theory' },
-        { code: 'AIML-205', name: 'Data Structures Laboratory', credits: 2, type: 'Practical' },
-      ],
-      3: [
-        { code: 'AIML-301', name: 'Discrete Mathematical Structures', credits: 4, type: 'Theory' },
-        { code: 'AIML-302', name: 'Object-Oriented Programming with Java', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-303', name: 'Database Management Systems & SQL', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-304', name: 'Computer Organization & Architecture', credits: 3, type: 'Theory' },
-        { code: 'AIML-305', name: 'Database & Backend Lab', credits: 2, type: 'Practical' },
-      ],
-      4: [
-        { code: 'AIML-401', name: 'Design & Analysis of Algorithms', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-402', name: 'Operating Systems & System Programming', credits: 3, type: 'Theory' },
-        { code: 'AIML-403', name: 'Machine Learning Foundations & Supervised Learning', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-404', name: 'Theory of Computation & Automata', credits: 3, type: 'Theory' },
-        { code: 'AIML-405', name: 'Machine Learning Tools & Scikit-Learn Lab', credits: 2, type: 'Practical' },
-      ],
-      5: [
-        { code: 'AIML-501', name: 'Deep Learning & Artificial Neural Networks', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-502', name: 'Computer Vision & Image Processing', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-503', name: 'Web Technologies & REST API Architecture', credits: 3, type: 'Theory' },
-        { code: 'AIML-504', name: 'Software Engineering & Agile Methodologies', credits: 3, type: 'Theory' },
-        { code: 'AIML-505', name: 'PyTorch / TensorFlow Deep Learning Lab', credits: 2, type: 'Practical' },
-      ],
-      6: [
-        { code: 'AIML-601', name: 'Natural Language Processing & LLM Architecture', credits: 4, type: 'Theory + Lab' },
-        { code: 'AIML-602', name: 'Big Data Analytics & Cloud Computing', credits: 3, type: 'Theory' },
-        { code: 'AIML-603', name: 'Reinforcement Learning & Decision Systems', credits: 3, type: 'Theory' },
-        { code: 'AIML-604', name: 'Information & Network Security', credits: 3, type: 'Theory' },
-        { code: 'AIML-605', name: 'NLP & Generative AI Studio Lab', credits: 2, type: 'Practical' },
-      ],
-      7: [
-        { code: 'AIML-701', name: 'Robotics, Sensors & Autonomous Systems', credits: 3, type: 'Theory' },
-        { code: 'AIML-702', name: 'AI Ethics, Safety & Explainable AI (XAI)', credits: 3, type: 'Theory' },
-        { code: 'AIML-703', name: 'Departmental Elective-I (MLOps / Edge AI)', credits: 3, type: 'Elective' },
-        { code: 'AIML-704', name: 'Capstone Minor Project & Prototype', credits: 3, type: 'Project' },
-        { code: 'AIML-705', name: 'Industrial Summer Internship Evaluation', credits: 2, type: 'Internship' },
-      ],
-      8: [
-        { code: 'AIML-801', name: 'Major Capstone AI System Implementation', credits: 8, type: 'Project' },
-        { code: 'AIML-802', name: 'Departmental Elective-II (Quantum AI / Bio-AI)', credits: 3, type: 'Elective' },
-        { code: 'AIML-803', name: 'Technical Seminar & Research Publication', credits: 2, type: 'Seminar' },
-        { code: 'AIML-804', name: 'Comprehensive Academic Viva-Voce', credits: 2, type: 'Viva' },
-      ]
-    };
-    return subjects[sem] || subjects[1];
-  }
-
-  // Default Standard B.Tech
-  const defaultBTech = {
-    1: [
-      { code: 'ENG-101', name: 'Engineering Mathematics-I', credits: 4, type: 'Theory' },
-      { code: 'ENG-102', name: 'Engineering Physics / Chemistry', credits: 3, type: 'Theory' },
-      { code: 'ENG-103', name: 'Programming for Problem Solving (C / Python)', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-104', name: 'Basic Electrical / Electronics Systems', credits: 3, type: 'Theory' },
-      { code: 'ENG-105', name: 'Engineering Workshop & Computer Drawing Lab', credits: 2, type: 'Practical' },
-    ],
-    2: [
-      { code: 'ENG-201', name: 'Engineering Mathematics-II', credits: 4, type: 'Theory' },
-      { code: 'ENG-202', name: 'Branch Fundamentals & Applied Science', credits: 3, type: 'Theory' },
-      { code: 'ENG-203', name: 'Data Structures & Problem Solving', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-204', name: 'Digital Systems & Branch Circuitry', credits: 3, type: 'Theory' },
-      { code: 'ENG-205', name: 'Branch Core Laboratory-I', credits: 2, type: 'Practical' },
-    ],
-    3: [
-      { code: 'ENG-301', name: 'Advanced Engineering Mathematics', credits: 4, type: 'Theory' },
-      { code: 'ENG-302', name: 'Core Branch Technology-I', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-303', name: 'Systems Architecture & Modeling', credits: 3, type: 'Theory' },
-      { code: 'ENG-304', name: 'Measurement, Instrumentation & Testing', credits: 3, type: 'Theory' },
-      { code: 'ENG-305', name: 'Branch Core Laboratory-II', credits: 2, type: 'Practical' },
-    ],
-    4: [
-      { code: 'ENG-401', name: 'Design & Analysis of Core Systems', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-402', name: 'Control Systems & Instrumentation', credits: 3, type: 'Theory' },
-      { code: 'ENG-403', name: 'Core Branch Technology-II', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-404', name: 'Computational Tools & Software Simulation', credits: 3, type: 'Theory' },
-      { code: 'ENG-405', name: 'Software Simulation & CAD Lab', credits: 2, type: 'Practical' },
-    ],
-    5: [
-      { code: 'ENG-501', name: 'Advanced Branch Applications-I', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-502', name: 'Modern Engineering Materials & Processes', credits: 3, type: 'Theory' },
-      { code: 'ENG-503', name: 'Professional Elective-I', credits: 3, type: 'Elective' },
-      { code: 'ENG-504', name: 'Management & Industrial Economics', credits: 3, type: 'Theory' },
-      { code: 'ENG-505', name: 'Advanced Branch Laboratory', credits: 2, type: 'Practical' },
-    ],
-    6: [
-      { code: 'ENG-601', name: 'Advanced Branch Applications-II', credits: 4, type: 'Theory + Lab' },
-      { code: 'ENG-602', name: 'Embedded Systems & Automation', credits: 3, type: 'Theory' },
-      { code: 'ENG-603', name: 'Professional Elective-II', credits: 3, type: 'Elective' },
-      { code: 'ENG-604', name: 'Open Interdisciplinary Elective', credits: 3, type: 'Elective' },
-      { code: 'ENG-605', name: 'Design Project & Fabrication Lab', credits: 2, type: 'Practical' },
-    ],
-    7: [
-      { code: 'ENG-701', name: 'System Optimization & Quality Engineering', credits: 3, type: 'Theory' },
-      { code: 'ENG-702', name: 'Professional Elective-III', credits: 3, type: 'Elective' },
-      { code: 'ENG-703', name: 'Capstone Minor Project & Research Review', credits: 3, type: 'Project' },
-      { code: 'ENG-704', name: 'Summer Industrial Training Presentation', credits: 2, type: 'Training' },
-    ],
-    8: [
-      { code: 'ENG-801', name: 'Major Capstone Engineering Project', credits: 8, type: 'Project' },
-      { code: 'ENG-802', name: 'Technical Seminar & Paper Publication', credits: 2, type: 'Seminar' },
-      { code: 'ENG-803', name: 'Comprehensive Degree Viva-Voce', credits: 2, type: 'Viva' },
-    ]
-  };
-  return defaultBTech[sem] || defaultBTech[1];
-};
-
-export default function SyllabusManager({ courses: initialPropCourses, onRefreshCourses }) {
-  // Navigation Sub-tab: 'universities' (Default: only universities show first) | 'colleges' | 'courses' | 'syllabus'
+export default function SyllabusManager() {
+  // Main Navigation Tabs: Strictly 3 Sections
+  // 1. 'universities'
+  // 2. 'colleges'
+  // 3. 'upload_syllabus'
   const [activeSubTab, setActiveSubTab] = useState('universities');
 
-  // Master Data States
+  // Universities State
   const [universities, setUniversities] = useState(INITIAL_UNIVERSITIES);
-  const [colleges, setColleges] = useState(INITIAL_COLLEGES);
-  const [coursesList, setCoursesList] = useState(INITIAL_COURSES);
+  const [loadingUnivs, setLoadingUnivs] = useState(false);
+  const [univSearch, setUnivSearch] = useState('');
+  const [showUnivModal, setShowUnivModal] = useState(false);
+  const [editingUniv, setEditingUniv] = useState(null);
+  const [univFormData, setUnivFormData] = useState({
+    name: '',
+    shortName: '',
+    code: '',
+    city: '',
+    state: 'Madhya Pradesh',
+    website: '',
+    establishedYear: new Date().getFullYear(),
+    description: ''
+  });
 
-  // Fetch live universities and colleges from API
+  // Colleges State
+  const [colleges, setColleges] = useState(INITIAL_COLLEGES);
+  const [selectedUnivFilter, setSelectedUnivFilter] = useState('ALL');
+  const [collegeSearch, setCollegeSearch] = useState('');
+  const [showCollegeModal, setShowCollegeModal] = useState(false);
+  const [editingCollege, setEditingCollege] = useState(null);
+  const [collegeFormData, setCollegeFormData] = useState({
+    name: '',
+    shortName: '',
+    code: '',
+    universityId: 'univ-mpu',
+    universityName: 'Madhyanchal Professional University Bhopal',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh'
+  });
+
+  // Syllabi Repository State
+  const [syllabiList, setSyllabiList] = useState([]);
+  const [syllabiFilterUniv, setSyllabiFilterUniv] = useState('ALL');
+  const [syllabiFilterSem, setSyllabiFilterSem] = useState('ALL');
+  const [syllabiSearch, setSyllabiSearch] = useState('');
+
+  // Tab 3 Upload Form State (Cascading: University ➔ College ➔ Branch ➔ Semester ➔ File)
+  const [uploadUnivId, setUploadUnivId] = useState('univ-mpu');
+  const [uploadCollegeId, setUploadCollegeId] = useState('');
+  const [uploadBranchCode, setUploadBranchCode] = useState('BTECH-AIML');
+  const [uploadSemester, setUploadSemester] = useState('1');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null); // { success: bool, message: string }
+
+  // Load Universities, Colleges and Syllabi on Mount
+  useEffect(() => {
+    fetchUniversities();
+    fetchColleges();
+    fetchSyllabi();
+  }, []);
+
   const fetchUniversities = async () => {
+    setLoadingUnivs(true);
     try {
       const res = await fetch('/api/universities');
       const data = await res.json();
-      if (data.success && data.universities && data.universities.length > 0) {
+      if (data.success && Array.isArray(data.universities) && data.universities.length > 0) {
         setUniversities(data.universities);
       }
     } catch (err) {
-      console.log('Using initial universities data');
+      console.warn('Could not fetch universities, using fallback:', err);
+    } finally {
+      setLoadingUnivs(false);
     }
   };
 
@@ -437,1827 +194,1111 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
     try {
       const res = await fetch('/api/colleges');
       const data = await res.json();
-      if (data.success && data.colleges && data.colleges.length > 0) {
+      if (data.success && Array.isArray(data.colleges) && data.colleges.length > 0) {
         setColleges(data.colleges);
       }
     } catch (err) {
-      console.log('Using initial colleges data');
+      console.warn('Could not fetch colleges, using fallback:', err);
     }
   };
 
-  const fetchCourses = async () => {
+  const fetchSyllabi = async () => {
     try {
-      const res = await fetch('/api/courses');
+      const res = await fetch('/api/syllabi');
       const data = await res.json();
-      if (data.success && data.courses && data.courses.length > 0) {
-        const filtered = data.courses.filter(c => 
-          c.name?.toLowerCase().includes('b.tech') || 
-          c.code?.toLowerCase().includes('btech') ||
-          c.name?.toLowerCase().includes('mba') ||
-          c.code?.toLowerCase().includes('mba')
-        );
-        if (filtered.length > 0) {
-          setCoursesList(filtered);
-        }
+      if (data.success && Array.isArray(data.syllabi)) {
+        setSyllabiList(data.syllabi);
       }
     } catch (err) {
-      console.log('Using initial courses');
+      console.warn('Could not fetch syllabi:', err);
     }
   };
 
+  // Sync default uploadCollegeId when uploadUnivId or colleges change
   useEffect(() => {
-    fetchUniversities();
-    fetchColleges();
-    fetchCourses();
-  }, []);
+    const matchingColleges = colleges.filter(c => c.universityId === uploadUnivId);
+    if (matchingColleges.length > 0) {
+      // If current uploadCollegeId isn't in matching, select first
+      if (!matchingColleges.some(c => c.id === uploadCollegeId)) {
+        setUploadCollegeId(matchingColleges[0].id);
+      }
+    } else {
+      setUploadCollegeId('');
+    }
+  }, [uploadUnivId, colleges]);
 
-  // Filter States
-  const [selectedUnivFilter, setSelectedUnivFilter] = useState('all');
-  const [selectedDegreeFilter, setSelectedDegreeFilter] = useState('B.Tech');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Derived Values for Uploader
+  const currentUploadUniv = universities.find(u => u.id === uploadUnivId) || universities[0];
+  const uploadAffiliatedColleges = colleges.filter(c => c.universityId === uploadUnivId);
+  const currentUploadCollege = colleges.find(c => c.id === uploadCollegeId) || uploadAffiliatedColleges[0];
+  const currentUploadBranch = ACADEMIC_BRANCHES.find(b => b.code === uploadBranchCode) || ACADEMIC_BRANCHES[0];
 
-  // Selected University object
-  const selectedUniversity = universities.find(u => u.id === selectedUnivFilter) || null;
+  // Maximum semesters for selected branch (e.g. 8 for B.Tech, 4 for MBA)
+  const maxSemesters = currentUploadBranch?.semesters || 8;
+  const semesterOptions = Array.from({ length: maxSemesters }, (_, i) => String(i + 1));
 
-  // Notification Messages
-  const [successMsg, setSuccessMsg] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
+  // Check if a syllabus already exists for currently selected combination
+  const currentExistingSyllabus = syllabiList.find(s => 
+    s.universityId === uploadUnivId &&
+    s.collegeId === uploadCollegeId &&
+    (s.courseId === currentUploadBranch?.code || s.branch === currentUploadBranch?.name) &&
+    String(s.semester) === String(uploadSemester)
+  );
 
-  // ----------------------------------------------------
-  // INTERACTIVE VIEW SYLLABUS MODAL STATE
-  // ----------------------------------------------------
-  const [viewingSyllabusCourse, setViewingSyllabusCourse] = useState(null);
-  const [viewerActiveSem, setViewerActiveSem] = useState('1');
-  const [modalFileToUpload, setModalFileToUpload] = useState(null);
-  const [modalUploading, setModalUploading] = useState(false);
+  // Dynamic College Count for Top Banner
+  const displayedCollegesCount = selectedUnivFilter === 'ALL'
+    ? colleges.length
+    : colleges.filter(c => c.universityId === selectedUnivFilter).length;
 
-  const handleOpenViewSyllabus = (course, sem = '1') => {
-    setViewingSyllabusCourse(course);
-    setViewerActiveSem(sem);
-    setModalFileToUpload(null);
-    setErrorMsg(null);
+  // Filtered Colleges in Tab 2
+  const filteredColleges = colleges.filter(c => {
+    const matchesUniv = selectedUnivFilter === 'ALL' || c.universityId === selectedUnivFilter;
+    const matchesSearch = !collegeSearch || 
+      (c.name || '').toLowerCase().includes(collegeSearch.toLowerCase()) ||
+      (c.shortName || '').toLowerCase().includes(collegeSearch.toLowerCase()) ||
+      (c.code || '').toLowerCase().includes(collegeSearch.toLowerCase()) ||
+      (c.district || '').toLowerCase().includes(collegeSearch.toLowerCase());
+    return matchesUniv && matchesSearch;
+  });
+
+  // Filtered Syllabi in Tab 3 Repository Table
+  const filteredSyllabi = syllabiList.filter(s => {
+    const matchesUniv = syllabiFilterUniv === 'ALL' || s.universityId === syllabiFilterUniv;
+    const matchesSem = syllabiFilterSem === 'ALL' || String(s.semester) === String(syllabiFilterSem);
+    const matchesSearch = !syllabiSearch ||
+      (s.branch || '').toLowerCase().includes(syllabiSearch.toLowerCase()) ||
+      (s.collegeName || '').toLowerCase().includes(syllabiSearch.toLowerCase()) ||
+      (s.fileName || '').toLowerCase().includes(syllabiSearch.toLowerCase()) ||
+      (s.universityName || '').toLowerCase().includes(syllabiSearch.toLowerCase());
+    return matchesUniv && matchesSem && matchesSearch;
+  });
+
+  // Quick Action from Universities Tab: Navigate to Colleges Tab with filter
+  const handleViewAffiliatedColleges = (univId) => {
+    setSelectedUnivFilter(univId);
+    setActiveSubTab('colleges');
   };
 
-  const handleModalFileUpload = async (e) => {
+  // Quick Action from Universities / Colleges Tab: Navigate to Upload Tab with pre-selection
+  const handleNavigateToUpload = (univId, collegeId = '') => {
+    setUploadUnivId(univId);
+    if (collegeId) {
+      setUploadCollegeId(collegeId);
+    }
+    setActiveSubTab('upload_syllabus');
+    setUploadStatus(null);
+  };
+
+  // Syllabus Upload Handler
+  const handleUploadSyllabus = async (e) => {
     e.preventDefault();
-    if (!modalFileToUpload || !viewingSyllabusCourse) {
-      setErrorMsg('Please select a syllabus document file to upload.');
+    if (!selectedFile) {
+      setUploadStatus({ success: false, message: 'Please choose a PDF or Excel syllabus file to upload.' });
+      return;
+    }
+    if (!uploadUnivId) {
+      setUploadStatus({ success: false, message: 'Please select a University.' });
+      return;
+    }
+    if (!uploadCollegeId) {
+      setUploadStatus({ success: false, message: 'Please select an Affiliated College.' });
       return;
     }
 
-    setModalUploading(true);
-    setErrorMsg(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', modalFileToUpload);
-      formData.append('semester', viewerActiveSem);
+    setUploading(true);
+    setUploadStatus(null);
 
-      const res = await fetch(`/api/courses/${viewingSyllabusCourse.id}/syllabus-file`, {
+    try {
+      const data = new FormData();
+      data.append('file', selectedFile);
+      data.append('universityId', uploadUnivId);
+      data.append('universityName', currentUploadUniv?.name || '');
+      data.append('collegeId', uploadCollegeId);
+      data.append('collegeName', currentUploadCollege?.shortName || currentUploadCollege?.name || '');
+      data.append('courseId', currentUploadBranch?.code || '');
+      data.append('courseName', `${currentUploadBranch?.degree} - ${currentUploadBranch?.name}`);
+      data.append('branch', currentUploadBranch?.name || '');
+      data.append('semester', uploadSemester);
+
+      const res = await fetch('/api/syllabi/upload', {
         method: 'POST',
-        body: formData
+        body: data
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to upload syllabus.');
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || 'Failed to upload syllabus file.');
       }
 
-      const updatedCourse = data.course || {
-        ...viewingSyllabusCourse,
-        syllabusFiles: {
-          ...(viewingSyllabusCourse.syllabusFiles || {}),
-          [viewerActiveSem]: data.syllabusFile
-        }
-      };
+      setUploadStatus({
+        success: true,
+        message: `✓ Syllabus for ${currentUploadBranch?.name} (Semester ${uploadSemester}) uploaded successfully!`
+      });
+      setSelectedFile(null);
+      // Reset file input element
+      const fileInp = document.getElementById('syllabus_file_input');
+      if (fileInp) fileInp.value = '';
 
-      setCoursesList(prev => prev.map(c => c.id === updatedCourse.id ? updatedCourse : c));
-      setViewingSyllabusCourse(updatedCourse);
-      setSuccessMsg(`Semester ${viewerActiveSem} syllabus file uploaded successfully!`);
-      setModalFileToUpload(null);
-      setTimeout(() => setSuccessMsg(null), 4000);
-      if (onRefreshCourses) onRefreshCourses();
+      fetchSyllabi();
     } catch (err) {
-      setErrorMsg(err.message || 'Upload failed');
+      setUploadStatus({ success: false, message: err.message || 'Server error uploading syllabus.' });
     } finally {
-      setModalUploading(false);
+      setUploading(false);
     }
   };
 
-  const handleModalDeleteFile = async (courseId, sem) => {
-    if (!window.confirm(`Are you sure you want to remove the syllabus document for Semester ${sem}?`)) return;
+  // Delete Syllabus Handler
+  const handleDeleteSyllabus = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this syllabus file?')) return;
     try {
-      const res = await fetch(`/api/courses/${courseId}/syllabus-file/${sem}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        const updatedFiles = { ...(viewingSyllabusCourse.syllabusFiles || {}) };
-        delete updatedFiles[sem];
-        const updatedCourse = { ...viewingSyllabusCourse, syllabusFiles: updatedFiles };
-        setCoursesList(prev => prev.map(c => c.id === courseId ? updatedCourse : c));
-        setViewingSyllabusCourse(updatedCourse);
-        setSuccessMsg(`Semester ${sem} syllabus document removed.`);
-        setTimeout(() => setSuccessMsg(null), 4000);
-        if (onRefreshCourses) onRefreshCourses();
+      const res = await fetch(`/api/syllabi/${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setSyllabiList(prev => prev.filter(s => s.id !== id));
+      } else {
+        alert(result.message || 'Failed to delete syllabus.');
       }
     } catch (err) {
-      setErrorMsg('Failed to remove syllabus file.');
+      alert('Error deleting syllabus: ' + err.message);
     }
   };
 
-  // ----------------------------------------------------
-  // ADD / EDIT UNIVERSITY MODAL STATE
-  // ----------------------------------------------------
-  const [showUnivModal, setShowUnivModal] = useState(false);
-  const [editingUniv, setEditingUniv] = useState(null);
-  const [savingUniv, setSavingUniv] = useState(false);
-  const [univForm, setUnivForm] = useState({
-    name: '',
-    shortName: '',
-    code: '',
-    city: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    website: '',
-    establishedYear: 2018,
-    description: ''
-  });
-
+  // University CRUD Handlers
   const handleOpenAddUniv = () => {
     setEditingUniv(null);
-    setUnivForm({
+    setUnivFormData({
       name: '',
       shortName: '',
       code: '',
-      city: 'Chhatarpur',
+      city: 'Bhopal',
       state: 'Madhya Pradesh',
       website: '',
-      establishedYear: 2018,
-      description: 'University offering recognized degree programs (B.Tech & MBA).'
+      establishedYear: new Date().getFullYear(),
+      description: ''
     });
     setShowUnivModal(true);
-    setErrorMsg(null);
   };
 
   const handleOpenEditUniv = (u) => {
     setEditingUniv(u);
-    setUnivForm({
+    setUnivFormData({
       name: u.name || '',
       shortName: u.shortName || '',
       code: u.code || '',
-      city: u.city || 'Bhopal',
+      city: u.city || '',
       state: u.state || 'Madhya Pradesh',
       website: u.website || '',
-      establishedYear: u.establishedYear || 2018,
+      establishedYear: u.establishedYear || 2020,
       description: u.description || ''
     });
     setShowUnivModal(true);
-    setErrorMsg(null);
   };
 
   const handleSaveUniv = async (e) => {
     e.preventDefault();
-    if (!univForm.name.trim()) {
-      setErrorMsg('University name is required.');
-      return;
-    }
-
-    setSavingUniv(true);
-    setErrorMsg(null);
-
     try {
       const url = editingUniv ? `/api/universities/${editingUniv.id}` : '/api/universities';
       const method = editingUniv ? 'PUT' : 'POST';
-
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(univForm)
+        body: JSON.stringify(univFormData)
       });
       const data = await res.json();
-
-      if (data.success && data.university) {
-        if (editingUniv) {
-          setUniversities(prev => prev.map(u => u.id === editingUniv.id ? data.university : u));
-        } else {
-          setUniversities(prev => [data.university, ...prev]);
-        }
+      if (data.success) {
+        setShowUnivModal(false);
+        fetchUniversities();
       } else {
-        if (editingUniv) {
-          setUniversities(prev => prev.map(u => u.id === editingUniv.id ? { ...u, ...univForm } : u));
-        } else {
-          const newUniv = {
-            id: `univ-${Date.now()}`,
-            ...univForm,
-            status: 'Active'
-          };
-          setUniversities(prev => [newUniv, ...prev]);
-        }
+        alert(data.message || 'Failed to save university.');
       }
-
-      setShowUnivModal(false);
-      setSuccessMsg(editingUniv ? `University "${univForm.name}" updated!` : `University "${univForm.name}" added successfully!`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-      fetchUniversities();
     } catch (err) {
-      if (editingUniv) {
-        setUniversities(prev => prev.map(u => u.id === editingUniv.id ? { ...u, ...univForm } : u));
-      } else {
-        const newUniv = {
-          id: `univ-${Date.now()}`,
-          ...univForm,
-          status: 'Active'
-        };
-        setUniversities(prev => [newUniv, ...prev]);
-      }
-      setShowUnivModal(false);
-      setSuccessMsg('University saved successfully!');
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } finally {
-      setSavingUniv(false);
+      alert('Error saving university: ' + err.message);
     }
   };
 
-  const handleDeleteUniv = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to remove university "${name}"?`)) return;
+  const handleDeleteUniv = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this university?')) return;
     try {
-      await fetch(`/api/universities/${id}`, { method: 'DELETE' });
-    } catch (err) {}
-    setUniversities(prev => prev.filter(u => u.id !== id));
-    setSuccessMsg(`University "${name}" removed.`);
-    setTimeout(() => setSuccessMsg(null), 4000);
+      const res = await fetch(`/api/universities/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchUniversities();
+      } else {
+        alert(data.message || 'Failed to delete university.');
+      }
+    } catch (err) {
+      alert('Error deleting university: ' + err.message);
+    }
   };
 
-  // ----------------------------------------------------
-  // ADD / EDIT COLLEGE MODAL STATE
-  // ----------------------------------------------------
-  const [showCollegeModal, setShowCollegeModal] = useState(false);
-  const [savingCollege, setSavingCollege] = useState(false);
-  const [collegeForm, setCollegeForm] = useState({
-    name: '',
-    shortName: '',
-    code: '',
-    universityId: 'univ-mpu',
-    universityName: 'Madhyanchal Professional University Bhopal',
-    district: 'Chhatarpur',
-    state: 'Madhya Pradesh',
-    address: ''
-  });
-
-  const handleOpenAddCollege = (defaultUnivId) => {
-    const targetUniv = universities.find(u => u.id === defaultUnivId) || universities[0];
-    setCollegeForm({
+  // College CRUD Handlers
+  const handleOpenAddCollege = () => {
+    setEditingCollege(null);
+    setCollegeFormData({
       name: '',
       shortName: '',
       code: '',
-      universityId: targetUniv ? targetUniv.id : 'univ-mpu',
-      universityName: targetUniv ? targetUniv.name : 'Madhyanchal Professional University Bhopal',
+      universityId: selectedUnivFilter !== 'ALL' ? selectedUnivFilter : (universities[0]?.id || 'univ-mpu'),
+      universityName: universities.find(u => u.id === (selectedUnivFilter !== 'ALL' ? selectedUnivFilter : universities[0]?.id))?.name || '',
       district: 'Chhatarpur',
-      state: 'Madhya Pradesh',
-      address: ''
+      state: 'Madhya Pradesh'
     });
     setShowCollegeModal(true);
-    setErrorMsg(null);
   };
 
   const handleSaveCollege = async (e) => {
     e.preventDefault();
-    if (!collegeForm.name.trim()) {
-      setErrorMsg('College name is required.');
-      return;
-    }
-
-    setSavingCollege(true);
     try {
+      const matchedUniv = universities.find(u => u.id === collegeFormData.universityId);
+      const payload = {
+        ...collegeFormData,
+        universityName: matchedUniv ? matchedUniv.name : collegeFormData.universityName
+      };
+
       const res = await fetch('/api/colleges', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(collegeForm)
-      });
-      const data = await res.json();
-      if (data.success && data.college) {
-        setColleges(prev => [data.college, ...prev]);
-      } else {
-        const newCol = {
-          id: `col-${Date.now()}`,
-          ...collegeForm,
-          status: 'Active'
-        };
-        setColleges(prev => [newCol, ...prev]);
-      }
-      setShowCollegeModal(false);
-      setSuccessMsg(`College "${collegeForm.shortName || collegeForm.name}" registered successfully!`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-      fetchColleges();
-    } catch (err) {
-      const newCol = {
-        id: `col-${Date.now()}`,
-        ...collegeForm,
-        status: 'Active'
-      };
-      setColleges(prev => [newCol, ...prev]);
-      setShowCollegeModal(false);
-      setSuccessMsg('College registered successfully!');
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } finally {
-      setSavingCollege(false);
-    }
-  };
-
-  const handleDeleteCollege = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to remove college "${name}"?`)) return;
-    try {
-      await fetch(`/api/colleges/${id}`, { method: 'DELETE' });
-    } catch (err) {}
-    setColleges(prev => prev.filter(c => c.id !== id));
-    setSuccessMsg('College removed.');
-    setTimeout(() => setSuccessMsg(null), 4000);
-  };
-
-  // ----------------------------------------------------
-  // ADD / EDIT COURSE MODAL STATE (Only B.Tech or MBA)
-  // ----------------------------------------------------
-  const [showCourseModal, setShowCourseModal] = useState(false);
-  const [editingCourse, setEditingCourse] = useState(null);
-  const [savingCourse, setSavingCourse] = useState(false);
-  const [courseForm, setCourseForm] = useState({
-    degree: 'B.Tech',
-    name: '',
-    code: '',
-    department: 'School of Engineering & Technology',
-    durationYears: 4,
-    totalSemesters: 8,
-    eligibility: '10+2 with PCM (Min 50%)',
-    description: '',
-    totalFee: 240000,
-    feePerSemester: 30000
-  });
-
-  const handleOpenAddCourse = (defaultDegree = 'B.Tech') => {
-    setEditingCourse(null);
-    const isMba = defaultDegree === 'MBA';
-    setCourseForm({
-      degree: defaultDegree,
-      name: isMba ? 'MBA- ' : 'B.Tech- ',
-      code: isMba ? 'MBA-' : 'BTECH-',
-      department: isMba ? 'School of Management & Business' : 'School of Engineering & Technology',
-      durationYears: isMba ? 2 : 4,
-      totalSemesters: isMba ? 4 : 8,
-      eligibility: isMba ? 'Graduation in any stream (Min 50%)' : '10+2 with PCM (Min 50%)',
-      description: isMba ? 'Master of Business Administration professional management specialization.' : 'Four-year engineering bachelor degree program.',
-      totalFee: isMba ? 160000 : 240000,
-      feePerSemester: isMba ? 40000 : 30000
-    });
-    setShowCourseModal(true);
-    setErrorMsg(null);
-  };
-
-  const handleOpenEditCourse = (course) => {
-    setEditingCourse(course);
-    const isMba = course.name?.toLowerCase().includes('mba') || course.degree === 'MBA';
-    setCourseForm({
-      degree: isMba ? 'MBA' : 'B.Tech',
-      name: course.name || '',
-      code: course.code || '',
-      department: course.department || (isMba ? 'School of Management & Business' : 'School of Engineering & Technology'),
-      durationYears: course.durationYears || (isMba ? 2 : 4),
-      totalSemesters: course.totalSemesters || (isMba ? 4 : 8),
-      eligibility: course.eligibility || (isMba ? 'Graduation in any stream (Min 50%)' : '10+2 with PCM (Min 50%)'),
-      description: course.description || '',
-      totalFee: course.totalFee !== undefined ? course.totalFee : (isMba ? 160000 : 240000),
-      feePerSemester: course.feePerSemester !== undefined ? course.feePerSemester : (isMba ? 40000 : 30000)
-    });
-    setShowCourseModal(true);
-    setErrorMsg(null);
-  };
-
-  const handleSaveCourse = async (e) => {
-    e.preventDefault();
-    if (!courseForm.name || !courseForm.code) {
-      setErrorMsg('Course name and code are required.');
-      return;
-    }
-
-    setSavingCourse(true);
-    setErrorMsg(null);
-
-    try {
-      const url = editingCourse ? `/api/courses/${editingCourse.id}` : '/api/courses';
-      const method = editingCourse ? 'PUT' : 'POST';
-
-      const payload = {
-        ...courseForm,
-        durationYears: Number(courseForm.durationYears) || 1,
-        totalSemesters: Number(courseForm.totalSemesters) || 2,
-        totalFee: Number(courseForm.totalFee) || 0,
-        feePerSemester: Number(courseForm.feePerSemester) || 0
-      };
-
-      const res = await fetch(url, {
-        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-
-      if (data.success && data.course) {
-        if (editingCourse) {
-          setCoursesList(prev => prev.map(c => c.id === editingCourse.id ? data.course : c));
-        } else {
-          setCoursesList(prev => [data.course, ...prev]);
-        }
+      if (data.success) {
+        setShowCollegeModal(false);
+        fetchColleges();
       } else {
-        if (editingCourse) {
-          setCoursesList(prev => prev.map(c => c.id === editingCourse.id ? { ...c, ...payload } : c));
-        } else {
-          const newC = { id: `c-${Date.now()}`, ...payload };
-          setCoursesList(prev => [newC, ...prev]);
-        }
+        alert(data.message || 'Failed to register college.');
       }
-
-      setShowCourseModal(false);
-      setSuccessMsg(editingCourse 
-        ? `Course "${courseForm.name}" updated successfully!` 
-        : `New Course "${courseForm.name}" added successfully!`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-
-      if (onRefreshCourses) await onRefreshCourses();
     } catch (err) {
-      const payload = { ...courseForm };
-      if (editingCourse) {
-        setCoursesList(prev => prev.map(c => c.id === editingCourse.id ? { ...c, ...payload } : c));
-      } else {
-        const newC = { id: `c-${Date.now()}`, ...payload };
-        setCoursesList(prev => [newC, ...prev]);
-      }
-      setShowCourseModal(false);
-      setSuccessMsg('Course saved successfully!');
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } finally {
-      setSavingCourse(false);
+      alert('Error saving college: ' + err.message);
     }
   };
 
-  const handleDeleteCourse = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete branch "${name}"?`)) return;
-    try {
-      await fetch(`/api/courses/${id}`, { method: 'DELETE' });
-    } catch (err) {}
-    setCoursesList(prev => prev.filter(c => c.id !== id));
-    setSuccessMsg(`Branch "${name}" deleted.`);
-    setTimeout(() => setSuccessMsg(null), 4000);
-    if (onRefreshCourses) onRefreshCourses();
+  const handleDeleteCollege = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this affiliated college?')) return;
+    setColleges(prev => prev.filter(c => c.id !== id));
   };
-
-  // ----------------------------------------------------
-  // SYLLABUS UPLOAD STATE & HANDLERS (Full Page Tab 4)
-  // ----------------------------------------------------
-  const [selectedCourseId, setSelectedCourseId] = useState(coursesList[0]?.id || 'btech-aiml');
-  const [selectedSemester, setSelectedSemester] = useState('1');
-  const [fileToUpload, setFileToUpload] = useState(null);
-  const [uploading, setUploading] = useState(false);
-
-  const selectedCourse = coursesList.find(c => c.id === selectedCourseId) || coursesList[0] || null;
-  const currentSyllabusFile = selectedCourse?.syllabusFiles?.[selectedSemester] || null;
-  const totalSemesters = selectedCourse?.totalSemesters || 8;
-  const semesterOptions = Array.from({ length: totalSemesters }, (_, i) => String(i + 1));
-
-  const handleFileUpload = async (e) => {
-    e.preventDefault();
-    if (!fileToUpload || !selectedCourse) {
-      setErrorMsg('Please select a program, semester, and a syllabus document file.');
-      return;
-    }
-
-    setUploading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-      formData.append('semester', selectedSemester);
-
-      const res = await fetch(`/api/courses/${selectedCourse.id}/syllabus-file`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to upload syllabus file.');
-      }
-
-      setSuccessMsg(`Syllabus for ${selectedCourse.name} (Semester ${selectedSemester}) uploaded successfully!`);
-      setFileToUpload(null);
-      const inputEl = document.getElementById('syllabus-file-input');
-      if (inputEl) inputEl.value = '';
-
-      if (data.course) {
-        setCoursesList(prev => prev.map(c => c.id === data.course.id ? data.course : c));
-      }
-      if (onRefreshCourses) await onRefreshCourses();
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeleteFile = async () => {
-    if (!window.confirm(`Are you sure you want to remove the syllabus file for Semester ${selectedSemester}?`)) return;
-
-    setUploading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch(`/api/courses/${selectedCourse.id}/syllabus-file/${selectedSemester}`, {
-        method: 'DELETE'
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to remove syllabus file.');
-      }
-
-      setSuccessMsg(`Semester ${selectedSemester} syllabus removed.`);
-      if (data.course) {
-        setCoursesList(prev => prev.map(c => c.id === data.course.id ? data.course : c));
-      }
-      if (onRefreshCourses) await onRefreshCourses();
-    } catch (err) {
-      setErrorMsg(err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleJumpToSyllabus = (courseId) => {
-    setSelectedCourseId(courseId);
-    setSelectedSemester('1');
-    setActiveSubTab('syllabus');
-  };
-
-  // Helper to get colleges under a specific university
-  const getCollegesForUniv = (univ) => {
-    if (!univ) return [];
-    return colleges.filter(c => 
-      c.universityId === univ.id || 
-      (c.universityName || '').toLowerCase().includes((univ.shortName || univ.name).toLowerCase())
-    );
-  };
-
-  // Filtered Colleges list for Tab 2
-  const filteredColleges = colleges.filter(c => {
-    const matchesUniv = selectedUnivFilter === 'all' || 
-      c.universityId === selectedUnivFilter || 
-      (c.universityName || '').toLowerCase().includes((selectedUniversity?.shortName || selectedUniversity?.name || '').toLowerCase());
-    
-    const matchesSearch = !searchTerm.trim() || 
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.district.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesUniv && matchesSearch;
-  });
-
-  // Dynamic count of colleges to show in banner based on selection:
-  const displayedCollegesCount = selectedUnivFilter === 'all' || !selectedUniversity 
-    ? colleges.length 
-    : getCollegesForUniv(selectedUniversity).length;
-
-  // Filtered Courses list: Strictly B.Tech and MBA
-  const btechCourses = coursesList.filter(c => c.name?.toLowerCase().includes('b.tech') || c.code?.toLowerCase().includes('btech') || c.degree === 'B.Tech');
-  const mbaCourses = coursesList.filter(c => c.name?.toLowerCase().includes('mba') || c.code?.toLowerCase().includes('mba') || c.degree === 'MBA');
-
-  const filteredCourses = coursesList.filter(c => {
-    const isBtech = c.name?.toLowerCase().includes('b.tech') || c.code?.toLowerCase().includes('btech') || c.degree === 'B.Tech';
-    const isMba = c.name?.toLowerCase().includes('mba') || c.code?.toLowerCase().includes('mba') || c.degree === 'MBA';
-
-    if (selectedDegreeFilter === 'B.Tech' && !isBtech) return false;
-    if (selectedDegreeFilter === 'MBA' && !isMba) return false;
-
-    const matchesSearch = !searchTerm.trim() || 
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-slate-900">
+    <div className="space-y-6 animate-fadeIn pb-12">
       
-      {/* ========================================================================= */}
-      {/* 1. ACADEMIC HEADER BANNER - STRICTLY ONLY 2 PARTS (Universities & Colleges) */}
-      {/* ========================================================================= */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0 shadow-md">
-              <Building2 className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-                  Affiliation &amp; University Hub
-                </span>
-                {selectedUniversity && (
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                    Active: {selectedUniversity.shortName || selectedUniversity.code}
-                  </span>
-                )}
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black mt-1 text-white">
-                Universities &amp; Affiliated Colleges Hub
-              </h1>
-              <p className="text-xs text-slate-300 mt-0.5">
-                {selectedUniversity 
-                  ? `Selected: ${selectedUniversity.name} — viewing its affiliated colleges and academic network.`
-                  : 'Select any university below to view and manage its affiliated colleges.'}
-              </p>
-            </div>
-          </div>
-
-          {/* Metric Badges: EXACTLY 2 PARTS (Universities & Colleges) - Dynamic by selection */}
-          <div className="flex items-center gap-3">
-            {/* Part 1: Universities */}
-            <div 
-              onClick={() => {
-                setSelectedUnivFilter('all');
-                setActiveSubTab('universities');
-              }}
-              className={`px-5 py-3 rounded-2xl border text-center min-w-[120px] transition-all cursor-pointer shadow-sm ${
-                selectedUnivFilter === 'all' || activeSubTab === 'universities'
-                  ? 'bg-white/20 border-amber-400/60 ring-2 ring-amber-400/30'
-                  : 'bg-white/10 hover:bg-white/15 border-white/10'
-              }`}
-              title="Click to view all Universities"
-            >
-              <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider block">
-                Universities
-              </span>
-              <span className="text-2xl font-black text-white">
-                {universities.length}
-              </span>
-              <span className="text-[10px] text-slate-300 block font-medium">
-                {selectedUniversity ? (selectedUniversity.shortName || selectedUniversity.code) : 'Partner Hubs'}
-              </span>
-            </div>
-
-            {/* Part 2: Colleges - Dynamically changes based on selected university! */}
-            <div 
-              onClick={() => {
-                setActiveSubTab('colleges');
-              }}
-              className={`px-5 py-3 rounded-2xl border text-center min-w-[140px] transition-all cursor-pointer shadow-sm ${
-                activeSubTab === 'colleges'
-                  ? 'bg-white/20 border-indigo-400/60 ring-2 ring-indigo-400/30'
-                  : 'bg-white/10 hover:bg-white/15 border-white/10'
-              }`}
-              title="Click to view Affiliated Colleges"
-            >
-              <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block">
-                Colleges
-              </span>
-              <span className="text-2xl font-black text-white">
-                {displayedCollegesCount}
-              </span>
-              <span className="text-[10px] text-indigo-200 block truncate max-w-[140px] font-medium">
-                {selectedUniversity 
-                  ? `under ${selectedUniversity.shortName || selectedUniversity.code}` 
-                  : 'All 18 Colleges'}
-              </span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 2. MODERN TOP SUB-NAVBAR & QUICK ACTION TOOLBAR */}
-      {/* ========================================================================= */}
-      <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+      {/* Top Banner: Strictly 3-Part Overview */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-indigo-900/40 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        {/* Navigation Tabs Strip */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-500/30 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Academic Registry &amp; Syllabus Portal
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              University, College &amp; Syllabus Management
+            </h1>
+            <p className="text-xs sm:text-sm text-indigo-200/80 max-w-2xl leading-relaxed">
+              Maintain partner universities, manage affiliated institutes, and upload semester-wise syllabus files in PDF or Excel formats with automatic college-branch linkage.
+            </p>
+          </div>
+
+          {/* Metric Stats Banner: 3 Clean Boxes */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+            {/* Stat 1: Universities */}
+            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[110px]">
+              <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider block">Universities</span>
+              <span className="text-xl sm:text-2xl font-black text-white block mt-0.5">{universities.length}</span>
+              <span className="text-[10px] text-emerald-400 font-semibold block">Registered</span>
+            </div>
+
+            {/* Stat 2: Colleges */}
+            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[120px]">
+              <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider block">Colleges</span>
+              <span className="text-xl sm:text-2xl font-black text-white block mt-0.5">{displayedCollegesCount}</span>
+              <span className="text-[10px] text-indigo-300 font-semibold block">
+                {selectedUnivFilter === 'ALL' ? 'Total Affiliated' : 'Under Selected'}
+              </span>
+            </div>
+
+            {/* Stat 3: Syllabi on Record */}
+            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[110px]">
+              <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider block">Syllabi</span>
+              <span className="text-xl sm:text-2xl font-black text-emerald-400 block mt-0.5">{syllabiList.length}</span>
+              <span className="text-[10px] text-slate-300 font-semibold block">PDF / Excel Files</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3 Main Navigation Tabs */}
+        <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap gap-2">
           {/* Tab 1: Universities */}
           <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab('universities');
-              setErrorMsg(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+            onClick={() => setActiveSubTab('universities')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
               activeSubTab === 'universities'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/40'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                ? 'bg-white text-indigo-950 shadow-lg scale-[1.02]'
+                : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
             }`}
           >
-            <Building2 className={`w-4 h-4 ${activeSubTab === 'universities' ? 'text-amber-400' : 'text-slate-500'}`} />
+            <Landmark className="w-4 h-4" />
             <span>1. Universities</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-              activeSubTab === 'universities' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
+            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              activeSubTab === 'universities' ? 'bg-indigo-100 text-indigo-900' : 'bg-white/20 text-white'
             }`}>
               {universities.length}
             </span>
           </button>
 
-          {/* Tab 2: Colleges */}
+          {/* Tab 2: Affiliated Colleges */}
           <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab('colleges');
-              setErrorMsg(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
+            onClick={() => setActiveSubTab('colleges')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
               activeSubTab === 'colleges'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/40'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                ? 'bg-white text-indigo-950 shadow-lg scale-[1.02]'
+                : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
             }`}
           >
-            <Landmark className={`w-4 h-4 ${activeSubTab === 'colleges' ? 'text-amber-400' : 'text-slate-500'}`} />
+            <Building2 className="w-4 h-4" />
             <span>2. Affiliated Colleges</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-              activeSubTab === 'colleges' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
+            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              activeSubTab === 'colleges' ? 'bg-indigo-100 text-indigo-900' : 'bg-white/20 text-white'
             }`}>
-              {displayedCollegesCount}
+              {colleges.length}
             </span>
           </button>
 
-          {/* Tab 3: Courses & Branches */}
+          {/* Tab 3: Upload Syllabus (Direct hierarchy uploader) */}
           <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab('courses');
-              setErrorMsg(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-              activeSubTab === 'courses'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/40'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            onClick={() => setActiveSubTab('upload_syllabus')}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
+              activeSubTab === 'upload_syllabus'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 scale-[1.02]'
+                : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 hover:text-white border border-emerald-500/30'
             }`}
           >
-            <GraduationCap className={`w-4 h-4 ${activeSubTab === 'courses' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>3. B.Tech &amp; MBA Programs</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-              activeSubTab === 'courses' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
-            }`}>
-              {coursesList.length}
-            </span>
-          </button>
-
-          {/* Tab 4: Syllabus Upload */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab('syllabus');
-              setErrorMsg(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-              activeSubTab === 'syllabus'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/40'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
-          >
-            <Upload className={`w-4 h-4 ${activeSubTab === 'syllabus' ? 'text-amber-400' : 'text-slate-500'}`} />
-            <span>4. Upload Syllabus</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-              activeSubTab === 'syllabus' ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-200 text-slate-600'
-            }`}>
-              PDF / Excel
+            <Upload className="w-4 h-4" />
+            <span>3. Upload Syllabus</span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">
+              PDF &amp; Excel
             </span>
           </button>
         </div>
-
-        {/* Quick Action Buttons */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0">
-          <button
-            type="button"
-            onClick={handleOpenAddUniv}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
-            title="Add a new University"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Add University</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleOpenAddCollege(selectedUnivFilter !== 'all' ? selectedUnivFilter : 'univ-mpu')}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer"
-            title="Register College"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Add College</span>
-          </button>
-        </div>
-
       </div>
 
-      {/* Notifications */}
-      {successMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-900 flex items-center justify-between gap-3 text-xs font-bold animate-fadeIn">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{successMsg}</span>
-          </div>
-        </div>
-      )}
-
-      {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-900 flex items-center gap-3 text-xs font-bold animate-fadeIn">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-
       {/* ========================================================================= */}
-      {/* TAB 1: UNIVERSITIES DIRECTORY (Only Universities Shown Here!) */}
+      {/* TAB 1: UNIVERSITIES */}
       {/* ========================================================================= */}
       {activeSubTab === 'universities' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-indigo-600" />
-                <span>Partner Universities ({universities.length})</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Click on any university to view all its affiliated colleges and managed programs.
-              </p>
+          {/* Universities Header & Search */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={univSearch}
+                onChange={(e) => setUnivSearch(e.target.value)}
+                placeholder="Search partner universities by name, code or city..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
             </div>
 
             <button
-              type="button"
               onClick={handleOpenAddUniv}
-              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New University</span>
+              <span>Register New University</span>
             </button>
           </div>
 
+          {/* Universities Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {universities.map((univ) => {
-              const univColleges = getCollegesForUniv(univ);
+            {universities
+              .filter(u => !univSearch || 
+                (u.name || '').toLowerCase().includes(univSearch.toLowerCase()) ||
+                (u.shortName || '').toLowerCase().includes(univSearch.toLowerCase()) ||
+                (u.city || '').toLowerCase().includes(univSearch.toLowerCase())
+              )
+              .map(u => {
+                const affiliatedCount = colleges.filter(c => c.universityId === u.id || (c.universityName || '').toLowerCase() === (u.name || '').toLowerCase()).length;
+                const uploadedCount = syllabiList.filter(s => s.universityId === u.id).length;
 
-              return (
-                <div 
-                  key={univ.id} 
-                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center shrink-0 shadow-xs">
-                          <Building2 className="w-6 h-6" />
+                return (
+                  <div 
+                    key={u.id}
+                    className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-5 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-sm border border-indigo-100 shrink-0">
+                            {u.code || 'UNIV'}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                {u.status || 'Active Partner'}
+                              </span>
+                              {u.establishedYear && (
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  Est. {u.establishedYear}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="font-extrabold text-base text-slate-900 mt-1 leading-snug">
+                              {u.name}
+                            </h3>
+                            <p className="text-xs font-semibold text-indigo-700">
+                              {u.shortName || u.name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => handleOpenEditUniv(u)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+                            title="Edit details"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUniv(u.id)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                            title="Delete university"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-1">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{u.city || 'Bhopal'}, {u.state || 'Madhya Pradesh'}</span>
+                        </span>
+                        {u.website && (
+                          <a 
+                            href={u.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center gap-1 text-indigo-600 hover:underline font-medium"
+                          >
+                            <Globe className="w-3.5 h-3.5" />
+                            <span>{u.website.replace(/^https?:\/\//, '')}</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {u.description && (
+                        <p className="text-xs text-slate-500 line-clamp-2">
+                          {u.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Stats & Actions */}
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block">Affiliated Colleges</span>
+                          <span className="text-sm font-black text-slate-900">{affiliatedCount} Institutes</span>
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-xs uppercase px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                              {univ.code || 'UNIV'}
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                              {univ.status || 'Active'}
-                            </span>
-                          </div>
-                          <h3 className="text-base font-extrabold text-slate-900 mt-1">
-                            {univ.name}
-                          </h3>
+                          <span className="text-[10px] text-slate-400 uppercase font-bold block">Syllabus Files</span>
+                          <span className="text-sm font-black text-emerald-700">{uploadedCount} Uploaded</span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Meta info */}
-                    <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs">
-                      <div>
-                        <span className="text-slate-400 block font-medium">City / State</span>
-                        <strong className="text-slate-800 flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>{univ.city}, {univ.state}</span>
-                        </strong>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewAffiliatedColleges(u.id)}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>View Colleges ({affiliatedCount}) →</span>
+                        </button>
+                        <button
+                          onClick={() => handleNavigateToUpload(u.id)}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Syllabus →</span>
+                        </button>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">Affiliated Colleges</span>
-                        <strong className="text-indigo-900 font-extrabold text-sm">
-                          {univColleges.length} Colleges
-                        </strong>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                      {univ.description || 'Recognized higher education university offering degree and technical programs.'}
-                    </p>
-
-                    {univ.website && (
-                      <a
-                        href={univ.website.startsWith('http') ? univ.website : `https://${univ.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
-                      >
-                        <Globe className="w-3.5 h-3.5" />
-                        <span>{univ.website}</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Primary Action: VIEW COLLEGES UNDER THIS UNIVERSITY */}
-                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedUnivFilter(univ.id);
-                        setActiveSubTab('colleges');
-                      }}
-                      className="flex items-center gap-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
-                    >
-                      <Landmark className="w-4 h-4" />
-                      <span>View Affiliated Colleges ({univColleges.length})</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditUniv(univ)}
-                        className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-                        title="Edit University"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteUniv(univ.id, univ.name)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                        title="Remove University"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
-
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: AFFILIATED COLLEGES (Drill-down: Colleges Under Selected University) */}
+      {/* TAB 2: AFFILIATED COLLEGES */}
       {/* ========================================================================= */}
       {activeSubTab === 'colleges' && (
         <div className="space-y-6">
-          
-          {/* Active University Breadcrumb & Switcher Header */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedUnivFilter('all');
-                      setActiveSubTab('universities');
-                    }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-indigo-600 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Universities</span>
-                  </button>
-                  <span className="text-slate-300">/</span>
-                  <span className="text-xs font-bold text-indigo-700">
-                    {selectedUniversity ? (selectedUniversity.shortName || selectedUniversity.name) : 'All Partner Colleges'}
-                  </span>
-                </div>
-                <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
-                  <Landmark className="w-5 h-5 text-indigo-600" />
-                  <span>
-                    {selectedUniversity 
-                      ? `Colleges Under ${selectedUniversity.shortName || selectedUniversity.name} (${filteredColleges.length})`
-                      : `All Affiliated Colleges Directory (${filteredColleges.length})`}
-                  </span>
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2">
+          {/* University Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5 pl-2">
+              <Filter className="w-3.5 h-3.5" /> Filter by University:
+            </span>
+            <button
+              onClick={() => setSelectedUnivFilter('ALL')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedUnivFilter === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All Partner Universities ({colleges.length})
+            </button>
+            {universities.map(u => {
+              const uCount = colleges.filter(c => c.universityId === u.id || (c.universityName || '').toLowerCase() === (u.name || '').toLowerCase()).length;
+              return (
                 <button
-                  type="button"
-                  onClick={() => handleOpenAddCollege(selectedUnivFilter !== 'all' ? selectedUnivFilter : 'univ-mpu')}
-                  className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
+                  key={u.id}
+                  onClick={() => setSelectedUnivFilter(u.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedUnivFilter === u.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>+ Register New College</span>
+                  <span>{u.shortName || u.name}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                    selectedUnivFilter === u.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {uCount}
+                  </span>
                 </button>
-              </div>
-            </div>
-
-            {/* University Filter Pills - Click to instantly switch university and see its colleges */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-400 whitespace-nowrap mr-1">
-                Filter by University:
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setSelectedUnivFilter('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
-                  selectedUnivFilter === 'all'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                All Universities ({colleges.length})
-              </button>
-
-              {universities.map(u => {
-                const isCurrent = selectedUnivFilter === u.id;
-                const count = getCollegesForUniv(u).length;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => setSelectedUnivFilter(u.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
-                      isCurrent
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-400/30'
-                        : 'bg-indigo-50/70 hover:bg-indigo-100 text-indigo-800 border-indigo-200'
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>{u.shortName || u.name}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      isCurrent ? 'bg-white/20 text-white' : 'bg-indigo-200 text-indigo-900'
-                    }`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Search Bar */}
-          <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-            <Search className="w-4 h-4 text-slate-400 ml-2" />
-            <input
-              type="text"
-              placeholder="Search college by name, code (e.g. BED121, N462), or location..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-xs bg-transparent focus:outline-none font-medium text-slate-800"
-            />
-            {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="p-1 text-slate-400 hover:text-slate-600">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Colleges Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-900 text-white uppercase text-[11px] font-bold">
-                  <tr>
-                    <th className="p-3.5">Code</th>
-                    <th className="p-3.5">College Name &amp; Trust</th>
-                    <th className="p-3.5">Affiliated University</th>
-                    <th className="p-3.5">District / State</th>
-                    <th className="p-3.5">Programs</th>
-                    <th className="p-3.5 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredColleges.map((col) => (
-                    <tr key={col.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3.5">
-                        <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
-                          {col.code}
-                        </span>
-                      </td>
-                      <td className="p-3.5 max-w-md">
-                        <span className="font-bold text-slate-900 block">{col.name}</span>
-                        {col.shortName && col.shortName !== col.name && (
-                          <span className="text-[11px] text-slate-500 block mt-0.5">{col.shortName}</span>
-                        )}
-                      </td>
-                      <td className="p-3.5 font-bold text-slate-800">
-                        {col.universityName}
-                      </td>
-                      <td className="p-3.5 text-slate-600">
-                        {col.district}, {col.state}
-                      </td>
-                      <td className="p-3.5">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
-                          B.Tech &amp; MBA
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setActiveSubTab('courses')}
-                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-100 transition-colors cursor-pointer"
-                          >
-                            Programs &rarr;
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCollege(col.id, col.name)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete college"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredColleges.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 font-medium">
-                        No colleges found matching the selection.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 3: B.TECH (13 Branches) & MBA (8 Streams) - CLEAN COMPACT VIEW */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'courses' && (
-        <div className="space-y-6">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-indigo-600" />
-                <span>
-                  {selectedDegreeFilter === 'B.Tech' 
-                    ? `B.Tech Engineering (${btechCourses.length} Branches)` 
-                    : selectedDegreeFilter === 'MBA' 
-                    ? `MBA Management (${mbaCourses.length} Specializations)` 
-                    : `Academic Programs & Branches (${filteredCourses.length})`}
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Official degree branches with semester durations and academic syllabus documents.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOpenAddCourse('B.Tech')}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Add B.Tech Branch</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOpenAddCourse('MBA')}
-                className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Add MBA Stream</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Program Toggle & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            {/* Degree Pill Toggles */}
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-              <button
-                type="button"
-                onClick={() => setSelectedDegreeFilter('B.Tech')}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedDegreeFilter === 'B.Tech'
-                    ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400/30'
-                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
-                }`}
-              >
-                <GraduationCap className="w-4 h-4" />
-                <span>B.Tech Engineering ({btechCourses.length} Branches)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedDegreeFilter('MBA')}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedDegreeFilter === 'MBA'
-                    ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400/30'
-                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                }`}
-              >
-                <Briefcase className="w-4 h-4" />
-                <span>MBA Management ({mbaCourses.length} Specializations)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedDegreeFilter('all')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedDegreeFilter === 'all'
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                All Programs ({coursesList.length})
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          {/* Search & Add College Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search branch (e.g. AI&ML, Mining, Banking)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 font-medium"
+                value={collegeSearch}
+                onChange={(e) => setCollegeSearch(e.target.value)}
+                placeholder="Search colleges by name, code, district..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
+
+            <button
+              onClick={handleOpenAddCollege}
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Register Affiliated College</span>
+            </button>
           </div>
 
-          {/* Clean Compact Cards Grid - No Price, Clear Duration, Side-by-Side View & Upload buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredCourses.map((c) => {
-              const isMba = c.name?.toLowerCase().includes('mba') || c.degree === 'MBA';
-              const uploadedCount = c.syllabusFiles ? Object.keys(c.syllabusFiles).length : 0;
-              const totalSem = c.totalSemesters || (isMba ? 4 : 8);
+          {/* Colleges List */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredColleges.map(c => {
+              const matchingUniv = universities.find(u => u.id === c.universityId) || { name: c.universityName, shortName: c.universityName };
+              const collegeSyllabiCount = syllabiList.filter(s => s.collegeId === c.id).length;
 
               return (
                 <div 
-                  key={c.id} 
-                  className={`bg-white rounded-2xl border p-4.5 shadow-xs hover:shadow-md transition-all space-y-3.5 flex flex-col justify-between ${
-                    isMba ? 'border-purple-200 hover:border-purple-300' : 'border-slate-200 hover:border-indigo-300'
-                  }`}
+                  key={c.id}
+                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
                 >
-                  <div className="space-y-2">
-                    {/* Header Badges */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-mono font-bold text-[11px] uppercase px-2 py-0.5 rounded-md border ${
-                          isMba 
-                            ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                            : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                        }`}>
-                          {c.code}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isMba 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-indigo-100 text-indigo-800'
-                        }`}>
-                          {isMba ? 'MBA Stream' : 'B.Tech Branch'}
-                        </span>
-                      </div>
-
-                      {/* Syllabus Status Pill */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
-                        uploadedCount > 0 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : 'bg-slate-50 text-slate-500 border-slate-200'
-                      }`}>
-                        {uploadedCount > 0 ? `✅ ${uploadedCount}/${totalSem} Sem Uploaded` : `📄 ${totalSem} Sem Syllabus`}
+                  <div className="space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">
+                        {c.code || 'COL'}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {c.district || 'MP'}
                       </span>
                     </div>
 
-                    {/* Branch Title */}
-                    <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
+                    <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
                       {c.name}
-                    </h3>
+                    </h4>
 
-                    {/* Duration & Semesters & Department */}
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
-                      <span className="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                        ⏱️ {c.durationYears} Years
-                      </span>
-                      <span className="inline-flex items-center gap-1 font-bold text-slate-800 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
-                        📚 {totalSem} Semesters
-                      </span>
-                      <span className="text-slate-400 font-normal">
-                        • {c.department}
+                    <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-1">
+                      <Landmark className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      <span className="font-semibold text-indigo-900 truncate">
+                        {matchingUniv.shortName || matchingUniv.name}
                       </span>
                     </div>
                   </div>
 
-                  {/* Actions: View Syllabus + Upload Syllabus + Edit/Delete */}
-                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenViewSyllabus(c, '1')}
-                        className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer shadow-2xs ${
-                          isMba
-                            ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
-                            : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
-                        }`}
-                        title="View Semester Wise Syllabus & Curriculum"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>View Syllabus</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleJumpToSyllabus(c.id)}
-                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl text-slate-700 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
-                        title="Upload Syllabus PDF Document"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload</span>
-                      </button>
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>Uploaded Syllabi:</span>
+                      <span className="font-bold text-emerald-700">{collegeSyllabiCount} files</span>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <button
-                        type="button"
-                        onClick={() => handleOpenEditCourse(c)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Branch Information"
+                        onClick={() => handleNavigateToUpload(c.universityId, c.id)}
+                        className="flex-1 flex items-center justify-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload Syllabus →</span>
                       </button>
-
                       <button
-                        type="button"
-                        onClick={() => handleDeleteCourse(c.id, c.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Branch"
+                        onClick={() => handleDeleteCollege(c.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        title="Delete college"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-
                 </div>
               );
             })}
           </div>
-
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: SYLLABUS UPLOAD & MANAGE (Full Dedicated Tool) */}
+      {/* TAB 3: UPLOAD SYLLABUS (DIRECT HIERARCHY FORM & REPOSITORY) */}
       {/* ========================================================================= */}
-      {activeSubTab === 'syllabus' && (
+      {activeSubTab === 'upload_syllabus' && (
         <div className="space-y-8">
-          
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
-            
-            <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Upload className="w-5 h-5 text-indigo-600" />
-                <span>Upload Official Semester Syllabus Document</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Select degree branch and semester, then upload official curriculum document (PDF / Excel).
-              </p>
+          {/* Main Uploader Form Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs">
+                    3
+                  </span>
+                  <h2 className="font-black text-lg text-slate-900">
+                    Upload Semester Syllabus (PDF &amp; Excel)
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Follow the step-by-step hierarchy: Select University ➔ Affiliated College ➔ Course Branch ➔ Semester ➔ Choose File.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold bg-purple-50 text-purple-700 px-3 py-1 rounded-full border border-purple-200">
+                  📄 PDF Supported
+                </span>
+                <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
+                  📊 Excel Supported
+                </span>
+              </div>
             </div>
 
-            <form onSubmit={handleFileUpload} className="space-y-6">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                
-                {/* 1. SELECT PROGRAM */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      1. Select B.Tech / MBA Program *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSubTab('courses')}
-                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
-                    >
-                      + View All Branches
-                    </button>
-                  </div>
-                  <select
-                    value={selectedCourseId}
-                    onChange={(e) => {
-                      setSelectedCourseId(e.target.value);
-                      setSelectedSemester('1');
-                      setSuccessMsg(null);
-                      setErrorMsg(null);
-                    }}
-                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-600 shadow-xs"
-                  >
-                    {coursesList.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.name} ({course.code}) — {course.durationYears} Yr ({course.totalSemesters} Sem)
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Department: {selectedCourse?.department} • Total Semesters: {totalSemesters}
-                  </span>
-                </div>
+            {/* Upload Status Banner */}
+            {uploadStatus && (
+              <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 transition-all ${
+                uploadStatus.success 
+                  ? 'bg-emerald-50 border border-emerald-300 text-emerald-900' 
+                  : 'bg-rose-50 border border-rose-300 text-rose-900'
+              }`}>
+                {uploadStatus.success ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                )}
+                <span>{uploadStatus.message}</span>
+              </div>
+            )}
 
-                {/* 2. SELECT SEMESTER */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    2. Select Semester *
+            {/* Cascading 4-Step Selection Grid */}
+            <form onSubmit={handleUploadSyllabus} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-xs">
+                
+                {/* 1. SELECT UNIVERSITY */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
+                    <span>University *</span>
                   </label>
                   <select
-                    value={selectedSemester}
-                    onChange={(e) => {
-                      setSelectedSemester(e.target.value);
-                      setSuccessMsg(null);
-                      setErrorMsg(null);
-                    }}
-                    className="w-full p-3 bg-slate-50 border border-slate-300 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-600 shadow-xs"
+                    value={uploadUnivId}
+                    onChange={(e) => setUploadUnivId(e.target.value)}
+                    className="w-full p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none font-bold text-indigo-950 shadow-2xs"
+                    required
                   >
-                    {semesterOptions.map((sem) => (
-                      <option key={sem} value={sem}>
-                        Semester {sem} (Sem {sem})
+                    {universities.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.shortName || u.name}
                       </option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-slate-500 block">
-                    Uploading syllabus specifically for Semester {selectedSemester}
-                  </span>
                 </div>
 
-              </div>
-
-              {/* 3. UPLOAD FILE */}
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  3. Upload Syllabus File (PDF, Excel, Word, CSV) *
-                </label>
-                
-                <div className="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-3xl p-6 bg-slate-50/60 transition-colors text-center space-y-3">
-                  <div className="w-12 h-12 mx-auto rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
-                    <Upload className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">
-                      Choose a PDF or Excel / CSV document
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      Supported formats: .pdf, .xlsx, .xls, .docx, .doc, .csv (Max: 30MB)
-                    </p>
-                  </div>
-
-                  <input
-                    id="syllabus-file-input"
-                    type="file"
-                    accept=".pdf,.xlsx,.xls,.doc,.docx,.csv"
-                    onChange={(e) => setFileToUpload(e.target.files[0] || null)}
-                    className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer cursor-pointer"
-                  />
-
-                  {fileToUpload && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold">
-                      <FileCheck2 className="w-4 h-4 text-indigo-600" />
-                      <span>Selected: {fileToUpload.name} ({(fileToUpload.size / (1024 * 1024)).toFixed(2)} MB)</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="submit"
-                    disabled={uploading || !fileToUpload}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>{uploading ? 'Uploading Document...' : `Upload Semester ${selectedSemester} Syllabus`}</span>
-                  </button>
-                </div>
-
-              </div>
-
-            </form>
-
-            {/* Current Uploaded Syllabus Status */}
-            <div className="pt-6 border-t border-slate-200 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Live Syllabus Document for {selectedCourse?.name} — Semester {selectedSemester}:
-                </h3>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                  Status on Student Portal
-                </span>
-              </div>
-
-              {currentSyllabusFile ? (
-                <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                      {currentSyllabusFile.fileName?.endsWith('.xls') || currentSyllabusFile.fileName?.endsWith('.xlsx') || currentSyllabusFile.fileName?.endsWith('.csv') ? (
-                        <FileSpreadsheet className="w-6 h-6" />
-                      ) : (
-                        <FileText className="w-6 h-6" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        <span>{currentSyllabusFile.fileName}</span>
-                        <span className="text-[10px] font-mono bg-emerald-200/60 text-emerald-800 px-2 py-0.5 rounded font-bold">
-                          ACTIVE ON PORTAL
-                        </span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500">
-                        Uploaded on {new Date(currentSyllabusFile.uploadedAt).toLocaleString()} • Size: {currentSyllabusFile.fileSize ? `${(currentSyllabusFile.fileSize / 1024).toFixed(1)} KB` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={currentSyllabusFile.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                      className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download / View</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={handleDeleteFile}
-                      disabled={uploading}
-                      className="p-2 text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
-                      title="Remove file"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-500">
-                  <p className="font-semibold text-slate-700">No syllabus file uploaded yet for Semester {selectedSemester}.</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Upload above to make it instantly downloadable for students.</p>
-                </div>
-              )}
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 0: INTERACTIVE SEMESTER SYLLABUS VIEWER */}
-      {/* ========================================================================= */}
-      {viewingSyllabusCourse && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setViewingSyllabusCourse(null)}
-        >
-          <div 
-            className="bg-white w-full max-w-3xl rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl text-slate-900 border border-slate-200 animate-fadeIn my-6 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center font-bold shrink-0 shadow-xs">
-                  <BookOpen className="w-6 h-6" />
-                </div>
+                {/* 2. SELECT AFFILIATED COLLEGE */}
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono font-bold text-xs uppercase px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      {viewingSyllabusCourse.code}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                      {viewingSyllabusCourse.durationYears} Years ({viewingSyllabusCourse.totalSemesters} Semesters)
-                    </span>
-                  </div>
-                  <h3 className="font-black text-base sm:text-lg text-slate-900 mt-1">
-                    {viewingSyllabusCourse.name} — Syllabus &amp; Curricula
-                  </h3>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">2</span>
+                    <span>Affiliated College *</span>
+                  </label>
+                  <select
+                    value={uploadCollegeId}
+                    onChange={(e) => setUploadCollegeId(e.target.value)}
+                    className="w-full p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl focus:bg-white focus:outline-none font-semibold text-emerald-950 shadow-2xs"
+                    required
+                  >
+                    {uploadAffiliatedColleges.length > 0 ? (
+                      uploadAffiliatedColleges.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.code ? `[${c.code}] ` : ''}{c.shortName || c.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">No colleges affiliated with this university</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* 3. SELECT PROGRAM / BRANCH */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-[10px] font-black">3</span>
+                    <span>Course Branch / Stream *</span>
+                  </label>
+                  <select
+                    value={uploadBranchCode}
+                    onChange={(e) => {
+                      setUploadBranchCode(e.target.value);
+                      setUploadSemester('1'); // reset semester
+                    }}
+                    className="w-full p-2.5 bg-purple-50/60 border border-purple-200 rounded-xl focus:bg-white focus:outline-none font-bold text-purple-950 shadow-2xs"
+                    required
+                  >
+                    <optgroup label="B.Tech Engineering Branches (13)">
+                      {ACADEMIC_BRANCHES.filter(b => b.degree === 'B.Tech').map(b => (
+                        <option key={b.code} value={b.code}>
+                          {b.name} [{b.code}]
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="MBA Management Streams (8)">
+                      {ACADEMIC_BRANCHES.filter(b => b.degree === 'MBA').map(b => (
+                        <option key={b.code} value={b.code}>
+                          {b.name} [{b.code}]
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Education &amp; Other Degree Programs">
+                      {ACADEMIC_BRANCHES.filter(b => b.degree !== 'B.Tech' && b.degree !== 'MBA').map(b => (
+                        <option key={b.code} value={b.code}>
+                          {b.degree} - {b.name} [{b.code}]
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* 4. SELECT SEMESTER */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-black">4</span>
+                    <span>Semester / Term *</span>
+                  </label>
+                  <select
+                    value={uploadSemester}
+                    onChange={(e) => setUploadSemester(e.target.value)}
+                    className="w-full p-2.5 bg-blue-50/60 border border-blue-200 rounded-xl focus:bg-white focus:outline-none font-black text-blue-950 shadow-2xs"
+                    required
+                  >
+                    {semesterOptions.map(sem => (
+                      <option key={sem} value={sem}>
+                        Semester {sem}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <button 
-                type="button" 
-                onClick={() => setViewingSyllabusCourse(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Semester Selector Tabs */}
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                Select Semester to View / Upload Syllabus:
-              </label>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {Array.from({ length: viewingSyllabusCourse.totalSemesters || 8 }, (_, i) => String(i + 1)).map((sem) => {
-                  const isCurrent = viewerActiveSem === sem;
-                  const hasFile = viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[sem];
-                  return (
-                    <button
-                      key={sem}
-                      type="button"
-                      onClick={() => {
-                        setViewerActiveSem(sem);
-                        setModalFileToUpload(null);
-                      }}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
-                        isCurrent
-                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-400/30'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      <span>Semester {sem}</span>
-                      {hasFile && (
-                        <Check className={`w-3.5 h-3.5 ${isCurrent ? 'text-emerald-300' : 'text-emerald-600'}`} />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Active Semester Content */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4">
-              
-              {/* Document Download / View Section */}
-              <div className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block">
-                  1. Official Syllabus Document (Semester {viewerActiveSem})
-                </span>
-
-                {viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[viewerActiveSem] ? (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Current Status Box for this Exact Combination */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                {currentExistingSyllabus ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                        <FileText className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        {currentExistingSyllabus.fileType === 'Excel' ? (
+                          <FileSpreadsheet className="w-5 h-5" />
+                        ) : (
+                          <FileText className="w-5 h-5" />
+                        )}
                       </div>
                       <div>
-                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2">
-                          <span>{viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileName}</span>
-                          <span className="text-[9px] font-mono bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-bold">
-                            ATTACHED
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-extrabold uppercase bg-emerald-600 text-white px-2 py-0.2 rounded">
+                            {currentExistingSyllabus.fileType} Ready
                           </span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Uploaded: {new Date(viewingSyllabusCourse.syllabusFiles[viewerActiveSem].uploadedAt).toLocaleDateString()}
-                          {viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileSize && (
-                            <span> • {(viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileSize / 1024).toFixed(1)} KB</span>
-                          )}
+                          <span className="text-xs font-bold text-emerald-950">
+                            Semester {currentExistingSyllabus.semester} Syllabus Available
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 mt-0.5 truncate max-w-md">
+                          📎 <strong>{currentExistingSyllabus.fileName}</strong> ({(currentExistingSyllabus.fileSize / 1024).toFixed(1)} KB)
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
                       <a
-                        href={viewingSyllabusCourse.syllabusFiles[viewerActiveSem].fileUrl}
+                        href={currentExistingSyllabus.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        download
-                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition-colors"
+                        className="flex items-center gap-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>View / Download PDF</span>
+                        <span>View / Download</span>
                       </a>
                       <button
                         type="button"
-                        onClick={() => handleModalDeleteFile(viewingSyllabusCourse.id, viewerActiveSem)}
-                        className="p-2 text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
-                        title="Remove Document"
+                        onClick={() => handleDeleteSyllabus(currentExistingSyllabus.id)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                        title="Delete this file"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>No syllabus document file uploaded for Semester {viewerActiveSem} yet.</span>
-                    </div>
+                  <div className="flex items-center gap-2.5 text-amber-800 bg-amber-50/80 border border-amber-200 p-3.5 rounded-xl text-xs font-semibold">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      No syllabus file on record yet for <strong>{currentUploadBranch?.name}</strong> (Semester {uploadSemester}) at <strong>{currentUploadCollege?.shortName || currentUploadCollege?.name}</strong>. Please upload below.
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Upload Document for Current Semester */}
-              <form onSubmit={handleModalFileUpload} className="space-y-2 pt-2 border-t border-slate-200/80">
-                <label className="text-xs font-bold text-slate-700 block">
-                  {viewingSyllabusCourse.syllabusFiles && viewingSyllabusCourse.syllabusFiles[viewerActiveSem] 
-                    ? `Replace Semester ${viewerActiveSem} Syllabus Document (PDF / Excel):` 
-                    : `Upload Semester ${viewerActiveSem} Syllabus Document (PDF / Excel):`}
-                </label>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <input
-                    type="file"
-                    accept=".pdf,.xlsx,.xls,.doc,.docx,.csv"
-                    onChange={(e) => setModalFileToUpload(e.target.files[0] || null)}
-                    className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer bg-white border border-slate-200 rounded-xl p-1"
-                  />
-                  <button
-                    type="submit"
-                    disabled={modalUploading || !modalFileToUpload}
-                    className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>{modalUploading ? 'Uploading...' : `Upload for Sem ${viewerActiveSem}`}</span>
-                  </button>
+              {/* Drag & Drop File Selector */}
+              <div className="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 transition-all rounded-3xl p-6 sm:p-8 text-center space-y-3">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
+                  <Upload className="w-7 h-7" />
                 </div>
-              </form>
 
-              {/* Structured Curriculum Subjects List */}
-              <div className="space-y-2 pt-3 border-t border-slate-200/80">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 block">
-                  2. Semester {viewerActiveSem} Academic Curriculum &amp; Modules
-                </span>
-                
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-200">
-                      <tr>
-                        <th className="p-2.5">Subject Code</th>
-                        <th className="p-2.5">Subject / Course Module</th>
-                        <th className="p-2.5">Credits</th>
-                        <th className="p-2.5">Course Type</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {getCurriculumSubjects(viewingSyllabusCourse.name, viewerActiveSem).map((sub, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-2.5 font-mono font-bold text-indigo-700">
-                            {sub.code}
-                          </td>
-                          <td className="p-2.5 font-bold text-slate-900">
-                            {sub.name}
-                          </td>
-                          <td className="p-2.5 text-slate-600 font-semibold">
-                            {sub.credits} Credits
-                          </td>
-                          <td className="p-2.5">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                              {sub.type}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div>
+                  <h4 className="font-extrabold text-sm text-slate-800">
+                    Choose Syllabus Document (PDF or Excel)
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Supports .pdf, .xls, .xlsx, .doc, .docx up to 25MB
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-2 pt-2">
+                  <label className="cursor-pointer bg-white hover:bg-indigo-50 text-indigo-700 font-bold border border-indigo-300 px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all">
+                    <FileText className="w-4 h-4" />
+                    <span>{selectedFile ? 'Change File' : 'Browse PDF / Excel File'}</span>
+                    <input
+                      type="file"
+                      id="syllabus_file_input"
+                      accept=".pdf,.xls,.xlsx,.doc,.docx"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setSelectedFile(e.target.files[0]);
+                          setUploadStatus(null);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {selectedFile && (
+                    <div className="flex items-center gap-2 bg-indigo-100/70 border border-indigo-300 text-indigo-950 px-3 py-1 rounded-xl text-xs font-semibold mt-1">
+                      <span>📄 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          const fileInp = document.getElementById('syllabus_file_input');
+                          if (fileInp) fileInp.value = '';
+                        }}
+                        className="text-rose-600 hover:text-rose-800 ml-1 cursor-pointer font-bold"
+                        title="Cancel chosen file"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Submit Button */}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={uploading || !selectedFile}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold py-3.5 px-8 rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <span>Uploading Syllabus...</span>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>
+                        Upload Syllabus for {currentUploadBranch?.name} (Sem-{uploadSemester})
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Master Table of All Uploaded Syllabi */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-indigo-600" />
+                  <span>All Uploaded Syllabus Files ({filteredSyllabi.length})</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Search, view, download or manage curriculum syllabus files uploaded across colleges.
+                </p>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={syllabiSearch}
+                    onChange={(e) => setSyllabiSearch(e.target.value)}
+                    placeholder="Search file, branch, college..."
+                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <select
+                  value={syllabiFilterUniv}
+                  onChange={(e) => setSyllabiFilterUniv(e.target.value)}
+                  className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
+                >
+                  <option value="ALL">All Universities</option>
+                  {universities.map(u => (
+                    <option key={u.id} value={u.id}>{u.shortName || u.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={syllabiFilterSem}
+                  onChange={(e) => setSyllabiFilterSem(e.target.value)}
+                  className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
+                >
+                  <option value="ALL">All Semesters</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                    <option key={s} value={String(s)}>Semester {s}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setViewingSyllabusCourse(null)}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs cursor-pointer shadow-sm"
-              >
-                Close Syllabus Viewer
-              </button>
-            </div>
-
+            {/* Syllabi Table */}
+            {filteredSyllabi.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold tracking-wider bg-slate-50">
+                      <th className="py-3 px-4 rounded-l-xl">University &amp; College</th>
+                      <th className="py-3 px-4">Program &amp; Branch</th>
+                      <th className="py-3 px-4 text-center">Semester</th>
+                      <th className="py-3 px-4">File Name &amp; Format</th>
+                      <th className="py-3 px-4">Uploaded Date</th>
+                      <th className="py-3 px-4 text-right rounded-r-xl">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                    {filteredSyllabi.map(s => (
+                      <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3 px-4">
+                          <strong className="text-slate-900 block">{s.universityName}</strong>
+                          <span className="text-[11px] text-slate-500">{s.collegeName || 'Affiliated Campus'}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <strong className="text-indigo-900 block">{s.branch}</strong>
+                          <span className="text-[10px] text-slate-400">{s.courseName}</span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="font-extrabold px-2 py-0.5 rounded-full text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Sem-{s.semester}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            {s.fileType === 'Excel' ? (
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <FileText className="w-4 h-4 text-purple-600 shrink-0" />
+                            )}
+                            <div className="truncate max-w-[200px]">
+                              <span className="font-bold text-slate-800 block truncate">{s.fileName}</span>
+                              <span className="text-[10px] text-slate-400">
+                                {(s.fileSize / 1024).toFixed(1)} KB ({s.fileType})
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-[11px] text-slate-500">
+                          {new Date(s.uploadedAt).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <a
+                              href={s.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition-colors"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Download</span>
+                            </a>
+                            <button
+                              onClick={() => handleDeleteSyllabus(s.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete file"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-slate-400 space-y-2">
+                <FileText className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-semibold">No syllabus files uploaded yet for this filter.</p>
+                <p className="text-[11px] text-slate-400">Use the form above to upload your first syllabus file.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: ADD / EDIT UNIVERSITY */}
+      {/* MODAL: ADD / EDIT UNIVERSITY */}
       {/* ========================================================================= */}
       {showUnivModal && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setShowUnivModal(false)}
-        >
-          <div 
-            className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl text-slate-900 border border-slate-200 animate-fadeIn my-8"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-900">
-                    {editingUniv ? 'Edit University Details' : 'Add New University'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Enter official university details and city location.
-                  </p>
-                </div>
-              </div>
+              <h3 className="font-extrabold text-base text-slate-900">
+                {editingUniv ? 'Edit University' : 'Register New Partner University'}
+              </h3>
               <button 
-                type="button" 
                 onClick={() => setShowUnivModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2265,101 +1306,86 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
             <form onSubmit={handleSaveUniv} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">University Full Name *</label>
+                <label className="block font-bold text-slate-700 uppercase mb-1">University Full Name *</label>
                 <input
                   type="text"
+                  value={univFormData.name}
+                  onChange={(e) => setUnivFormData({ ...univFormData, name: e.target.value })}
+                  placeholder="e.g. Madhyanchal Professional University Bhopal"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:outline-none"
                   required
-                  placeholder="e.g. MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY"
-                  value={univForm.name}
-                  onChange={(e) => setUnivForm({ ...univForm, name: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 uppercase"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Short Name / Acronym</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Short Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. MCU / MCBU"
-                    value={univForm.shortName}
-                    onChange={(e) => setUnivForm({ ...univForm, shortName: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:border-indigo-600 uppercase"
+                    value={univFormData.shortName}
+                    onChange={(e) => setUnivFormData({ ...univFormData, shortName: e.target.value })}
+                    placeholder="e.g. MPU Bhopal"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">University Code</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Code</label>
                   <input
                     type="text"
-                    placeholder="e.g. MCU01"
-                    value={univForm.code}
-                    onChange={(e) => setUnivForm({ ...univForm, code: e.target.value.toUpperCase() })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600 uppercase"
+                    value={univFormData.code}
+                    onChange={(e) => setUnivFormData({ ...univFormData, code: e.target.value })}
+                    placeholder="e.g. MPU01"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl uppercase font-mono focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">City</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">City</label>
                   <input
                     type="text"
-                    placeholder="e.g. Chhatarpur"
-                    value={univForm.city}
-                    onChange={(e) => setUnivForm({ ...univForm, city: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                    value={univFormData.city}
+                    onChange={(e) => setUnivFormData({ ...univFormData, city: e.target.value })}
+                    placeholder="e.g. Bhopal"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">State</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">State</label>
                   <input
                     type="text"
-                    placeholder="e.g. Madhya Pradesh"
-                    value={univForm.state}
-                    onChange={(e) => setUnivForm({ ...univForm, state: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                    value={univFormData.state}
+                    onChange={(e) => setUnivFormData({ ...univFormData, state: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  Official Website URL <span className="text-slate-400 font-normal">(Optional)</span>
-                </label>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Official Website URL</label>
                 <input
-                  type="text"
-                  placeholder="e.g. https://mcbu.ac.in (Optional - can be left blank)"
-                  value={univForm.website}
-                  onChange={(e) => setUnivForm({ ...univForm, website: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                  type="url"
+                  value={univFormData.website}
+                  onChange={(e) => setUnivFormData({ ...univFormData, website: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">About / Description</label>
-                <textarea
-                  rows={2}
-                  placeholder="Brief note on university programs..."
-                  value={univForm.description}
-                  onChange={(e) => setUnivForm({ ...univForm, description: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-600"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowUnivModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={savingUniv}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
                 >
-                  {savingUniv ? 'Saving...' : editingUniv ? 'Update University' : 'Save University'}
+                  Save University
                 </button>
               </div>
             </form>
@@ -2368,35 +1394,18 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: ADD AFFILIATED COLLEGE */}
+      {/* MODAL: ADD AFFILIATED COLLEGE */}
       {/* ========================================================================= */}
       {showCollegeModal && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setShowCollegeModal(false)}
-        >
-          <div 
-            className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl text-slate-900 border border-slate-200 animate-fadeIn my-8"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                  <Landmark className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-900">
-                    Register New Affiliated College
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Affiliate a college to a university with its official code.
-                  </p>
-                </div>
-              </div>
+              <h3 className="font-extrabold text-base text-slate-900">
+                Register Affiliated College
+              </h3>
               <button 
-                type="button" 
                 onClick={() => setShowCollegeModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2404,288 +1413,81 @@ export default function SyllabusManager({ courses: initialPropCourses, onRefresh
 
             <form onSubmit={handleSaveCollege} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Affiliated University *</label>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Affiliated University *</label>
                 <select
-                  value={collegeForm.universityId}
-                  onChange={(e) => {
-                    const u = universities.find(x => x.id === e.target.value);
-                    setCollegeForm({
-                      ...collegeForm,
-                      universityId: e.target.value,
-                      universityName: u ? u.name : ''
-                    });
-                  }}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
+                  value={collegeFormData.universityId}
+                  onChange={(e) => setCollegeFormData({ ...collegeFormData, universityId: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:outline-none"
+                  required
                 >
                   {universities.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+                    <option key={u.id} value={u.id}>{u.name} ({u.shortName})</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">College Code (e.g. BED121, N462) *</label>
+                <label className="block font-bold text-slate-700 uppercase mb-1">College Full Name *</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. BED121"
-                  value={collegeForm.code}
-                  onChange={(e) => setCollegeForm({ ...collegeForm, code: e.target.value.toUpperCase() })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600 uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Full Official College Name *</label>
-                <input
-                  type="text"
-                  required
+                  value={collegeFormData.name}
+                  onChange={(e) => setCollegeFormData({ ...collegeFormData, name: e.target.value })}
                   placeholder="e.g. BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA"
-                  value={collegeForm.name}
-                  onChange={(e) => setCollegeForm({ ...collegeForm, name: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:border-indigo-600"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Short Display Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Jeevan Jyoti Shiksha Mahavidyalaya"
-                  value={collegeForm.shortName}
-                  onChange={(e) => setCollegeForm({ ...collegeForm, shortName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:outline-none"
+                  required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">District</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Short Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Chhatarpur"
-                    value={collegeForm.district}
-                    onChange={(e) => setCollegeForm({ ...collegeForm, district: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                    value={collegeFormData.shortName}
+                    onChange={(e) => setCollegeFormData({ ...collegeFormData, shortName: e.target.value })}
+                    placeholder="e.g. Jeevan Jyoti Mahavidyalaya"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">State</label>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">College Code</label>
                   <input
                     type="text"
-                    placeholder="e.g. Madhya Pradesh"
-                    value={collegeForm.state}
-                    onChange={(e) => setCollegeForm({ ...collegeForm, state: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-indigo-600"
+                    value={collegeFormData.code}
+                    onChange={(e) => setCollegeFormData({ ...collegeFormData, code: e.target.value })}
+                    placeholder="e.g. BED121"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl uppercase font-mono focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">District / City</label>
+                <input
+                  type="text"
+                  value={collegeFormData.district}
+                  onChange={(e) => setCollegeFormData({ ...collegeFormData, district: e.target.value })}
+                  placeholder="e.g. Chhatarpur"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowCollegeModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={savingCollege}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
                 >
-                  {savingCollege ? 'Saving...' : 'Register College'}
+                  Register College
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 3: ADD / EDIT B.TECH OR MBA PROGRAM */}
-      {/* ========================================================================= */}
-      {showCourseModal && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setShowCourseModal(false)}
-        >
-          <div 
-            className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl text-slate-900 border border-slate-200 animate-fadeIn my-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold ${
-                  courseForm.degree === 'MBA' ? 'bg-purple-100 text-purple-700' : 'bg-indigo-100 text-indigo-700'
-                }`}>
-                  {courseForm.degree === 'MBA' ? <Briefcase className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-lg text-slate-900">
-                    {editingCourse ? `Edit ${courseForm.degree} Branch / Stream` : `Add New ${courseForm.degree} Program`}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Configure degree branch duration and academic details.
-                  </p>
-                </div>
-              </div>
-              <button 
-                type="button" 
-                onClick={() => setShowCourseModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Degree Selector */}
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">
-                    Degree Type *
-                  </label>
-                  <select
-                    value={courseForm.degree}
-                    onChange={(e) => {
-                      const deg = e.target.value;
-                      const isMba = deg === 'MBA';
-                      setCourseForm({
-                        ...courseForm,
-                        degree: deg,
-                        department: isMba ? 'School of Management & Business' : 'School of Engineering & Technology',
-                        durationYears: isMba ? 2 : 4,
-                        totalSemesters: isMba ? 4 : 8,
-                        eligibility: isMba ? 'Graduation in any stream (Min 50%)' : '10+2 with PCM (Min 50%)',
-                        totalFee: isMba ? 160000 : 240000,
-                        feePerSemester: isMba ? 40000 : 30000
-                      });
-                    }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
-                  >
-                    <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
-                    <option value="MBA">MBA (Master of Business Administration)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">
-                    Branch / Program Code *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={courseForm.degree === 'MBA' ? 'e.g. MBA-AGRI' : 'e.g. BTECH-AIML'}
-                    value={courseForm.code}
-                    onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value.toUpperCase() })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:border-indigo-600 uppercase"
-                  />
-                </div>
-
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-bold text-slate-700 block">
-                    Branch / Specialization Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={courseForm.degree === 'MBA' ? 'e.g. MBA- Agri Business Management' : 'e.g. B.Tech- Artificial Intelligence & Machine Learning (A)'}
-                    value={courseForm.name}
-                    onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">
-                    Duration (Years) *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="6"
-                    step="1"
-                    required
-                    value={courseForm.durationYears}
-                    onChange={(e) => {
-                      const yrs = Number(e.target.value);
-                      setCourseForm({
-                        ...courseForm,
-                        durationYears: yrs,
-                        totalSemesters: Math.round(yrs * 2)
-                      });
-                    }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 block">
-                    Total Semesters *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    required
-                    value={courseForm.totalSemesters}
-                    onChange={(e) => setCourseForm({ ...courseForm, totalSemesters: Number(e.target.value) })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600"
-                  />
-                </div>
-
-                {/* Eligibility Criteria */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-bold text-slate-700 block">
-                    Eligibility Criteria *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={courseForm.eligibility}
-                    onChange={(e) => setCourseForm({ ...courseForm, eligibility: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:border-indigo-600"
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-bold text-slate-700 block">
-                    Course Description &amp; Curriculum Summary
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={courseForm.description}
-                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-600 leading-relaxed font-normal"
-                  />
-                </div>
-
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowCourseModal(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={savingCourse}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{savingCourse ? 'Saving...' : editingCourse ? 'Save Changes' : 'Create & Publish Program'}</span>
-                </button>
-              </div>
-
-            </form>
-
           </div>
         </div>
       )}
