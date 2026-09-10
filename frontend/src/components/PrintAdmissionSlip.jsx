@@ -137,7 +137,7 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
                   <th className="p-2 border border-slate-300">Degree Course &amp; Branch</th>
                   <th className="p-2 border border-slate-300 text-center">Session / Satra</th>
                   <th className="p-2 border border-slate-300 text-center">Medium</th>
-                  <th className="p-2 border border-slate-300 text-right">Total Course Fee</th>
+                  <th className="p-2 border border-slate-300 text-right">Total Package Fee</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +158,10 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
                     {student.medium || 'Hindi'}
                   </td>
                   <td className="p-2 border border-slate-300 font-extrabold text-right text-slate-900">
-                    ₹{Number(student.studentFee || student.totalFee || 0).toLocaleString('en-IN')}
+                    <span className="text-xs block">₹{Number(student.totalFee || (Number(student.studentFee || 30000) + Number(student.admissionFee || 2000))).toLocaleString('en-IN')}</span>
+                    <span className="text-[9px] text-slate-500 font-normal block mt-0.5">
+                      (Course: ₹{Number(student.courseFee || student.studentFee || 30000).toLocaleString('en-IN')} + {student.feeType || 'Admission'}: ₹{Number(student.admissionFee || 2000).toLocaleString('en-IN')})
+                    </span>
                   </td>
                 </tr>
               </tbody>

@@ -245,10 +245,13 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Current_satra: 'July',
     Current_class: 'SEM-1',
 
-    // 5. Fees & Administration
-    Student_fee: '30000',
-    Fee_Type: 'Admission Fee',
-    Initial_Payment: '2500',
+    // 5. Fees & Administration (Separate Course Fee & Admission Fee)
+    Student_fee: '30000',          // Total Course Fee (e.g. 30000)
+    Course_Fee_Paid: '',           // How much student is paying for course fee now
+    Fee_Type: 'Admission Fee',     // Fee category (Admission Fee, Late Exam Fee, etc.)
+    Admission_Fee: '2000',         // Total Admission / Extra Fee (e.g. 2000)
+    Admission_Fee_Paid: '2000',    // How much student is paying for admission fee now (e.g. 2000)
+    Initial_Payment: '2000',       // Combined total paid
     Payment_Mode: 'Cash / Desk',
     Fee_Collected_By: 'Cashier',
     Transaction_Ref: '',
@@ -469,9 +472,23 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (!formData.Admission_Satra) throw new Error('Admission_Satra is required.');
       if (!formData.University_Name) throw new Error('Please select a valid University.');
       if (!formData.College_Name) throw new Error('Please select an affiliated College.');
+      const courseFeeCalc = Number(formData.Student_fee) || 0;
+      const courseFeePaidCalc = Number(formData.Course_Fee_Paid) || 0;
+      const admissionFeeCalc = Number(formData.Admission_Fee) || 0;
+      const admissionFeePaidCalc = Number(formData.Admission_Fee_Paid) || 0;
+      const grandTotalFeeCalc = courseFeeCalc + admissionFeeCalc;
+      const totalPaidTodayCalc = courseFeePaidCalc + admissionFeePaidCalc;
+      const grandBalanceDueCalc = Math.max(0, grandTotalFeeCalc - totalPaidTodayCalc);
 
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      data.set('Student_fee', String(courseFeeCalc));
+      data.set('Course_Fee_Paid', String(courseFeePaidCalc));
+      data.set('Admission_Fee', String(admissionFeeCalc));
+      data.set('Admission_Fee_Paid', String(admissionFeePaidCalc));
+      data.set('Initial_Payment', String(totalPaidTodayCalc));
+      data.set('totalFee', String(grandTotalFeeCalc));
+      data.set('balanceDue', String(grandBalanceDueCalc));
       data.append('Document_Submit', JSON.stringify(submittedDocs));
 
       const docStatusMap = {};
@@ -542,13 +559,27 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Deb_id: '',
       Scholer_id: '',
       User_id: '',
-      Initial_Payment: '2500',
+      Student_fee: '30000',
+      Course_Fee_Paid: '',
       Fee_Type: 'Admission Fee',
+      Admission_Fee: '2000',
+      Admission_Fee_Paid: '2000',
+      Initial_Payment: '2000',
       Fee_Collected_By: 'Cashier',
       Reference: '',
       Remark: ''
     }));
   };
+
+    // Live Dual-Fee Calculations (Course Fee + Admission Fee = Total Package)
+  const courseFeeVal = Number(formData.Student_fee) || 0;
+  const courseFeePaidVal = Number(formData.Course_Fee_Paid) || 0;
+  const admissionFeeVal = Number(formData.Admission_Fee) || 0;
+  const admissionFeePaidVal = Number(formData.Admission_Fee_Paid) || 0;
+
+  const grandTotalFee = courseFeeVal + admissionFeeVal; // e.g. 30000 + 2000 = 32000
+  const totalPaidToday = courseFeePaidVal + admissionFeePaidVal; // e.g. 0 + 2000 = 2000
+  const grandBalanceDue = Math.max(0, grandTotalFee - totalPaidToday); // e.g. 32000 - 2000 = 30000
 
   const standardDocuments = [
     '10th Marksheet',
@@ -1284,152 +1315,233 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         {/* SECTION 5: FEES, PAYMENT, STATUS & REFERENCE */}
         {/* ========================================================================= */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base">
               <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-extrabold text-xs">5</span>
-              <span>Fee Particulars, Admission Deposit &amp; Collection Desk</span>
+              <span>Fee Particulars &amp; Dual Collection Breakdown</span>
             </div>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-              Flexible Course &amp; Admission Fee Entry
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-0.5 rounded-full">
+                Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
 
-          <div className="bg-emerald-50/50 border border-emerald-200 p-5 rounded-2xl space-y-4 text-xs">
+          <div className="bg-emerald-50/50 border border-emerald-200 p-5 rounded-2xl space-y-5 text-xs">
             
-            {/* Top Row: Course Fee -> Fee Head/Type -> Paid Amount -> Payment Mode */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* DUAL FEE SECTION: Part 1 - Course Fee & Part 2 - Admission Fee */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               
-              {/* 1. Course Fee (Total Fee) */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Course Fee (Total ₹) *
-                </label>
-                <input
-                  type="number"
-                  name="Student_fee"
-                  value={formData.Student_fee}
-                  onChange={handleInputChange}
-                  placeholder="30000"
-                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                  required
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Total program course package</span>
+              {/* SECTION A: Course Fee Particulars */}
+              <div className="bg-white p-4 rounded-xl border border-indigo-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                  <span className="font-extrabold text-xs text-indigo-950 uppercase flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    <span>1. Course Fee (प्रोग्राम / कोर्स फीस)</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                    Total: ₹{courseFeeVal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Total Course Fee */}
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                      Course Fee (Total ₹) *
+                    </label>
+                    <input
+                      type="number"
+                      name="Student_fee"
+                      value={formData.Student_fee}
+                      onChange={handleInputChange}
+                      placeholder="30000"
+                      className="w-full p-2.5 bg-indigo-50/40 border border-indigo-200 rounded-xl font-black text-sm text-indigo-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+                      required
+                    />
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">e.g. 30,000 (total package)</span>
+                  </div>
+
+                  {/* Course Fee Paid Now */}
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                      Course Fee Paid Now (₹)
+                    </label>
+                    <input
+                      type="number"
+                      name="Course_Fee_Paid"
+                      value={formData.Course_Fee_Paid}
+                      onChange={handleInputChange}
+                      placeholder="0 (or installment)"
+                      className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-black text-sm text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+                    />
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">Course fee given at admission</span>
+                  </div>
+                </div>
               </div>
 
-              {/* 2. Fee Type / Head (Admission Fee, Late Exam Fee, etc.) */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Fee Type / Head *
-                </label>
-                <input
-                  type="text"
-                  list="feeTypeOptions"
-                  name="Fee_Type"
-                  value={formData.Fee_Type}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Admission Fee, Late Exam Fee"
-                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-bold text-xs text-indigo-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
-                  required
-                />
-                <datalist id="feeTypeOptions">
-                  <option value="Admission Fee" />
-                  <option value="Late Exam Fee" />
-                  <option value="Registration Fee" />
-                  <option value="Exam Fee" />
-                  <option value="Tuition Installment" />
-                  <option value="Enrollment Fee" />
-                  <option value="Caution Deposit" />
-                  <option value="Miscellaneous Fee" />
-                </datalist>
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Type or choose fee category</span>
-              </div>
+              {/* SECTION B: Admission / Extra Fee Particulars */}
+              <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                  <span className="font-extrabold text-xs text-emerald-950 uppercase flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span>2. Admission / Extra Fee (एडमिशन फीस)</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                    Total: ₹{admissionFeeVal.toLocaleString('en-IN')}
+                  </span>
+                </div>
 
-              {/* 3. Fee Amount / Paid Amount (₹) */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Fee Amount Paid (₹) *
-                </label>
-                <input
-                  type="number"
-                  name="Initial_Payment"
-                  value={formData.Initial_Payment}
-                  onChange={handleInputChange}
-                  placeholder="2000 or 2500"
-                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Amount being paid right now</span>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Fee Head / Type */}
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                      Fee Head / Type *
+                    </label>
+                    <input
+                      type="text"
+                      list="feeTypeOptions"
+                      name="Fee_Type"
+                      value={formData.Fee_Type}
+                      onChange={handleInputChange}
+                      placeholder="Admission Fee"
+                      className="w-full p-2.5 bg-emerald-50/40 border border-emerald-200 rounded-xl font-bold text-xs text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                      required
+                    />
+                    <datalist id="feeTypeOptions">
+                      <option value="Admission Fee" />
+                      <option value="Late Exam Fee" />
+                      <option value="Registration Fee" />
+                      <option value="Exam Fee" />
+                      <option value="Tuition Installment" />
+                      <option value="Enrollment Fee" />
+                    </datalist>
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">Category name</span>
+                  </div>
 
-              {/* 4. Payment Mode */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Payment Mode *
-                </label>
-                <select
-                  name="Payment_Mode"
-                  value={formData.Payment_Mode}
-                  onChange={handleInputChange}
-                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-slate-800 shadow-2xs cursor-pointer"
-                >
-                  <option value="Cash / Desk">Cash / Desk</option>
-                  <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
-                  <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
-                  <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
-                  <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
-                </select>
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Collection transaction channel</span>
+                  {/* Admission Fee Total (e.g. 2000) */}
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                      Admission Fee (Total ₹) *
+                    </label>
+                    <input
+                      type="number"
+                      name="Admission_Fee"
+                      value={formData.Admission_Fee}
+                      onChange={handleInputChange}
+                      placeholder="2000"
+                      className="w-full p-2.5 bg-emerald-50/40 border border-emerald-200 rounded-xl font-black text-sm text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                      required
+                    />
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">e.g. 2,000 or 2,500</span>
+                  </div>
+
+                  {/* Admission Fee Paid Now (e.g. 2000) */}
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                      Fee Paid Now (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      name="Admission_Fee_Paid"
+                      value={formData.Admission_Fee_Paid}
+                      onChange={handleInputChange}
+                      placeholder="2000"
+                      className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                      required
+                    />
+                    <span className="text-[10px] text-slate-500 mt-0.5 block">Admission fee paid now</span>
+                  </div>
+                </div>
               </div>
 
             </div>
 
-            {/* Bottom Row: Fee Collected By (replaces Status) -> Reference (Typeable text!) -> Remark -> Attending Officer */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1 border-t border-emerald-100">
-              
-              {/* 5. Fee Collected By (Typeable, replaces Status dropdown) */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Fee Collected By *
-                </label>
-                <input
-                  type="text"
-                  list="collectedByList"
-                  name="Fee_Collected_By"
-                  value={formData.Fee_Collected_By}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Cashier, Accounts, Admin"
-                  className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-bold text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                  required
-                />
-                <datalist id="collectedByList">
-                  <option value="Cashier" />
-                  <option value="Accounts" />
-                  <option value="Admin" />
-                  <option value="Desk Counter" />
-                  <option value="Counselor" />
-                </datalist>
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Type Cashier, Accounts, Admin etc.</span>
+            {/* SECTION C: Payment Mode, Fee Collector, Reference & Remark */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+              <span className="font-extrabold text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span>3. Payment Mode, Collector &amp; Reference</span>
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* Payment Mode */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                    Payment Mode *
+                  </label>
+                  <select
+                    name="Payment_Mode"
+                    value={formData.Payment_Mode}
+                    onChange={handleInputChange}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-slate-800 shadow-2xs cursor-pointer"
+                  >
+                    <option value="Cash / Desk">Cash / Desk</option>
+                    <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
+                    <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
+                    <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
+                    <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
+                  </select>
+                </div>
+
+                {/* Fee Collected By */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                    Fee Collected By *
+                  </label>
+                  <input
+                    type="text"
+                    list="collectedByList"
+                    name="Fee_Collected_By"
+                    value={formData.Fee_Collected_By}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Cashier, Accounts, Admin"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                    required
+                  />
+                  <datalist id="collectedByList">
+                    <option value="Cashier" />
+                    <option value="Accounts" />
+                    <option value="Admin" />
+                    <option value="Desk Counter" />
+                    <option value="Counselor" />
+                  </datalist>
+                </div>
+
+                {/* Reference (Typeable text - NO dropdown!) */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                    Reference (Referred By)
+                  </label>
+                  <input
+                    type="text"
+                    name="Reference"
+                    value={formData.Reference}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Direct Walk-in, Rahul Sharma..."
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold text-xs text-slate-800 shadow-2xs"
+                  />
+                </div>
+
+                {/* Attending Officer */}
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                    Attending Officer
+                  </label>
+                  <input
+                    type="text"
+                    name="operatorName"
+                    value={formData.operatorName}
+                    onChange={handleInputChange}
+                    className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl focus:outline-none font-semibold text-slate-700 text-xs shadow-2xs"
+                  />
+                </div>
               </div>
 
-              {/* 6. Reference (Typeable text input - No dropdown!) */}
+              {/* Remark */}
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Reference (Referred By)
-                </label>
-                <input
-                  type="text"
-                  name="Reference"
-                  value={formData.Reference}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Direct Walk-in, Rahul Sharma, Agent..."
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold text-xs text-slate-800 shadow-2xs"
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Type reference name or source</span>
-              </div>
-
-              {/* 7. Remark */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Remark
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
+                  Remark / Special Notes
                 </label>
                 <input
                   type="text"
@@ -1437,58 +1549,59 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                   value={formData.Remark}
                   onChange={handleInputChange}
                   placeholder="Special notes / scholarship remark"
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium text-xs shadow-2xs"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium text-xs shadow-2xs"
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Official admission notes</span>
               </div>
-
-              {/* 8. Attending Officer */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Attending Officer
-                </label>
-                <input
-                  type="text"
-                  name="operatorName"
-                  value={formData.operatorName}
-                  onChange={handleInputChange}
-                  className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl focus:outline-none font-semibold text-slate-700 text-xs shadow-2xs"
-                />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Logged-in desk authority</span>
-              </div>
-
             </div>
 
-            {/* Live Fee Calculation & Accounting Strip */}
-            <div className="bg-white p-3.5 rounded-xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-semibold">Total Course Fee:</span>
-                <span className="font-extrabold text-emerald-950 text-sm">
-                  ₹{Number(formData.Student_fee || 0).toLocaleString('en-IN')}
-                </span>
+            {/* LIVE ACCOUNTING BANNER: The 30,000 + 2,000 = 32,000 Math Display */}
+            <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3">
+                <div>
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 block">
+                    Combined Fee Structure
+                  </span>
+                  <div className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 mt-0.5">
+                    <span>Total Payable:</span>
+                    <span className="text-emerald-300">
+                      ₹{courseFeeVal.toLocaleString('en-IN')} <span className="text-xs font-normal text-slate-300">(Course)</span> + ₹{admissionFeeVal.toLocaleString('en-IN')} <span className="text-xs font-normal text-slate-300">({formData.Fee_Type || 'Admission'})</span> = ₹{grandTotalFee.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 block">
+                    Mode &amp; Authority
+                  </span>
+                  <span className="text-xs font-bold text-white block">
+                    {formData.Payment_Mode} • {formData.Fee_Collected_By || 'Cashier'}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-semibold">
-                  {formData.Fee_Type || 'Admission Fee'} Paid:
-                </span>
-                <span className="font-extrabold text-emerald-700 text-sm">
-                  ₹{Number(formData.Initial_Payment || 0).toLocaleString('en-IN')}
-                </span>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                  via {formData.Payment_Mode}
-                </span>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                  <span className="text-[10px] text-slate-300 block font-medium">1. Total Course Fee</span>
+                  <span className="font-extrabold text-sm text-white block">₹{courseFeeVal.toLocaleString('en-IN')}</span>
+                  <span className="text-[10px] text-emerald-300">Paid Now: ₹{courseFeePaidVal.toLocaleString('en-IN')}</span>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-semibold">Remaining Balance:</span>
-                <span className="font-extrabold text-rose-700 text-sm">
-                  ₹{Math.max(0, (Number(formData.Student_fee) || 0) - (Number(formData.Initial_Payment) || 0)).toLocaleString('en-IN')}
-                </span>
-              </div>
+                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                  <span className="text-[10px] text-slate-300 block font-medium">2. {formData.Fee_Type || 'Admission Fee'}</span>
+                  <span className="font-extrabold text-sm text-white block">₹{admissionFeeVal.toLocaleString('en-IN')}</span>
+                  <span className="text-[10px] text-emerald-300">Paid Now: ₹{admissionFeePaidVal.toLocaleString('en-IN')}</span>
+                </div>
 
-              <div className="text-[11px] font-semibold text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
-                Collected By: <strong>{formData.Fee_Collected_By || 'Cashier'}</strong>
+                <div className="bg-emerald-500/20 p-2.5 rounded-xl border border-emerald-400/30">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-emerald-200 block font-medium">Paid Today:</span>
+                    <strong className="text-xs text-emerald-300">₹{totalPaidToday.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-400/20">
+                    <span className="text-[10px] text-rose-300 block font-bold">Remaining Balance:</span>
+                    <strong className="text-sm text-rose-300 font-black">₹{grandBalanceDue.toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
               </div>
             </div>
 

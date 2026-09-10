@@ -840,9 +840,14 @@ app.post(
         totalFee: Number(body.Student_fee) || Number(body.totalFee) || 100000
       };
 
-      const courseFee = Number(body.Student_fee) || Number(body.totalFee) || selectedCourse.totalFee || 100000;
-      const initialPaid = Number(body.Initial_Payment) || Number(body.initialPayment) || 0;
-      const balanceDue = Math.max(0, courseFee - initialPaid);
+      const courseFee = Number(body.Student_fee) || Number(body.courseFee) || selectedCourse.totalFee || 30000;
+      const admissionFee = Number(body.Admission_Fee) || Number(body.admissionFee) || 0;
+      const grandTotalFee = Number(body.totalFee) || (courseFee + admissionFee);
+
+      const courseFeePaid = Number(body.Course_Fee_Paid) || Number(body.courseFeePaid) || 0;
+      const admissionFeePaid = Number(body.Admission_Fee_Paid) || Number(body.admissionFeePaid) || 0;
+      const initialPaid = Number(body.Initial_Payment) || (courseFeePaid + admissionFeePaid);
+      const balanceDue = Math.max(0, grandTotalFee - initialPaid);
 
       const files = req.files || {};
       const studentImgUrl = files.student_image 
@@ -921,7 +926,11 @@ app.post(
         currentClass: body.Current_class || body.currentClass || 'SEM-1',
         currentSemester: Number(body.currentSemester) || (body.Current_class?.includes('SEM-') ? Number(body.Current_class.replace('SEM-', '')) : 1),
         studentFee: courseFee,
-        totalFee: courseFee,
+        courseFee: courseFee,
+        admissionFee: admissionFee,
+        totalFee: grandTotalFee,
+        courseFeePaid: courseFeePaid,
+        admissionFeePaid: admissionFeePaid,
         initialPayment: initialPaid,
         totalPaid: initialPaid,
         balanceDue: balanceDue,
@@ -979,12 +988,16 @@ app.post(
           studentName: newStudent.fullName,
           courseName: newStudent.courseName,
           amountPaid: initialPaid,
+          courseFeePaid: courseFeePaid,
+          admissionFeePaid: admissionFeePaid,
           feeType: body.Fee_Type || body.feeType || 'Admission Fee',
           paymentMode: body.Payment_Mode || body.paymentMode || 'Cash / Desk',
           transactionRef: body.Transaction_Ref || body.transactionRef || `ADM-INIT-${Math.floor(100000 + Math.random() * 900000)}`,
-          paidFor: `${body.Fee_Type || body.feeType || 'Admission Fee'} Deposit`,
+          paidFor: (admissionFeePaid > 0 && courseFeePaid > 0)
+            ? `${body.Fee_Type || 'Admission Fee'} (₹${admissionFeePaid}) + Course Fee Installment (₹${courseFeePaid})`
+            : (admissionFeePaid > 0 ? `${body.Fee_Type || 'Admission Fee'} Deposit (₹${admissionFeePaid})` : `Course Fee Installment (₹${courseFeePaid})`),
           paymentDate: new Date().toISOString(),
-          totalFee: courseFee,
+          totalFee: grandTotalFee,
           totalPaidToDate: initialPaid,
           balanceRemaining: balanceDue,
           receivedBy: body.Fee_Collected_By || body.feeCollectedBy || body.operatorName || 'Cashier'
