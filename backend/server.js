@@ -1195,13 +1195,109 @@ app.post(
         db.fee_payments.unshift(initialReceipt);
       }
 
+      // Check if Secondary Course (Dual Enrollment) is requested in same form submission
+      let secondaryStudent = null;
+      let secondaryReceipt = null;
+
+      if (body.secondaryCourse) {
+        let sec = null;
+        try {
+          sec = typeof body.secondaryCourse === 'string' ? JSON.parse(body.secondaryCourse) : body.secondaryCourse;
+        } catch (e) {
+          console.warn('Failed to parse secondaryCourse:', e);
+        }
+
+        if (sec && (sec.courseName || sec.Course_Name || sec.degree || sec.Course_Program || sec.branch || sec.Branch)) {
+          const secCourseName = (sec.Course_Name || sec.courseName || sec.branch || sec.Branch || 'DCA').trim();
+          const secCollegeName = (sec.College_Name || sec.collegeName || body.College_Name || 'Affiliated College').trim();
+          const secUnivName = (sec.University_Name || sec.universityName || body.University_Name || 'Partner University').trim();
+          const secCourseCode = (sec.Branch || sec.degree || sec.Course_Type || secCourseName.split(' ')[0] || 'DCA').replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase();
+
+          let secCandidateRoll = `${newStudent.rollNo}-${secCourseCode}`;
+          let secCounter = 2;
+          while (db.students.some(s => s.rollNo.toUpperCase() === secCandidateRoll.toUpperCase())) {
+            secCandidateRoll = `${newStudent.rollNo}-${secCourseCode}${secCounter++}`;
+          }
+
+          const secCourseFee = Number(sec.Student_fee || sec.courseFee || sec.totalFee || 25000);
+          const secAdmissionFee = Number(sec.Admission_Fee || sec.admissionFee || 0);
+          const secGrandTotal = secCourseFee + secAdmissionFee;
+          const secPaid = Number(sec.Initial_Payment || sec.Course_Fee_Paid || sec.totalPaid || 0);
+          const secBalanceDue = Math.max(0, secGrandTotal - secPaid);
+
+          secondaryStudent = {
+            ...newStudent,
+            id: 'std-' + (Date.now() + 1),
+            rollNo: secCandidateRoll,
+            registrationNo: `${secUnivName.slice(0, 3).toUpperCase()}-${year}-${Math.floor(1000 + Math.random() * 9000)}`,
+            universityName: secUnivName,
+            collegeName: secCollegeName,
+            courseName: secCourseName,
+            branch: sec.Branch || sec.branch || 'General',
+            courseType: sec.Course_Type || sec.courseType || 'Diploma',
+            courseMode: sec.Course_Mode || sec.courseMode || 'Regular',
+            currentClass: sec.Current_class || 'SEM-1',
+            currentSemester: Number(sec.currentSemester) || 1,
+            studentFee: secCourseFee,
+            courseFee: secCourseFee,
+            admissionFee: secAdmissionFee,
+            totalFee: secGrandTotal,
+            totalPaid: secPaid,
+            balanceDue: secBalanceDue,
+            isDualEnrollment: true,
+            primaryRollNo: newStudent.rollNo,
+            primaryStudentId: newStudent.id,
+            dualProgramType: 'Diploma / 2nd Course',
+            admissionTimestamp: new Date().toISOString()
+          };
+
+          // Mark primary student as dual enrolled as well
+          newStudent.isDualEnrollment = true;
+
+          const secProg = computeStudentSemesterProgress(secondaryStudent, db.courses);
+          secondaryStudent.currentSemester = secProg.currentSemester;
+          secondaryStudent.currentClass = secProg.currentClass;
+
+          db.students.unshift(secondaryStudent);
+
+          if (secPaid > 0) {
+            const secReceiptNo = `RCPT-${year}-${String(db.fee_payments.length + 1).padStart(4, '0')}`;
+            secondaryReceipt = {
+              id: `pay-${Date.now() + 2}`,
+              receiptNo: secReceiptNo,
+              studentId: secondaryStudent.id,
+              rollNo: secondaryStudent.rollNo,
+              studentName: secondaryStudent.fullName,
+              courseName: secondaryStudent.courseName,
+              amountPaid: secPaid,
+              courseFeePaid: secPaid,
+              admissionFeePaid: 0,
+              feeType: 'Secondary Course Admission Deposit',
+              paymentMode: sec.Payment_Mode || body.Payment_Mode || 'Cash / Desk',
+              transactionRef: `ADM-SEC-${Math.floor(100000 + Math.random() * 900000)}`,
+              paidFor: `Admission & Tuition Fee Deposit for ${secondaryStudent.courseName}`,
+              paymentDate: new Date().toISOString(),
+              totalFee: secGrandTotal,
+              totalPaidToDate: secPaid,
+              balanceRemaining: secBalanceDue,
+              receivedBy: body.Fee_Collected_By || body.operatorName || 'Cashier'
+            };
+            db.fee_payments.unshift(secondaryReceipt);
+          }
+        }
+      }
+
       writeDB(db);
 
       res.status(201).json({
         success: true,
-        message: 'Student registered & admitted successfully!',
+        message: secondaryStudent 
+          ? `Primary (${newStudent.courseName}) and Secondary (${secondaryStudent.courseName}) admitted successfully!`
+          : 'Student registered & admitted successfully!',
         student: newStudent,
-        receipt: initialReceipt
+        receipt: initialReceipt,
+        secondaryStudent: secondaryStudent,
+        secondaryReceipt: secondaryReceipt
       });
     } catch (err) {
       console.error('Error during student registration:', err);
@@ -1209,6 +1305,138 @@ app.post(
     }
   }
 );
+
+// Full Student Edit Endpoint
+app.put('/api/students/:rollNo', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const index = db.students.findIndex(s => s.rollNo.toUpperCase() === roll);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const existing = db.students[index];
+  const body = req.body;
+
+  // Handle potential Roll Number change
+  let newRoll = (body.rollNo || body.Roll_No || existing.rollNo).trim().toUpperCase();
+  if (newRoll !== roll && db.students.some((s, idx) => idx !== index && s.rollNo.toUpperCase() === newRoll)) {
+    return res.status(400).json({ success: false, message: `Roll Number ${newRoll} is already in use by another student!` });
+  }
+
+  // Update student fields
+  const updatedStudent = {
+    ...existing,
+    rollNo: newRoll,
+    fullName: body.fullName || body.Student_Name || existing.fullName,
+    motherName: body.motherName || body.Mother_Name || existing.motherName,
+    fatherName: body.fatherName || body.Father_Name || existing.fatherName,
+    dob: body.dob || body.Date_Of_Birth || existing.dob,
+    gender: body.gender || body.Gender || existing.gender,
+    bloodGroup: body.bloodGroup || body.Blood_Group || existing.bloodGroup,
+    phone: body.phone || body.Contact || existing.phone,
+    email: body.email || body.Email_ID || existing.email,
+    address: body.address || body.Address || existing.address,
+    aadhaarNo: body.aadhaarNo || body.Aadhaar_No || existing.aadhaarNo,
+    samagraId: body.samagraId || body.Samagra_id || existing.samagraId,
+    abcId: body.abcId || body.Abc_id || existing.abcId,
+    mptassId: body.mptassId || body.MPTass_id || existing.mptassId,
+    otrId: body.otrId || body.OTR_id || existing.otrId,
+    debId: body.debId || body.Deb_id || existing.debId,
+    scholarId: body.scholarId || body.Scholer_id || existing.scholarId,
+    userId: body.userId || body.User_id || existing.userId,
+    universityName: body.universityName || body.University_Name || existing.universityName,
+    collegeName: body.collegeName || body.College_Name || existing.collegeName,
+    courseName: body.courseName || body.Course_Name || existing.courseName,
+    branch: body.branch || body.Branch || existing.branch,
+    courseType: body.courseType || body.Course_Type || existing.courseType,
+    courseMode: body.courseMode || body.Course_Mode || existing.courseMode,
+    socialCategory: body.socialCategory || body.Social_category || existing.socialCategory,
+    currentSession: body.currentSession || body.Current_session || existing.currentSession,
+    currentClass: body.currentClass || body.Current_class || existing.currentClass,
+    currentSemester: Number(body.currentSemester) || existing.currentSemester,
+    manualSemester: body.manualSemester !== undefined ? Number(body.manualSemester) : existing.manualSemester,
+    totalFee: body.totalFee !== undefined ? Number(body.totalFee) : existing.totalFee,
+    studentFee: body.totalFee !== undefined ? Number(body.totalFee) : (existing.studentFee || existing.totalFee),
+    admissionYear: Number(body.admissionYear) || existing.admissionYear,
+    remark: body.remark || body.Remark || existing.remark,
+    status: body.status || existing.status || 'Active',
+    updatedAt: new Date().toISOString()
+  };
+
+  // Re-calculate balance due
+  updatedStudent.balanceDue = Math.max(0, (updatedStudent.totalFee || 0) - (updatedStudent.totalPaid || 0));
+
+  // If roll number changed, update linked fee_payments and dual references
+  if (newRoll !== roll) {
+    (db.fee_payments || []).forEach(p => {
+      if (p.rollNo && p.rollNo.toUpperCase() === roll) {
+        p.rollNo = newRoll;
+      }
+    });
+    db.students.forEach(s => {
+      if (s.primaryRollNo && s.primaryRollNo.toUpperCase() === roll) {
+        s.primaryRollNo = newRoll;
+      }
+    });
+  }
+
+  db.students[index] = updatedStudent;
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: 'Student details updated successfully!',
+    student: updatedStudent
+  });
+});
+
+// Manual Semester / Year Promotion Endpoint
+app.put('/api/students/:rollNo/promote', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const { targetSemester, targetClass, remark } = req.body;
+  const currentSem = Number(student.currentSemester) || 1;
+  const nextSem = targetSemester !== undefined ? Number(targetSemester) : currentSem + 1;
+  const nextClass = targetClass || `SEM-${nextSem}`;
+
+  student.currentSemester = nextSem;
+  student.currentClass = nextClass;
+  student.manualSemester = nextSem;
+  student.manualPromotion = true;
+  student.promotedAt = new Date().toISOString();
+
+  if (!Array.isArray(student.semesterHistory)) {
+    student.semesterHistory = [];
+  }
+  student.semesterHistory.push({
+    fromSemester: currentSem,
+    toSemester: nextSem,
+    className: nextClass,
+    promotedAt: new Date().toISOString(),
+    remark: remark || 'Admin manual semester promotion'
+  });
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Student ${student.fullName} promoted to ${nextClass} successfully!`,
+    student: {
+      rollNo: student.rollNo,
+      currentSemester: student.currentSemester,
+      currentClass: student.currentClass,
+      promotedAt: student.promotedAt
+    }
+  });
+});
 
 app.delete('/api/students/:rollNo', (req, res) => {
   const db = readDB();
@@ -1372,33 +1600,43 @@ function computeStudentSemesterProgress(student, courses = []) {
   // How many semesters have been fully cleared:
   const clearedSemesters = Math.min(totalSemesters, Math.floor(totalPaid / feePerSemester));
   
+  // Admin manual promotion has highest precedence
   let currentSemester = 1;
-  if (totalPaid >= totalFee || clearedSemesters >= totalSemesters) {
+  if (student.manualSemester !== undefined && student.manualSemester !== null) {
+    currentSemester = Math.max(1, Number(student.manualSemester));
+  } else if (student.currentSemester) {
+    currentSemester = Math.max(1, Number(student.currentSemester));
+  } else if (totalPaid >= totalFee || clearedSemesters >= totalSemesters) {
     currentSemester = totalSemesters;
   } else {
     currentSemester = Math.min(totalSemesters, clearedSemesters + 1);
   }
-  const currentClass = `SEM-${currentSemester}`;
+  const currentClass = student.currentClass || `SEM-${currentSemester}`;
 
   // Amount paid towards current semester & remaining due for current semester
   let currentSemesterPaid = 0;
   let currentSemesterDue = 0;
 
-  if (totalPaid >= totalFee) {
+  // Fee threshold needed to cover up to currentSemester
+  const feeNeededUpToCurrentSem = currentSemester * feePerSemester;
+  if (totalPaid >= feeNeededUpToCurrentSem || totalPaid >= totalFee) {
     currentSemesterPaid = feePerSemester;
     currentSemesterDue = 0;
   } else {
-    currentSemesterPaid = totalPaid - (clearedSemesters * feePerSemester);
+    const paidInPrevSems = Math.max(0, (currentSemester - 1) * feePerSemester);
+    currentSemesterPaid = Math.max(0, totalPaid - paidInPrevSems);
     currentSemesterDue = Math.max(0, feePerSemester - currentSemesterPaid);
   }
 
   let semesterFeeStatus = '';
   if (totalPaid >= totalFee) {
     semesterFeeStatus = 'All Semesters Paid (Fully Paid)';
+  } else if (currentSemesterDue === 0) {
+    semesterFeeStatus = `Sem ${currentSemester} Fully Paid`;
   } else if (clearedSemesters > 0) {
     semesterFeeStatus = `Sem 1-${clearedSemesters} Paid • Sem ${currentSemester} Due (₹${currentSemesterDue.toLocaleString('en-IN')})`;
   } else {
-    semesterFeeStatus = `Sem 1 Due (₹${currentSemesterDue.toLocaleString('en-IN')})`;
+    semesterFeeStatus = `Sem ${currentSemester} Due (₹${currentSemesterDue.toLocaleString('en-IN')})`;
   }
 
   return {

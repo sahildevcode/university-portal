@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
-  ArrowLeft, RotateCcw, ChevronDown
+  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
@@ -22,6 +22,14 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [activeProfileTab, setActiveProfileTab] = useState('profile');
   const [printSlipStudent, setPrintSlipStudent] = useState(null);
   const [printMarksheetData, setPrintMarksheetData] = useState(null);
+
+  // Full Edit Modal & Promotion State
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [editSuccess, setEditSuccess] = useState(null);
+  const [promotingRoll, setPromotingRoll] = useState(null);
 
   const fetchStudents = async (customSearch = null, customCourse = null, customSem = null, customTimeframe = null) => {
     setLoading(true);
@@ -97,6 +105,127 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
       }
     } catch (err) {
       alert('Failed to delete student');
+    }
+  };
+
+  const handleOpenEditModal = (std) => {
+    setEditingStudent(std);
+    setEditFormData({
+      rollNo: std.rollNo || '',
+      fullName: std.fullName || '',
+      fatherName: std.fatherName || '',
+      motherName: std.motherName || '',
+      dob: std.dob || '',
+      gender: std.gender || 'Male',
+      phone: std.phone || '',
+      email: std.email || '',
+      address: std.address || '',
+      aadhaarNo: std.aadhaarNo || '',
+      samagraId: std.samagraId || '',
+      abcId: std.abcId || '',
+      universityName: std.universityName || '',
+      collegeName: std.collegeName || '',
+      courseName: std.courseName || '',
+      branch: std.branch || '',
+      courseType: std.courseType || 'UG',
+      currentSemester: std.currentSemester || 1,
+      currentClass: std.currentClass || `SEM-${std.currentSemester || 1}`,
+      totalFee: std.totalFee || 0,
+      admissionYear: std.admissionYear || 2026,
+      remark: std.remark || '',
+      status: std.status || 'Active'
+    });
+    setEditError(null);
+    setEditSuccess(null);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/students/${editingStudent.rollNo}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update student details');
+      }
+      setEditSuccess('Student details updated successfully!');
+      setStudents(prev => prev.map(s => {
+        if (s.rollNo === editingStudent.rollNo) {
+          return { ...s, ...data.student };
+        }
+        if (s.linkedCourses) {
+          return {
+            ...s,
+            linkedCourses: s.linkedCourses.map(l => l.rollNo === editingStudent.rollNo ? { ...l, ...data.student } : l)
+          };
+        }
+        return s;
+      }));
+      if (selectedStudent?.rollNo === editingStudent.rollNo) {
+        setSelectedStudent(prev => ({ ...prev, ...data.student }));
+      }
+      setTimeout(() => {
+        setEditingStudent(null);
+        setEditSuccess(null);
+      }, 1000);
+    } catch (err) {
+      setEditError(err.message || 'Failed to update student');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handlePromoteStudent = async (std, targetSem = null) => {
+    const currentSem = Number(std.currentSemester) || 1;
+    const nextSem = targetSem !== null ? Number(targetSem) : currentSem + 1;
+    const nextClass = `SEM-${nextSem}`;
+
+    if (targetSem === null) {
+      if (!window.confirm(`Are you sure you want to promote ${std.fullName} (${std.rollNo}) from SEM-${currentSem} to ${nextClass}?`)) {
+        return;
+      }
+    }
+
+    setPromotingRoll(std.rollNo);
+    try {
+      const res = await fetch(`/api/students/${std.rollNo}/promote`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetSemester: nextSem,
+          targetClass: nextClass
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to promote student');
+      }
+
+      setStudents(prev => prev.map(s => {
+        if (s.rollNo === std.rollNo) {
+          return { ...s, currentSemester: nextSem, currentClass: nextClass, manualSemester: nextSem };
+        }
+        if (s.linkedCourses) {
+          return {
+            ...s,
+            linkedCourses: s.linkedCourses.map(l => l.rollNo === std.rollNo ? { ...l, currentSemester: nextSem, currentClass: nextClass, manualSemester: nextSem } : l)
+          };
+        }
+        return s;
+      }));
+      if (selectedStudent?.rollNo === std.rollNo) {
+        setSelectedStudent(prev => ({ ...prev, currentSemester: nextSem, currentClass: nextClass, manualSemester: nextSem }));
+      }
+    } catch (err) {
+      alert('Error promoting student: ' + err.message);
+    } finally {
+      setPromotingRoll(null);
     }
   };
 
@@ -431,8 +560,23 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                               {std.courseType || 'Degree'}
                             </span>
                           </div>
-                          <span className="text-[10px] text-indigo-600 font-bold block mt-0.5">
-                            Sem {std.currentSemester || 1} • {std.collegeName || 'PKC Institute'}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200">
+                              {std.currentClass || `SEM-${std.currentSemester || 1}`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handlePromoteStudent(std)}
+                              disabled={promotingRoll === std.rollNo}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
+                              title="Admin Power: Promote to Next Semester"
+                            >
+                              <Zap className="w-2.5 h-2.5 text-emerald-600" />
+                              <span>{promotingRoll === std.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                            {std.collegeName || 'PKC Institute'} ({std.universityName || 'University'})
                           </span>
                         </td>
                         <td className="p-3.5">
@@ -461,6 +605,13 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                               title="View Full Profile & Uploaded Documents"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditModal(std)}
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
+                              title="Edit Student Information & Courses"
+                            >
+                              <Edit3 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setPrintSlipStudent(std)}
@@ -519,6 +670,21 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                                 {linked.courseType || 'Diploma'}
                               </span>
                             </div>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                {linked.currentClass || `SEM-${linked.currentSemester || 1}`}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handlePromoteStudent(linked)}
+                                disabled={promotingRoll === linked.rollNo}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
+                                title="Admin Power: Promote to Next Semester"
+                              >
+                                <Zap className="w-2.5 h-2.5 text-emerald-600" />
+                                <span>{promotingRoll === linked.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
+                              </button>
+                            </div>
                             <span className="text-[10px] text-slate-600 font-medium block mt-0.5">
                               {linked.collegeName} ({linked.universityName})
                             </span>
@@ -547,6 +713,13 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                                 title={`View Profile for ${linked.courseName}`}
                               >
                                 <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditModal(linked)}
+                                className="p-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
+                                title={`Edit ${linked.courseName} Enrollment Details`}
+                              >
+                                <Edit3 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => {
@@ -606,12 +779,23 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedStudent(null)}
-                className="text-slate-300 hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal(selectedStudent)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  title="Fully Edit Student & Enrollment Record"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Student</span>
+                </button>
+                <button
+                  onClick={() => setSelectedStudent(null)}
+                  className="text-slate-300 hover:text-white p-1 rounded-lg"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Profile Tabs */}
@@ -941,6 +1125,297 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           result={printMarksheetData}
           onClose={() => setPrintMarksheetData(null)}
         />
+      )}
+
+      {/* Comprehensive Student Edit Modal */}
+      {editingStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden my-8 border border-slate-200">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Edit Student &amp; Enrollment Records</h2>
+                  <p className="text-xs text-indigo-200">
+                    Roll: <strong className="font-mono text-amber-300">{editingStudent.rollNo}</strong> • {editingStudent.courseName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingStudent(null)}
+                className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Error & Success alerts */}
+            {editError && (
+              <div className="m-6 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+            {editSuccess && (
+              <div className="m-6 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-bold flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{editSuccess}</span>
+              </div>
+            )}
+
+            {/* Edit Form */}
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
+              {/* Section: Personal Information */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-900 border-b pb-1.5 text-xs uppercase tracking-wider text-indigo-900 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
+                  <span>Personal &amp; Contact Details</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                    <input
+                      type="text"
+                      value={editFormData.fullName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold uppercase focus:bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Father's Name *</label>
+                    <input
+                      type="text"
+                      value={editFormData.fatherName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium uppercase focus:bg-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Mother's Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.motherName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, motherName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium uppercase focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={editFormData.dob || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, dob: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Gender</label>
+                    <select
+                      value={editFormData.gender || 'Male'}
+                      onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Contact Mobile</label>
+                    <input
+                      type="tel"
+                      value={editFormData.phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-slate-700 mb-1">Email ID</label>
+                    <input
+                      type="email"
+                      value={editFormData.email || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Aadhaar Number</label>
+                    <input
+                      type="text"
+                      value={editFormData.aadhaarNo || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, aadhaarNo: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Samagra ID</label>
+                    <input
+                      type="text"
+                      value={editFormData.samagraId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, samagraId: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-slate-700 mb-1">Address</label>
+                    <input
+                      type="text"
+                      value={editFormData.address || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Academic & Institutional Particulars */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-900 border-b pb-1.5 text-xs uppercase tracking-wider text-indigo-900 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">2</span>
+                  <span>Academic, University &amp; Promotion Controls</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Roll Number / Enrollment *</label>
+                    <input
+                      type="text"
+                      value={editFormData.rollNo || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, rollNo: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white uppercase"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">University Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.universityName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, universityName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">College Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.collegeName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, collegeName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Course Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.courseName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, courseName: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Branch / Specialization</label>
+                    <input
+                      type="text"
+                      value={editFormData.branch || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Manual Semester & Year Promotion Control */}
+                  <div className="bg-indigo-50/80 p-3 rounded-2xl border border-indigo-200">
+                    <label className="block font-black text-indigo-950 mb-1 flex items-center justify-between">
+                      <span>⚡ Current Semester / Class</span>
+                      <span className="text-[10px] text-indigo-700 font-bold">Admin Power</span>
+                    </label>
+                    <select
+                      value={editFormData.currentSemester || 1}
+                      onChange={(e) => {
+                        const semNum = Number(e.target.value);
+                        setEditFormData({
+                          ...editFormData,
+                          currentSemester: semNum,
+                          currentClass: `SEM-${semNum}`,
+                          manualSemester: semNum
+                        });
+                      }}
+                      className="w-full p-2 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value={1}>SEM-1 (1st Semester / 1st Year)</option>
+                      <option value={2}>SEM-2 (2nd Semester / 1st Year)</option>
+                      <option value={3}>SEM-3 (3rd Semester / 2nd Year)</option>
+                      <option value={4}>SEM-4 (4th Semester / 2nd Year)</option>
+                      <option value={5}>SEM-5 (5th Semester / 3rd Year)</option>
+                      <option value={6}>SEM-6 (6th Semester / 3rd Year)</option>
+                      <option value={7}>SEM-7 (7th Semester / 4th Year)</option>
+                      <option value={8}>SEM-8 (8th Semester / 4th Year)</option>
+                    </select>
+                    <p className="text-[10px] text-indigo-800 mt-1">
+                      Promotion is in your control. Changing semester updates fee dues according to this class.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Total Course Fee (₹)</label>
+                    <input
+                      type="number"
+                      value={editFormData.totalFee || 0}
+                      onChange={(e) => setEditFormData({ ...editFormData, totalFee: Number(e.target.value) })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Admission Year</label>
+                    <input
+                      type="number"
+                      value={editFormData.admissionYear || 2026}
+                      onChange={(e) => setEditFormData({ ...editFormData, admissionYear: Number(e.target.value) })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-medium focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Status</label>
+                    <select
+                      value={editFormData.status || 'Active'}
+                      onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed / Passed</option>
+                      <option value="Suspended">Suspended</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingStudent(null)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{editLoading ? 'Saving...' : 'Save All Changes'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

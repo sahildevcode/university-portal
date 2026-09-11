@@ -3,7 +3,7 @@ import {
   UserPlus, Upload, FileText, CheckCircle2, AlertCircle, Printer, 
   CreditCard, Image as ImageIcon, FileCheck, Building, ShieldCheck,
   Calendar, Key, Hash, School, BookOpen, Layers, CheckSquare, Square,
-  Trash2, X, RefreshCw, Search, Sparkles, GraduationCap
+  Trash2, X, RefreshCw, Search, Sparkles, GraduationCap, PlusCircle
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 
@@ -270,6 +270,27 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   const [lookupResult, setLookupResult] = useState(null);
   const [isDualMode, setIsDualMode] = useState(false);
 
+  // In-Form Secondary Course State (Section 3 Red Button "+ Add Course")
+  const [hasSecondaryCourse, setHasSecondaryCourse] = useState(false);
+  const [secSelectedDegree, setSecSelectedDegree] = useState('DCA');
+  const [secFormData, setSecFormData] = useState({
+    University_Name: FALLBACK_UNIVERSITIES[1]?.name || FALLBACK_UNIVERSITIES[0].name,
+    College_Name: FALLBACK_COLLEGES[4]?.name || FALLBACK_COLLEGES[0].name,
+    Course_Name: 'DCA (Diploma in Computer Applications)',
+    Branch: 'Computer Applications & Office Suite',
+    Course_Type: 'Diploma',
+    Course_Mode: 'Regular',
+    Medium: 'Hindi Medium',
+    Student_fee: '25000',
+    Course_Fee_Paid: '0',
+    Admission_Fee: '1000',
+    Admission_Fee_Paid: '1000',
+    Current_class: 'SEM-1',
+    Current_session: '2026-2027',
+    Current_satra: 'July'
+  });
+  const [printSlipTarget, setPrintSlipTarget] = useState('primary'); // 'primary' or 'secondary'
+
   // Selected Documents Submitted Checklist (100% Optional at Admission)
   const [submittedDocs, setSubmittedDocs] = useState([]);
   const [docModes, setDocModes] = useState({});
@@ -459,6 +480,92 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Secondary Program Cascading Selection Logic
+  const secSelectedUnivObj = universitiesList.find(u => 
+    u.name === secFormData.University_Name ||
+    (u.shortName && secFormData.University_Name?.includes(u.shortName))
+  ) || universitiesList[0];
+
+  const secAffiliatedColleges = collegesList.filter(c => {
+    if (!secSelectedUnivObj) return true;
+    return c.universityId === secSelectedUnivObj.id || 
+           (c.universityName && c.universityName.toLowerCase() === secSelectedUnivObj.name.toLowerCase());
+  });
+
+  const secCurrentProgram = ACADEMIC_PROGRAMS.find(p => p.degree === secSelectedDegree) || ACADEMIC_PROGRAMS[0];
+
+  const secDbBranchesForDegree = allCoursesList
+    .filter(c => (c.degree && c.degree.toLowerCase() === secSelectedDegree.toLowerCase()) || 
+                 (c.name && c.name.toLowerCase().startsWith(secSelectedDegree.toLowerCase())))
+    .map(c => {
+      let branchName = c.name;
+      if (branchName.toLowerCase().startsWith(secSelectedDegree.toLowerCase())) {
+        branchName = branchName.slice(secSelectedDegree.length).replace(/^[\s\-–—:]+/, '');
+      }
+      return {
+        name: branchName.trim() || c.name,
+        code: c.code,
+        fullName: c.name,
+        fee: c.totalFee
+      };
+    });
+
+  const secAvailableBranches = secDbBranchesForDegree.length > 0 
+    ? secDbBranchesForDegree 
+    : (secCurrentProgram?.branches || []);
+
+  const handleSecUniversityChange = (e) => {
+    const newUnivName = e.target.value;
+    const targetUniv = universitiesList.find(u => u.name === newUnivName);
+    const targetId = targetUniv?.id;
+
+    const newAffiliated = collegesList.filter(c => 
+      c.universityId === targetId || 
+      (c.universityName && c.universityName.toLowerCase() === newUnivName.toLowerCase())
+    );
+
+    const firstCollegeName = newAffiliated[0]?.name || (targetUniv ? `${targetUniv.name} Campus` : '');
+
+    setSecFormData(prev => ({
+      ...prev,
+      University_Name: newUnivName,
+      College_Name: firstCollegeName
+    }));
+  };
+
+  const handleSecDegreeChange = (e) => {
+    const newDegree = e.target.value;
+    setSecSelectedDegree(newDegree);
+
+    const prog = ACADEMIC_PROGRAMS.find(p => p.degree === newDegree) || ACADEMIC_PROGRAMS[0];
+    const firstBranch = prog.branches[0];
+
+    setSecFormData(prev => ({
+      ...prev,
+      Course_Name: firstBranch?.fullName || `${newDegree} - ${firstBranch?.name || 'General'}`,
+      Branch: firstBranch?.name || 'General',
+      Course_Type: prog.courseType || 'Diploma',
+      Student_fee: String(firstBranch?.fee || prog.defaultFee || 25000)
+    }));
+  };
+
+  const handleSecBranchChange = (e) => {
+    const newBranchName = e.target.value;
+    const branchObj = secAvailableBranches.find(b => b.name === newBranchName);
+
+    setSecFormData(prev => ({
+      ...prev,
+      Branch: newBranchName,
+      Course_Name: branchObj?.fullName || `${secSelectedDegree}- ${newBranchName}`,
+      Student_fee: String(branchObj?.fee || prev.Student_fee)
+    }));
+  };
+
+  const handleSecInputChange = (e) => {
+    const { name, value } = e.target;
+    setSecFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   // Dual Program Lookup Functions
   const handleLookupStudent = async (overrideQuery) => {
     const q = (typeof overrideQuery === 'string' ? overrideQuery : lookupQuery).trim();
@@ -635,6 +742,13 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         data.append('student_image', studentImageFile);
       }
 
+      if (hasSecondaryCourse) {
+        data.append('secondaryCourse', JSON.stringify({
+          ...secFormData,
+          degree: secSelectedDegree
+        }));
+      }
+
       const res = await fetch('/api/students', {
         method: 'POST',
         body: data
@@ -646,6 +760,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       }
 
       setSuccessData(result);
+      setPrintSlipTarget('primary');
       setShowAdmissionSlip(true);
       if (onStudentCreated) onStudentCreated(result.student);
     } catch (err) {
@@ -664,6 +779,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setIsDualMode(false);
     setLookupResult(null);
     setLookupQuery('');
+    setHasSecondaryCourse(false);
+    setPrintSlipTarget('primary');
     setFormData(prev => ({
       ...prev,
       Student_Name: '',
@@ -760,24 +877,42 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       )}
 
       {successData && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 text-emerald-950 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 text-emerald-950 flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
           <div className="flex items-center gap-4">
             <CheckCircle2 className="w-10 h-10 text-emerald-600 shrink-0" />
             <div>
-              <h3 className="font-bold text-lg text-emerald-950">Admission Successfully Enrolled!</h3>
-              <p className="text-xs text-emerald-800 mt-0.5">
-                Candidate <strong className="uppercase">{successData.student?.fullName}</strong> registered with Roll/Enrollment No: <strong className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{successData.student?.rollNo}</strong>.
-              </p>
+              <h3 className="font-bold text-lg text-emerald-950">
+                {successData.secondaryStudent ? 'Dual Admissions Successfully Enrolled!' : 'Admission Successfully Enrolled!'}
+              </h3>
+              <div className="text-xs text-emerald-800 mt-1 space-y-1">
+                <p>
+                  1. <strong className="uppercase">{successData.student?.fullName}</strong> — {successData.student?.courseName} ({successData.student?.collegeName}): <strong className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{successData.student?.rollNo}</strong>
+                </p>
+                {successData.secondaryStudent && (
+                  <p>
+                    2. Secondary Course — {successData.secondaryStudent?.courseName} ({successData.secondaryStudent?.collegeName}): <strong className="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300">{successData.secondaryStudent?.rollNo}</strong>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button 
               type="button" 
-              onClick={() => setShowAdmissionSlip(true)} 
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              onClick={() => { setPrintSlipTarget('primary'); setShowAdmissionSlip(true); }} 
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
             >
-              <Printer className="w-4 h-4" /> <span>Print Admission Slip</span>
+              <Printer className="w-4 h-4" /> <span>{successData.secondaryStudent ? 'Slip 1 (Degree)' : 'Print Admission Slip'}</span>
             </button>
+            {successData.secondaryStudent && (
+              <button 
+                type="button" 
+                onClick={() => { setPrintSlipTarget('secondary'); setShowAdmissionSlip(true); }} 
+                className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4" /> <span>Slip 2 (Diploma)</span>
+              </button>
+            )}
             <button 
               type="button" 
               onClick={resetForm} 
@@ -1462,7 +1597,235 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
               </select>
             </div>
           </div>
+
+          {/* Red Button: + Add Course (Dual / Diploma Enrollment) */}
+          <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <span className="text-xs font-bold text-slate-850 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                Also Enrolling in Diploma or 2nd Course (e.g. DCA)?
+              </span>
+              <span className="text-[11px] text-slate-500 block">
+                Click to add secondary course with independent University, College &amp; Course selection in the same admission.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHasSecondaryCourse(!hasSecondaryCourse)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-md transition-all cursor-pointer ${
+                hasSecondaryCourse
+                  ? 'bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200'
+                  : 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30'
+              }`}
+            >
+              {hasSecondaryCourse ? (
+                <>
+                  <X className="w-4 h-4" />
+                  <span>Remove Secondary Course</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>+ Add Course</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 3B: SECONDARY / DUAL PROGRAM SELECTION (INDEPENDENT) */}
+        {/* ========================================================================= */}
+        {hasSecondaryCourse && (
+          <div className="bg-gradient-to-br from-rose-50/70 via-white to-amber-50/40 border-2 border-rose-300 rounded-3xl p-6 shadow-md space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-200 pb-3">
+              <div className="flex items-center gap-2.5 text-rose-950 font-bold text-base">
+                <span className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
+                  3B
+                </span>
+                <span>Secondary / Dual Course Enrollment (e.g. DCA / Diploma)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] bg-rose-100 text-rose-900 border border-rose-200 font-bold px-2.5 py-0.5 rounded-full">
+                  Independent University &amp; College
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setHasSecondaryCourse(false)}
+                  className="text-xs text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded-lg border border-rose-200"
+                >
+                  <X className="w-3.5 h-3.5" /> Remove
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
+              {/* Secondary University */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span>2nd University Name *</span>
+                  <span className="text-[10px] text-rose-700 font-semibold">({universitiesList.length} registered)</span>
+                </label>
+                <select
+                  name="University_Name"
+                  value={secFormData.University_Name}
+                  onChange={handleSecUniversityChange}
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-950 shadow-2xs"
+                  required={hasSecondaryCourse}
+                >
+                  {universitiesList.map(u => (
+                    <option key={u.id} value={u.name}>
+                      {u.name} {u.shortName ? `(${u.shortName})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">Can be different from Primary University.</p>
+              </div>
+
+              {/* Secondary College */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span>2nd College Name *</span>
+                  <span className="text-[10px] text-rose-700 font-semibold">({secAffiliatedColleges.length} affiliated)</span>
+                </label>
+                <select
+                  name="College_Name"
+                  value={secFormData.College_Name}
+                  onChange={handleSecInputChange}
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 font-semibold text-rose-950 shadow-2xs"
+                  required={hasSecondaryCourse}
+                >
+                  {secAffiliatedColleges.length > 0 ? (
+                    secAffiliatedColleges.map(c => (
+                      <option key={c.id} value={c.name}>
+                        {c.code ? `[${c.code}] ` : ''}{c.shortName || c.name} {c.district ? `(${c.district})` : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No affiliated colleges registered under this university</option>
+                  )}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">Filtered strictly to 2nd university colleges.</p>
+              </div>
+
+              {/* Secondary Degree / Program */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
+                  2nd Course Program (Degree / Diploma) *
+                </label>
+                <select
+                  value={secSelectedDegree}
+                  onChange={handleSecDegreeChange}
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-950 shadow-2xs"
+                >
+                  {ACADEMIC_PROGRAMS.map(prog => (
+                    <option key={prog.degree} value={prog.degree}>
+                      {prog.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Secondary Branch */}
+              <div className="lg:col-span-2">
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span>2nd Branch / Specialization *</span>
+                  <span className="text-[10px] text-rose-700 font-bold">{secAvailableBranches.length} branches available</span>
+                </label>
+                <select
+                  name="Branch"
+                  value={secFormData.Branch}
+                  onChange={handleSecBranchChange}
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold text-slate-900"
+                  required={hasSecondaryCourse}
+                >
+                  {secAvailableBranches.map((b, idx) => (
+                    <option key={b.code || idx} value={b.name}>
+                      {b.name} {b.code ? `[${b.code}]` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Secondary Course Type */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
+                  2nd Course Type
+                </label>
+                <select
+                  name="Course_Type"
+                  value={secFormData.Course_Type}
+                  onChange={handleSecInputChange}
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl focus:outline-none font-medium"
+                >
+                  <option value="Diploma">Diploma</option>
+                  <option value="PG Diploma">PG Diploma</option>
+                  <option value="UG">UG (Undergraduate)</option>
+                  <option value="PG">PG (Postgraduate)</option>
+                  <option value="Certificate">Certificate Course</option>
+                </select>
+              </div>
+
+              {/* Secondary Course Fee */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
+                  2nd Course Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  name="Student_fee"
+                  value={secFormData.Student_fee}
+                  onChange={handleSecInputChange}
+                  placeholder="e.g. 25000"
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl font-mono font-bold text-slate-900"
+                />
+              </div>
+
+              {/* Secondary Initial Fee Paid Today */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
+                  2nd Fee Paid Today (₹)
+                </label>
+                <input
+                  type="number"
+                  name="Course_Fee_Paid"
+                  value={secFormData.Course_Fee_Paid}
+                  onChange={handleSecInputChange}
+                  placeholder="e.g. 5000 (or 0 if unpaid)"
+                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl font-mono font-bold text-emerald-700"
+                />
+              </div>
+
+              {/* Secondary Course Mode & Medium */}
+              <div>
+                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
+                  Mode &amp; Medium
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    name="Course_Mode"
+                    value={secFormData.Course_Mode}
+                    onChange={handleSecInputChange}
+                    className="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs font-medium"
+                  >
+                    <option value="Regular">Regular</option>
+                    <option value="Private">Private</option>
+                    <option value="Distance">Distance</option>
+                  </select>
+                  <select
+                    name="Medium"
+                    value={secFormData.Medium}
+                    onChange={handleSecInputChange}
+                    className="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs font-medium"
+                  >
+                    <option value="Hindi Medium">Hindi</option>
+                    <option value="English Medium">English</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SECTION 4: SESSIONS, SATRA & CLASS PARTICULARS */}
@@ -2102,8 +2465,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       {/* Printable Slip Modal */}
       {showAdmissionSlip && successData && (
         <PrintAdmissionSlip 
-          student={successData.student} 
-          receipt={successData.receipt} 
+          student={printSlipTarget === 'secondary' && successData.secondaryStudent ? successData.secondaryStudent : successData.student} 
+          receipt={printSlipTarget === 'secondary' && successData.secondaryReceipt ? successData.secondaryReceipt : successData.receipt} 
           onClose={() => setShowAdmissionSlip(false)} 
         />
       )}
