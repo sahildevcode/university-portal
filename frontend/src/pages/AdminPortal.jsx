@@ -21,7 +21,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
   const [staffLinkCopied, setStaffLinkCopied] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleCopyStaffLink = () => {
     const staffUrl = `${window.location.origin}/staff`;
@@ -324,62 +324,104 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         </div>
       )}
 
-      {/* 2-Column Dashboard Layout: Persistent Left Side Navbar + Right Active Screen Workspace */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-        
-        {/* ========================================================================= */}
-        {/* 1. LEFT COLUMN: PERSISTENT SIDE NAVBAR */}
-        {/* ========================================================================= */}
-        <aside className="w-full lg:w-80 xl:w-92 shrink-0 space-y-3 lg:sticky lg:top-6 z-20">
-          
-          {/* Mobile Screen Active Module & Toggle Bar (Visible on mobile screens < lg) */}
-          <div className="lg:hidden bg-white rounded-3xl border-2 border-slate-200 p-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm shrink-0">
-                <ActiveIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block leading-tight">
-                  Active Screen
-                </span>
-                <strong className="text-sm font-black text-slate-900 leading-snug">
-                  {activeModule.label}
-                </strong>
-              </div>
+      {/* Top Action & Navigation Bar: Desk Info + Drawer Menu Trigger Button */}
+      <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Left: Prominent Drawer Menu Toggle Button */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex items-center gap-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:to-indigo-900 text-white px-5 py-3 rounded-2xl font-black text-sm shadow-lg hover:shadow-xl border-2 border-amber-400/60 hover:border-amber-400 transition-all cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md group-hover:rotate-12 transition-transform">
+              <Menu className="w-5 h-5" />
             </div>
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
-            >
-              {mobileSidebarOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-amber-400" />}
-              <span>{mobileSidebarOpen ? 'Close Menu' : 'All Desks (7)'}</span>
-            </button>
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 block leading-tight">
+                Desk Switcher
+              </span>
+              <span className="text-sm font-black tracking-tight flex items-center gap-1.5">
+                ☰ Open Navigation Menu <span className="bg-amber-400 text-slate-950 text-[10px] px-2 py-0.5 rounded-full font-black">7 Desks</span>
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* Right: Active Desk Indicator (Takes up 100% full screen) */}
+        <div className="flex items-center gap-3.5 bg-slate-50 border-2 border-slate-200/90 px-4 py-2.5 rounded-2xl min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm shrink-0">
+            <ActiveIcon className="w-5 h-5" />
           </div>
+          <div className="text-left min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Full Page Active Desk
+              </span>
+              <span className="text-[10px] font-extrabold text-indigo-950 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                {activeModule.badge}
+              </span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight truncate mt-0.5">
+              {activeModule.fullName || activeModule.label}
+            </h2>
+          </div>
+        </div>
+      </div>
 
-          {/* Side Navbar Main Container (Always visible on lg+, toggleable on mobile) */}
-          <div className={`space-y-3 ${mobileSidebarOpen ? 'block' : 'hidden lg:block'}`}>
+      {/* ========================================================================= */}
+      {/* OFF-CANVAS SLIDE-OUT NAVIGATION DRAWER (HIDDEN BY DEFAULT) */}
+      {/* ========================================================================= */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Dark Backdrop Overlay - Click to close */}
+          <div 
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity animate-fadeIn cursor-pointer"
+            onClick={() => setIsSidebarOpen(false)}
+            title="Click to close menu"
+          />
+
+          {/* Side Drawer Panel */}
+          <div className="relative w-full max-w-md sm:max-w-lg bg-slate-900 text-white h-full shadow-2xl z-10 flex flex-col overflow-hidden border-r-2 border-amber-400/50 animate-fadeIn">
             
-            {/* Side Navbar Header Card */}
-            <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-xl border border-slate-800 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-                  Admin Modules
-                </span>
-                <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2.5 py-0.5 rounded-full">
-                  7 Desks
-                </span>
+            {/* Drawer Header */}
+            <div className="p-5 sm:p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+                  <Menu className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/30">
+                      Admin Desks
+                    </span>
+                    <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2 py-0.5 rounded-md">
+                      7 Modules
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
+                    Portal Navigation Menu
+                  </h3>
+                </div>
               </div>
-              <h3 className="text-lg font-black tracking-tight text-white mt-1">
-                Sidebar Navigation
-              </h3>
-              <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                Click any section below to switch desk view
-              </p>
+
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 flex items-center justify-center transition-colors cursor-pointer border border-white/10"
+                title="Close Navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Individual Module Buttons - Bolder, Larger, Clearly Separated Cards */}
-            <div className="space-y-3">
+            {/* Drawer Instruction Subtitle */}
+            <div className="px-5 py-3 bg-slate-850/70 border-b border-slate-800 text-xs text-slate-300 flex items-center justify-between shrink-0">
+              <span>Select any desk below to open in <strong>100% Full Screen</strong></span>
+            </div>
+
+            {/* Scrollable List of 7 Modules - Bold, Large & Clearly Separated */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
               {adminModules.map((mod, idx) => {
                 const Icon = mod.icon;
                 const isSelected = activeTab === mod.id || (mod.id === 'syllabus' && activeTab === 'courses');
@@ -390,65 +432,63 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
                     type="button"
                     onClick={() => {
                       setActiveTab(mod.id);
-                      setMobileSidebarOpen(false);
+                      setIsSidebarOpen(false);
                     }}
-                    className={`w-full text-left p-4 rounded-3xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 group select-none ${
+                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 group select-none ${
                       isSelected
-                        ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white border-amber-400 shadow-xl shadow-slate-950/20 ring-4 ring-amber-400/20 translate-x-1'
-                        : 'bg-white hover:bg-indigo-50/40 text-slate-800 border-slate-200/90 hover:border-indigo-400 hover:shadow-md'
+                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-xl ring-4 ring-amber-400/30 font-black scale-[1.01]'
+                        : 'bg-slate-800/90 hover:bg-slate-750 text-white border-slate-700/80 hover:border-amber-400/60 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      {/* Left Icon Box with High-Contrast Badge */}
+                      {/* Numbered Icon Box */}
                       <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all font-black ${
                           isSelected
-                            ? 'bg-amber-400 text-slate-950 shadow-md font-black scale-105'
-                            : 'bg-slate-100 text-slate-700 group-hover:bg-indigo-100 group-hover:text-indigo-700 border border-slate-200'
+                            ? 'bg-slate-950 text-amber-400 shadow-md'
+                            : 'bg-slate-900 text-amber-300 border border-slate-700 group-hover:scale-105'
                         }`}
                       >
                         <Icon className="w-5 h-5" />
                       </div>
 
-                      {/* Text Block (Bold, Large & Highly Visible) */}
+                      {/* Desk Title & Subtitle */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
-                            isSelected 
-                              ? 'bg-white/20 text-amber-300' 
-                              : 'bg-slate-100 text-slate-500'
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                            isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-white/10 text-amber-300'
                           }`}>
                             0{idx + 1}
                           </span>
                           <h4 className={`text-sm sm:text-[15px] font-black tracking-tight leading-snug truncate ${
-                            isSelected ? 'text-white' : 'text-slate-900 group-hover:text-indigo-950'
+                            isSelected ? 'text-slate-950' : 'text-white group-hover:text-amber-300'
                           }`}>
                             {mod.label}
                           </h4>
                         </div>
                         <p className={`text-[11px] font-medium truncate mt-1 leading-normal ${
-                          isSelected ? 'text-amber-200/90' : 'text-slate-500'
+                          isSelected ? 'text-slate-900 font-bold' : 'text-slate-400'
                         }`}>
                           {mod.shortDesc || mod.sub}
                         </p>
                       </div>
                     </div>
 
-                    {/* Right Badges & Indicators */}
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Right Badge & Arrow */}
+                    <div className="flex items-center gap-2 shrink-0">
                       {mod.badge && (
                         <span
                           className={`text-[10px] px-2.5 py-0.5 rounded-full font-black hidden sm:inline-block ${
                             isSelected
-                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              ? 'bg-slate-950 text-white'
+                              : 'bg-white/10 text-slate-300 border border-white/10'
                           }`}
                         >
                           {mod.badge}
                         </span>
                       )}
                       <ChevronRight className={`w-4 h-4 transition-transform ${
-                        isSelected ? 'text-amber-400 translate-x-1' : 'text-slate-300 group-hover:text-indigo-500'
+                        isSelected ? 'text-slate-950 translate-x-1' : 'text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1'
                       }`} />
                     </div>
                   </button>
@@ -456,52 +496,26 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
               })}
             </div>
 
-            {/* Quick Status Footer */}
-            <div className="bg-slate-50 border-2 border-slate-200/90 p-4 rounded-3xl text-xs space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] font-extrabold uppercase text-slate-500">
-                <span>System Status</span>
-                <span className="text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-600 font-medium">
-                Click any desk above to instantly manage records.
-              </p>
+            {/* Drawer Footer with Close Button */}
+            <div className="p-4 bg-slate-950 border-t border-slate-800 shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border border-slate-700"
+              >
+                <X className="w-4 h-4 text-amber-400" />
+                <span>✕ Close Navigation Menu</span>
+              </button>
             </div>
 
           </div>
-        </aside>
+        </div>
+      )}
 
-        {/* ========================================================================= */}
-        {/* 2. RIGHT COLUMN: MAIN ACTIVE WORKSPACE */}
-        {/* ========================================================================= */}
-        <main className="flex-1 min-w-0 w-full space-y-6">
-          
-          {/* Active Desk Header Banner */}
-          <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-13 h-13 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
-                <ActiveIcon className="w-7 h-7" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Active Desk
-                  </span>
-                  <span className="text-[11px] font-extrabold text-indigo-950 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                    {activeModule.badge}
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
-                  {activeModule.fullName || activeModule.label}
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  {activeModule.sub}
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* ========================================================================= */}
+      {/* 100% FULL-PAGE ACTIVE DESK WORKSPACE (NO SQUEEZING, MAXIMUM WIDTH & HEIGHT) */}
+      {/* ========================================================================= */}
+      <main className="w-full space-y-6">
 
 
 
@@ -656,8 +670,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         <UniversityPaidManager />
       )}
 
-        </main>
-      </div>
+      </main>
 
       {/* Modal Add Course */}
       {showCourseModal && (
