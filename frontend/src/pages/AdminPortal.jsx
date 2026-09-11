@@ -3,7 +3,7 @@ import {
   Shield, BookOpen, Plus, Edit3, Trash2, Users, CreditCard, 
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
-  Copy, Check, ExternalLink
+  Copy, Check, ExternalLink, ChevronRight, Menu, X
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -21,6 +21,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
   const [staffLinkCopied, setStaffLinkCopied] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleCopyStaffLink = () => {
     const staffUrl = `${window.location.origin}/staff`;
@@ -190,6 +191,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Universities & Courses', 
       fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
       sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
+      shortDesc: 'Universities, Colleges, Branches & Syllabus',
       icon: Building2, 
       color: 'text-indigo-600',
       badge: 'MPU • 18 Colleges'
@@ -199,6 +201,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Fee & Cash Counter', 
       fullName: 'Cash Counter Fee & Accounts Layer',
       sub: 'Student fee receipts, pending dues & collection registers',
+      shortDesc: 'Fee Receipts, Student Ledgers & Cash Registry',
       icon: CreditCard, 
       color: 'text-emerald-600',
       badge: 'Live Counter'
@@ -208,6 +211,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Student Admissions', 
       fullName: 'Enrolled Students Directory & Admissions',
       sub: 'All enrolled students records & new admissions',
+      shortDesc: 'Enrolled Students & New Form (39 Fields)',
       icon: Users, 
       color: 'text-blue-600',
       badge: 'Admissions'
@@ -217,6 +221,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Documents Tracker', 
       fullName: 'Student Documents Tracker & Verification Desk',
       sub: 'Student documents verification & KYC compliance desk',
+      shortDesc: 'KYC, Marksheets & Digital Dossier',
       icon: FolderCheck, 
       color: 'text-purple-600',
       badge: 'KYC Desk'
@@ -226,6 +231,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Staff Management', 
       fullName: 'Staff & Operator Credentials Manager',
       sub: 'Cashier and counselor login password control',
+      shortDesc: 'Cashier & Operator IDs and Passwords',
       icon: UserCheck, 
       color: 'text-amber-600',
       badge: `${staffList.length} Staff`
@@ -235,6 +241,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'Website CMS & Inquiries', 
       fullName: 'Website CMS & Inquiries Manager',
       sub: 'Main website content, banners & student inquiries',
+      shortDesc: 'Front Website Banners & Student Inquiries',
       icon: Globe, 
       color: 'text-sky-600',
       badge: 'CMS'
@@ -244,6 +251,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       label: 'University Settlement', 
       fullName: 'University Paid & Settlement Ledger',
       sub: 'University official fees paid, outstanding dues & margin ledger',
+      shortDesc: 'Official Dues, Margins & University Pay',
       icon: Building2, 
       color: 'text-amber-600',
       badge: 'Settlement'
@@ -254,7 +262,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const ActiveIcon = activeModule.icon;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-slate-900">
+    <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 text-slate-900">
       
       {/* Top Header */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-slate-800">
@@ -316,66 +324,184 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         </div>
       )}
 
-      {/* Administrative Top Navigation Bar */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-3 sm:p-4 space-y-3">
-        {/* Module Selector Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-thin">
-          {adminModules.map((mod) => {
-            const Icon = mod.icon;
-            const isSelected = activeTab === mod.id || (mod.id === 'syllabus' && activeTab === 'courses');
-            return (
-              <button
-                key={mod.id}
-                type="button"
-                onClick={() => setActiveTab(mod.id)}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-                  isSelected
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400/50'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-950 border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div
-                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    isSelected
-                      ? 'bg-amber-400 text-slate-950 shadow-xs'
-                      : 'bg-white text-slate-600 border border-slate-200'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
-                <span>{mod.label}</span>
-                {mod.badge && (
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+      {/* 2-Column Dashboard Layout: Persistent Left Side Navbar + Right Active Screen Workspace */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+        
+        {/* ========================================================================= */}
+        {/* 1. LEFT COLUMN: PERSISTENT SIDE NAVBAR */}
+        {/* ========================================================================= */}
+        <aside className="w-full lg:w-80 xl:w-92 shrink-0 space-y-3 lg:sticky lg:top-6 z-20">
+          
+          {/* Mobile Screen Active Module & Toggle Bar (Visible on mobile screens < lg) */}
+          <div className="lg:hidden bg-white rounded-3xl border-2 border-slate-200 p-4 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-sm shrink-0">
+                <ActiveIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block leading-tight">
+                  Active Screen
+                </span>
+                <strong className="text-sm font-black text-slate-900 leading-snug">
+                  {activeModule.label}
+                </strong>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+            >
+              {mobileSidebarOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-amber-400" />}
+              <span>{mobileSidebarOpen ? 'Close Menu' : 'All Desks (7)'}</span>
+            </button>
+          </div>
+
+          {/* Side Navbar Main Container (Always visible on lg+, toggleable on mobile) */}
+          <div className={`space-y-3 ${mobileSidebarOpen ? 'block' : 'hidden lg:block'}`}>
+            
+            {/* Side Navbar Header Card */}
+            <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-xl border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+                  Admin Modules
+                </span>
+                <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2.5 py-0.5 rounded-full">
+                  7 Desks
+                </span>
+              </div>
+              <h3 className="text-lg font-black tracking-tight text-white mt-1">
+                Sidebar Navigation
+              </h3>
+              <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                Click any section below to switch desk view
+              </p>
+            </div>
+
+            {/* Individual Module Buttons - Bolder, Larger, Clearly Separated Cards */}
+            <div className="space-y-3">
+              {adminModules.map((mod, idx) => {
+                const Icon = mod.icon;
+                const isSelected = activeTab === mod.id || (mod.id === 'syllabus' && activeTab === 'courses');
+
+                return (
+                  <button
+                    key={mod.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(mod.id);
+                      setMobileSidebarOpen(false);
+                    }}
+                    className={`w-full text-left p-4 rounded-3xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 group select-none ${
                       isSelected
-                        ? 'bg-white/20 text-amber-300'
-                        : 'bg-slate-200/80 text-slate-600'
+                        ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white border-amber-400 shadow-xl shadow-slate-950/20 ring-4 ring-amber-400/20 translate-x-1'
+                        : 'bg-white hover:bg-indigo-50/40 text-slate-800 border-slate-200/90 hover:border-indigo-400 hover:shadow-md'
                     }`}
                   >
-                    {mod.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {/* Left Icon Box with High-Contrast Badge */}
+                      <div
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 shadow-md font-black scale-105'
+                            : 'bg-slate-100 text-slate-700 group-hover:bg-indigo-100 group-hover:text-indigo-700 border border-slate-200'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </div>
 
-        {/* Current Active Section Status Strip */}
-        <div className="pt-2.5 px-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Active Screen
-            </span>
-            <strong className="text-slate-900 font-extrabold text-xs">{activeModule.fullName || activeModule.label}</strong>
-            <span className="text-slate-300 hidden md:inline">•</span>
-            <span className="text-slate-500 text-[11px] hidden md:inline">{activeModule.sub}</span>
+                      {/* Text Block (Bold, Large & Highly Visible) */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
+                            isSelected 
+                              ? 'bg-white/20 text-amber-300' 
+                              : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            0{idx + 1}
+                          </span>
+                          <h4 className={`text-sm sm:text-[15px] font-black tracking-tight leading-snug truncate ${
+                            isSelected ? 'text-white' : 'text-slate-900 group-hover:text-indigo-950'
+                          }`}>
+                            {mod.label}
+                          </h4>
+                        </div>
+                        <p className={`text-[11px] font-medium truncate mt-1 leading-normal ${
+                          isSelected ? 'text-amber-200/90' : 'text-slate-500'
+                        }`}>
+                          {mod.shortDesc || mod.sub}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Badges & Indicators */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {mod.badge && (
+                        <span
+                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-black hidden sm:inline-block ${
+                            isSelected
+                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          {mod.badge}
+                        </span>
+                      )}
+                      <ChevronRight className={`w-4 h-4 transition-transform ${
+                        isSelected ? 'text-amber-400 translate-x-1' : 'text-slate-300 group-hover:text-indigo-500'
+                      }`} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Status Footer */}
+            <div className="bg-slate-50 border-2 border-slate-200/90 p-4 rounded-3xl text-xs space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-extrabold uppercase text-slate-500">
+                <span>System Status</span>
+                <span className="text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 font-medium">
+                Click any desk above to instantly manage records.
+              </p>
+            </div>
+
           </div>
-          <span className="text-[10px] font-semibold text-slate-400">
-            Click any module tab to switch view
-          </span>
-        </div>
-      </div>
+        </aside>
+
+        {/* ========================================================================= */}
+        {/* 2. RIGHT COLUMN: MAIN ACTIVE WORKSPACE */}
+        {/* ========================================================================= */}
+        <main className="flex-1 min-w-0 w-full space-y-6">
+          
+          {/* Active Desk Header Banner */}
+          <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-13 h-13 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+                <ActiveIcon className="w-7 h-7" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active Desk
+                  </span>
+                  <span className="text-[11px] font-extrabold text-indigo-950 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                    {activeModule.badge}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+                  {activeModule.fullName || activeModule.label}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {activeModule.sub}
+                </p>
+              </div>
+            </div>
+          </div>
 
 
 
@@ -529,6 +655,9 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
       {activeTab === 'university-paid' && (
         <UniversityPaidManager />
       )}
+
+        </main>
+      </div>
 
       {/* Modal Add Course */}
       {showCourseModal && (
