@@ -742,11 +742,135 @@ function isDateInTimeframe(d, timeframe, now = new Date()) {
   return true;
 }
 
+// Helper to identify if two student records represent the same individual (Dual Enrollment / Multi-Course)
+function isSameStudent(s1, s2) {
+  if (!s1 || !s2) return false;
+  if (s1.id === s2.id) return false;
+
+  // 1. Explicit linking properties
+  if (s1.primaryRollNo && s2.rollNo && s1.primaryRollNo.toUpperCase() === s2.rollNo.toUpperCase()) return true;
+  if (s2.primaryRollNo && s1.rollNo && s2.primaryRollNo.toUpperCase() === s1.rollNo.toUpperCase()) return true;
+  if (s1.primaryStudentId && s1.primaryStudentId === s2.id) return true;
+  if (s2.primaryStudentId && s2.primaryStudentId === s1.id) return true;
+
+  // 2. Roll No Prefix match (e.g. 233324 and 233324-DCA)
+  const r1 = (s1.rollNo || '').toUpperCase().trim();
+  const r2 = (s2.rollNo || '').toUpperCase().trim();
+  if (r1 && r2) {
+    if (r1.startsWith(r2 + '-') || r2.startsWith(r1 + '-')) return true;
+    const base1 = r1.split('-')[0];
+    const base2 = r2.split('-')[0];
+    if (base1 && base2 && base1 === base2 && base1.length >= 4) return true;
+  }
+
+  // 3. Aadhaar Number Match (Aadhaar is strictly 1:1 per citizen)
+  const a1 = (s1.aadhaarNo || s1.aadharNo || s1.aadhar || '').replace(/[\s-]/g, '').trim();
+  const a2 = (s2.aadhaarNo || s2.aadharNo || s2.aadhar || '').replace(/[\s-]/g, '').trim();
+  if (a1 && a2 && a1.length >= 10 && a1 === a2) return true;
+
+  // 4. Samagra ID Match (MP specific citizen ID)
+  const sam1 = (s1.samagraId || '').trim();
+  const sam2 = (s2.samagraId || '').trim();
+  if (sam1 && sam2 && sam1.length >= 6 && sam1 === sam2) return true;
+
+  // 5. Phone Number + Student Name or Father Name match
+  const p1 = (s1.phone || s1.contact || '').replace(/\D/g, '').slice(-10);
+  const p2 = (s2.phone || s2.contact || '').replace(/\D/g, '').slice(-10);
+  if (p1 && p2 && p1.length === 10 && p1 === p2) {
+    const name1 = (s1.fullName || s1.studentName || '').trim().toLowerCase();
+    const name2 = (s2.fullName || s2.studentName || '').trim().toLowerCase();
+    const f1 = (s1.fatherName || s1.father_name || '').trim().toLowerCase();
+    const f2 = (s2.fatherName || s2.father_name || '').trim().toLowerCase();
+
+    if (name1 && name2 && (name1 === name2 || name1.includes(name2) || name2.includes(name1))) return true;
+    if (f1 && f2 && (f1 === f2 || f1.includes(f2) || f2.includes(f1))) return true;
+  }
+
+  return false;
+}
+
+// Dedicated Endpoint: Search Existing Student for Dual Enrollment Pre-filling
+app.get('/api/students/lookup-dual', (req, res) => {
+  const db = readDB();
+  const query = (req.query.q || '').trim().toLowerCase();
+  const cleanNum = query.replace(/[\s-]/g, '');
+
+  if (!query) {
+    return res.json({ success: true, found: false });
+  }
+
+  const student = db.students.find(s => {
+    const r = (s.rollNo || '').toLowerCase();
+    const reg = (s.registrationNo || '').toLowerCase();
+    const aadhaar = (s.aadhaarNo || s.aadharNo || '').replace(/[\s-]/g, '');
+    const ph = (s.phone || s.contact || '').replace(/\D/g, '');
+
+    if (r === query || reg === query) return true;
+    if (cleanNum && aadhaar && aadhaar === cleanNum) return true;
+    if (cleanNum && ph && ph.slice(-10) === cleanNum.slice(-10)) return true;
+    return false;
+  });
+
+  if (!student) {
+    return res.json({ success: true, found: false });
+  }
+
+  const linked = db.students.filter(other => isSameStudent(student, other));
+  const enrollments = [student, ...linked].map(s => ({
+    id: s.id,
+    rollNo: s.rollNo,
+    courseName: s.courseName,
+    collegeName: s.collegeName,
+    universityName: s.universityName,
+    currentClass: s.currentClass,
+    currentSemester: s.currentSemester,
+    courseType: s.courseType,
+    admissionDate: s.admissionDate,
+    totalFee: s.totalFee,
+    totalPaid: s.totalPaid,
+    balanceDue: s.balanceDue
+  }));
+
+  res.json({
+    success: true,
+    found: true,
+    student,
+    enrollments
+  });
+});
+
 app.get('/api/students', (req, res) => {
   const db = readDB();
-  const { search, course, semester, timeframe = 'all' } = req.query;
+  const { search, course, semester, timeframe = 'all', university } = req.query;
   const now = new Date();
   let list = [...db.students];
+
+  // Enrich list with dual enrollment & linked courses info
+  list = list.map(s => {
+    const linked = db.students.filter(other => isSameStudent(s, other));
+    return {
+      ...s,
+      isDualEnrolled: linked.length > 0 || !!s.isDualEnrollment,
+      dualEnrollmentCount: linked.length + 1,
+      linkedCourses: linked.map(l => ({
+        id: l.id,
+        rollNo: l.rollNo,
+        registrationNo: l.registrationNo,
+        courseName: l.courseName,
+        courseType: l.courseType || (l.courseName?.toLowerCase().includes('diploma') || l.courseName?.toLowerCase().includes('dca') ? 'Diploma' : 'Degree'),
+        branch: l.branch || 'General',
+        collegeName: l.collegeName,
+        universityName: l.universityName,
+        currentSemester: l.currentSemester,
+        currentClass: l.currentClass,
+        totalFee: l.totalFee,
+        totalPaid: l.totalPaid,
+        balanceDue: l.balanceDue,
+        feeStatus: (l.totalPaid >= l.totalFee) ? 'Fully Paid' : (l.totalPaid > 0 ? 'Partial' : 'Unpaid'),
+        admissionDate: l.admissionDate
+      }))
+    };
+  });
 
   // Calculate live counts across all students for timeframes
   const timeframeCounts = {
@@ -756,6 +880,9 @@ app.get('/api/students', (req, res) => {
     year: db.students.filter(s => isDateInTimeframe(getStudentAdmissionDate(s), 'year', now)).length
   };
 
+  if (university && university !== 'all') {
+    list = list.filter(s => s.universityName?.toLowerCase().includes(university.toLowerCase()));
+  }
   if (course && course !== 'all') {
     list = list.filter(s => s.courseId === course || s.courseName?.toLowerCase().includes(course.toLowerCase()));
   }
@@ -782,8 +909,19 @@ app.get('/api/students', (req, res) => {
       const phoneMatch = phoneRaw.includes(q) || (cleanNum && phoneClean.includes(cleanNum));
       const emailMatch = s.email?.toLowerCase().includes(q);
       const samagraMatch = s.samagraId?.toLowerCase().includes(q);
+      const collegeMatch = s.collegeName?.toLowerCase().includes(q);
+      const universityMatch = s.universityName?.toLowerCase().includes(q);
+      const courseMatch = s.courseName?.toLowerCase().includes(q);
 
-      return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || samagraMatch;
+      // Also match in linkedCourses: e.g. searching "DCA" matches student who does BCA + DCA!
+      const linkedMatch = s.linkedCourses && s.linkedCourses.some(l => 
+        l.courseName?.toLowerCase().includes(q) ||
+        l.collegeName?.toLowerCase().includes(q) ||
+        l.universityName?.toLowerCase().includes(q) ||
+        l.rollNo?.toLowerCase().includes(q)
+      );
+
+      return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || samagraMatch || collegeMatch || universityMatch || courseMatch || linkedMatch;
     });
   }
 
@@ -828,11 +966,59 @@ app.post(
       const studentCount = db.students.length + 1;
       const year = new Date().getFullYear();
       const generatedRollNo = `UNIV${year}${String(studentCount).padStart(3, '0')}`;
-      const rollNo = body.rollNo ? body.rollNo.trim().toUpperCase() : (body.Enrollment_No ? body.Enrollment_No.trim().toUpperCase() : generatedRollNo);
+      let rollNo = body.rollNo ? body.rollNo.trim().toUpperCase() : (body.Enrollment_No ? body.Enrollment_No.trim().toUpperCase() : generatedRollNo);
       const registrationNo = `REG-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      if (db.students.some(s => s.rollNo.toUpperCase() === rollNo)) {
-        return res.status(400).json({ success: false, message: `Roll Number / Enrollment No ${rollNo} already exists!` });
+      // Check if student with this rollNo already exists
+      const existingSameRoll = db.students.find(s => s.rollNo.toUpperCase() === rollNo.toUpperCase());
+      let isDualEnrollment = Boolean(body.isDualEnrollment === 'true' || body.isDualEnrollment === true);
+      let primaryRollNo = body.primaryRollNo || null;
+      let primaryStudentId = body.primaryStudentId || null;
+
+      if (existingSameRoll) {
+        const requestedCourse = (body.Course_Name || body.courseName || '').trim();
+        const requestedCollege = (body.College_Name || body.collegeName || '').trim();
+        const isSameCourseAndCollege = 
+          existingSameRoll.courseName?.toLowerCase() === requestedCourse.toLowerCase() &&
+          existingSameRoll.collegeName?.toLowerCase() === requestedCollege.toLowerCase();
+
+        if (isSameCourseAndCollege) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Student with Roll Number ${rollNo} is already enrolled in ${existingSameRoll.courseName} at ${existingSameRoll.collegeName}!` 
+          });
+        }
+
+        // Student is enrolling in a secondary/dual course (e.g. DCA while doing BCA)
+        isDualEnrollment = true;
+        primaryRollNo = existingSameRoll.rollNo;
+        primaryStudentId = existingSameRoll.id;
+
+        // Auto-assign a disambiguated linked roll number for this 2nd course: e.g. 233324-DCA
+        const courseCodePart = (body.Branch || body.Course_Type || body.courseCode || requestedCourse.split(' ')[0] || 'DUAL').replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase();
+        let candidateRoll = `${rollNo}-${courseCodePart}`;
+        let counter = 2;
+        while (db.students.some(s => s.rollNo.toUpperCase() === candidateRoll.toUpperCase())) {
+          candidateRoll = `${rollNo}-${courseCodePart}${counter++}`;
+        }
+        rollNo = candidateRoll;
+      } else {
+        // Also check if existing student matches by Aadhaar / Phone (Dual Course detection)
+        const aadharInput = (body.Aadhaar_No || body.aadhaarNo || '').replace(/[\s-]/g, '').trim();
+        const phoneInput = (body.Contact || body.phone || '').replace(/\D/g, '').slice(-10);
+        const matchedExisting = db.students.find(s => {
+          const sAadhaar = (s.aadhaarNo || s.aadharNo || '').replace(/[\s-]/g, '').trim();
+          if (aadharInput && sAadhaar && aadharInput.length >= 10 && aadharInput === sAadhaar) return true;
+          const sPhone = (s.phone || s.contact || '').replace(/\D/g, '').slice(-10);
+          if (phoneInput && sPhone && phoneInput.length === 10 && phoneInput === sPhone) return true;
+          return false;
+        });
+
+        if (matchedExisting) {
+          isDualEnrollment = true;
+          primaryRollNo = matchedExisting.rollNo;
+          primaryStudentId = matchedExisting.id;
+        }
       }
 
       const selectedCourse = db.courses.find(c => c.id === body.courseId || c.name === body.Course_Name || c.name === body.courseName) || {
@@ -945,6 +1131,10 @@ app.post(
         reference: body.Reference || body.reference || 'Direct Walk-in',
         studentImage: studentImgUrl,
         documents: documents,
+        isDualEnrollment: isDualEnrollment,
+        primaryRollNo: primaryRollNo,
+        primaryStudentId: primaryStudentId,
+        dualProgramType: body.Course_Type === 'Diploma' ? 'Diploma' : 'Degree / Certificate',
         admissionType: 'Physical Campus Admission Desk',
         admissionYear: Number(body.admissionYear) || 2026,
         admissionTimestamp: new Date().toISOString()
@@ -1226,7 +1416,7 @@ function computeStudentSemesterProgress(student, courses = []) {
 
 app.get('/api/fees/ledger', (req, res) => {
   const db = readDB();
-  const { search, status, course, dueFilter = 'all' } = req.query;
+  const { search, status, course, dueFilter = 'all', university } = req.query;
 
   let ledger = db.students.map(s => {
     let feeStatus = 'Unpaid';
@@ -1249,6 +1439,7 @@ app.get('/api/fees/ledger', (req, res) => {
       collegeName: s.collegeName || 'Govt PG College / PKC Learning Institute',
       universityName: s.universityName || 'Barkatullah University / State University',
       courseName: s.courseName,
+      courseType: s.courseType || (s.courseName?.toLowerCase().includes('diploma') || s.courseName?.toLowerCase().includes('dca') ? 'Diploma' : 'Degree'),
       branch: s.branch || 'General',
       currentSemester: prog.currentSemester,
       currentClass: prog.currentClass,
@@ -1267,10 +1458,51 @@ app.get('/api/fees/ledger', (req, res) => {
       fatherName: s.fatherName || s.father_name || '',
       aadhaarNo: s.aadhaarNo || s.aadharNo || s.aadhar || '',
       documentsStatus: s.documentsStatus || {},
-      documentSubmit: s.documentSubmit || []
+      documentSubmit: s.documentSubmit || [],
+      isDualEnrollment: s.isDualEnrollment || false,
+      primaryRollNo: s.primaryRollNo || null,
+      primaryStudentId: s.primaryStudentId || null
     };
   });
 
+  // Attach linked courses for dual enrollment across the full student ledger
+  ledger = ledger.map(s => {
+    const linked = ledger.filter(other => isSameStudent(s, other));
+    return {
+      ...s,
+      isDualEnrolled: linked.length > 0 || !!s.isDualEnrollment,
+      dualEnrollmentCount: linked.length + 1,
+      linkedCourses: linked.map(l => ({
+        id: l.id,
+        rollNo: l.rollNo,
+        registrationNo: l.registrationNo,
+        fullName: l.fullName,
+        courseName: l.courseName,
+        courseType: l.courseType || (l.courseName?.toLowerCase().includes('diploma') || l.courseName?.toLowerCase().includes('dca') ? 'Diploma' : 'Degree'),
+        branch: l.branch || 'General',
+        collegeName: l.collegeName,
+        universityName: l.universityName,
+        currentSemester: l.currentSemester,
+        currentClass: l.currentClass,
+        totalSemesters: l.totalSemesters,
+        durationYears: l.durationYears,
+        feePerSemester: l.feePerSemester,
+        clearedSemesters: l.clearedSemesters,
+        currentSemesterPaid: l.currentSemesterPaid,
+        currentSemesterDue: l.currentSemesterDue,
+        semesterFeeStatus: l.semesterFeeStatus,
+        totalFee: l.totalFee,
+        totalPaid: l.totalPaid,
+        balanceDue: l.balanceDue,
+        feeStatus: l.feeStatus,
+        lastPaymentDate: l.lastPaymentDate
+      }))
+    };
+  });
+
+  if (university && university !== 'all') {
+    ledger = ledger.filter(s => s.universityName?.toLowerCase().includes(university.toLowerCase()));
+  }
   if (course && course !== 'all') {
     ledger = ledger.filter(s => s.courseName?.toLowerCase().includes(course.toLowerCase()));
   }
@@ -1287,16 +1519,28 @@ app.get('/api/fees/ledger', (req, res) => {
   if (search) {
     const q = search.trim().toLowerCase();
     const cleanNum = q.replace(/[\s-]/g, '');
-    ledger = ledger.filter(s => 
-      s.fullName?.toLowerCase().includes(q) ||
-      s.rollNo?.toLowerCase().includes(q) ||
-      s.registrationNo?.toLowerCase().includes(q) ||
-      s.fatherName?.toLowerCase().includes(q) ||
-      (s.aadhaarNo && (s.aadhaarNo.toLowerCase().includes(q) || (cleanNum && s.aadhaarNo.replace(/[\s-]/g, '').includes(cleanNum)))) ||
-      s.phone?.includes(q) ||
-      s.collegeName?.toLowerCase().includes(q) ||
-      s.courseName?.toLowerCase().includes(q)
-    );
+    ledger = ledger.filter(s => {
+      const basicMatch = 
+        s.fullName?.toLowerCase().includes(q) ||
+        s.rollNo?.toLowerCase().includes(q) ||
+        s.registrationNo?.toLowerCase().includes(q) ||
+        s.fatherName?.toLowerCase().includes(q) ||
+        (s.aadhaarNo && (s.aadhaarNo.toLowerCase().includes(q) || (cleanNum && s.aadhaarNo.replace(/[\s-]/g, '').includes(cleanNum)))) ||
+        s.phone?.includes(q) ||
+        s.collegeName?.toLowerCase().includes(q) ||
+        s.universityName?.toLowerCase().includes(q) ||
+        s.courseName?.toLowerCase().includes(q);
+
+      // Search across linked dual enrollments
+      const linkedMatch = s.linkedCourses && s.linkedCourses.some(l => 
+        l.courseName?.toLowerCase().includes(q) ||
+        l.collegeName?.toLowerCase().includes(q) ||
+        l.universityName?.toLowerCase().includes(q) ||
+        l.rollNo?.toLowerCase().includes(q)
+      );
+
+      return basicMatch || linkedMatch;
+    });
   }
 
   const totalBalanceDue = ledger.reduce((acc, s) => acc + (s.balanceDue || 0), 0);

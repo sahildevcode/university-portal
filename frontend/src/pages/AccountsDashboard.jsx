@@ -39,6 +39,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
 
   // Due Filter for Ledger
   const [dueFilter, setDueFilter] = useState('all'); // 'all', 'due_only', 'sem_due_only', 'cleared'
+  const [dualOnlyFilter, setDualOnlyFilter] = useState(false);
   const [ledgerSummary, setLedgerSummary] = useState(null);
 
   // Timeframe Collection State
@@ -598,11 +599,28 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-base text-slate-900">Student Fee Accounts &amp; Dues Directory</h3>
-                <p className="text-xs text-slate-400">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="font-bold text-base text-slate-900">Student Fee Accounts &amp; Dues Directory</h3>
+                  <button
+                    type="button"
+                    onClick={() => setDualOnlyFilter(!dualOnlyFilter)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer border ${
+                      dualOnlyFilter
+                        ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs ring-2 ring-amber-400/40'
+                        : 'bg-white text-slate-700 hover:bg-amber-50 border-slate-300'
+                    }`}
+                    title="Filter only students who are enrolled in multiple/dual courses (Degree + Diploma)"
+                  >
+                    <span>🎓 Dual Courses Only</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${dualOnlyFilter ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                      {ledger.filter(s => s.isDualEnrolled).length}
+                    </span>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
                   {dueFilter === 'due_only' 
                     ? 'Showing only students with outstanding pending dues and their exact balance amounts' 
-                    : 'Showing all enrolled students linked with central admission & accounts database'}
+                    : 'Showing all enrolled students linked with central admission & accounts database. Dual course students are grouped with nested details.'}
                 </p>
               </div>
               <div className="text-xs font-bold text-slate-700">
@@ -645,112 +663,282 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                         </div>
                       </td>
                     </tr>
-                  ) : (
-                    ledger.map((std) => (
-                      <tr key={std.id} className="group hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3 font-mono font-bold text-indigo-700 whitespace-nowrap">
-                          {std.rollNo}
-                          {std.aadhaarNo && (
-                            <span className="block text-[9px] text-slate-400 font-mono font-normal">Aadhaar: {std.aadhaarNo}</span>
-                          )}
-                        </td>
-                        <td className="p-3 font-semibold text-slate-900 uppercase">
-                          {std.fullName}
-                          {std.fatherName && (
-                            <span className="block text-[10px] text-slate-400 font-normal capitalize">Father: {std.fatherName}</span>
-                          )}
-                          <span className="block text-[10px] text-slate-400 font-normal">{std.phone}</span>
-                        </td>
-                        <td className="p-3 text-slate-700">
-                          <span className="font-semibold text-slate-800 block text-[11px] max-w-[150px] truncate leading-tight" title={std.collegeName || 'PKC Education Institute'}>
-                            {std.collegeName || 'PKC Education Institute'}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-700">
-                          <span className="font-medium block truncate max-w-xs">{std.courseName}</span>
-                          {std.branch && <span className="text-[10px] text-slate-400 block">{std.branch}</span>}
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap">
-                          <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            {std.currentClass || ('SEM-' + (std.currentSemester || 1))}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 mt-0.5">
-                            Sem {std.currentSemester || 1} of {std.totalSemesters || 8}
-                          </span>
-                        </td>
-                        <td className="p-3 whitespace-nowrap">
-                          {std.clearedSemesters >= std.totalSemesters ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>All Sems Paid</span>
-                            </span>
-                          ) : (
-                            <div>
-                              <span className="font-bold text-rose-700 text-xs block">
-                                ₹{Number(std.currentSemesterDue || 0).toLocaleString('en-IN')} Due
+                  ) : (() => {
+                    const renderedSecondaryIds = new Set();
+                    const displayedLedger = dualOnlyFilter 
+                      ? ledger.filter(s => s.isDualEnrolled)
+                      : ledger;
+
+                    if (displayedLedger.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="10" className="p-8 text-center text-slate-400">
+                            <p className="font-bold text-slate-700 text-sm">No dual-enrolled students found matching this criteria.</p>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return displayedLedger.map((std) => {
+                      // Skip if this row was already rendered as a connected sub-row of a primary enrollment
+                      if (renderedSecondaryIds.has(std.id)) {
+                        return null;
+                      }
+
+                      // Mark all linked enrollments so they won't repeat later as separate top-level rows
+                      if (std.linkedCourses && std.linkedCourses.length > 0) {
+                        std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
+                      }
+
+                      return (
+                        <React.Fragment key={std.id}>
+                          {/* Primary Enrolled Program Row */}
+                          <tr className="group hover:bg-slate-50/80 transition-colors">
+                            <td className="p-3 font-mono font-bold text-indigo-700 whitespace-nowrap">
+                              {std.rollNo}
+                              {std.aadhaarNo && (
+                                <span className="block text-[9px] text-slate-400 font-mono font-normal">Aadhaar: {std.aadhaarNo}</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-semibold text-slate-900 uppercase">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-950">{std.fullName}</span>
+                                {std.isDualEnrolled && (
+                                  <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded-md text-[9px] font-black tracking-normal">
+                                    🎓 dual course ({std.dualEnrollmentCount || 2} programs)
+                                  </span>
+                                )}
+                              </div>
+                              {std.fatherName && (
+                                <span className="block text-[10px] text-slate-400 font-normal capitalize">Father: {std.fatherName}</span>
+                              )}
+                              <span className="block text-[10px] text-slate-400 font-normal">{std.phone}</span>
+                            </td>
+                            <td className="p-3 text-slate-700">
+                              <span className="font-semibold text-slate-800 block text-[11px] max-w-[170px] truncate leading-tight" title={std.collegeName || 'PKC Education Institute'}>
+                                {std.collegeName || 'PKC Education Institute'}
+                              </span>
+                              {std.universityName && (
+                                <span className="block text-[9px] text-indigo-700 font-bold max-w-[170px] truncate mt-0.5" title={std.universityName}>
+                                  🏛️ {std.universityName}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-slate-700">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-900 block truncate max-w-xs">{std.courseName}</span>
+                                <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded border ${
+                                  std.courseType === 'Diploma' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                }`}>
+                                  {std.courseType || 'Degree'}
+                                </span>
+                              </div>
+                              {std.branch && <span className="text-[10px] text-slate-400 block">{std.branch}</span>}
+                            </td>
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {std.currentClass || ('SEM-' + (std.currentSemester || 1))}
+                              </span>
+                              <span className="block text-[10px] text-slate-400 mt-0.5">
+                                Sem {std.currentSemester || 1} of {std.totalSemesters || 8}
+                              </span>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              {std.clearedSemesters >= std.totalSemesters ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>All Sems Paid</span>
+                                </span>
+                              ) : (
+                                <div>
+                                  <span className="font-bold text-rose-700 text-xs block">
+                                    ₹{Number(std.currentSemesterDue || 0).toLocaleString('en-IN')} Due
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    (Sem {std.currentSemester || 1}: ₹{Number(std.feePerSemester || 0).toLocaleString('en-IN')}/sem)
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className="font-bold text-emerald-700 block">
+                                ₹{Number(std.totalPaid).toLocaleString('en-IN')}
                               </span>
                               <span className="text-[10px] text-slate-400">
-                                (Sem {std.currentSemester || 1}: ₹{Number(std.feePerSemester || 0).toLocaleString('en-IN')}/sem)
+                                of ₹{Number(std.totalFee).toLocaleString('en-IN')}
                               </span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3 whitespace-nowrap">
-                          <span className="font-bold text-emerald-700 block">
-                            ₹{Number(std.totalPaid).toLocaleString('en-IN')}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            of ₹{Number(std.totalFee).toLocaleString('en-IN')}
-                          </span>
-                        </td>
-                        <td className="p-3 whitespace-nowrap">
-                          <span className={`font-extrabold text-sm ${std.balanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-                            ₹{Number(std.balanceDue).toLocaleString('en-IN')}
-                          </span>
-                        </td>
-                        <td className="p-3 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            std.feeStatus === 'Fully Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                            std.feeStatus === 'Partial' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-rose-50 text-rose-700 border border-rose-200'
-                          }`}>
-                            {std.feeStatus}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-6px_0_12px_rgba(0,0,0,0.06)] min-w-[145px]">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleOpenCollectModal(std)}
-                              className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
-                              title="Collect Fee Installment"
-                            >
-                              <PlusCircle className="w-3.5 h-3.5 shrink-0" />
-                              <span>+ Collect</span>
-                            </button>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className={`font-extrabold text-sm ${std.balanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                                ₹{Number(std.balanceDue).toLocaleString('en-IN')}
+                              </span>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                std.feeStatus === 'Fully Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                std.feeStatus === 'Partial' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}>
+                                {std.feeStatus}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-6px_0_12px_rgba(0,0,0,0.06)] min-w-[145px]">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => handleOpenCollectModal(std)}
+                                  className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                                  title="Collect Fee Installment"
+                                >
+                                  <PlusCircle className="w-3.5 h-3.5 shrink-0" />
+                                  <span>+ Collect</span>
+                                </button>
 
-                            {isAdmin ? (
-                              <button
-                                onClick={() => handleOpenAdjustModal(std)}
-                                className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
-                                title="Admin Fee Correction (Correct cashier typos)"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 shrink-0" />
-                                <span>Edit Fee</span>
-                              </button>
-                            ) : (
-                              <span 
-                                className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 whitespace-nowrap"
-                                title="Locked: Only Admin can adjust fee totals"
-                              >
-                                <Lock className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>Locked</span>
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                                {isAdmin ? (
+                                  <button
+                                    onClick={() => handleOpenAdjustModal(std)}
+                                    className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                                    title="Admin Fee Correction (Correct cashier typos)"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Edit Fee</span>
+                                  </button>
+                                ) : (
+                                  <span 
+                                    className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 whitespace-nowrap"
+                                    title="Locked: Only Admin can adjust fee totals"
+                                  >
+                                    <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span>Locked</span>
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
+                          {std.linkedCourses && std.linkedCourses.map((linked, lIdx) => (
+                            <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 transition-colors">
+                              <td className="p-3 pl-4 font-mono font-bold text-indigo-900 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-amber-600 font-black text-sm">↳</span>
+                                  <span className="bg-white px-1.5 py-0.5 rounded border border-amber-300 text-xs font-mono text-indigo-950 font-bold">{linked.rollNo}</span>
+                                </div>
+                                <span className="inline-block text-[8px] font-black uppercase text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded ml-4 mt-0.5">
+                                  Dual Program
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-700">
+                                <div className="flex items-center gap-1.5 flex-wrap text-xs font-bold text-slate-900">
+                                  <span className="text-amber-600 font-black">↳</span>
+                                  <span className="uppercase">{std.fullName}</span>
+                                  <span className="inline-block bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black px-1.5 py-0.2 rounded">
+                                    {linked.courseType || 'Diploma'}
+                                  </span>
+                                </div>
+                                <span className="block text-[10px] text-slate-500 ml-3">Same Student (Dual Enrollment)</span>
+                              </td>
+                              <td className="p-3 text-slate-700">
+                                <span className="font-semibold text-slate-800 block text-[11px] max-w-[170px] truncate leading-tight" title={linked.collegeName}>
+                                  {linked.collegeName || 'Affiliated College'}
+                                </span>
+                                {linked.universityName && (
+                                  <span className="block text-[9px] text-indigo-700 font-bold max-w-[170px] truncate mt-0.5" title={linked.universityName}>
+                                    🏛️ {linked.universityName}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3 text-slate-700">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-amber-950 block truncate max-w-xs">{linked.courseName}</span>
+                                  <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                    {linked.courseType || 'Diploma'}
+                                  </span>
+                                </div>
+                                {linked.branch && <span className="text-[10px] text-slate-500 block">{linked.branch}</span>}
+                              </td>
+                              <td className="p-3 text-center whitespace-nowrap">
+                                <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                  {linked.currentClass || ('SEM-' + (linked.currentSemester || 1))}
+                                </span>
+                                <span className="block text-[10px] text-slate-500 mt-0.5">
+                                  Sem {linked.currentSemester || 1} of {linked.totalSemesters || 2}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                {linked.clearedSemesters >= linked.totalSemesters ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>All Sems Paid</span>
+                                  </span>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-rose-700 text-xs block">
+                                      ₹{Number(linked.currentSemesterDue || 0).toLocaleString('en-IN')} Due
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                      (Sem {linked.currentSemester || 1}: ₹{Number(linked.feePerSemester || 0).toLocaleString('en-IN')}/sem)
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className="font-bold text-emerald-700 block">
+                                  ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  of ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className={`font-extrabold text-sm ${linked.balanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                                  ₹{Number(linked.balanceDue || 0).toLocaleString('en-IN')}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                  linked.feeStatus === 'Fully Paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  linked.feeStatus === 'Partial' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                  'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}>
+                                  {linked.feeStatus}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center whitespace-nowrap sticky right-0 bg-amber-50/90 group-hover:bg-amber-100/90 z-10 shadow-[-6px_0_12px_rgba(0,0,0,0.06)] min-w-[145px]">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenCollectModal(linked)}
+                                    className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                                    title={`Collect Fee for ${linked.courseName}`}
+                                  >
+                                    <PlusCircle className="w-3.5 h-3.5 shrink-0" />
+                                    <span>+ Collect</span>
+                                  </button>
+                                  {isAdmin ? (
+                                    <button
+                                      onClick={() => handleOpenAdjustModal(linked)}
+                                      className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                                      title={`Edit Fee for ${linked.courseName}`}
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                                      <span>Edit Fee</span>
+                                    </button>
+                                  ) : (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 whitespace-nowrap"
+                                      title="Locked: Only Admin can adjust fee totals"
+                                    >
+                                      <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                                      <span>Locked</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>

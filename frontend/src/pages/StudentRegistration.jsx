@@ -3,7 +3,7 @@ import {
   UserPlus, Upload, FileText, CheckCircle2, AlertCircle, Printer, 
   CreditCard, Image as ImageIcon, FileCheck, Building, ShieldCheck,
   Calendar, Key, Hash, School, BookOpen, Layers, CheckSquare, Square,
-  Trash2, X, RefreshCw
+  Trash2, X, RefreshCw, Search, Sparkles, GraduationCap
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 
@@ -258,8 +258,17 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Status: 'Active',
     Reference: '',
     Remark: '',
+    isDualEnrollment: false,
+    primaryRollNo: null,
+    primaryStudentId: null,
     operatorName: staffUser ? `${staffUser.name} (${staffUser.role || 'Cashier'})` : (adminUser ? 'Institute Administrator' : 'Admissions Authority')
   });
+
+  // Dual Program / 2nd Course Fast-Fill Lookup State
+  const [lookupQuery, setLookupQuery] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState(null);
+  const [isDualMode, setIsDualMode] = useState(false);
 
   // Selected Documents Submitted Checklist (100% Optional at Admission)
   const [submittedDocs, setSubmittedDocs] = useState([]);
@@ -450,6 +459,89 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Dual Program Lookup Functions
+  const handleLookupStudent = async (overrideQuery) => {
+    const q = (typeof overrideQuery === 'string' ? overrideQuery : lookupQuery).trim();
+    if (!q) return;
+    setLookupLoading(true);
+    setLookupResult(null);
+    try {
+      const res = await fetch(`/api/students/lookup-dual?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.success && data.found) {
+        setLookupResult(data);
+      } else {
+        setLookupResult({ found: false });
+      }
+    } catch (err) {
+      console.error('Lookup error:', err);
+      setLookupResult({ found: false });
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleClearLookup = () => {
+    setLookupQuery('');
+    setLookupResult(null);
+  };
+
+  const handleAutoFillForDualCourse = (student) => {
+    if (!student) return;
+    setIsDualMode(true);
+
+    // Switch to DCA diploma by default for secondary course, or keep current
+    const dcaProg = ACADEMIC_PROGRAMS.find(p => p.degree === 'DCA');
+    const targetDegree = dcaProg ? 'DCA' : selectedDegree;
+    setSelectedDegree(targetDegree);
+
+    const prog = ACADEMIC_PROGRAMS.find(p => p.degree === targetDegree) || ACADEMIC_PROGRAMS[0];
+    const firstBranch = prog.branches?.[0];
+
+    const cleanPrimaryRoll = student.rollNo || '';
+    const suggestedRoll = `${cleanPrimaryRoll}-${targetDegree}`;
+
+    // Auto-populate KYC while preserving / setting dual enrollment linkage
+    setFormData(prev => ({
+      ...prev,
+      Student_Name: student.fullName || student.Student_Name || '',
+      Mother_Name: student.motherName || student.Mother_Name || '',
+      Father_Name: student.fatherName || student.Father_Name || '',
+      Date_Of_Birth: student.dob || student.Date_Of_Birth || '',
+      Gender: student.gender || student.Gender || 'Male',
+      Blood_Group: student.bloodGroup || student.Blood_Group || 'NA',
+      Contact: student.phone || student.contact || student.Contact || '',
+      Email_ID: student.email || student.Email_ID || '',
+      Address: student.address || student.Address || '',
+      Aadhaar_No: student.aadhaarNo || student.aadharNo || student.Aadhaar_No || '',
+      Samagra_id: student.samagraId || student.Samagra_id || '',
+      Enrollment_No: suggestedRoll,
+      Abc_id: student.abcId || student.Abc_id || '',
+      MPTass_id: student.mptassId || student.MPTass_id || '',
+      MPTass_Password: student.mptassPassword || student.MPTass_Password || '',
+      OTR_id: student.otrId || student.OTR_id || '',
+      Deb_id: student.debId || student.Deb_id || '',
+      Scholer_id: student.scholarId || student.Scholer_id || '',
+      User_id: student.userId || student.User_id || '',
+      Course_Name: firstBranch?.fullName || `${targetDegree} - ${firstBranch?.name || 'General'}`,
+      Branch: firstBranch?.name || 'General',
+      Course_Type: prog.courseType || 'Diploma',
+      Student_fee: String(firstBranch?.fee || prog.defaultFee || 25000),
+      Course_Fee_Paid: '',
+      Admission_Fee: '2000',
+      Admission_Fee_Paid: '2000',
+      Initial_Payment: '2000',
+      Reference: `Dual Admission (Primary: ${cleanPrimaryRoll})`,
+      isDualEnrollment: 'true',
+      primaryRollNo: cleanPrimaryRoll,
+      primaryStudentId: String(student.id || '')
+    }));
+
+    if (student.studentImage) {
+      setImagePreview(student.studentImage);
+    }
+  };
+
   // Document Modes & Attachments
   const handleDocModeSelect = (docName, mode) => {
     setDocModes(prev => ({ ...prev, [docName]: mode }));
@@ -569,6 +661,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setSubmittedDocs([]);
     setDocModes({});
     setDocFiles({});
+    setIsDualMode(false);
+    setLookupResult(null);
+    setLookupQuery('');
     setFormData(prev => ({
       ...prev,
       Student_Name: '',
@@ -596,7 +691,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Initial_Payment: '2000',
       Fee_Collected_By: 'Cashier',
       Reference: '',
-      Remark: ''
+      Remark: '',
+      isDualEnrollment: false,
+      primaryRollNo: null,
+      primaryStudentId: null
     }));
   };
 
@@ -693,6 +791,144 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
       {/* Main Comprehensive Admission Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200 space-y-10">
+        
+        {/* ========================================================================= */}
+        {/* DUAL ENROLLMENT / SECONDARY DEGREE-DIPLOMA QUICK LOOKUP */}
+        {/* ========================================================================= */}
+        <div className="bg-gradient-to-r from-amber-50 via-indigo-50/40 to-amber-50 border-2 border-amber-300/80 rounded-3xl p-5 sm:p-6 shadow-xs transition-all">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                  <GraduationCap className="w-3 h-3" />
+                  Dual Program Admission
+                </span>
+                <span className="text-xs font-bold text-slate-900">
+                  Student Enrolling in 2nd Course (e.g. DCA while doing BCA / BA)?
+                </span>
+              </div>
+              <p className="text-xs text-slate-600">
+                Search by Roll Number, Aadhaar Card, or Mobile number to 1-click auto-fill all student KYC details and link both courses together.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 w-full lg:w-auto">
+              <div className="relative flex-1 lg:w-72">
+                <input 
+                  type="text"
+                  value={lookupQuery}
+                  onChange={(e) => setLookupQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleLookupStudent(); }}}
+                  placeholder="Roll No / Aadhaar / Mobile"
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-amber-300 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-inner"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleLookupStudent()}
+                disabled={lookupLoading || !lookupQuery.trim()}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              >
+                {lookupLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>Find Student</span>
+              </button>
+              {lookupResult && (
+                <button
+                  type="button"
+                  onClick={handleClearLookup}
+                  className="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-xl transition-colors cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Display Found Student Card */}
+          {lookupResult && lookupResult.found && (
+            <div className="mt-4 pt-4 border-t border-amber-200 bg-white/95 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm border border-amber-200/60">
+              <div className="flex items-center gap-3">
+                {lookupResult.student?.studentImage ? (
+                  <img src={lookupResult.student.studentImage} alt="" className="w-12 h-12 rounded-xl object-cover border border-amber-300 shadow-xs" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 font-black flex items-center justify-center text-base border border-amber-300">
+                    {lookupResult.student?.fullName?.charAt(0) || 'S'}
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-sm text-slate-900 uppercase">{lookupResult.student?.fullName}</span>
+                    <span className="font-mono text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-200">
+                      Primary Roll: {lookupResult.student?.rollNo}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 mt-0.5 flex flex-wrap items-center gap-2">
+                    <span>Enrolled in: <strong className="text-indigo-900">{lookupResult.student?.courseName}</strong></span>
+                    <span>•</span>
+                    <span>{lookupResult.student?.collegeName}</span>
+                    {lookupResult.student?.aadhaarNo && (
+                      <>
+                        <span>•</span>
+                        <span className="font-mono text-[11px]">Aadhaar: {lookupResult.student?.aadhaarNo}</span>
+                      </>
+                    )}
+                  </div>
+                  {lookupResult.enrollments?.length > 1 && (
+                    <div className="text-[11px] text-amber-800 font-semibold mt-1">
+                      Currently enrolled in {lookupResult.enrollments.length} programs ({lookupResult.enrollments.map(e => e.courseName).join(', ')})
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleAutoFillForDualCourse(lookupResult.student)}
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>1-Click Auto-Fill for Dual Course (DCA)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {lookupResult && !lookupResult.found && (
+            <div className="mt-3 pt-3 border-t border-amber-200 text-xs text-rose-700 font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>No existing student found matching "{lookupQuery}". Please verify the Roll No, Aadhaar, or Mobile number.</span>
+            </div>
+          )}
+
+          {isDualMode && (
+            <div className="mt-4 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  Dual Enrollment Mode Active! Student: <strong>{formData.Student_Name}</strong> | Linked Primary Roll: <strong className="font-mono bg-white px-1.5 py-0.2 rounded border border-emerald-300">{formData.primaryRollNo}</strong> | New Program: <strong>{selectedDegree} ({formData.Course_Name})</strong>
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setIsDualMode(false);
+                  setFormData(prev => ({
+                    ...prev,
+                    isDualEnrollment: false,
+                    primaryRollNo: null,
+                    primaryStudentId: null
+                  }));
+                }} 
+                className="text-xs text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer ml-3 shrink-0"
+              >
+                Remove Link
+              </button>
+            </div>
+          )}
+        </div>
         
         {/* ========================================================================= */}
         {/* SECTION 1: PERSONAL & FAMILY PARTICULARS */}
@@ -900,17 +1136,31 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
             {/* Enrollment_No */}
             <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Enrollment_No
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider">
+                  Enrollment_No
+                </label>
+                {isDualMode && (
+                  <span className="text-[9px] font-black text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">
+                    Linked to {formData.primaryRollNo}
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 name="Enrollment_No"
                 value={formData.Enrollment_No}
                 onChange={handleInputChange}
                 placeholder="e.g. BU2026-9988 or Roll No"
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white focus:outline-none uppercase"
+                className={`w-full p-2.5 bg-slate-50 border rounded-xl font-mono focus:bg-white focus:outline-none uppercase ${
+                  isDualMode ? 'border-amber-400 bg-amber-50/40 text-indigo-950 font-bold' : 'border-slate-300'
+                }`}
               />
+              {isDualMode && (
+                <span className="text-[10px] text-amber-800 font-semibold block mt-1">
+                  💡 Disambiguated Roll for 2nd Course: {formData.Enrollment_No}
+                </span>
+              )}
             </div>
 
             {/* Abc_id */}

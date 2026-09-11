@@ -15,6 +15,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [selectedSemester, setSelectedSemester] = useState('all');
   const [timeframe, setTimeframe] = useState('all'); // 'all', 'week', 'month', 'year'
   const [timeframeCounts, setTimeframeCounts] = useState({ all: 0, week: 0, month: 0, year: 0 });
+  const [dualOnly, setDualOnly] = useState(false);
   
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -293,6 +294,34 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         </div>
       )}
 
+      {/* Table Header Bar with Dual Courses Filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="text-xs font-bold text-slate-700">Enrolled Students:</span>
+          <span className="font-extrabold text-sm text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+            {students.length} Total
+          </span>
+          <button
+            type="button"
+            onClick={() => setDualOnly(!dualOnly)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer border ${
+              dualOnly
+                ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs ring-2 ring-amber-400/40'
+                : 'bg-slate-50 text-slate-700 hover:bg-amber-50 border-slate-300'
+            }`}
+            title="Filter only students who are doing multiple courses simultaneously"
+          >
+            <span>🎓 Dual Courses (Degree + Diploma)</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${dualOnly ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {students.filter(s => s.isDualEnrolled).length}
+            </span>
+          </button>
+        </div>
+        <span className="text-[11px] text-slate-400 font-medium">
+          Students with multiple programs are grouped together with nested courses
+        </span>
+      </div>
+
       {/* Students Data Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -342,91 +371,208 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                     </div>
                   </td>
                 </tr>
-              ) : (
-                students.map((std) => {
+              ) : (() => {
+                const renderedSecondaryIds = new Set();
+                const displayedStudents = dualOnly 
+                  ? students.filter(s => s.isDualEnrolled)
+                  : students;
+
+                if (displayedStudents.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan="7" className="p-8 text-center text-slate-400">
+                        <p className="font-bold text-slate-700 text-sm">No dual-enrolled students found matching this criteria.</p>
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return displayedStudents.map((std) => {
+                  if (renderedSecondaryIds.has(std.id)) return null;
+
+                  if (std.linkedCourses && std.linkedCourses.length > 0) {
+                    std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
+                  }
+
                   const isFullyPaid = (std.totalPaid || 0) >= (std.totalFee || 0);
                   const isPartial = (std.totalPaid || 0) > 0 && !isFullyPaid;
 
                   return (
-                    <tr key={std.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 font-mono font-bold text-indigo-700">
-                        {std.rollNo}
-                        <span className="block text-[10px] text-slate-400 font-sans font-normal">{std.registrationNo}</span>
-                        {std.aadhaarNo && (
-                          <span className="block text-[9px] text-slate-500 font-mono font-normal">Aadhaar: {std.aadhaarNo}</span>
-                        )}
-                      </td>
-                      <td className="p-3.5 font-semibold text-slate-900 uppercase">
-                        {std.fullName}
-                        <span className="block text-[10px] text-slate-400 capitalize">Father: {std.fatherName}</span>
-                        {std.admissionDate && (
-                          <span className="inline-flex items-center gap-1 text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-bold mt-0.5 border border-indigo-100">
-                            <Calendar className="w-2.5 h-2.5 text-indigo-600" />
-                            <span>Admitted: {new Date(std.admissionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    <React.Fragment key={std.id}>
+                      <tr className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-indigo-700">
+                          {std.rollNo}
+                          <span className="block text-[10px] text-slate-400 font-sans font-normal">{std.registrationNo}</span>
+                          {std.aadhaarNo && (
+                            <span className="block text-[9px] text-slate-500 font-mono font-normal">Aadhaar: {std.aadhaarNo}</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 font-semibold text-slate-900 uppercase">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{std.fullName}</span>
+                            {std.isDualEnrolled && (
+                              <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded-md text-[9px] font-black tracking-normal">
+                                🎓 dual course ({std.dualEnrollmentCount || 2} programs)
+                              </span>
+                            )}
+                          </div>
+                          <span className="block text-[10px] text-slate-400 capitalize">Father: {std.fatherName}</span>
+                          {std.admissionDate && (
+                            <span className="inline-flex items-center gap-1 text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-bold mt-0.5 border border-indigo-100">
+                              <Calendar className="w-2.5 h-2.5 text-indigo-600" />
+                              <span>Admitted: {new Date(std.admissionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-800 block truncate max-w-xs">{std.courseName}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {std.courseType || 'Degree'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-indigo-600 font-bold block mt-0.5">
+                            Sem {std.currentSemester || 1} • {std.collegeName || 'PKC Institute'}
                           </span>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        <span className="font-medium text-slate-800 block truncate max-w-xs">{std.courseName}</span>
-                        <span className="text-[10px] text-indigo-600 font-bold">Sem {std.currentSemester || 1} • Batch {std.admissionYear}</span>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="font-semibold text-slate-700">10th: {std.academic10th?.percentage}%</span>
-                        <span className="block text-[10px] text-slate-500">12th: {std.academic12th?.percentage}%</span>
-                      </td>
-                      <td className="p-3.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                          isPartial ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                          'bg-rose-50 text-rose-700 border border-rose-200'
-                        }`}>
-                          {isFullyPaid ? 'Fully Paid' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
-                        </span>
-                        <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span>
-                      </td>
-                      <td className="p-3.5 text-slate-600">
-                        <span>{std.phone}</span>
-                        <span className="block text-[10px] text-slate-400 truncate max-w-xs">{std.email}</span>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleOpenProfile(std.rollNo)}
-                            className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
-                            title="View Full Profile & Uploaded Documents"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setPrintSlipStudent(std)}
-                            className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                            title="Print Admission Slip"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (onSelectStudentForFee) onSelectStudentForFee(std);
-                              setActiveTab('accounts');
-                            }}
-                            className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-                            title="Open Fee Payment Ledger"
-                          >
-                            <CreditCard className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteStudent(std.rollNo)}
-                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                            title="Delete Student"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-slate-700">10th: {std.academic10th?.percentage || 'N/A'}%</span>
+                          <span className="block text-[10px] text-slate-500">12th: {std.academic12th?.percentage || 'N/A'}%</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            isPartial ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                            'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}>
+                            {isFullyPaid ? 'Fully Paid' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span>
+                        </td>
+                        <td className="p-3.5 text-slate-600">
+                          <span>{std.phone}</span>
+                          <span className="block text-[10px] text-slate-400 truncate max-w-xs">{std.email}</span>
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenProfile(std.rollNo)}
+                              className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
+                              title="View Full Profile & Uploaded Documents"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setPrintSlipStudent(std)}
+                              className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                              title="Print Admission Slip"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (onSelectStudentForFee) onSelectStudentForFee(std);
+                                setActiveTab('accounts');
+                              }}
+                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                              title="Open Fee Payment Ledger"
+                            >
+                              <CreditCard className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(std.rollNo)}
+                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                              title="Delete Student"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
+                      {std.linkedCourses && std.linkedCourses.map((linked, lIdx) => (
+                        <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 transition-colors">
+                          <td className="p-3.5 pl-5 font-mono font-bold text-indigo-900">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-amber-600 font-black text-sm">↳</span>
+                              <span className="bg-white px-1.5 py-0.5 rounded border border-amber-300 text-xs font-mono font-bold">{linked.rollNo}</span>
+                            </div>
+                            <span className="inline-block text-[8px] font-black uppercase text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded ml-4 mt-0.5">
+                              Dual Course
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-slate-700">
+                            <div className="flex items-center gap-1.5 flex-wrap text-xs font-bold text-slate-900">
+                              <span className="text-amber-600 font-black">↳</span>
+                              <span className="uppercase">{std.fullName}</span>
+                              <span className="inline-block bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black px-1.5 py-0.2 rounded">
+                                {linked.courseType || 'Diploma'}
+                              </span>
+                            </div>
+                            <span className="block text-[10px] text-slate-400 ml-3">Same Student (Dual Enrollment)</span>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-amber-950 block truncate max-w-xs">{linked.courseName}</span>
+                              <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                {linked.courseType || 'Diploma'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-600 font-medium block mt-0.5">
+                              {linked.collegeName} ({linked.universityName})
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-slate-500 text-xs">
+                            <span>Verified KYC</span>
+                          </td>
+                          <td className="p-3.5">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              linked.balanceDue <= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                              linked.totalPaid > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                              'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}>
+                              {linked.balanceDue <= 0 ? 'Fully Paid' : linked.totalPaid > 0 ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
+                            </span>
+                            <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span>
+                          </td>
+                          <td className="p-3.5 text-slate-600">
+                            <span>{std.phone}</span>
+                          </td>
+                          <td className="p-3.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenProfile(linked.rollNo)}
+                                className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
+                                title={`View Profile for ${linked.courseName}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (onSelectStudentForFee) onSelectStudentForFee(linked);
+                                  setActiveTab('accounts');
+                                }}
+                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                title={`Open Fee Ledger for ${linked.courseName}`}
+                              >
+                                <CreditCard className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStudent(linked.rollNo)}
+                                className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                title="Delete Enrollment"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
                   );
-                })
-              )}
+                });
+              })()}
             </tbody>
           </table>
         </div>
