@@ -52,6 +52,8 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
   const [showCollectModal, setShowCollectModal] = useState(false);
   const [payStudent, setPayStudent] = useState(null);
   const [payAmount, setPayAmount] = useState('');
+  const [payReceiptNo, setPayReceiptNo] = useState('101');
+  const [nextReceiptNumber, setNextReceiptNumber] = useState('101');
   const [feeType, setFeeType] = useState('Tuition / Semester Fee (सेमेस्टर / ट्यूशन फीस)');
   const [paymentMode, setPaymentMode] = useState('Cash');
   const [transactionRef, setTransactionRef] = useState('');
@@ -74,7 +76,8 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
   const [adjustStudent, setAdjustStudent] = useState(null);
   const [adjustTotalFee, setAdjustTotalFee] = useState('');
   const [adjustTotalPaid, setAdjustTotalPaid] = useState('');
-  const [adjustReason, setAdjustReason] = useState('Corrected cashier data entry typo');
+  const [adjustReason, setAdjustReason] = useState('');
+  const [adjustAdminPin, setAdjustAdminPin] = useState('');
   const [adjustLoading, setAdjustLoading] = useState(false);
   const [adjustError, setAdjustError] = useState(null);
   const [adjustSuccess, setAdjustSuccess] = useState(null);
@@ -100,6 +103,9 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
       if (ledgerData.success) {
         setLedger(ledgerData.ledger || []);
         if (ledgerData.summary) setLedgerSummary(ledgerData.summary);
+        if (ledgerData.nextReceiptNo) {
+          setNextReceiptNumber(ledgerData.nextReceiptNo);
+        }
       }
     } catch (err) {
       console.error('Error fetching accounts data:', err);
@@ -174,7 +180,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
     }
   };
 
-  const handleOpenCollectModal = (std) => {
+  const handleOpenCollectModal = async (std) => {
     setPayStudent(std);
     const suggested = (std.currentSemesterDue && std.currentSemesterDue > 0)
       ? std.currentSemesterDue
@@ -192,6 +198,21 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
       setReceivedBy('Accounts Desk');
     }
     setPayError(null);
+
+    // Fetch freshest sequential receipt number (starts at 101 by default and increments)
+    try {
+      const rRes = await fetch('/api/fees/next-receipt');
+      const rData = await rRes.json();
+      if (rData.success && rData.nextReceiptNo) {
+        setPayReceiptNo(String(rData.nextReceiptNo));
+        setNextReceiptNumber(String(rData.nextReceiptNo));
+      } else {
+        setPayReceiptNo(nextReceiptNumber || '101');
+      }
+    } catch (e) {
+      setPayReceiptNo(nextReceiptNumber || '101');
+    }
+
     setShowCollectModal(true);
   };
 
@@ -212,6 +233,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
         body: JSON.stringify({
           rollNo: payStudent.rollNo,
           amount: Number(payAmount),
+          receiptNo: payReceiptNo,
           feeType: feeType,
           paymentMode: paymentMode,
           transactionRef: transactionRef,
@@ -975,9 +997,14 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                   <Receipt className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900">
-                {paymentsData.transactionCount || 0}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-2xl font-black text-slate-900">
+                  {paymentsData.transactionCount || 0}
+                </p>
+                <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full" title="Next auto-increment receipt number">
+                  Next: #{nextReceiptNumber || '101'}
+                </span>
+              </div>
               <span className="text-[11px] text-slate-400 block">
                 Payment receipts issued in period
               </span>
@@ -1021,7 +1048,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
-                placeholder="Search payments by Student Name, Roll No, Receipt No, TXN Ref, Cashier..."
+                placeholder="Search payments by Student Name, Roll No, Receipt No (e.g. 101), TXN Ref, Cashier..."
                 value={paymentSearch}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -1407,7 +1434,28 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Receipt Number (starts from 101 by default, increments automatically) & Payment Mode */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Receipt No. (रसीद क्रमांक) *</span>
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded">
+                          Auto: Start 101+
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={payReceiptNo}
+                        onChange={(e) => setPayReceiptNo(e.target.value)}
+                        placeholder="101"
+                        className="w-full p-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-emerald-950 text-sm shadow-2xs"
+                        required
+                      />
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Default 101 से स्टार्ट होकर फीस जमा होने पर आगे बढ़ता है।
+                      </span>
+                    </div>
+
                     <div>
                       <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Payment Mode *
@@ -1424,7 +1472,9 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                         <option value="Bank Cheque / DD">Demand Draft / Cheque</option>
                       </select>
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
                         Transaction / Ref No.
@@ -1435,8 +1485,20 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                         onChange={(e) => setTransactionRef(e.target.value)}
                         placeholder="TXN-998822"
                         className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none font-mono"
-                      >
-                      </input>
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Cashier / Received By (Official Desk Officer)
+                      </label>
+                      <input
+                        type="text"
+                        value={receivedBy}
+                        onChange={(e) => setReceivedBy(e.target.value)}
+                        placeholder="Operator Name"
+                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none font-medium text-slate-800"
+                      />
                     </div>
                   </div>
 
@@ -1450,19 +1512,6 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                       onChange={(e) => setPaidFor(e.target.value)}
                       placeholder="Semester 1 Tuition Fee Installment"
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Cashier / Received By (Official Desk Officer)
-                    </label>
-                    <input
-                      type="text"
-                      value={receivedBy}
-                      onChange={(e) => setReceivedBy(e.target.value)}
-                      placeholder="Operator Name"
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none font-medium text-slate-800"
                     />
                   </div>
                 </div>

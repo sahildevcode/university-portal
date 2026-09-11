@@ -459,8 +459,8 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
               <tr>
                 <th className="p-3.5">Roll No</th>
                 <th className="p-3.5">Student Name</th>
-                <th className="p-3.5">Course &amp; Semester</th>
-                <th className="p-3.5">10th / 12th %</th>
+                <th className="p-3.5">Course</th>
+                <th className="p-3.5">Semester</th>
                 <th className="p-3.5">Fee Status</th>
                 <th className="p-3.5">Contact</th>
                 <th className="p-3.5 text-center">Actions</th>
@@ -555,33 +555,31 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                         </td>
                         <td className="p-3.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-800 block truncate max-w-xs">{std.courseName}</span>
+                            <span className="font-bold text-slate-900 block truncate max-w-xs">{std.courseName}</span>
                             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                               {std.courseType || 'Degree'}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200">
-                              {std.currentClass || `SEM-${std.currentSemester || 1}`}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handlePromoteStudent(std)}
-                              disabled={promotingRoll === std.rollNo}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
-                              title="Admin Power: Promote to Next Semester"
-                            >
-                              <Zap className="w-2.5 h-2.5 text-emerald-600" />
-                              <span>{promotingRoll === std.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
-                            </button>
                           </div>
                           <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
                             {std.collegeName || 'PKC Institute'} ({std.universityName || 'University'})
                           </span>
                         </td>
                         <td className="p-3.5">
-                          <span className="font-semibold text-slate-700">10th: {std.academic10th?.percentage || 'N/A'}%</span>
-                          <span className="block text-[10px] text-slate-500">12th: {std.academic12th?.percentage || 'N/A'}%</span>
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200">
+                              {std.currentClass || `SEM-${std.currentSemester || 1}`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handlePromoteStudent(std)}
+                              disabled={promotingRoll === std.rollNo}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer shadow-2xs"
+                              title="Admin Power: Promote to Next Semester"
+                            >
+                              <Zap className="w-3 h-3 text-emerald-600" />
+                              <span>{promotingRoll === std.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
+                            </button>
+                          </div>
                         </td>
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -592,6 +590,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                             {isFullyPaid ? 'Fully Paid' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
                           </span>
                           <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span>
+                          <span className="block text-[9px] text-slate-400">Total: ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}</span>
                         </td>
                         <td className="p-3.5 text-slate-600">
                           <span>{std.phone}</span>
@@ -670,27 +669,26 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                                 {linked.courseType || 'Diploma'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                            <span className="text-[10px] text-slate-600 font-medium block mt-0.5">
+                              {linked.collegeName} ({linked.universityName})
+                            </span>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex flex-col gap-1.5 items-start">
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300">
                                 {linked.currentClass || `SEM-${linked.currentSemester || 1}`}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handlePromoteStudent(linked)}
                                 disabled={promotingRoll === linked.rollNo}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer shadow-2xs"
                                 title="Admin Power: Promote to Next Semester"
                               >
-                                <Zap className="w-2.5 h-2.5 text-emerald-600" />
+                                <Zap className="w-3 h-3 text-emerald-600" />
                                 <span>{promotingRoll === linked.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
                               </button>
                             </div>
-                            <span className="text-[10px] text-slate-600 font-medium block mt-0.5">
-                              {linked.collegeName} ({linked.universityName})
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-slate-500 text-xs">
-                            <span>Verified KYC</span>
                           </td>
                           <td className="p-3.5">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -701,6 +699,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                               {linked.balanceDue <= 0 ? 'Fully Paid' : linked.totalPaid > 0 ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
                             </span>
                             <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span>
+                            <span className="block text-[9px] text-slate-400">Total: ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}</span>
                           </td>
                           <td className="p-3.5 text-slate-600">
                             <span>{std.phone}</span>

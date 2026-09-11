@@ -1169,7 +1169,7 @@ app.post(
 
       let initialReceipt = null;
       if (initialPaid > 0) {
-        const receiptNo = `RCPT-${year}-${String(db.fee_payments.length + 1).padStart(4, '0')}`;
+        const receiptNo = String(getNextReceiptNumber(db));
         initialReceipt = {
           id: `pay-${Date.now()}`,
           receiptNo: receiptNo,
@@ -1261,7 +1261,7 @@ app.post(
           db.students.unshift(secondaryStudent);
 
           if (secPaid > 0) {
-            const secReceiptNo = `RCPT-${year}-${String(db.fee_payments.length + 1).padStart(4, '0')}`;
+            const secReceiptNo = String(getNextReceiptNumber(db));
             secondaryReceipt = {
               id: `pay-${Date.now() + 2}`,
               receiptNo: secReceiptNo,
@@ -1580,6 +1580,42 @@ app.get('/api/fees/payments', (req, res) => {
   });
 });
 
+// Helper to get next sequential receipt number (starts from 101 by default, increments automatically)
+function getNextReceiptNumber(db) {
+  const payments = db.fee_payments || [];
+  let maxNum = 100; // Defaults to 100 so first receipt starts at 101
+  for (const p of payments) {
+    if (!p || !p.receiptNo) continue;
+    const str = String(p.receiptNo).trim();
+    if (/^\d+$/.test(str)) {
+      const n = parseInt(str, 10);
+      if (n >= 101 && n < 10000000) {
+        if (n > maxNum) maxNum = n;
+      }
+    } else {
+      const match = str.match(/(?:^|[^\d])(\d{3,7})$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n >= 101 && n < 10000000 && n !== 2024 && n !== 2025 && n !== 2026 && n !== 2027) {
+          if (n > maxNum) maxNum = n;
+        }
+      }
+    }
+  }
+  return maxNum + 1;
+}
+
+// Get Next Sequential Receipt Number
+app.get('/api/fees/next-receipt', (req, res) => {
+  try {
+    const db = readDB();
+    const nextReceiptNo = String(getNextReceiptNumber(db));
+    res.json({ success: true, nextReceiptNo });
+  } catch (err) {
+    res.status(500).json({ success: false, nextReceiptNo: '101' });
+  }
+});
+
 // Helper to dynamically calculate semester progression across any program (8 sem, 6 sem, diploma, etc.)
 function computeStudentSemesterProgress(student, courses = []) {
   const course = (courses || []).find(c => c.id === student.courseId || c.name?.toLowerCase() === student.courseName?.toLowerCase()) || {};
@@ -1784,15 +1820,18 @@ app.get('/api/fees/ledger', (req, res) => {
   const totalBalanceDue = ledger.reduce((acc, s) => acc + (s.balanceDue || 0), 0);
   const totalSemesterDue = ledger.reduce((acc, s) => acc + (s.currentSemesterDue || 0), 0);
   const dueStudentsCount = ledger.filter(s => s.balanceDue > 0).length;
+  const nextReceiptNo = String(getNextReceiptNumber(db));
 
   res.json({
     success: true,
     ledger,
+    nextReceiptNo,
     summary: {
       totalStudents: ledger.length,
       dueStudentsCount,
       totalBalanceDue,
-      totalSemesterDue
+      totalSemesterDue,
+      nextReceiptNo
     }
   });
 });
@@ -1801,7 +1840,7 @@ app.get('/api/fees/ledger', (req, res) => {
 app.post('/api/fees/pay', (req, res) => {
   try {
     const db = readDB();
-    const { rollNo, amount, paymentMode, transactionRef, paidFor, feeType, receivedBy } = req.body;
+    const { rollNo, amount, paymentMode, transactionRef, paidFor, feeType, receivedBy, receiptNo: customReceiptNo } = req.body;
 
     if (!rollNo || !amount || Number(amount) <= 0) {
       return res.status(400).json({ success: false, message: 'Please provide valid Roll No and payment amount.' });
@@ -1827,8 +1866,9 @@ app.post('/api/fees/pay', (req, res) => {
     student.currentSemester = prog.currentSemester;
     student.currentClass = prog.currentClass;
 
-    const year = new Date().getFullYear();
-    const receiptNo = `RCPT-${year}-${String(db.fee_payments.length + 1).padStart(4, '0')}`;
+    const receiptNo = customReceiptNo && String(customReceiptNo).trim()
+      ? String(customReceiptNo).trim()
+      : String(getNextReceiptNumber(db));
 
     const newPayment = {
       id: `pay-${Date.now()}`,
