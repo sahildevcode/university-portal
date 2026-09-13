@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown, ExternalLink } from 'lucide-react';
+import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown, ExternalLink, UploadCloud } from 'lucide-react';
 import StudentRegistration from './StudentRegistration';
 import AccountsDashboard from './AccountsDashboard';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
+import BulkImportModal from '../components/BulkImportModal';
 
 export default function CashCounterPortal({ courses, staffUser, onStaffLogout }) {
   const [activeTab, setActiveTab] = useState('collect-fee'); // 'collect-fee' | 'walkin-admission' | 'documents'
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [isDeskDropdownOpen, setIsDeskDropdownOpen] = useState(false);
   const deskDropdownRef = useRef(null);
 
@@ -109,6 +111,14 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
               </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={() => setShowBulkImportModal(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-amber-200 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl transition-colors border border-amber-400/40 cursor-pointer"
+                title="Bulk Import Students & Past Fees from Excel or PDF"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
+                <span>Bulk Import Data</span>
+              </button>
               <a
                 href="/"
                 target="_blank"
@@ -162,8 +172,19 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
           </div>
         </div>
 
-        {/* Interactive Custom Dropdown Menu */}
-        <div className="relative min-w-[280px] sm:min-w-[360px]" ref={deskDropdownRef}>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowBulkImportModal(true)}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-3.5 py-2.5 rounded-2xl text-xs shadow-md transition-all cursor-pointer border border-emerald-400/40 shrink-0"
+            title="Bulk Import Students & Past Fees from Excel or PDF"
+          >
+            <UploadCloud className="w-4 h-4 text-amber-300" />
+            <span>📥 Bulk Import</span>
+          </button>
+
+          {/* Interactive Custom Dropdown Menu */}
+          <div className="relative min-w-[260px] sm:min-w-[340px]" ref={deskDropdownRef}>
           <button
             type="button"
             onClick={() => setIsDeskDropdownOpen(!isDeskDropdownOpen)}
@@ -221,6 +242,7 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
           )}
         </div>
       </div>
+    </div>
 
       {/* Tab Content */}
       {activeTab === 'collect-fee' && (
@@ -250,6 +272,16 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
           <StudentDocumentsTracker isAdmin={false} staffUser={staffUser} courses={courses} />
         </div>
       )}
+
+      {/* Bulk Data Import Modal */}
+      <BulkImportModal
+        isOpen={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        operatorName={staffUser?.name || 'Staff'}
+        onImportSuccess={() => {
+          // Trigger refresh if needed
+        }}
+      />
 
     </div>
   );

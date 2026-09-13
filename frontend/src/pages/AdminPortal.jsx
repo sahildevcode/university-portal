@@ -3,7 +3,7 @@ import {
   Shield, BookOpen, Plus, Edit3, Trash2, Users, CreditCard, 
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
-  Copy, Check, ExternalLink, ChevronRight, Menu, X
+  Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -12,6 +12,7 @@ import StudentRegistration from './StudentRegistration';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
 import WebsiteCmsManager from './WebsiteCmsManager';
 import UniversityPaidManager from './UniversityPaidManager';
+import BulkImportModal from '../components/BulkImportModal';
 
 export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLogout }) {
   const [activeTab, setActiveTab] = useState('syllabus');
@@ -21,6 +22,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -274,6 +276,16 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Bulk Import Data */}
+          <button
+            onClick={() => setShowBulkImportModal(true)}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white border border-emerald-400/40 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+            title="Bulk Import Students & Past Fees from Excel or PDF"
+          >
+            <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
+            <span>📥 Bulk Import Data</span>
+          </button>
+
           {/* View Public Student Website */}
           <a
             href="/"
@@ -606,6 +618,14 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
               >
                 ➕ New Student Admission Form (39 Fields)
               </button>
+              <button
+                onClick={() => setShowBulkImportModal(true)}
+                className="px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5"
+                title="Bulk Import Students & Past Fees from Excel or PDF"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
+                <span>📥 Bulk Import (Excel / PDF)</span>
+              </button>
             </div>
             <span className="text-[11px] font-semibold text-slate-500">
               Active Mode: <strong className="text-indigo-950">{admissionSubTab === 'directory' ? 'Student Records & Verification' : 'MP Govt Higher Education Admission Desk'}</strong>
@@ -773,6 +793,17 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
           </div>
         </div>
       )}
+
+      {/* Bulk Data Import Modal (Excel / PDF) */}
+      <BulkImportModal
+        isOpen={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        operatorName={adminUser?.name || 'Administrator'}
+        onImportSuccess={() => {
+          setSuccessMsg('Bulk import completed successfully! Legacy students and fee accounts are live.');
+          if (onRefreshCourses) onRefreshCourses();
+        }}
+      />
 
     </div>
   );

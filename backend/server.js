@@ -4,6 +4,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import XLSX from 'xlsx';
+import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +13,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const memUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024 }
+});
 
 initDB();
 const uploadDir = path.join(__dirname, 'uploads', 'documents');
@@ -952,6 +959,590 @@ app.get('/api/students', (req, res) => {
   }
 
   res.json({ success: true, count: list.length, students: list, timeframeCounts });
+});
+
+// ====================================================
+// BULK STUDENT & FEE DATA IMPORT (EXCEL / PDF)
+// ====================================================
+
+function getColVal(row, aliases = []) {
+  if (!row || typeof row !== 'object') return '';
+  const cleanAliases = aliases.map(a => a.toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, ''));
+  for (const key of Object.keys(row)) {
+    const cleanKey = key.toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+    if (cleanAliases.includes(cleanKey)) {
+      const val = row[key];
+      return val !== undefined && val !== null ? String(val).trim() : '';
+    }
+  }
+  return '';
+}
+
+function normalizeStudentRow(row, idx = 0) {
+  const studentName = getColVal(row, ['Student_Name', 'StudentName', 'FullName', 'Name', 'Student', 'नाम', 'विद्यार्थी का नाम']) || `Student ${idx + 1}`;
+  const fatherName = getColVal(row, ['Father_Name', 'FatherName', 'Father', 'पिता का नाम', 'FathersName']);
+  const motherName = getColVal(row, ['Mother_Name', 'MotherName', 'Mother', 'माता का नाम']);
+  const rollNo = getColVal(row, ['Roll_No', 'RollNo', 'Roll', 'अनुक्रमांक', 'RollNumber']);
+  const enrollmentNo = getColVal(row, ['Enrollment_No', 'EnrollmentNo', 'Enrollment', 'RegNo', 'Registration_No', 'पंजीयन क्र']);
+  const courseName = getColVal(row, ['Course_Name', 'CourseName', 'Course', 'कोर्स', 'Program', 'Degree']) || 'General Degree';
+  const branch = getColVal(row, ['Branch', 'Stream', 'Department', 'शाखा']) || 'General';
+  const admissionSession = getColVal(row, ['Admission_Session', 'AdmissionSession', 'Session', 'सत्र', 'AcademicSession', 'Batch']) || '2024-2025';
+  const currentClassVal = getColVal(row, ['Current_Class', 'CurrentClass', 'Class', 'Semester', 'Sem', 'कक्षा', 'सेमेस्टर']) || 'SEM-1';
+  
+  let currentSemester = 1;
+  const semMatch = currentClassVal.match(/\d+/);
+  if (semMatch) {
+    currentSemester = parseInt(semMatch[0], 10);
+  }
+  const currentClass = currentClassVal.toUpperCase().startsWith('SEM') ? currentClassVal.toUpperCase() : `SEM-${currentSemester}`;
+
+  const rawFee = getColVal(row, ['Total_Fee', 'TotalFee', 'CourseFee', 'Fee', 'कुल फीस', 'PackageFee']);
+  const totalFee = Number(rawFee.replace(/[^0-9.]/g, '')) || 30000;
+
+  const rawSch = getColVal(row, ['Scholarship_Amount', 'ScholarshipAmount', 'Scholarship', 'छात्रवृत्ति']);
+  const scholarshipAmount = Number(rawSch.replace(/[^0-9.]/g, '')) || 0;
+
+  const rawPaid = getColVal(row, ['Fee_Paid', 'FeePaid', 'Paid', 'TotalPaid', 'जमा फीस', 'AmountPaid']);
+  const totalPaid = Number(rawPaid.replace(/[^0-9.]/g, '')) || 0;
+
+  const netTotalFee = Math.max(0, totalFee - scholarshipAmount);
+  const balanceDue = Math.max(0, netTotalFee - totalPaid);
+
+  const phone = getColVal(row, ['Contact_No', 'Contact', 'Phone', 'Mobile', 'मोबाइल', 'ContactNumber']);
+  const email = getColVal(row, ['Email_ID', 'Email', 'EmailId', 'Mail']);
+  const aadhaarNo = getColVal(row, ['Aadhaar_No', 'Aadhaar', 'Aadhar', 'आधार']);
+  const samagraId = getColVal(row, ['Samagra_ID', 'Samagra', 'SamagraId', 'समग्र']);
+  const universityName = getColVal(row, ['University_Name', 'UniversityName', 'University', 'विश्वविद्यालय']) || 'Maharaja Chhatrasal Bundelkhand University (MCBU)';
+  const collegeName = getColVal(row, ['College_Name', 'CollegeName', 'College', 'महाविद्यालय']) || 'PKC Education & Consultancy';
+  const gender = getColVal(row, ['Gender', 'Sex', 'लिंग']) || 'Male';
+  const socialCategory = getColVal(row, ['Category', 'SocialCategory', 'Caste', 'वर्ग', 'जाति']) || 'General';
+  const address = getColVal(row, ['Address', 'City', 'District', 'पता']);
+  const docsSubmitted = getColVal(row, ['Documents_Submitted', 'Documents', 'Docs', 'दस्तावेज', 'DocumentSubmit']) || '10th, 12th, Aadhaar';
+
+  return {
+    studentName,
+    fatherName,
+    motherName,
+    rollNo,
+    enrollmentNo,
+    courseName,
+    branch,
+    admissionSession,
+    currentClass,
+    currentSemester,
+    totalFee,
+    scholarshipAmount,
+    netTotalFee,
+    totalPaid,
+    balanceDue,
+    phone,
+    email,
+    aadhaarNo,
+    samagraId,
+    universityName,
+    collegeName,
+    gender,
+    socialCategory,
+    address,
+    docsSubmitted
+  };
+}
+
+function parsePdfTextToStudents(rawText) {
+  if (!rawText || typeof rawText !== 'string') return [];
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const results = [];
+
+  // Strategy 1: Check if lines look like delimited table rows (tabs, pipes, commas, or multi-space)
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Skip common header lines
+    if (/^(s\.?no|sr\.?no|roll|name|student|course|session)/i.test(line) && /(fee|paid|contact|class)/i.test(line)) {
+      continue;
+    }
+
+    // Check pipe, tab, comma, or multi-space separated
+    let cols = [];
+    if (line.includes('|')) {
+      cols = line.split('|').map(c => c.trim()).filter(Boolean);
+    } else if (line.includes('\t')) {
+      cols = line.split('\t').map(c => c.trim()).filter(Boolean);
+    } else if (line.includes(',')) {
+      cols = line.split(',').map(c => c.trim()).filter(Boolean);
+    } else if (/\s{3,}/.test(line)) {
+      cols = line.split(/\s{3,}/).map(c => c.trim()).filter(Boolean);
+    }
+
+    if (cols.length >= 3) {
+      const nameCandidate = cols[0].replace(/^\d+[\.\)]\s*/, '').trim();
+      if (nameCandidate && nameCandidate.length > 2 && !/^(total|summary|grand|page)/i.test(nameCandidate)) {
+        let course = 'General Degree';
+        let roll = '';
+        let fee = 30000;
+        let paid = 0;
+        let phone = '';
+        let session = '2024-2025';
+
+        cols.forEach((col, cIdx) => {
+          if (cIdx === 0) return;
+          if (/20\d{2}[-/]\d{2,4}/.test(col)) {
+            session = col;
+          } else if (/^\d{10}$/.test(col.replace(/\D/g, ''))) {
+            phone = col.replace(/\D/g, '');
+          } else if (/^(UNIV|REG|[A-Z]{2,4}\d{4})/i.test(col)) {
+            roll = col;
+          } else if (/(BCA|B\.Tech|MBA|BBA|MCA|BA|B\.Com|B\.Sc|DCA|PGDCA|M\.Sc|MA|LLB)/i.test(col)) {
+            course = col;
+          } else if (/^\d{3,6}$/.test(col.replace(/[^0-9]/g, ''))) {
+            const num = parseInt(col.replace(/[^0-9]/g, ''), 10);
+            if (num >= 5000 && fee === 30000) {
+              fee = num;
+            } else if (num >= 0 && paid === 0) {
+              paid = num;
+            }
+          }
+        });
+
+        results.push(normalizeStudentRow({
+          Student_Name: nameCandidate,
+          Roll_No: roll,
+          Course_Name: course,
+          Admission_Session: session,
+          Total_Fee: fee,
+          Fee_Paid: paid,
+          Contact_No: phone
+        }, results.length));
+      }
+    }
+  }
+
+  // Strategy 2: If tabular didn't find enough rows, check for Key: Value patterns
+  if (results.length === 0) {
+    const fullText = lines.join('\n');
+    const studentBlocks = fullText.split(/(?:Student\s*Name|Candidate\s*Name|विद्यार्थी\s*का\s*नाम|Roll\s*No\.?\s*:)/i);
+    
+    if (studentBlocks.length > 1) {
+      studentBlocks.forEach((block) => {
+        if (!block.trim() || block.length < 15) return;
+        const bLines = block.split('\n');
+        let sName = bLines[0].replace(/^[:\-\s]+/, '').trim();
+        if (!sName || sName.length > 50) return;
+
+        const getVal = (regex) => {
+          const match = block.match(regex);
+          return match ? match[1].trim() : '';
+        };
+
+        const father = getVal(/(?:Father(?:'s)?\s*Name|पिता\s*का\s*नाम)\s*[:\-]\s*([^\n\r]+)/i);
+        const course = getVal(/(?:Course|Class|Program|कोर्स)\s*[:\-]\s*([^\n\r]+)/i);
+        const roll = getVal(/(?:Roll\s*No\.?|Enrollment\s*No\.?|अनुक्रमांक)\s*[:\-]\s*([^\n\r]+)/i);
+        const fee = getVal(/(?:Total\s*Fee|Course\s*Fee|Package\s*Fee|फीस)\s*[:\-]\s*([^\n\r]+)/i);
+        const paid = getVal(/(?:Paid\s*Fee|Fee\s*Paid|जमा\s*राशि)\s*[:\-]\s*([^\n\r]+)/i);
+        const contact = getVal(/(?:Mobile|Contact|Phone|मोबाइल)\s*[:\-]\s*([^\n\r]+)/i);
+        const session = getVal(/(?:Session|Batch|सत्र)\s*[:\-]\s*([^\n\r]+)/i);
+
+        results.push(normalizeStudentRow({
+          Student_Name: sName,
+          Father_Name: father,
+          Course_Name: course || 'General Degree',
+          Roll_No: roll,
+          Admission_Session: session || '2024-2025',
+          Total_Fee: fee || 30000,
+          Fee_Paid: paid || 0,
+          Contact_No: contact
+        }, results.length));
+      });
+    }
+  }
+
+  return results;
+}
+
+// Download Official Bulk Import Excel Template
+app.get('/api/students/import-template', (req, res) => {
+  try {
+    const wb = XLSX.utils.book_new();
+
+    const headers = [
+      'Student_Name',
+      'Father_Name',
+      'Mother_Name',
+      'Roll_No',
+      'Enrollment_No',
+      'Course_Name',
+      'Branch',
+      'Admission_Session',
+      'Current_Class',
+      'Total_Fee',
+      'Scholarship_Amount',
+      'Fee_Paid',
+      'Contact_No',
+      'Email_ID',
+      'Aadhaar_No',
+      'Samagra_ID',
+      'University_Name',
+      'College_Name',
+      'Gender',
+      'Category',
+      'Address',
+      'Documents_Submitted'
+    ];
+
+    const sampleRows = [
+      {
+        Student_Name: 'Rahul Verma',
+        Father_Name: 'Suresh Verma',
+        Mother_Name: 'Sunita Verma',
+        Roll_No: 'UNIV2024001',
+        Enrollment_No: 'REG-2024-1001',
+        Course_Name: 'Bachelor of Computer Applications (BCA)',
+        Branch: 'Computer Applications',
+        Admission_Session: '2024-2025',
+        Current_Class: 'SEM-3',
+        Total_Fee: 36000,
+        Scholarship_Amount: 5000,
+        Fee_Paid: 20000,
+        Contact_No: '9876543210',
+        Email_ID: 'rahul.verma@example.com',
+        Aadhaar_No: '1234-5678-9012',
+        Samagra_ID: '123456789',
+        University_Name: 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
+        College_Name: 'Govt PG College Chhatarpur',
+        Gender: 'Male',
+        Category: 'OBC',
+        Address: 'Civil Lines, Chhatarpur (M.P.)',
+        Documents_Submitted: '10th, 12th, Aadhaar, Samagra, TC'
+      },
+      {
+        Student_Name: 'Priya Sharma',
+        Father_Name: 'Rajesh Sharma',
+        Mother_Name: 'Anita Sharma',
+        Roll_No: 'UNIV2023045',
+        Enrollment_No: 'REG-2023-1045',
+        Course_Name: 'Bachelor of Arts (BA)',
+        Branch: 'Humanities & Social Science',
+        Admission_Session: '2023-2024',
+        Current_Class: 'SEM-5',
+        Total_Fee: 18000,
+        Scholarship_Amount: 0,
+        Fee_Paid: 18000,
+        Contact_No: '9823456789',
+        Email_ID: 'priya.sharma@example.com',
+        Aadhaar_No: '9876-5432-1012',
+        Samagra_ID: '987654321',
+        University_Name: 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
+        College_Name: 'Govt PG College Chhatarpur',
+        Gender: 'Female',
+        Category: 'General',
+        Address: 'Mahoba Road, Chhatarpur (M.P.)',
+        Documents_Submitted: '10th, 12th, Aadhaar, TC, Migration'
+      },
+      {
+        Student_Name: 'Amit Patel',
+        Father_Name: 'Mahendra Patel',
+        Mother_Name: 'Geeta Patel',
+        Roll_No: 'UNIV2025012',
+        Enrollment_No: 'REG-2025-1012',
+        Course_Name: 'Diploma in Computer Application (DCA)',
+        Branch: 'Information Technology',
+        Admission_Session: '2025-2026',
+        Current_Class: 'SEM-1',
+        Total_Fee: 12000,
+        Scholarship_Amount: 2000,
+        Fee_Paid: 5000,
+        Contact_No: '9712345678',
+        Email_ID: 'amit.patel@example.com',
+        Aadhaar_No: '5544-3322-1100',
+        Samagra_ID: '554433221',
+        University_Name: 'Makhanlal Chaturvedi National University (MCU Bhopal)',
+        College_Name: 'PKC Education & Consultancy',
+        Gender: 'Male',
+        Category: 'OBC',
+        Address: 'Galla Mandi, Nowgong (M.P.)',
+        Documents_Submitted: '10th, Aadhaar, Photo'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleRows, { header: headers });
+    const colWidths = headers.map(h => ({ wch: Math.max(h.length + 4, 18) }));
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Students_Import_Format');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="PKC_Student_Bulk_Import_Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error generating import template:', err);
+    res.status(500).json({ success: false, message: 'Could not generate template: ' + err.message });
+  }
+});
+
+// Parse Uploaded Excel or CSV File
+app.post('/api/students/parse-excel', memUpload.single('file'), (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, message: 'Please select an Excel (.xlsx / .xls) or CSV file to upload.' });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      return res.status(400).json({ success: false, message: 'The uploaded Excel file contains no worksheets.' });
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+    if (!rawRows || rawRows.length === 0) {
+      return res.status(400).json({ success: false, message: 'The worksheet is empty. Please add data rows under the headers.' });
+    }
+
+    const records = rawRows.map((r, idx) => normalizeStudentRow(r, idx)).filter(s => s.studentName && s.studentName.trim() !== '');
+
+    res.json({
+      success: true,
+      sheetName,
+      totalRowsFound: rawRows.length,
+      count: records.length,
+      records
+    });
+  } catch (err) {
+    console.error('Error parsing Excel file:', err);
+    res.status(500).json({ success: false, message: 'Failed to parse Excel file: ' + err.message });
+  }
+});
+
+// Parse Uploaded PDF File or Raw Extracted Text
+app.post('/api/students/parse-pdf', memUpload.single('file'), async (req, res) => {
+  try {
+    let extractedText = '';
+
+    if (req.file && req.file.buffer) {
+      const pdfData = await pdfParse(req.file.buffer);
+      extractedText = pdfData.text || '';
+    } else if (req.body && req.body.rawText) {
+      extractedText = req.body.rawText;
+    } else {
+      return res.status(400).json({ success: false, message: 'Please upload a PDF document or paste extracted text.' });
+    }
+
+    const records = parsePdfTextToStudents(extractedText);
+
+    res.json({
+      success: true,
+      textLength: extractedText.length,
+      previewSnippet: extractedText.slice(0, 500),
+      count: records.length,
+      records
+    });
+  } catch (err) {
+    console.error('Error parsing PDF file:', err);
+    res.status(500).json({ success: false, message: 'Failed to parse PDF document: ' + err.message });
+  }
+});
+
+// Commit Bulk Import into Database
+app.post('/api/students/bulk-import', (req, res) => {
+  try {
+    const db = readDB();
+    const { students = [], clearExisting = false, operatorName = 'Admin' } = req.body;
+
+    if (!Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ success: false, message: 'No student records provided for import.' });
+    }
+
+    if (!db.students) db.students = [];
+    if (!db.fee_payments) db.fee_payments = [];
+
+    if (clearExisting === true) {
+      db.students = [];
+      db.fee_payments = [];
+    }
+
+    const importedStudents = [];
+    const generatedReceipts = [];
+    const now = new Date();
+    const timestamp = now.toISOString();
+
+    for (let i = 0; i < students.length; i++) {
+      const row = students[i];
+      const studentIdx = db.students.length + 1;
+      const yr = row.admissionSession ? row.admissionSession.split('-')[0] : now.getFullYear();
+      
+      let finalRoll = row.rollNo ? String(row.rollNo).trim().toUpperCase() : `UNIV${yr}${String(studentIdx).padStart(3, '0')}`;
+      if (db.students.some(s => s.rollNo.toUpperCase() === finalRoll)) {
+        finalRoll = `${finalRoll}-${studentIdx}`;
+      }
+
+      const regNo = row.enrollmentNo ? String(row.enrollmentNo).trim() : `REG-${yr}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const courseFee = Number(row.totalFee) || 30000;
+      const schAmt = Number(row.scholarshipAmount) || 0;
+      const netFee = Math.max(0, courseFee - schAmt);
+      const paid = Number(row.totalPaid) || 0;
+      const due = Math.max(0, netFee - paid);
+
+      const docList = row.docsSubmitted
+        ? (typeof row.docsSubmitted === 'string' ? row.docsSubmitted.split(',').map(d => d.trim()).filter(Boolean) : row.docsSubmitted)
+        : ['10th', '12th', 'Aadhaar'];
+
+      const docStatusMap = {};
+      docList.forEach(d => {
+        docStatusMap[d] = {
+          docName: d,
+          status: 'submitted_manual',
+          mode: 'Verified Physical Hardcopy (Legacy Record)',
+          fileUrl: '',
+          updatedAt: timestamp
+        };
+      });
+
+      const newStudent = {
+        id: `std-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
+        rollNo: finalRoll,
+        registrationNo: regNo,
+        studentName: row.studentName || `Student ${studentIdx}`,
+        fullName: row.studentName || `Student ${studentIdx}`,
+        fatherName: row.fatherName || '',
+        motherName: row.motherName || '',
+        dob: row.dob || '',
+        gender: row.gender || 'Male',
+        contact: row.phone || '',
+        phone: row.phone || '',
+        email: row.email || '',
+        address: row.address || '',
+        aadhaarNo: row.aadhaarNo || '',
+        samagraId: row.samagraId || '',
+        enrollmentNo: row.enrollmentNo || finalRoll,
+        medium: 'Hindi',
+        admissionSession: row.admissionSession || '2024-2025',
+        admissionSatra: 'July',
+        admissionDate: row.admissionDate || `${yr}-07-15`,
+        universityName: row.universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
+        collegeName: row.collegeName || 'PKC Education & Consultancy',
+        courseId: 'legacy-course',
+        courseName: row.courseName || 'General Degree',
+        branch: row.branch || 'General',
+        courseType: row.courseType || 'UG',
+        courseMode: 'Regular',
+        socialCategory: row.socialCategory || 'General',
+        category: row.socialCategory || 'General',
+        documentSubmit: docList,
+        documentsStatus: docStatusMap,
+        bloodGroup: 'NA',
+        currentSession: row.admissionSession || '2024-2025',
+        currentSatra: 'July',
+        currentClass: row.currentClass || `SEM-${row.currentSemester || 1}`,
+        currentSemester: Number(row.currentSemester) || 1,
+        studentFee: courseFee,
+        courseFee: courseFee,
+        admissionFee: 0,
+        totalFee: courseFee,
+        scholarshipAmount: schAmt,
+        netTotalFee: netFee,
+        courseFeePaid: paid,
+        admissionFeePaid: 0,
+        initialPayment: paid,
+        totalPaid: paid,
+        balanceDue: due,
+        universityFee: Math.round(courseFee * 0.5),
+        universityPaid: 0,
+        universityDue: Math.round(courseFee * 0.5),
+        remark: row.remark || 'Imported via Bulk Data Migration (Legacy)',
+        status: 'Active',
+        feeType: 'Past Session Legacy Fee Deposit',
+        feeCollectedBy: operatorName,
+        paymentMode: 'Bank / Cash Record (Imported)',
+        reference: 'Legacy Session Archive',
+        admissionType: 'Bulk Legacy Import',
+        admissionYear: Number(yr) || 2024,
+        admissionTimestamp: timestamp
+      };
+
+      // Calculate semester progression
+      const prog = computeStudentSemesterProgress(newStudent, db.courses);
+      if (!row.currentClass) {
+        newStudent.currentClass = prog.currentClass;
+        newStudent.currentSemester = prog.currentSemester;
+      }
+
+      db.students.unshift(newStudent);
+      importedStudents.push(newStudent);
+
+      // Create Payment Ledger entry if fee was paid
+      if (paid > 0) {
+        const receiptNo = String(getNextReceiptNumber(db));
+        const receipt = {
+          id: `pay-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
+          receiptNo: receiptNo,
+          studentId: newStudent.id,
+          rollNo: newStudent.rollNo,
+          studentName: newStudent.fullName,
+          courseName: newStudent.courseName,
+          amountPaid: paid,
+          courseFeePaid: paid,
+          admissionFeePaid: 0,
+          feeType: 'Past Session Legacy Fee Deposit',
+          paymentMode: 'Bank / Cash Record (Imported)',
+          transactionRef: `LEG-IMP-${yr}-${String(receiptNo).padStart(4, '0')}`,
+          paidFor: `Session ${newStudent.admissionSession} Fee Settlement`,
+          paymentDate: newStudent.admissionDate,
+          totalFee: courseFee,
+          totalPaidToDate: paid,
+          balanceRemaining: due,
+          receivedBy: operatorName
+        };
+        db.fee_payments.unshift(receipt);
+        generatedReceipts.push(receipt);
+      }
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Successfully imported ${importedStudents.length} student records and generated ${generatedReceipts.length} payment ledger entries.`,
+      importedCount: importedStudents.length,
+      receiptsCount: generatedReceipts.length
+    });
+  } catch (err) {
+    console.error('Error during bulk import:', err);
+    res.status(500).json({ success: false, message: 'Bulk import failed: ' + err.message });
+  }
+});
+
+// Reset / Clear Demo Student Data
+app.post('/api/students/reset-demo-data', (req, res) => {
+  try {
+    const { confirmationKey } = req.body;
+    if (confirmationKey !== 'CLEAR_DEMO_DATA') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid confirmation key. Please confirm with CLEAR_DEMO_DATA to prevent accidental deletion.'
+      });
+    }
+
+    const db = readDB();
+    const studentsDeleted = db.students ? db.students.length : 0;
+    const paymentsDeleted = db.fee_payments ? db.fee_payments.length : 0;
+
+    db.students = [];
+    db.fee_payments = [];
+    if (db.university_payments) db.university_payments = [];
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Cleared ${studentsDeleted} demo students and ${paymentsDeleted} fee receipts. Database is fresh and ready for real data import!`,
+      cleared: { students: studentsDeleted, payments: paymentsDeleted }
+    });
+  } catch (err) {
+    console.error('Error resetting demo data:', err);
+    res.status(500).json({ success: false, message: 'Failed to reset demo data: ' + err.message });
+  }
 });
 
 app.get('/api/students/:rollNo', (req, res) => {

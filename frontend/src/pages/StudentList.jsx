@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
-  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2
+  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
+import BulkImportModal from '../components/BulkImportModal';
 
 export default function StudentList({ courses, setActiveTab, onSelectStudentForFee, onOpenNewAdmission }) {
   const [students, setStudents] = useState([]);
@@ -22,6 +23,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [activeProfileTab, setActiveProfileTab] = useState('profile');
   const [printSlipStudent, setPrintSlipStudent] = useState(null);
   const [printMarksheetData, setPrintMarksheetData] = useState(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   // Full Edit Modal & Promotion State
   const [editingStudent, setEditingStudent] = useState(null);
@@ -247,16 +249,27 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            if (onOpenNewAdmission) onOpenNewAdmission();
-            else if (setActiveTab) setActiveTab('register');
-          }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer"
-        >
-          <Users className="w-4 h-4" />
-          <span>+ Enroll New Student</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => setShowBulkImport(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-emerald-400/30"
+            title="Bulk Import Students & Past Fees from Excel or PDF"
+          >
+            <UploadCloud className="w-4 h-4 text-amber-300" />
+            <span>📥 Bulk Import Data</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (onOpenNewAdmission) onOpenNewAdmission();
+              else if (setActiveTab) setActiveTab('register');
+            }}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer"
+          >
+            <Users className="w-4 h-4" />
+            <span>+ Enroll New Student</span>
+          </button>
+        </div>
       </div>
 
       {/* Admission Timeframe Filter Dropdown */}
@@ -1465,6 +1478,16 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           </div>
         </div>
       )}
+
+      {/* Bulk Data Import Modal */}
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        operatorName="Admin / Faculty Desk"
+        onImportSuccess={() => {
+          fetchStudents();
+        }}
+      />
 
     </div>
   );
