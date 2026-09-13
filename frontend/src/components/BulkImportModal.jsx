@@ -28,9 +28,31 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
 
   if (!isOpen) return null;
 
-  // Handle template download
+  // Handle template download (Direct Static Download, 0ms lag, no server dependency)
   const handleDownloadTemplate = () => {
-    window.open('/api/students/import-template', '_blank');
+    const link = document.createElement('a');
+    link.href = '/PKC_Student_Bulk_Import_Template.xlsx';
+    link.download = 'PKC_Student_Bulk_Import_Template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle demo sample Excel download (pre-filled with 5 real-looking students)
+  const handleDownloadDemoData = () => {
+    const link = document.createElement('a');
+    link.href = '/PKC_Demo_Students_Sample.xlsx';
+    link.download = 'PKC_Demo_Students_Sample.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Helper to load sample text into PDF parser for instant testing
+  const handlePasteDemoText = () => {
+    const demo = `1. Rahul Verma | Suresh Verma | BCA | 2024-2025 | SEM-3 | Total Fee: 36000 | Paid: 20000 | 9876543210\n2. Priya Sharma | Rajesh Sharma | BA | 2023-2024 | SEM-5 | Total Fee: 18000 | Paid: 18000 | 9823456789\n3. Amit Patel | Mahendra Patel | DCA | 2025-2026 | SEM-1 | Total Fee: 12000 | Paid: 5000 | 9712345678\n4. Anjali Gupta | Ramesh Gupta | B.Com | 2024-2025 | SEM-3 | Total Fee: 24000 | Paid: 15000 | 9988776655\n5. Vikram Singh | Kalyan Singh | B.Sc | 2023-2024 | SEM-6 | Total Fee: 28000 | Paid: 28000 | 9123456780`;
+    setPdfRawText(demo);
+    setErrorMsg(null);
   };
 
   // Handle Excel parsing
@@ -340,14 +362,27 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
             </button>
           </div>
 
-          <button
-            onClick={handleDownloadTemplate}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-            title="Download PKC Official Student Bulk Import Template"
-          >
-            <Download className="w-4 h-4" />
-            <span>📥 Download Excel Template (.xlsx)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              title="Download PKC Official Student Bulk Import Blank Template"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>📥 Blank Template (.xlsx)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadDemoData}
+              className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              title="Download Ready-to-Upload Sample Excel filled with 5 demo students"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>⭐ Demo Test Sheet (.xlsx)</span>
+            </button>
+          </div>
         </div>
 
         {/* Notifications */}
@@ -444,13 +479,20 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
                       <span>Upload karke <strong>Parse</strong> karein. Niche list aayegi jisme aap fees aur data check karke seedhe live portal me daal sakte hain!</span>
                     </li>
                   </ul>
-                  <div className="pt-2 border-t border-amber-200">
+                  <div className="pt-2 border-t border-amber-200 flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={handleDownloadTemplate}
                       className="w-full text-center py-2 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs transition-colors cursor-pointer"
                     >
-                      Template Download Karein (.xlsx)
+                      📥 Blank Template Download Karein (.xlsx)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadDemoData}
+                      className="w-full text-center py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
+                    >
+                      ⭐ Demo Sample File (.xlsx - Ready to Upload)
                     </button>
                   </div>
                 </div>
@@ -503,12 +545,19 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
 
                 {/* Direct Text Paste */}
                 <div className="border border-slate-200 rounded-3xl p-5 bg-white space-y-2 flex flex-col">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-indigo-600" />
                       Option B: PDF / WhatsApp Ka Text Direct Paste Karein
                     </span>
-                    <span className="text-[10px] text-slate-400">Tabular / Pipe / Key-Value</span>
+                    <button
+                      type="button"
+                      onClick={handlePasteDemoText}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[11px] rounded-lg border border-indigo-200 cursor-pointer transition-colors"
+                      title="Load demo students into box for instant testing"
+                    >
+                      ✨ Fill Demo Text
+                    </button>
                   </div>
                   <textarea
                     rows={6}
