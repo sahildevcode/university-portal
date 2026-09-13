@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1050,7 +1050,22 @@ function normalizeStudentRow(row, idx = 0) {
 
 function parsePdfTextToStudents(rawText) {
   if (!rawText || typeof rawText !== 'string') return [];
-  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const rawLines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = [];
+  let currentLine = '';
+  for (const l of rawLines) {
+    if (/^\d+[\.\)]\s*/.test(l)) {
+      if (currentLine) lines.push(currentLine);
+      currentLine = l;
+    } else if (currentLine && (currentLine.includes('|') || currentLine.includes('\t'))) {
+      currentLine += ' ' + l;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = l;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
   const results = [];
 
   // Strategy 1: Check if lines look like delimited table rows (tabs, pipes, commas, or multi-space)
@@ -1076,17 +1091,21 @@ function parsePdfTextToStudents(rawText) {
     if (cols.length >= 3) {
       const nameCandidate = cols[0].replace(/^\d+[\.\)]\s*/, '').trim();
       if (nameCandidate && nameCandidate.length > 2 && !/^(total|summary|grand|page)/i.test(nameCandidate)) {
+        let father = cols.length >= 2 && !/^\d+$/.test(cols[1]) && !cols[1].startsWith('UNIV') && !cols[1].startsWith('REG') ? cols[1] : '';
         let course = 'General Degree';
         let roll = '';
         let fee = 30000;
         let paid = 0;
         let phone = '';
         let session = '2024-2025';
+        let semClass = 'SEM-1';
 
         cols.forEach((col, cIdx) => {
           if (cIdx === 0) return;
           if (/20\d{2}[-/]\d{2,4}/.test(col)) {
             session = col;
+          } else if (/^SEM-\d+/i.test(col)) {
+            semClass = col;
           } else if (/^\d{10}$/.test(col.replace(/\D/g, ''))) {
             phone = col.replace(/\D/g, '');
           } else if (/^(UNIV|REG|[A-Z]{2,4}\d{4})/i.test(col)) {
@@ -1105,9 +1124,11 @@ function parsePdfTextToStudents(rawText) {
 
         results.push(normalizeStudentRow({
           Student_Name: nameCandidate,
+          Father_Name: father,
           Roll_No: roll,
           Course_Name: course,
           Admission_Session: session,
+          Current_Class: semClass,
           Total_Fee: fee,
           Fee_Paid: paid,
           Contact_No: phone
@@ -1320,8 +1341,9 @@ app.post('/api/students/parse-pdf', memUpload.single('file'), async (req, res) =
     let extractedText = '';
 
     if (req.file && req.file.buffer) {
-      const pdfData = await pdfParse(req.file.buffer);
-      extractedText = pdfData.text || '';
+      const parser = new PDFParse(new Uint8Array(req.file.buffer));
+      const pdfData = await parser.getText();
+      extractedText = (pdfData && pdfData.text) ? pdfData.text : (typeof pdfData === 'string' ? pdfData : '');
     } else if (req.body && req.body.rawText) {
       extractedText = req.body.rawText;
     } else {

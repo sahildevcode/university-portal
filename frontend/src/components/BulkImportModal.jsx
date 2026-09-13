@@ -38,11 +38,21 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
     document.body.removeChild(link);
   };
 
-  // Handle demo sample Excel download (pre-filled with 5 real-looking students)
+  // Handle 100-student demo Excel download
   const handleDownloadDemoData = () => {
     const link = document.createElement('a');
-    link.href = '/PKC_Demo_Students_Sample.xlsx';
-    link.download = 'PKC_Demo_Students_Sample.xlsx';
+    link.href = '/PKC_100_Students_Data.xlsx';
+    link.download = 'PKC_100_Students_Data.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle 100-student demo PDF download
+  const handleDownload100Pdf = () => {
+    const link = document.createElement('a');
+    link.href = '/PKC_100_Students_Admission_Register.pdf';
+    link.download = 'PKC_100_Students_Admission_Register.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -377,10 +387,20 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
               type="button"
               onClick={handleDownloadDemoData}
               className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              title="Download Ready-to-Upload Sample Excel filled with 5 demo students"
+              title="Download 100 Students Demo Excel File"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>⭐ Demo Test Sheet (.xlsx)</span>
+              <span>⭐ 100 Students Excel (.xlsx)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownload100Pdf}
+              className="flex items-center gap-1.5 bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              title="Download 100 Students Demo Admission Register PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-300" />
+              <span>📄 100 Students PDF (.pdf)</span>
             </button>
           </div>
         </div>
@@ -527,13 +547,22 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
                   <p className="text-xs text-slate-500 mt-1 max-w-sm">
                     Admission Register PDF, Fee List ya Excel se export hui PDF upload karein.
                   </p>
-                  <div className="mt-4 flex items-center gap-2">
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => pdfInputRef.current?.click()}
                       className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
                       {file ? 'PDF Badlein' : 'Browse PDF File'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownload100Pdf}
+                      className="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold rounded-xl text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      title="Download 100-student demo register PDF for testing"
+                    >
+                      <Download className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Download 100 Students Demo PDF</span>
                     </button>
                     {file && (
                       <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200">
