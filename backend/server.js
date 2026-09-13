@@ -1115,11 +1115,13 @@ app.post(
         courseFee: courseFee,
         admissionFee: admissionFee,
         totalFee: grandTotalFee,
+        scholarshipAmount: Number(body.scholarshipAmount || body.Scholarship_Amount) || 0,
+        netTotalFee: Math.max(0, grandTotalFee - (Number(body.scholarshipAmount || body.Scholarship_Amount) || 0)),
         courseFeePaid: courseFeePaid,
         admissionFeePaid: admissionFeePaid,
         initialPayment: initialPaid,
         totalPaid: initialPaid,
-        balanceDue: balanceDue,
+        balanceDue: Math.max(0, Math.max(0, grandTotalFee - (Number(body.scholarshipAmount || body.Scholarship_Amount) || 0)) - initialPaid),
         universityFee: Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5),
         universityPaid: Number(body.universityPaid) || 0,
         universityDue: Math.max(0, (Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5)) - (Number(body.universityPaid) || 0)),
@@ -1242,8 +1244,10 @@ app.post(
             courseFee: secCourseFee,
             admissionFee: secAdmissionFee,
             totalFee: secGrandTotal,
+            scholarshipAmount: Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0,
+            netTotalFee: Math.max(0, secGrandTotal - (Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0)),
             totalPaid: secPaid,
-            balanceDue: secBalanceDue,
+            balanceDue: Math.max(0, Math.max(0, secGrandTotal - (Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0)) - secPaid),
             isDualEnrollment: true,
             primaryRollNo: newStudent.rollNo,
             primaryStudentId: newStudent.id,
@@ -1359,14 +1363,17 @@ app.put('/api/students/:rollNo', (req, res) => {
     manualSemester: body.manualSemester !== undefined ? Number(body.manualSemester) : existing.manualSemester,
     totalFee: body.totalFee !== undefined ? Number(body.totalFee) : existing.totalFee,
     studentFee: body.totalFee !== undefined ? Number(body.totalFee) : (existing.studentFee || existing.totalFee),
+    scholarshipAmount: body.scholarshipAmount !== undefined ? Math.max(0, Number(body.scholarshipAmount)) : (existing.scholarshipAmount || 0),
     admissionYear: Number(body.admissionYear) || existing.admissionYear,
     remark: body.remark || body.Remark || existing.remark,
     status: body.status || existing.status || 'Active',
     updatedAt: new Date().toISOString()
   };
 
-  // Re-calculate balance due
-  updatedStudent.balanceDue = Math.max(0, (updatedStudent.totalFee || 0) - (updatedStudent.totalPaid || 0));
+  // Re-calculate net fee and balance due considering scholarship
+  const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
+  updatedStudent.netTotalFee = Math.max(0, (updatedStudent.totalFee || 0) - schAmt);
+  updatedStudent.balanceDue = Math.max(0, updatedStudent.netTotalFee - (updatedStudent.totalPaid || 0));
 
   // If roll number changed, update linked fee_payments and dual references
   if (newRoll !== roll) {
@@ -1629,7 +1636,9 @@ function computeStudentSemesterProgress(student, courses = []) {
   totalSemesters = Math.max(1, totalSemesters);
 
   const durationYears = Number(course.durationYears) || Math.round(totalSemesters / 2) || 3;
-  const totalFee = Number(student.studentFee || student.totalFee || course.totalFee || 100000);
+  const scholarship = Number(student.scholarshipAmount) || 0;
+  const rawTotalFee = Number(student.studentFee || student.totalFee || course.totalFee || 100000);
+  const totalFee = Math.max(0, rawTotalFee - scholarship);
   const feePerSemester = Number(course.feePerSemester) || Math.max(1, Math.round(totalFee / totalSemesters));
   const totalPaid = Number(student.totalPaid || 0);
 
@@ -1725,8 +1734,10 @@ app.get('/api/fees/ledger', (req, res) => {
       currentSemesterDue: prog.currentSemesterDue,
       semesterFeeStatus: prog.semesterFeeStatus,
       totalFee: s.totalFee || 0,
+      scholarshipAmount: s.scholarshipAmount || 0,
+      netTotalFee: Math.max(0, (s.totalFee || 0) - (s.scholarshipAmount || 0)),
       totalPaid: s.totalPaid || 0,
-      balanceDue: Math.max(0, (s.totalFee || 0) - (s.totalPaid || 0)),
+      balanceDue: Math.max(0, Math.max(0, (s.totalFee || 0) - (s.scholarshipAmount || 0)) - (s.totalPaid || 0)),
       feeStatus: feeStatus,
       lastPaymentDate: s.admissionDate,
       fatherName: s.fatherName || s.father_name || '',
@@ -1766,6 +1777,8 @@ app.get('/api/fees/ledger', (req, res) => {
         currentSemesterDue: l.currentSemesterDue,
         semesterFeeStatus: l.semesterFeeStatus,
         totalFee: l.totalFee,
+        scholarshipAmount: l.scholarshipAmount || 0,
+        netTotalFee: l.netTotalFee || Math.max(0, (l.totalFee || 0) - (l.scholarshipAmount || 0)),
         totalPaid: l.totalPaid,
         balanceDue: l.balanceDue,
         feeStatus: l.feeStatus,
@@ -1914,11 +1927,11 @@ app.post('/api/fees/pay', (req, res) => {
   }
 });
 
-// Admin Fee Adjustment & Correction (To fix cashier entry mistakes e.g. 11,80,000 -> 1,80,000 or paid 1,00,000 -> 10,000)
+// Admin Fee Adjustment & Correction (To fix cashier entry mistakes and apply student scholarship deductions)
 app.put('/api/fees/student/:rollNo/adjust', (req, res) => {
   try {
     const { rollNo } = req.params;
-    const { totalFee, totalPaid, adjustmentReason, adminUser } = req.body;
+    const { totalFee, totalPaid, scholarshipAmount, adjustmentReason, adminUser } = req.body;
     const db = readDB();
 
     const roll = rollNo.trim().toUpperCase();
@@ -1929,12 +1942,20 @@ app.put('/api/fees/student/:rollNo/adjust', (req, res) => {
 
     const oldTotalFee = Number(student.totalFee) || 0;
     const oldTotalPaid = Number(student.totalPaid) || 0;
+    const oldScholarship = Number(student.scholarshipAmount) || 0;
 
     const newTotalFee = totalFee !== undefined && totalFee !== '' ? Math.max(0, Number(totalFee)) : oldTotalFee;
     const newTotalPaid = totalPaid !== undefined && totalPaid !== '' ? Math.max(0, Number(totalPaid)) : oldTotalPaid;
-    const newBalance = Math.max(0, newTotalFee - newTotalPaid);
+    const newScholarship = scholarshipAmount !== undefined && scholarshipAmount !== '' ? Math.max(0, Number(scholarshipAmount)) : oldScholarship;
+
+    // Net fee payable after subtracting scholarship from total fee
+    const netFee = Math.max(0, newTotalFee - newScholarship);
+    const newBalance = Math.max(0, netFee - newTotalPaid);
 
     student.totalFee = newTotalFee;
+    student.studentFee = newTotalFee;
+    student.scholarshipAmount = newScholarship;
+    student.netTotalFee = netFee;
     student.totalPaid = newTotalPaid;
     student.balanceDue = newBalance;
 
@@ -1950,10 +1971,13 @@ app.put('/api/fees/student/:rollNo/adjust', (req, res) => {
       studentName: student.fullName,
       oldTotalFee,
       newTotalFee,
+      oldScholarship,
+      newScholarship,
+      netTotalFee: netFee,
       oldTotalPaid,
       newTotalPaid,
       newBalanceDue: newBalance,
-      reason: adjustmentReason || 'Admin manual correction for cashier typo',
+      reason: adjustmentReason || 'Admin manual correction / scholarship deduction',
       adjustedBy: adminUser || 'University Administrator',
       adjustedAt: new Date().toISOString()
     };

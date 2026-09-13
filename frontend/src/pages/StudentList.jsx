@@ -131,6 +131,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
       currentSemester: std.currentSemester || 1,
       currentClass: std.currentClass || `SEM-${std.currentSemester || 1}`,
       totalFee: std.totalFee || 0,
+      scholarshipAmount: std.scholarshipAmount !== undefined ? std.scholarshipAmount : 0,
       admissionYear: std.admissionYear || 2026,
       remark: std.remark || '',
       status: std.status || 'Active'
@@ -590,7 +591,15 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                             {isFullyPaid ? 'Fully Paid' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
                           </span>
                           <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span>
-                          <span className="block text-[9px] text-slate-400">Total: ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}</span>
+                          <span className="block text-[9px] text-slate-400">
+                            Total: ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}
+                            {Number(std.scholarshipAmount) > 0 && ` (Sch: -₹${Number(std.scholarshipAmount).toLocaleString('en-IN')})`}
+                          </span>
+                          {Number(std.scholarshipAmount) > 0 && (
+                            <span className="inline-block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">
+                              🎓 Sch: ₹{Number(std.scholarshipAmount).toLocaleString('en-IN')}
+                            </span>
+                          )}
                         </td>
                         <td className="p-3.5 text-slate-600">
                           <span>{std.phone}</span>
@@ -699,7 +708,15 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                               {linked.balanceDue <= 0 ? 'Fully Paid' : linked.totalPaid > 0 ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
                             </span>
                             <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span>
-                            <span className="block text-[9px] text-slate-400">Total: ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}</span>
+                            <span className="block text-[9px] text-slate-400">
+                              Total: ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
+                              {Number(linked.scholarshipAmount) > 0 && ` (Sch: -₹${Number(linked.scholarshipAmount).toLocaleString('en-IN')})`}
+                            </span>
+                            {Number(linked.scholarshipAmount) > 0 && (
+                              <span className="inline-block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">
+                                🎓 Sch: ₹{Number(linked.scholarshipAmount).toLocaleString('en-IN')}
+                              </span>
+                            )}
                           </td>
                           <td className="p-3.5 text-slate-600">
                             <span>{std.phone}</span>
@@ -1028,10 +1045,25 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
             {/* Tab 3: Fee Ledger */}
             {activeProfileTab === 'fees' && (
               <div className="p-6 space-y-4 text-xs">
-                <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border text-center">
-                  <div><span className="text-slate-400 block">Total Course Fee</span><span className="font-bold text-slate-900 text-sm">₹{Number(selectedStudent.totalFee).toLocaleString('en-IN')}</span></div>
-                  <div><span className="text-slate-400 block">Total Paid</span><span className="font-bold text-emerald-700 text-sm">₹{Number(selectedStudent.totalPaid || 0).toLocaleString('en-IN')}</span></div>
-                  <div><span className="text-slate-400 block">Pending Balance Due</span><span className="font-bold text-rose-700 text-sm">₹{Number(selectedStudent.balanceDue || 0).toLocaleString('en-IN')}</span></div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border text-center">
+                  <div>
+                    <span className="text-slate-400 block">Gross Course Fee</span>
+                    <span className="font-bold text-slate-900 text-sm">₹{Number(selectedStudent.totalFee || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div>
+                    <span className="text-indigo-600 block">Scholarship (छात्रवृत्ति)</span>
+                    <span className="font-bold text-indigo-700 text-sm">
+                      {Number(selectedStudent.scholarshipAmount) > 0 ? `₹${Number(selectedStudent.scholarshipAmount).toLocaleString('en-IN')}` : '₹0'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Total Paid</span>
+                    <span className="font-bold text-emerald-700 text-sm">₹{Number(selectedStudent.totalPaid || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Pending Balance Due</span>
+                    <span className="font-bold text-rose-700 text-sm">₹{Number(selectedStudent.balanceDue || 0).toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1368,6 +1400,23 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                       onChange={(e) => setEditFormData({ ...editFormData, totalFee: Number(e.target.value) })}
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white"
                     />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-indigo-900 mb-1 flex items-center justify-between">
+                      <span>Scholarship / छात्रवृत्ति (₹)</span>
+                      <span className="text-[10px] text-indigo-600 font-normal">Default 0</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editFormData.scholarshipAmount !== undefined ? editFormData.scholarshipAmount : 0}
+                      onChange={(e) => setEditFormData({ ...editFormData, scholarshipAmount: Number(e.target.value) || 0 })}
+                      className="w-full p-2.5 bg-indigo-50/60 border border-indigo-300 rounded-xl font-mono font-bold text-indigo-950 focus:bg-white focus:border-indigo-600"
+                      placeholder="0"
+                    />
+                    <p className="text-[10px] text-indigo-700 mt-1">
+                      Auto-deducted from Total Course Fee (Remaining dues auto-reduce).
+                    </p>
                   </div>
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Admission Year</label>

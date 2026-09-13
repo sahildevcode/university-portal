@@ -75,6 +75,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [adjustStudent, setAdjustStudent] = useState(null);
   const [adjustTotalFee, setAdjustTotalFee] = useState('');
+  const [adjustScholarship, setAdjustScholarship] = useState(0);
   const [adjustTotalPaid, setAdjustTotalPaid] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
   const [adjustAdminPin, setAdjustAdminPin] = useState('');
@@ -261,8 +262,9 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
   const handleOpenAdjustModal = (std) => {
     setAdjustStudent(std);
     setAdjustTotalFee(std.totalFee || 0);
+    setAdjustScholarship(std.scholarshipAmount !== undefined ? std.scholarshipAmount : 0);
     setAdjustTotalPaid(std.totalPaid || 0);
-    setAdjustReason('Corrected cashier entry mistake / typo');
+    setAdjustReason(std.scholarshipAmount ? 'Updated scholarship / fee structure' : 'Corrected cashier entry mistake / scholarship update');
     setAdjustError(null);
     setAdjustSuccess(null);
     setShowAdjustModal(true);
@@ -281,6 +283,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           totalFee: Number(adjustTotalFee),
+          scholarshipAmount: Number(adjustScholarship) || 0,
           totalPaid: Number(adjustTotalPaid),
           adjustmentReason: adjustReason,
           adminUser: 'Admin'
@@ -310,7 +313,8 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
     ? Math.max(0, (payStudent.balanceDue || 0) - (Number(payAmount) || 0))
     : 0;
 
-  const calculatedAdjustBalance = Math.max(0, (Number(adjustTotalFee) || 0) - (Number(adjustTotalPaid) || 0));
+  const calculatedAdjustNetFee = Math.max(0, (Number(adjustTotalFee) || 0) - (Number(adjustScholarship) || 0));
+  const calculatedAdjustBalance = Math.max(0, calculatedAdjustNetFee - (Number(adjustTotalPaid) || 0));
 
   return (
     <div className="w-full space-y-8">
@@ -787,13 +791,30 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                                 ₹{Number(std.totalPaid).toLocaleString('en-IN')}
                               </span>
                               <span className="text-[10px] text-slate-400">
-                                of ₹{Number(std.totalFee).toLocaleString('en-IN')}
+                                of {Number(std.scholarshipAmount) > 0 ? (
+                                  <>
+                                    <span className="line-through text-slate-400">₹{Number(std.totalFee).toLocaleString('en-IN')}</span>{' '}
+                                    <span className="font-bold text-slate-700">₹{Number(std.netTotalFee || (std.totalFee - std.scholarshipAmount)).toLocaleString('en-IN')}</span>
+                                  </>
+                                ) : (
+                                  `₹${Number(std.totalFee).toLocaleString('en-IN')}`
+                                )}
                               </span>
+                              {Number(std.scholarshipAmount) > 0 && (
+                                <span className="block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 w-fit">
+                                  🎓 Sch: ₹{Number(std.scholarshipAmount).toLocaleString('en-IN')}
+                                </span>
+                              )}
                             </td>
                             <td className="p-3 whitespace-nowrap">
                               <span className={`font-extrabold text-sm ${std.balanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
                                 ₹{Number(std.balanceDue).toLocaleString('en-IN')}
                               </span>
+                              {Number(std.scholarshipAmount) > 0 && (
+                                <span className="block text-[9px] text-indigo-600 font-medium">
+                                  (Sch. applied)
+                                </span>
+                              )}
                             </td>
                             <td className="p-3 whitespace-nowrap">
                               <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -908,13 +929,30 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                                   ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}
                                 </span>
                                 <span className="text-[10px] text-slate-400">
-                                  of ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
+                                  {Number(linked.scholarshipAmount) > 0 ? (
+                                    <>
+                                      <span className="line-through text-slate-400">₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}</span>{' '}
+                                      <span className="font-bold text-slate-700">₹{Number(linked.netTotalFee || (linked.totalFee - linked.scholarshipAmount)).toLocaleString('en-IN')}</span>
+                                    </>
+                                  ) : (
+                                    `of ₹${Number(linked.totalFee || 0).toLocaleString('en-IN')}`
+                                  )}
                                 </span>
+                                {Number(linked.scholarshipAmount) > 0 && (
+                                  <span className="block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 w-fit">
+                                    🎓 Sch: ₹{Number(linked.scholarshipAmount).toLocaleString('en-IN')}
+                                  </span>
+                                )}
                               </td>
                               <td className="p-3 whitespace-nowrap">
                                 <span className={`font-extrabold text-sm ${linked.balanceDue > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
                                   ₹{Number(linked.balanceDue || 0).toLocaleString('en-IN')}
                                 </span>
+                                {Number(linked.scholarshipAmount) > 0 && (
+                                  <span className="block text-[9px] text-indigo-600 font-medium">
+                                    (Sch. applied)
+                                  </span>
+                                )}
                               </td>
                               <td className="p-3 whitespace-nowrap">
                                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -1599,53 +1637,100 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                   <strong>ℹ️ Cashier Entry Correction:</strong> If cashier mistakenly entered excessive or incorrect amounts (e.g. ₹11,80,000 instead of ₹1,80,000, or paid ₹1,00,000 instead of ₹10,000), Admin can directly correct them here. Live treasury totals will recalculate immediately.
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {/* Field 1: Total Course Fee */}
                   <div className="space-y-1.5">
                     <label className="block font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                      Correct Total Course Fee (₹) *
+                      Gross Course Fee (₹) *
                     </label>
                     <input
                       type="number"
                       value={adjustTotalFee}
                       onChange={(e) => setAdjustTotalFee(e.target.value)}
                       placeholder="e.g. 180000"
-                      className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 font-mono shadow-xs"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500 font-mono shadow-xs"
                       required
                     />
-                    <span className="text-[10px] text-slate-400">Total payable for entire degree program</span>
+                    <span className="text-[10px] text-slate-400">Total institutional fee</span>
                   </div>
 
-                  {/* Field 2: Total Fee Paid So Far */}
+                  {/* Field 2: Scholarship Amount (Default 0, auto-deducted) */}
+                  <div className="space-y-1.5">
+                    <label className="block font-bold text-indigo-800 uppercase tracking-wider text-[11px] flex items-center gap-1">
+                      <span>🎓 Scholarship (₹)</span>
+                      <span className="text-[9px] font-normal text-indigo-600 bg-indigo-50 px-1 rounded border border-indigo-200">Default 0</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={adjustScholarship}
+                      onChange={(e) => setAdjustScholarship(e.target.value)}
+                      placeholder="0"
+                      className="w-full p-2.5 bg-indigo-50/50 border border-indigo-300 rounded-xl text-xs font-bold text-indigo-900 focus:outline-none focus:border-indigo-600 font-mono shadow-xs"
+                    />
+                    <span className="text-[10px] text-indigo-600">MPTASS/NSP: Auto-deducts from total</span>
+                  </div>
+
+                  {/* Field 3: Total Fee Paid So Far */}
                   <div className="space-y-1.5">
                     <label className="block font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                      Correct Total Paid So Far (₹) *
+                      Total Paid So Far (₹) *
                     </label>
                     <input
                       type="number"
                       value={adjustTotalPaid}
                       onChange={(e) => setAdjustTotalPaid(e.target.value)}
                       placeholder="e.g. 10000"
-                      className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-emerald-700 focus:outline-none focus:border-emerald-600 font-mono shadow-xs"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-emerald-700 focus:outline-none focus:border-emerald-600 font-mono shadow-xs"
                       required
                     />
                     <span className="text-[10px] text-slate-400">Actual amount received from student</span>
                   </div>
                 </div>
 
-                {/* Recalculated Outstanding Due Card */}
-                <div className="bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                      Auto-Recalculated Due Balance
-                    </span>
-                    <p className="text-xl font-black text-rose-400 mt-0.5">
-                      ₹{calculatedAdjustBalance.toLocaleString('en-IN')}
-                    </p>
+                {/* Recalculated Outstanding Due Card with Net Fee calculation */}
+                <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-sm space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5 text-xs">
+                    <div className="flex items-center gap-4 text-[11px] font-mono">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase">Gross Fee</span>
+                        <span className="font-bold text-slate-200">₹{Number(adjustTotalFee || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      <span className="text-slate-600">−</span>
+                      <div>
+                        <span className="text-indigo-400 block text-[9px] uppercase">Scholarship</span>
+                        <span className="font-bold text-indigo-300">₹{Number(adjustScholarship || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      <span className="text-slate-600">=</span>
+                      <div>
+                        <span className="text-emerald-400 block text-[9px] uppercase">Net Fee</span>
+                        <span className="font-bold text-emerald-300">₹{calculatedAdjustNetFee.toLocaleString('en-IN')}</span>
+                      </div>
+                      <span className="text-slate-600">−</span>
+                      <div>
+                        <span className="text-amber-400 block text-[9px] uppercase">Paid</span>
+                        <span className="font-bold text-amber-300">₹{Number(adjustTotalPaid || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    (Total Fee − Paid)
-                  </span>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        Auto-Recalculated Due Balance
+                      </span>
+                      <p className="text-2xl font-black text-rose-400 mt-0.5">
+                        ₹{calculatedAdjustBalance.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-400 text-right">
+                      {Number(adjustScholarship) > 0 ? (
+                        <span className="text-emerald-400 font-semibold">(Net Fee − Paid)</span>
+                      ) : (
+                        <span>(Total Fee − Paid)</span>
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Field 3: Reason for Adjustment */}

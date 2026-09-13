@@ -247,6 +247,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
     // 5. Fees & Administration (Separate Course Fee & Admission Fee)
     Student_fee: '30000',          // Total Course Fee (e.g. 30000)
+    Scholarship_Amount: '0',       // Government / Institutional Scholarship (defaults to 0)
     Course_Fee_Paid: '',           // How much student is paying for course fee now
     Fee_Type: 'Admission Fee',     // Fee category (Admission Fee, Late Exam Fee, etc.)
     Admission_Fee: '2000',         // Total Admission / Extra Fee (e.g. 2000)
@@ -282,6 +283,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Course_Mode: 'Regular',
     Medium: 'Hindi Medium',
     Student_fee: '25000',
+    Scholarship_Amount: '0',
     Course_Fee_Paid: '0',
     Admission_Fee: '1000',
     Admission_Fee_Paid: '1000',
@@ -634,6 +636,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Branch: firstBranch?.name || 'General',
       Course_Type: prog.courseType || 'Diploma',
       Student_fee: String(firstBranch?.fee || prog.defaultFee || 25000),
+      Scholarship_Amount: '0',
       Course_Fee_Paid: '',
       Admission_Fee: '2000',
       Admission_Fee_Paid: '2000',
@@ -704,9 +707,11 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       const courseFeePaidCalc = Number(formData.Course_Fee_Paid) || 0;
       const admissionFeeCalc = Number(formData.Admission_Fee) || 0;
       const admissionFeePaidCalc = Number(formData.Admission_Fee_Paid) || 0;
+      const scholarshipCalc = Number(formData.Scholarship_Amount) || 0;
       const grandTotalFeeCalc = courseFeeCalc + admissionFeeCalc;
+      const netTotalFeeCalc = Math.max(0, grandTotalFeeCalc - scholarshipCalc);
       const totalPaidTodayCalc = courseFeePaidCalc + admissionFeePaidCalc;
-      const grandBalanceDueCalc = Math.max(0, grandTotalFeeCalc - totalPaidTodayCalc);
+      const grandBalanceDueCalc = Math.max(0, netTotalFeeCalc - totalPaidTodayCalc);
 
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
@@ -716,6 +721,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       data.set('Admission_Fee_Paid', String(admissionFeePaidCalc));
       data.set('Initial_Payment', String(totalPaidTodayCalc));
       data.set('totalFee', String(grandTotalFeeCalc));
+      data.set('scholarshipAmount', String(scholarshipCalc));
+      data.set('Scholarship_Amount', String(scholarshipCalc));
+      data.set('netTotalFee', String(netTotalFeeCalc));
       data.set('balanceDue', String(grandBalanceDueCalc));
       data.append('Document_Submit', JSON.stringify(submittedDocs));
 
@@ -801,6 +809,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Scholer_id: '',
       User_id: '',
       Student_fee: '30000',
+      Scholarship_Amount: '0',
       Course_Fee_Paid: '',
       Fee_Type: 'Admission Fee',
       Admission_Fee: '2000',
@@ -815,15 +824,17 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }));
   };
 
-    // Live Dual-Fee Calculations (Course Fee + Admission Fee = Total Package)
+    // Live Dual-Fee Calculations (Course Fee + Admission Fee = Total Package, minus Scholarship)
   const courseFeeVal = Number(formData.Student_fee) || 0;
   const courseFeePaidVal = Number(formData.Course_Fee_Paid) || 0;
   const admissionFeeVal = Number(formData.Admission_Fee) || 0;
   const admissionFeePaidVal = Number(formData.Admission_Fee_Paid) || 0;
+  const scholarshipVal = Number(formData.Scholarship_Amount) || 0;
 
   const grandTotalFee = courseFeeVal + admissionFeeVal; // e.g. 30000 + 2000 = 32000
+  const netTotalFee = Math.max(0, grandTotalFee - scholarshipVal); // Deduct scholarship
   const totalPaidToday = courseFeePaidVal + admissionFeePaidVal; // e.g. 0 + 2000 = 2000
-  const grandBalanceDue = Math.max(0, grandTotalFee - totalPaidToday); // e.g. 32000 - 2000 = 30000
+  const grandBalanceDue = Math.max(0, netTotalFee - totalPaidToday); // e.g. (32000 - sch) - 2000
 
   const standardDocuments = [
     '10th Marksheet',
@@ -1986,7 +1997,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Total Course Fee */}
                   <div>
                     <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
@@ -2002,6 +2013,24 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                       required
                     />
                     <span className="text-[10px] text-slate-500 mt-0.5 block">e.g. 30,000 (total package)</span>
+                  </div>
+
+                  {/* Scholarship Amount (Default 0, auto-deducts) */}
+                  <div>
+                    <label className="block font-bold text-indigo-950 uppercase tracking-wider mb-1 text-[11px] flex items-center justify-between">
+                      <span>Scholarship (₹)</span>
+                      <span className="text-[9px] text-indigo-600 bg-indigo-50 px-1 rounded border border-indigo-200">Default 0</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      name="Scholarship_Amount"
+                      value={formData.Scholarship_Amount}
+                      onChange={handleInputChange}
+                      placeholder="0"
+                      className="w-full p-2.5 bg-indigo-50/40 border border-indigo-300 rounded-xl font-black text-sm text-indigo-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+                    />
+                    <span className="text-[10px] text-indigo-600 mt-0.5 block">Auto-deducted from total</span>
                   </div>
 
                   {/* Course Fee Paid Now */}
@@ -2203,11 +2232,16 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                   <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 block">
                     Combined Fee Structure
                   </span>
-                  <div className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 mt-0.5">
-                    <span>Total Payable:</span>
+                  <div className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span>Total Fee:</span>
                     <span className="text-emerald-300">
-                      ₹{courseFeeVal.toLocaleString('en-IN')} <span className="text-xs font-normal text-slate-300">(Course)</span> + ₹{admissionFeeVal.toLocaleString('en-IN')} <span className="text-xs font-normal text-slate-300">({formData.Fee_Type || 'Admission'})</span> = ₹{grandTotalFee.toLocaleString('en-IN')}
+                      ₹{grandTotalFee.toLocaleString('en-IN')}
                     </span>
+                    {scholarshipVal > 0 && (
+                      <span className="text-indigo-300 text-xs font-bold bg-indigo-900/60 px-2 py-0.5 rounded-md border border-indigo-500/40">
+                        − ₹{scholarshipVal.toLocaleString('en-IN')} (Scholarship) = Net ₹{netTotalFee.toLocaleString('en-IN')}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -2221,11 +2255,21 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
                   <span className="text-[10px] text-slate-300 block font-medium">1. Total Course Fee</span>
                   <span className="font-extrabold text-sm text-white block">₹{courseFeeVal.toLocaleString('en-IN')}</span>
                   <span className="text-[10px] text-emerald-300">Paid Now: ₹{courseFeePaidVal.toLocaleString('en-IN')}</span>
+                </div>
+
+                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                  <span className="text-[10px] text-indigo-300 block font-medium">Scholarship / छात्रवृत्ति</span>
+                  <span className="font-extrabold text-sm text-indigo-300 block">
+                    {scholarshipVal > 0 ? `− ₹${scholarshipVal.toLocaleString('en-IN')}` : '₹0 (None)'}
+                  </span>
+                  <span className="text-[10px] text-slate-300">
+                    Net Fee: ₹{netTotalFee.toLocaleString('en-IN')}
+                  </span>
                 </div>
 
                 <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
