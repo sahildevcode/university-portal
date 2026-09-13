@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 
-export default function InquiryPage({ courses = [], lang = 'hi' }) {
-  const t = translations[lang] || translations.hi;
+export default function InquiryPage({ courses = [], lang = 'en' }) {
+  const t = translations[lang] || translations.en;
 
   const [form, setForm] = useState({
     name: '',

@@ -1,11 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown, ExternalLink, UploadCloud } from 'lucide-react';
+import { CreditCard, UserPlus, FileText, Printer, Banknote, ShieldCheck, LogOut, UserCheck, FolderCheck, ChevronDown, ExternalLink, UploadCloud, Globe } from 'lucide-react';
 import StudentRegistration from './StudentRegistration';
 import AccountsDashboard from './AccountsDashboard';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
 import BulkImportModal from '../components/BulkImportModal';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function CashCounterPortal({ courses, staffUser, onStaffLogout }) {
+export default function CashCounterPortal({ 
+  courses, 
+  staffUser, 
+  onStaffLogout,
+  lang: propLang,
+  toggleLang: propToggleLang 
+}) {
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+
   const [activeTab, setActiveTab] = useState('collect-fee'); // 'collect-fee' | 'walkin-admission' | 'documents'
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [isDeskDropdownOpen, setIsDeskDropdownOpen] = useState(false);
@@ -40,24 +51,24 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
   const staffDesks = [
     {
       id: 'collect-fee',
-      label: '1. Collect Fee Installments (Cash / Card / Online)',
-      sub: 'छात्र फीस रसीद, नकद, यूपीआई व कार्ड पेमेंट डेस्क',
+      label: lang === 'hi' ? '1. छात्र फीस रसीद व भुगतान डेस्क' : '1. Collect Fee Installments (Cash / Card / Online)',
+      sub: lang === 'hi' ? 'छात्र फीस रसीद, नकद, यूपीआई व कार्ड पेमेंट डेस्क' : 'Student fee receipt, cash, UPI and POS card payment desk',
       icon: Banknote,
       color: 'text-emerald-600',
       badge: 'Fee Collection'
     },
     {
       id: 'walkin-admission',
-      label: '2. Physical Walk-in Admission & Initial Fee',
-      sub: 'सीधे काउंटर पर नया छात्र प्रवेश व नामांकन',
+      label: lang === 'hi' ? '2. नया छात्र प्रवेश व नामांकन' : '2. Physical Walk-in Admission & Initial Fee',
+      sub: lang === 'hi' ? 'सीधे काउंटर पर नया छात्र प्रवेश व नामांकन' : 'Direct on-counter student admission and enrollment',
       icon: UserPlus,
       color: 'text-indigo-600',
       badge: 'Offline Admission'
     },
     {
       id: 'documents',
-      label: '3. Student Documents & Verification Desk',
-      sub: 'छात्र मूल दस्तावेज़, अंकसूची व आईडी सत्यापन',
+      label: lang === 'hi' ? '3. छात्र दस्तावेज़ व अंकसूची सत्यापन' : '3. Student Documents & Verification Desk',
+      sub: lang === 'hi' ? 'छात्र मूल दस्तावेज़, अंकसूची व आईडी सत्यापन' : 'Original certificate verification and digital dossier desk',
       icon: FolderCheck,
       color: 'text-purple-600',
       badge: 'Doc Verification'
@@ -89,10 +100,10 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
               )}
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-              PKC Education Group — Cash Counter & Walk-in Desk
+              PKC Education Group — Cash Counter &amp; Walk-in Desk
             </h1>
             <p className="text-xs text-emerald-200 mt-0.5">
-              Supports <strong className="text-white">Cash (नकद), Card Swipe (POS) & Online UPI</strong> payments with automatic live sync to Admin Treasury.
+              Supports <strong className="text-white">Cash, Card Swipe (POS) &amp; Online UPI</strong> payments with automatic live sync to Admin Treasury.
             </p>
           </div>
         </div>
@@ -111,13 +122,24 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
               </div>
             </div>
             <div className="flex items-center gap-2 mt-1">
+              {/* Language Switcher */}
+              <button
+                type="button"
+                onClick={toggleLang}
+                className="flex items-center gap-1.5 text-xs font-black text-amber-300 hover:text-white bg-amber-400/20 hover:bg-amber-400/30 px-3 py-1.5 rounded-xl transition-colors border border-amber-400/40 cursor-pointer"
+                title="Switch Language / भाषा बदलें"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? '🌐 हिन्दी' : '🌐 English'}</span>
+              </button>
+
               <button
                 onClick={() => setShowBulkImportModal(true)}
                 className="flex items-center gap-1.5 text-xs font-bold text-amber-200 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl transition-colors border border-amber-400/40 cursor-pointer"
                 title="Bulk Import Students & Past Fees from Excel or PDF"
               >
                 <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
-                <span>Bulk Import Data</span>
+                <span>Bulk Import</span>
               </button>
               <a
                 href="/"
@@ -251,7 +273,7 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
             <span className="font-bold">🔒 Cashier Counter:</span>
             <span>Fee collection entries are locked upon receipt generation. Corrections or fee reductions require University Admin authority.</span>
           </div>
-          <AccountsDashboard isAdmin={false} staffUser={staffUser} />
+          <AccountsDashboard isAdmin={false} staffUser={staffUser} lang={lang} toggleLang={toggleLang} />
         </div>
       )}
 
@@ -263,13 +285,13 @@ export default function CashCounterPortal({ courses, staffUser, onStaffLogout })
               <strong>Walk-in Admission Desk:</strong> Register offline student candidate, upload document proofs, and collect initial admission fee via <strong>Cash, Card Swipe, or UPI</strong>.
             </span>
           </div>
-          <StudentRegistration courses={courses} staffUser={staffUser} />
+          <StudentRegistration courses={courses} staffUser={staffUser} lang={lang} toggleLang={toggleLang} />
         </div>
       )}
 
       {activeTab === 'documents' && (
         <div className="space-y-4">
-          <StudentDocumentsTracker isAdmin={false} staffUser={staffUser} courses={courses} />
+          <StudentDocumentsTracker isAdmin={false} staffUser={staffUser} courses={courses} lang={lang} toggleLang={toggleLang} />
         </div>
       )}
 

@@ -7,8 +7,14 @@ import {
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
 import BulkImportModal from '../components/BulkImportModal';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function StudentList({ courses, setActiveTab, onSelectStudentForFee, onOpenNewAdmission }) {
+export default function StudentList({ courses, setActiveTab, onSelectStudentForFee, onOpenNewAdmission, lang: propLang, toggleLang: propToggleLang }) {
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+  const isHindi = lang === 'hi';
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -495,11 +501,11 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                       <div className="space-y-1">
                         <h4 className="text-sm font-bold text-slate-800">
                           {search 
-                            ? `"${search}" नाम, रोल नं., पिता का नाम या आधार से कोई छात्र नहीं मिला` 
-                            : 'चुने गए फ़िल्टर के अनुसार कोई छात्र नहीं मिला'}
+                            ? (isHindi ? `"${search}" नाम, रोल नं., पिता का नाम या आधार से कोई छात्र नहीं मिला` : `No students found matching "${search}" by name, roll no, father name or Aadhaar`)
+                            : (isHindi ? 'चुने गए फ़िल्टर के अनुसार कोई छात्र नहीं मिला' : 'No students found matching the selected filters')}
                         </h4>
                         <p className="text-xs text-slate-500">
-                          कृपया रोल नंबर, छात्र का नाम, पिता का नाम (Father's Name) या आधार नंबर सही जांचें।
+                          {isHindi ? "कृपया रोल नंबर, छात्र का नाम, पिता का नाम (Father's Name) या आधार नंबर सही जांचें।" : "Please verify the Roll No, student name, father's name or Aadhaar number."}
                         </p>
                       </div>
 
@@ -509,7 +515,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                         className="inline-flex items-center gap-2 bg-[#071530] hover:bg-indigo-950 text-[#C59B27] hover:text-amber-300 font-bold px-5 py-2.5 rounded-xl text-xs shadow-md border border-[#C59B27]/40 cursor-pointer transition-all hover:scale-105"
                       >
                         <ArrowLeft className="w-4 h-4" />
-                        <span>← Back to All Students (वापस सभी छात्र दिखाएं)</span>
+                        <span>{isHindi ? '← वापस सभी छात्र दिखाएं (Back to All)' : '← Back to All Students'}</span>
                       </button>
                     </div>
                   </td>

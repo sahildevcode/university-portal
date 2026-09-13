@@ -26,11 +26,18 @@ import {
   Wallet,
   ArrowUpRight,
   ExternalLink,
-  Percent
+  Percent,
+  Globe
 } from 'lucide-react';
 import PrintUniversityVoucher from '../components/PrintUniversityVoucher';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function UniversityPaidManager() {
+export default function UniversityPaidManager({ lang: propLang, toggleLang: propToggleLang }) {
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+  const isHindi = lang === 'hi';
+
   // Main Navigation Sub-view
   const [subView, setSubView] = useState('ledger'); // 'ledger' | 'payments' | 'rates'
 
@@ -352,27 +359,41 @@ export default function UniversityPaidManager() {
               <span>🏛️ University Paid &amp; Settlement Ledger</span>
             </h2>
             <p className="text-sm text-amber-100/80 max-w-2xl font-medium">
-              हम विभिन्न यूनिवर्सिटीज (<span className="text-amber-300 font-bold">MCBU, Barkatullah, State University</span>) के लिए एडमिशन काउंसलर हैं — छात्रों से पैकेज फीस प्राप्त कर अधिकृत यूनिवर्सिटी फीस जमा करने, बकाया भुगतान व कंसल्टेंसी मुनाफे का केंद्रीय हिसाब।
+              {isHindi ? (
+                <>हम विभिन्न यूनिवर्सिटीज (<span className="text-amber-300 font-bold">MCBU, Barkatullah, State University</span>) के लिए एडमिशन काउंसलर हैं — छात्रों से पैकेज फीस प्राप्त कर अधिकृत यूनिवर्सिटी फीस जमा करने, बकाया भुगतान व कंसल्टेंसी मुनाफे का केंद्रीय हिसाब।</>
+              ) : (
+                <>Educational Consultancy &amp; University Fee Ledger — Track student packages, authorized university fee deposits, pending balances, and retained counselor margins.</>
+              )}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
+              onClick={() => {
+                if (typeof toggleLang === 'function') toggleLang();
+              }}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm cursor-pointer"
+              title="Toggle Language"
+            >
+              <Globe className="w-3.5 h-3.5 text-amber-300" />
+              <span>{isHindi ? 'English' : 'हिन्दी'}</span>
+            </button>
+            <button
               onClick={() => setRefreshTrigger(prev => prev + 1)}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm cursor-pointer"
               title="Refresh Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Refresh / रीलोड</span>
+              <span>{isHindi ? 'रीलोड' : 'Refresh'}</span>
             </button>
             <button
               onClick={() => {
                 setShowRateModal(true);
               }}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md"
+              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add University Rate</span>
+              <span>{isHindi ? '+ नई यूनिवर्सिटी दर' : '+ Add University Rate'}</span>
             </button>
           </div>
         </div>
@@ -393,7 +414,7 @@ export default function UniversityPaidManager() {
               ₹{stats ? Number(stats.totalUniversityFee).toLocaleString('en-IN') : '...'}
             </div>
             <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              यूनिवर्सिटी फीस कुल देय
+              {isHindi ? 'यूनिवर्सिटी फीस कुल देय' : 'Total Univ Payable'}
             </p>
           </div>
         </div>
@@ -411,7 +432,7 @@ export default function UniversityPaidManager() {
               ₹{stats ? Number(stats.totalUniversityPaid).toLocaleString('en-IN') : '...'}
             </div>
             <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              यूनिवर्सिटी को जमा किया ({stats ? stats.totalPaymentsCount : 0} वाउचर)
+              {isHindi ? `यूनिवर्सिटी को जमा किया (${stats ? stats.totalPaymentsCount : 0} वाउचर)` : `Paid to University (${stats ? stats.totalPaymentsCount : 0} Vouchers)`}
             </p>
           </div>
         </div>
@@ -429,7 +450,7 @@ export default function UniversityPaidManager() {
               ₹{stats ? Number(stats.totalUniversityDue).toLocaleString('en-IN') : '...'}
             </div>
             <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              यूनिवर्सिटी का कुल बकाया
+              {isHindi ? 'यूनिवर्सिटी का कुल बकाया' : 'Total Outstanding Balance'}
             </p>
           </div>
         </div>
@@ -448,7 +469,7 @@ export default function UniversityPaidManager() {
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>कंसल्टेंसी हाथ में शुद्ध बचत</span>
+              <span>{isHindi ? 'कंसल्टेंसी हाथ में शुद्ध बचत' : 'Counselor Retained Margin'}</span>
             </div>
           </div>
         </div>
@@ -466,7 +487,7 @@ export default function UniversityPaidManager() {
               ₹{stats ? Number(stats.expectedMargin).toLocaleString('en-IN') : '...'}
             </div>
             <p className="text-[11px] font-bold text-indigo-700 mt-1">
-              कुल अनुमानित कंसल्टेंसी लाभ
+              {isHindi ? 'कुल अनुमानित कंसल्टेंसी लाभ' : 'Projected Counselor Margin'}
             </p>
           </div>
         </div>
@@ -484,7 +505,7 @@ export default function UniversityPaidManager() {
             }`}
           >
             <Building2 className="w-4 h-4" />
-            <span>1. Student University Settlement Ledger (छात्र यूनिवर्सिटी लेजर)</span>
+            <span>{isHindi ? '1. छात्र यूनिवर्सिटी लेजर (Student Ledger)' : '1. Student University Settlement Ledger'}</span>
           </button>
 
           <button
@@ -496,7 +517,7 @@ export default function UniversityPaidManager() {
             }`}
           >
             <Printer className="w-4 h-4" />
-            <span>2. University Payment Vouchers &amp; History (भुगतान रसीदें)</span>
+            <span>{isHindi ? '2. भुगतान रसीदें व इतिहास (Payment History)' : '2. University Payment Vouchers & History'}</span>
           </button>
 
           <button
@@ -508,7 +529,7 @@ export default function UniversityPaidManager() {
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
-            <span>3. University Course Fee Rates Master (यूनिवर्सिटी मानक दरें)</span>
+            <span>{isHindi ? '3. यूनिवर्सिटी मानक दरें (Course Rates)' : '3. University Course Fee Rates Master'}</span>
           </button>
         </div>
 
@@ -529,7 +550,7 @@ export default function UniversityPaidManager() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="छात्र का नाम, Roll No, पिता का नाम, कोर्स, आधार कार्ड या यूनिवर्सिटी सर्च करें..."
+                placeholder={isHindi ? "छात्र का नाम, Roll No, पिता का नाम, कोर्स, आधार कार्ड या यूनिवर्सिटी सर्च करें..." : "Search by student name, roll no, father name, course, or university..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none placeholder:text-slate-400 shadow-sm"
@@ -551,7 +572,7 @@ export default function UniversityPaidManager() {
                 onChange={(e) => setSelectedUniv(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm cursor-pointer"
               >
-                <option value="ALL">🏛️ All Partner Universities (सभी यूनिवर्सिटीज)</option>
+                <option value="ALL">🏛️ {isHindi ? 'सभी यूनिवर्सिटीज (All Universities)' : 'All Partner Universities'}</option>
                 {universities.map((u, i) => (
                   <option key={i} value={u}>{u}</option>
                 ))}
@@ -566,9 +587,9 @@ export default function UniversityPaidManager() {
                   onChange={(e) => setDueFilter(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm cursor-pointer"
                 >
-                  <option value="all">⚡ All Students (सभी छात्र)</option>
-                  <option value="due_only">⚠️ Pending University Dues (यूनिवर्सिटी को फीस देना बाकी)</option>
-                  <option value="cleared">✅ Fully Cleared (यूनिवर्सिटी हिसाब चुकता)</option>
+                  <option value="all">⚡ {isHindi ? 'सभी छात्र (All Students)' : 'All Students'}</option>
+                  <option value="due_only">⚠️ {isHindi ? 'यूनिवर्सिटी को फीस देना बाकी' : 'Pending University Dues'}</option>
+                  <option value="cleared">✅ {isHindi ? 'यूनिवर्सिटी हिसाब चुकता' : 'Fully Cleared (Zero Due)'}</option>
                 </select>
               </div>
             )}
@@ -600,7 +621,7 @@ export default function UniversityPaidManager() {
             <div className="flex items-center gap-2.5">
               <Building2 className="w-5 h-5 text-amber-700" />
               <h3 className="text-sm font-bold text-slate-900">
-                Student &amp; University Dual Ledger (छात्र पैकेज बनाम यूनिवर्सिटी देय विवरण)
+                {isHindi ? 'छात्र पैकेज बनाम यूनिवर्सिटी देय विवरण (Student & University Dual Ledger)' : 'Student & University Dual Ledger'}
               </h3>
             </div>
             <span className="text-xs font-semibold text-slate-500">
@@ -611,14 +632,14 @@ export default function UniversityPaidManager() {
           {loading ? (
             <div className="py-16 text-center text-slate-500 space-y-3">
               <RefreshCw className="w-8 h-8 mx-auto animate-spin text-amber-600" />
-              <p className="text-xs font-bold">लोड हो रहा है... कृपया प्रतीक्षा करें</p>
+              <p className="text-xs font-bold">{isHindi ? 'लोड हो रहा है... कृपया प्रतीक्षा करें' : 'Loading ledger records... Please wait'}</p>
             </div>
           ) : students.length === 0 ? (
             <div className="py-16 text-center text-slate-500 space-y-2">
               <HelpCircle className="w-10 h-10 mx-auto text-slate-300" />
-              <p className="text-sm font-bold text-slate-700">कोई छात्र रिकॉर्ड नहीं मिला</p>
+              <p className="text-sm font-bold text-slate-700">{isHindi ? 'कोई छात्र रिकॉर्ड नहीं मिला' : 'No Student Records Found'}</p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                चुने गए फ़िल्टर या खोज शब्दों के अनुसार कोई छात्र डेटा उपलब्ध नहीं है।
+                {isHindi ? 'चुने गए फ़िल्टर या खोज शब्दों के अनुसार कोई छात्र डेटा उपलब्ध नहीं है।' : 'No student records match the selected filters or search query.'}
               </p>
             </div>
           ) : (
@@ -742,7 +763,7 @@ export default function UniversityPaidManager() {
                               ₹{retainedMargin.toLocaleString('en-IN')}
                             </div>
                             <p className="text-[10px] text-slate-500 font-medium">
-                              (छात्र भुगतान - यूनिवर्सिटी भुगतान)
+                              {isHindi ? '(छात्र भुगतान - यूनिवर्सिटी भुगतान)' : '(Student Paid - Univ Paid)'}
                             </p>
                             <span className="inline-block bg-emerald-100 text-emerald-800 font-bold text-[9px] px-1.5 py-0.5 rounded">
                               Margin In Hand
@@ -754,7 +775,7 @@ export default function UniversityPaidManager() {
                         <td className="py-4 px-4 align-top text-center">
                           {isFullySettled ? (
                             <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3" /> Settled / चुकता
+                              <CheckCircle2 className="w-3 h-3" /> {isHindi ? 'चुकता / Settled' : 'Settled'}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-amber-300">
@@ -815,9 +836,9 @@ export default function UniversityPaidManager() {
           {payments.length === 0 ? (
             <div className="py-16 text-center text-slate-500 space-y-2">
               <HelpCircle className="w-10 h-10 mx-auto text-slate-300" />
-              <p className="text-sm font-bold text-slate-700">कोई यूनिवर्सिटी भुगतान रिकॉर्ड नहीं मिला</p>
+              <p className="text-sm font-bold text-slate-700">{isHindi ? 'कोई यूनिवर्सिटी भुगतान रिकॉर्ड नहीं मिला' : 'No University Payment Records Found'}</p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                छात्र लेजर से "Pay Univ" बटन दबाकर यूनिवर्सिटी फीस जमा करें।
+                {isHindi ? 'छात्र लेजर से "Pay Univ" बटन दबाकर यूनिवर्सिटी फीस जमा करें।' : 'Click "+ Pay Univ" on any student in the ledger to record a university fee payment.'}
               </p>
             </div>
           ) : (
@@ -914,10 +935,10 @@ export default function UniversityPaidManager() {
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Official University Course Rate Cards (यूनिवर्सिटी मानक शुल्क दरें)
+                {isHindi ? 'यूनिवर्सिटी मानक शुल्क दरें (Course Rate Cards)' : 'Official University Course Rate Cards'}
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                विभिन्न विश्वविद्यालयों द्वारा ली जाने वाली आधिकारिक मूल फीस की सूची
+                {isHindi ? 'विभिन्न विश्वविद्यालयों द्वारा ली जाने वाली आधिकारिक मूल फीस की सूची' : 'Master list of official tuition fees charged by partner universities per course'}
               </p>
             </div>
             <button
@@ -925,7 +946,7 @@ export default function UniversityPaidManager() {
               className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Add Course Rate</span>
+              <span>{isHindi ? '+ नई दर जोड़ें' : '+ Add Course Rate'}</span>
             </button>
           </div>
 
@@ -987,10 +1008,10 @@ export default function UniversityPaidManager() {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    Pay Official University Fee (यूनिवर्सिटी फीस भुगतान)
+                    {isHindi ? 'यूनिवर्सिटी फीस भुगतान' : 'Pay Official University Fee'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    यूनिवर्सिटी खाते में चालान या बैंक ट्रांसफर द्वारा फीस जमा करें
+                    {isHindi ? 'यूनिवर्सिटी खाते में चालान या बैंक ट्रांसफर द्वारा फीस जमा करें' : 'Record official fee deposit to university account via Challan, RTGS or Net Banking'}
                   </p>
                 </div>
               </div>
@@ -1033,7 +1054,7 @@ export default function UniversityPaidManager() {
                 <input
                   type="number"
                   required
-                  placeholder="उदा. 5000"
+                  placeholder={isHindi ? "उदा. 5000" : "e.g. 5000"}
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1076,36 +1097,36 @@ export default function UniversityPaidManager() {
               {/* Installment / Semester Selector */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-bold">Paid Semester / Installment*</label>
+                  <label className="block text-slate-700 font-bold">{isHindi ? 'किस्त / सेमेस्टर*' : 'Paid Semester / Installment*'}</label>
                   <select
                     value={paidSemester}
                     onChange={(e) => setPaidSemester(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
-                    <option value="Semester 1">Semester 1 (प्रथम सेमेस्टर)</option>
-                    <option value="Semester 2">Semester 2 (द्वितीय सेमेस्टर)</option>
-                    <option value="Semester 3">Semester 3 (तृतीय सेमेस्टर)</option>
-                    <option value="Semester 4">Semester 4 (चतुर्थ सेमेस्टर)</option>
-                    <option value="Semester 5">Semester 5 (पंचम सेमेस्टर)</option>
-                    <option value="Semester 6">Semester 6 (षष्ठम सेमेस्टर)</option>
-                    <option value="Examination Fee">Examination Fee (परीक्षा फीस)</option>
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                    <option value="Semester 3">Semester 3</option>
+                    <option value="Semester 4">Semester 4</option>
+                    <option value="Semester 5">Semester 5</option>
+                    <option value="Semester 6">Semester 6</option>
+                    <option value="Examination Fee">Examination Fee</option>
                     <option value="Enrollment Fee">Enrollment &amp; Registration Fee</option>
                     <option value="Annual Composite">Annual Composite University Fee</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-slate-700 font-bold">Payment Mode / माध्यम*</label>
+                  <label className="block text-slate-700 font-bold">{isHindi ? 'भुगतान माध्यम*' : 'Payment Mode*'}</label>
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     <option value="Bank NEFT / RTGS">Bank NEFT / RTGS</option>
-                    <option value="Bank Challan">Bank Challan (बैंक चालान)</option>
+                    <option value="Bank Challan">Bank Challan</option>
                     <option value="Net Banking">Net Banking / Portal</option>
-                    <option value="DD / Cheque">DD / Cheque (डिमांड ड्राफ्ट)</option>
-                    <option value="Cash">Cash (विश्वविद्यालय काउंटर)</option>
+                    <option value="DD / Cheque">DD / Cheque</option>
+                    <option value="Cash">Cash Counter</option>
                     <option value="UPI / QR">UPI / QR Code</option>
                   </select>
                 </div>
@@ -1114,11 +1135,11 @@ export default function UniversityPaidManager() {
               {/* Bank Transaction Ref / UTR */}
               <div className="space-y-1">
                 <label className="block text-slate-700 font-bold">
-                  Bank UTR / Challan No. / Ref Number (बैंक संदर्भ संख्या)
+                  {isHindi ? 'बैंक संदर्भ संख्या (Bank UTR / Challan No.)' : 'Bank UTR / Challan No. / Ref Number'}
                 </label>
                 <input
                   type="text"
-                  placeholder="उदा. UTR202609088492 या CHALLAN-5521"
+                  placeholder={isHindi ? "उदा. UTR202609088492 या CHALLAN-5521" : "e.g. UTR202609088492 or CHALLAN-5521"}
                   value={transactionRef}
                   onChange={(e) => setTransactionRef(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1127,10 +1148,10 @@ export default function UniversityPaidManager() {
 
               {/* Remarks */}
               <div className="space-y-1">
-                <label className="block text-slate-700 font-bold">Remarks / विशेष टिप्पणी</label>
+                <label className="block text-slate-700 font-bold">{isHindi ? 'विशेष टिप्पणी (Remarks)' : 'Remarks / Reference Notes'}</label>
                 <input
                   type="text"
-                  placeholder="उदा. Paid via SBI Main Branch Chhatarpur"
+                  placeholder={isHindi ? "उदा. Paid via SBI Main Branch Chhatarpur" : "e.g. Paid via SBI Main Branch Chhatarpur"}
                   value={paymentRemark}
                   onChange={(e) => setPaymentRemark(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1144,7 +1165,7 @@ export default function UniversityPaidManager() {
                   onClick={() => setPayModalStudent(null)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
                 >
-                  रद्द करें / Cancel
+                  {isHindi ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -1152,11 +1173,11 @@ export default function UniversityPaidManager() {
                   className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-5 py-2 rounded-xl font-black shadow-lg shadow-amber-600/20 cursor-pointer disabled:opacity-50"
                 >
                   {payLoading ? (
-                    <span>भुगतान सुरक्षित हो रहा है...</span>
+                    <span>{isHindi ? 'भुगतान सुरक्षित हो रहा है...' : 'Recording Payment...'}</span>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Confirm &amp; Generate Voucher</span>
+                      <span>{isHindi ? 'पुष्टि करें और वाउचर बनाएं' : 'Confirm & Generate Voucher'}</span>
                     </>
                   )}
                 </button>
@@ -1207,7 +1228,7 @@ export default function UniversityPaidManager() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
                 <p className="text-[10px] text-slate-500">
-                  यह वह आधिकारिक फीस है जो काउंसलर को विश्वविद्यालय में जमा करनी है।
+                  {isHindi ? 'यह वह आधिकारिक फीस है जो विश्वविद्यालय में जमा करनी है।' : 'Official base tuition fee payable directly to the university for this course.'}
                 </p>
               </div>
 
@@ -1273,7 +1294,7 @@ export default function UniversityPaidManager() {
                     Add University Standard Rate
                   </h3>
                   <p className="text-xs text-slate-500">
-                    कोर्स के अनुसार यूनिवर्सिटी की आधिकारिक फीस दर्ज करें
+                    {isHindi ? 'कोर्स के अनुसार यूनिवर्सिटी की आधिकारिक फीस दर्ज करें' : 'Register official standard fees charged by partner universities for specific courses'}
                   </p>
                 </div>
               </div>
@@ -1291,7 +1312,7 @@ export default function UniversityPaidManager() {
                 <input
                   type="text"
                   required
-                  placeholder="उदा. Maharaja Chhatrasal Bundelkhand University (MCBU)"
+                  placeholder={isHindi ? "उदा. Maharaja Chhatrasal Bundelkhand University (MCBU)" : "e.g. Maharaja Chhatrasal Bundelkhand University (MCBU)"}
                   value={rateForm.universityName}
                   onChange={(e) => setRateForm({ ...rateForm, universityName: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1303,7 +1324,7 @@ export default function UniversityPaidManager() {
                 <input
                   type="text"
                   required
-                  placeholder="उदा. Bachelor of Arts (BA)"
+                  placeholder={isHindi ? "उदा. Bachelor of Arts (BA)" : "e.g. Bachelor of Arts (BA)"}
                   value={rateForm.courseName}
                   onChange={(e) => setRateForm({ ...rateForm, courseName: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1316,7 +1337,7 @@ export default function UniversityPaidManager() {
                   <input
                     type="number"
                     required
-                    placeholder="उदा. 15000"
+                    placeholder="15000"
                     value={rateForm.officialFee}
                     onChange={(e) => setRateForm({ ...rateForm, officialFee: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1327,7 +1348,7 @@ export default function UniversityPaidManager() {
                   <label className="block text-slate-700 font-bold">Per Semester (INR)</label>
                   <input
                     type="number"
-                    placeholder="उदा. 2500"
+                    placeholder="2500"
                     value={rateForm.feePerSemester}
                     onChange={(e) => setRateForm({ ...rateForm, feePerSemester: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
@@ -1336,10 +1357,10 @@ export default function UniversityPaidManager() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-slate-700 font-bold">Notes / विवरण</label>
+                <label className="block text-slate-700 font-bold">{isHindi ? 'टिप्पणी (Notes)' : 'Notes / Description'}</label>
                 <input
                   type="text"
-                  placeholder="उदा. Standard MP government university rate"
+                  placeholder={isHindi ? "उदा. Standard MP government university rate" : "e.g. Standard MP government university rate"}
                   value={rateForm.notes}
                   onChange={(e) => setRateForm({ ...rateForm, notes: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"

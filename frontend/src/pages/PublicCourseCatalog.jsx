@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 
-export default function PublicCourseCatalog({ courses, studentUser, onOpenStudentAuth, lang = 'hi' }) {
-  const t = translations[lang] || translations.hi;
+export default function PublicCourseCatalog({ courses, studentUser, onOpenStudentAuth, lang = 'en' }) {
+  const t = translations[lang] || translations.en;
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
   const [expandedSyllabusCourseId, setExpandedSyllabusCourseId] = useState(null);

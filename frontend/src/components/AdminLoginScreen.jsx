@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
-import { Shield, Key, User, Lock, AlertCircle, CheckCircle2, UserCheck, Eye, EyeOff } from 'lucide-react';
+import { Shield, Key, User, Lock, AlertCircle, CheckCircle2, UserCheck, Eye, EyeOff, Globe } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AdminLoginScreen({ 
   initialTab = 'admin', 
   onLoginSuccess, 
   onStaffLoginSuccess, 
-  onBackToPublic 
+  onBackToPublic,
+  lang: propLang,
+  toggleLang: propToggleLang
 }) {
-  // Active Role Option: 'admin' (एडमिन लॉगिन) | 'staff' (स्टाफ लॉगिन)
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+  const isHindi = lang === 'hi';
+
+  // Active Role Option: 'admin' | 'staff'
   const [activeRole, setActiveRole] = useState(initialTab || 'admin');
 
   // Admin Credentials
@@ -92,6 +100,18 @@ export default function AdminLoginScreen({
         
         {/* Institute Top Banner */}
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-7 sm:p-8 text-center space-y-3 relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof toggleLang === 'function') toggleLang();
+            }}
+            className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-all border border-white/20 cursor-pointer"
+            title="Toggle Language"
+          >
+            <Globe className="w-3.5 h-3.5 text-amber-300" />
+            <span>{isHindi ? 'English' : 'हिन्दी'}</span>
+          </button>
+
           <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-amber-400 mx-auto shadow-xl shadow-amber-400/20">
             <img src="/pkc_logo.png" alt="PKC Logo" className="w-full h-full object-contain rounded-full" />
           </div>
@@ -108,10 +128,10 @@ export default function AdminLoginScreen({
           </div>
         </div>
 
-        {/* 2-Option Role Selector ("एडमिन लॉगिन" aur "स्टाफ लॉगिन") */}
+        {/* 2-Option Role Selector ("Admin Login" & "Staff Login") */}
         <div className="p-6 sm:p-8 pb-4">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3 text-center">
-            Select Your Login Portal / लॉगिन का प्रकार चुनें
+            {isHindi ? 'लॉगिन पोर्टल चुनें (Select Portal)' : 'Select Your Login Portal'}
           </label>
 
           <div className="grid grid-cols-2 gap-3.5">
@@ -145,9 +165,11 @@ export default function AdminLoginScreen({
                 <strong className="text-sm font-black text-slate-900 block leading-tight">
                   Admin Login
                 </strong>
-                <span className="text-[11px] font-semibold text-slate-500 block mt-0.5">
-                  एडमिन लॉगिन
-                </span>
+                {isHindi && (
+                  <span className="text-[11px] font-semibold text-slate-500 block mt-0.5">
+                    एडमिन लॉगिन
+                  </span>
+                )}
               </div>
             </button>
 
@@ -181,9 +203,11 @@ export default function AdminLoginScreen({
                 <strong className="text-sm font-black text-slate-900 block leading-tight">
                   Staff Login
                 </strong>
-                <span className="text-[11px] font-semibold text-slate-500 block mt-0.5">
-                  स्टाफ लॉगिन
-                </span>
+                {isHindi && (
+                  <span className="text-[11px] font-semibold text-slate-500 block mt-0.5">
+                    स्टाफ लॉगिन
+                  </span>
+                )}
               </div>
             </button>
           </div>

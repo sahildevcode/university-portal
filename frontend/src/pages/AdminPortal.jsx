@@ -13,8 +13,21 @@ import StudentDocumentsTracker from './StudentDocumentsTracker';
 import WebsiteCmsManager from './WebsiteCmsManager';
 import UniversityPaidManager from './UniversityPaidManager';
 import BulkImportModal from '../components/BulkImportModal';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLogout }) {
+export default function AdminPortal({ 
+  adminUser, 
+  courses, 
+  onRefreshCourses, 
+  onLogout,
+  lang: propLang,
+  setLang: propSetLang,
+  toggleLang: propToggleLang
+}) {
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+
   const [activeTab, setActiveTab] = useState('syllabus');
   const [admissionSubTab, setAdmissionSubTab] = useState('directory');
   const [localCourses, setLocalCourses] = useState(courses || []);
@@ -284,6 +297,17 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
           >
             <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
             <span>📥 Bulk Import Data</span>
+          </button>
+
+          {/* Language Switcher Button */}
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="flex items-center gap-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 px-3.5 py-2 rounded-xl text-xs font-black shadow-md transition-all cursor-pointer"
+            title="Switch Language / भाषा बदलें"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>{lang === 'en' ? '🌐 हिन्दी' : '🌐 English'}</span>
           </button>
 
           {/* View Public Student Website */}
@@ -636,6 +660,8 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
             <StudentList 
               courses={localCourses} 
               onOpenNewAdmission={() => setAdmissionSubTab('new')} 
+              lang={lang}
+              toggleLang={toggleLang}
             />
           ) : (
             <StudentRegistration
@@ -645,6 +671,8 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
                 setAdmissionSubTab('directory');
                 if (onRefreshCourses) onRefreshCourses();
               }}
+              lang={lang}
+              toggleLang={toggleLang}
             />
           )}
         </div>
@@ -652,22 +680,22 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
 
       {/* TAB 2: CASH COUNTER & TREASURY FEED (WITH ADMIN EDIT POWER) */}
       {activeTab === 'cashcounter' && (
-        <AccountsDashboard isAdmin={true} />
+        <AccountsDashboard isAdmin={true} lang={lang} toggleLang={toggleLang} />
       )}
 
       {/* TAB: STUDENT DOCUMENTS TRACKER & VERIFICATION */}
       {activeTab === 'documents' && (
-        <StudentDocumentsTracker isAdmin={true} courses={localCourses} />
+        <StudentDocumentsTracker isAdmin={true} courses={localCourses} lang={lang} toggleLang={toggleLang} />
       )}
 
       {/* TAB 6: WEBSITE CMS & INQUIRIES */}
       {activeTab === 'cms' && (
-        <WebsiteCmsManager />
+        <WebsiteCmsManager lang={lang} toggleLang={toggleLang} />
       )}
 
       {/* TAB 7: UNIVERSITY PAID & SETTLEMENT MANAGEMENT */}
       {activeTab === 'university-paid' && (
-        <UniversityPaidManager />
+        <UniversityPaidManager lang={lang} toggleLang={toggleLang} />
       )}
 
       </main>

@@ -39,6 +39,10 @@ export default function App() {
     }
   });
 
+  const toggleLang = () => {
+    setLang(prev => (prev === 'en' ? 'hi' : 'en'));
+  };
+
   // Animated Splash Screen state (Logo + Name animation on first load)
   const [showSplash, setShowSplash] = useState(true);
 
@@ -268,6 +272,9 @@ export default function App() {
                   courses={courses} 
                   staffUser={staffUser}
                   onStaffLogout={handleStaffLogout}
+                  lang={lang}
+                  setLang={setLang}
+                  toggleLang={toggleLang}
                 />
               ) : (
                 <AdminLoginScreen 
@@ -275,6 +282,9 @@ export default function App() {
                   onLoginSuccess={handleAdminLoginSuccess} 
                   onStaffLoginSuccess={handleStaffLoginSuccess}
                   onBackToPublic={() => navigateTo('public', '/')}
+                  lang={lang}
+                  setLang={setLang}
+                  toggleLang={toggleLang}
                 />
               )
             ) : (
@@ -283,6 +293,9 @@ export default function App() {
                 courses={courses} 
                 onRefreshCourses={fetchGlobalData}
                 onLogout={handleAdminLogout}
+                lang={lang}
+                setLang={setLang}
+                toggleLang={toggleLang}
               />
             )}
           </div>
@@ -300,6 +313,9 @@ export default function App() {
                   courses={courses} 
                   onRefreshCourses={fetchGlobalData}
                   onLogout={handleAdminLogout}
+                  lang={lang}
+                  setLang={setLang}
+                  toggleLang={toggleLang}
                 />
               ) : (
                 <AdminLoginScreen 
@@ -307,6 +323,9 @@ export default function App() {
                   onLoginSuccess={handleAdminLoginSuccess} 
                   onStaffLoginSuccess={handleStaffLoginSuccess}
                   onBackToPublic={() => navigateTo('public', '/')}
+                  lang={lang}
+                  setLang={setLang}
+                  toggleLang={toggleLang}
                 />
               )
             ) : (
@@ -314,6 +333,9 @@ export default function App() {
                 courses={courses} 
                 staffUser={staffUser}
                 onStaffLogout={handleStaffLogout}
+                lang={lang}
+                setLang={setLang}
+                toggleLang={toggleLang}
               />
             )}
           </div>

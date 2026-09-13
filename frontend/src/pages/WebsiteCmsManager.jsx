@@ -22,10 +22,17 @@ import {
   Calendar,
   Eye,
   EyeOff,
-  Layers
+  Layers,
+  Globe
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function WebsiteCmsManager() {
+export default function WebsiteCmsManager({ lang: propLang, toggleLang: propToggleLang }) {
+  const context = useLanguage();
+  const lang = propLang || context.lang || 'en';
+  const toggleLang = propToggleLang || context.toggleLang;
+  const isHindi = lang === 'hi';
+
   const [activeSubTab, setActiveSubTab] = useState('events_gallery'); // 'events_gallery' | 'testimonials' | 'about' | 'inquiries'
   
   // Event Photos (Functions & Moments Gallery) State
@@ -397,6 +404,7 @@ export default function WebsiteCmsManager() {
     <div className="space-y-8 text-slate-900">
       
       {/* Header */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -411,16 +419,30 @@ export default function WebsiteCmsManager() {
                 Website CMS, Testimonials &amp; Inquiry Desk
               </h1>
               <p className="text-xs text-indigo-200 mt-0.5">
-                टॉप फोटो स्लाइडर, संस्थान का इतिहास/आंकड़े (About Us), एवं छात्रों द्वारा भेजी गई इंक्वायरी प्रबंधित करें।
+                {isHindi 
+                  ? 'टॉप फोटो स्लाइडर, संस्थान का इतिहास/आंकड़े (About Us), एवं छात्रों द्वारा भेजी गई इंक्वायरी प्रबंधित करें।'
+                  : 'Manage homepage event gallery, About Us history & statistics, and student admission inquiries.'}
               </p>
             </div>
           </div>
 
-          <div className="bg-white/10 px-4 py-2.5 rounded-2xl border border-white/10 text-right shrink-0">
-            <span className="text-[11px] text-indigo-200 block">Pending Inquiries</span>
-            <span className="text-xl font-black text-amber-300">
-              {inquiries.filter(i => i.status === 'New').length} New Leads
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (typeof toggleLang === 'function') toggleLang();
+              }}
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm cursor-pointer"
+              title="Toggle Language"
+            >
+              <Globe className="w-3.5 h-3.5 text-amber-300" />
+              <span>{isHindi ? 'English' : 'हिन्दी'}</span>
+            </button>
+            <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/10 text-right shrink-0">
+              <span className="text-[11px] text-indigo-200 block">Pending Inquiries</span>
+              <span className="text-xl font-black text-amber-300">
+                {inquiries.filter(i => i.status === 'New').length} New Leads
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -436,7 +458,7 @@ export default function WebsiteCmsManager() {
           }`}
         >
           <Camera className="w-4 h-4" />
-          <span>📸 1. Campus Functions &amp; Event Photos ({eventPhotos.length})</span>
+          <span>📸 {isHindi ? `1. संस्थान फंक्शन एवं कार्यक्रम फोटो (${eventPhotos.length})` : `1. Campus Functions & Event Photos (${eventPhotos.length})`}</span>
         </button>
 
         <button
@@ -448,7 +470,7 @@ export default function WebsiteCmsManager() {
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          <span>2. Testimonials CMS ({testimonials.length})</span>
+          <span>{isHindi ? `2. टेस्टिमोनियल स्लाइडर (${testimonials.length})` : `2. Testimonials CMS (${testimonials.length})`}</span>
         </button>
 
         <button
@@ -460,7 +482,7 @@ export default function WebsiteCmsManager() {
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>3. About Us &amp; Statistics Editor</span>
+          <span>{isHindi ? '3. अबाउट अस एवं आंकड़े' : '3. About Us & Statistics Editor'}</span>
         </button>
 
         <button
@@ -472,7 +494,7 @@ export default function WebsiteCmsManager() {
           }`}
         >
           <HelpCircle className="w-4 h-4" />
-          <span>4. Student Admission Inquiries ({inquiries.length})</span>
+          <span>{isHindi ? `4. छात्र इंक्वायरी (${inquiries.length})` : `4. Student Admission Inquiries (${inquiries.length})`}</span>
         </button>
       </div>
 
@@ -500,10 +522,12 @@ export default function WebsiteCmsManager() {
             <div>
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Camera className="w-5 h-5 text-indigo-600" />
-                <span>संस्थान फंक्शन एवं कार्यक्रम फोटो (Campus Events &amp; Functions Gallery)</span>
+                <span>{isHindi ? 'संस्थान फंक्शन एवं कार्यक्रम फोटो (Campus Events)' : 'Campus Events & Functions Gallery'}</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                वार्षिक उत्सव, दीक्षांत समारोह, कंप्यूटर लैब व सम्मान समारोह की फोटो यहाँ से मैनेज करें। ये फोटो सीधे स्टूडेंट पेज पर लाइव दिखाई देती हैं।
+                {isHindi 
+                  ? 'वार्षिक उत्सव, दीक्षांत समारोह, कंप्यूटर लैब व सम्मान समारोह की फोटो यहाँ से मैनेज करें। ये फोटो सीधे स्टूडेंट पेज पर लाइव दिखाई देती हैं।'
+                  : 'Manage annual fest, convocation, computer lab workshops, and ceremony photos displayed on the student public website.'}
               </p>
             </div>
 
@@ -513,7 +537,7 @@ export default function WebsiteCmsManager() {
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-md transition-colors cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>नई फंक्शन फोटो जोड़ें (+ Add Photo)</span>
+              <span>{isHindi ? '+ नई फोटो जोड़ें' : '+ Add Function Photo'}</span>
             </button>
           </div>
 
@@ -524,16 +548,20 @@ export default function WebsiteCmsManager() {
                 <Camera className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">कोई फंक्शन फोटो नहीं मिली</h3>
+                <h3 className="text-base font-bold text-slate-900">
+                  {isHindi ? 'कोई फंक्शन फोटो नहीं मिली' : 'No Campus Function Photos Found'}
+                </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  संस्थान के वार्षिक उत्सव, दीक्षांत समारोह या लैब की फोटो जोड़ने के लिए ऊपर दिए गए बटन पर क्लिक करें।
+                  {isHindi 
+                    ? 'संस्थान के वार्षिक उत्सव, दीक्षांत समारोह या लैब की फोटो जोड़ने के लिए ऊपर दिए गए बटन पर क्लिक करें।'
+                    : 'Click the button above to add photos of convocations, events, workshops or ceremonies.'}
                 </p>
               </div>
               <button
                 onClick={handleOpenAddEventPhoto}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-md cursor-pointer"
               >
-                + पहली फोटो जोड़ें
+                {isHindi ? '+ पहली फोटो जोड़ें' : '+ Add First Photo'}
               </button>
             </div>
           ) : (
@@ -584,7 +612,7 @@ export default function WebsiteCmsManager() {
                           Slide #{idx + 1}
                         </span>
                         <h4 className="text-xs font-bold truncate">
-                          {photo.titleHi || photo.title}
+                          {(isHindi ? photo.titleHi : photo.title) || photo.title || photo.titleHi}
                         </h4>
                       </div>
                     </div>
@@ -617,7 +645,7 @@ export default function WebsiteCmsManager() {
                       className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-indigo-50"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      <span>एडिट करें (Edit)</span>
+                      <span>{isHindi ? 'एडिट करें' : 'Edit Photo'}</span>
                     </button>
 
                     <button
@@ -625,7 +653,7 @@ export default function WebsiteCmsManager() {
                       className="flex items-center gap-1.5 text-rose-600 hover:text-rose-800 font-bold cursor-pointer px-2.5 py-1.5 rounded-lg hover:bg-rose-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>हटाएं (Delete)</span>
+                      <span>{isHindi ? 'हटाएं' : 'Delete'}</span>
                     </button>
                   </div>
 
@@ -649,7 +677,9 @@ export default function WebsiteCmsManager() {
                 <span>Top Photo &amp; Testimonial Slider Manager</span>
               </h2>
               <p className="text-xs text-slate-500">
-                होम पेज के शीर्ष पर दिखने वाले स्लाइडर में नई फोटो, छात्र का नाम, कोर्स और रिव्यू जोड़ें।
+                {isHindi 
+                  ? 'होम पेज के शीर्ष पर दिखने वाले स्लाइडर में नई फोटो, छात्र का नाम, कोर्स और रिव्यू जोड़ें।' 
+                  : 'Add student review testimonials, success photos, and courses to display on the top home slider.'}
               </p>
             </div>
 
@@ -735,7 +765,9 @@ export default function WebsiteCmsManager() {
               <span>About Us &amp; Institute Statistics Editor</span>
             </h2>
             <p className="text-xs text-slate-500">
-              संस्थान कितने साल पुराना है, कितने छात्रों को पास कराया, एफिलिएशन एवं मिशन/विज़न को यहाँ से कभी भी एडिट करें।
+              {isHindi 
+                ? 'संस्थान कितने साल पुराना है, कितने छात्रों को पास कराया, एफिलिएशन एवं मिशन/विज़न को यहाँ से कभी भी एडिट करें।' 
+                : 'Manage institute legacy years, student alumni count, affiliations, and core mission & vision.'}
             </p>
           </div>
 
@@ -744,7 +776,7 @@ export default function WebsiteCmsManager() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">Established Year (स्थापना वर्ष)</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'स्थापना वर्ष (Established Year)' : 'Established Year'}</label>
                 <input
                   type="number"
                   value={aboutForm.establishedYear}
@@ -755,7 +787,7 @@ export default function WebsiteCmsManager() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">Years of Excellence (अनुभव वर्ष)</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'अनुभव वर्ष (Years of Excellence)' : 'Years of Excellence'}</label>
                 <input
                   type="number"
                   value={aboutForm.yearsOfExcellence}
@@ -766,7 +798,7 @@ export default function WebsiteCmsManager() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">Total Students Guided (प्रवेशित छात्र)</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'प्रवेशित छात्र (Total Students Guided)' : 'Total Students Guided'}</label>
                 <input
                   type="number"
                   value={aboutForm.totalStudentsGuided}
@@ -777,7 +809,7 @@ export default function WebsiteCmsManager() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 block">University Affiliations (मान्यताएं)</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'मान्यताएं (University Affiliations)' : 'University Affiliations'}</label>
                 <input
                   type="number"
                   value={aboutForm.totalAffiliations}
@@ -858,7 +890,9 @@ export default function WebsiteCmsManager() {
                 <span>Prospective Student Admission Inquiries ({inquiries.length})</span>
               </h2>
               <p className="text-xs text-slate-500">
-                छात्रों द्वारा वेबसाइट से भेजी गई पूछताछ। तुरंत कॉल या व्हाट्सएप करें एवं स्थिति अपडेट करें।
+                {isHindi 
+                  ? 'छात्रों द्वारा वेबसाइट से भेजी गई पूछताछ। तुरंत कॉल या व्हाट्सएप करें एवं स्थिति अपडेट करें।' 
+                  : 'Direct admission inquiries received from prospective students via the public website.'}
               </p>
             </div>
 
@@ -1068,7 +1102,7 @@ export default function WebsiteCmsManager() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Camera className="w-5 h-5 text-indigo-600" />
-                <span>{editingEventPhoto ? 'फंक्शन फोटो एडिट करें (Edit Function Photo)' : 'नई फंक्शन फोटो जोड़ें (Add Function Photo)'}</span>
+                <span>{editingEventPhoto ? (isHindi ? 'फंक्शन फोटो एडिट करें' : 'Edit Function Photo') : (isHindi ? 'नई फंक्शन फोटो जोड़ें' : 'Add Function Photo')}</span>
               </h3>
               <button 
                 type="button" 
@@ -1083,7 +1117,7 @@ export default function WebsiteCmsManager() {
               {/* English & Hindi Title */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">कार्यक्रम का नाम (English Title) *</label>
+                  <label className="font-bold text-slate-700 block">{isHindi ? 'कार्यक्रम का नाम (English Title) *' : 'Event / Ceremony Title *'}</label>
                   <input
                     type="text"
                     required
@@ -1094,7 +1128,7 @@ export default function WebsiteCmsManager() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">हिंदी शीर्षक (Hindi Title)</label>
+                  <label className="font-bold text-slate-700 block">{isHindi ? 'हिंदी शीर्षक (Hindi Title)' : 'Hindi Title (Optional)'}</label>
                   <input
                     type="text"
                     placeholder="उदा. वार्षिक दीक्षांत समारोह 2024"
@@ -1108,7 +1142,7 @@ export default function WebsiteCmsManager() {
               {/* Category & Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">कैटेगरी (Category) *</label>
+                  <label className="font-bold text-slate-700 block">{isHindi ? 'कैटेगरी (Category) *' : 'Category *'}</label>
                   <input
                     type="text"
                     required
@@ -1119,7 +1153,7 @@ export default function WebsiteCmsManager() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 block">वर्ष / सत्र (Year / Session)</label>
+                  <label className="font-bold text-slate-700 block">{isHindi ? 'वर्ष / सत्र (Year / Session)' : 'Year / Academic Session'}</label>
                   <input
                     type="text"
                     placeholder="e.g. 2024 / Session 2023-24"
@@ -1133,7 +1167,7 @@ export default function WebsiteCmsManager() {
               {/* 1-Click Demo Photo Quick Selectors */}
               <div className="space-y-1.5 bg-indigo-50/60 p-3 rounded-2xl border border-indigo-100">
                 <label className="font-bold text-indigo-900 block flex items-center justify-between">
-                  <span>⚡ 1-क्लिक क्विक डेमो फोटो चुनें:</span>
+                  <span>{isHindi ? '⚡ 1-क्लिक क्विक डेमो फोटो चुनें:' : '⚡ 1-Click Demo Photo Quick Presets:'}</span>
                   <span className="text-[10px] text-indigo-600 font-normal">Click to auto-fill</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -1158,13 +1192,13 @@ export default function WebsiteCmsManager() {
 
               {/* Photo Upload from Computer OR URL Input */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-700 block">फोटो सोर्स (Photo Image Source) *</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'फोटो सोर्स (Photo Source) *' : 'Photo Image Source *'}</label>
                 
                 {/* File Upload Button */}
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer border border-slate-300 transition-colors text-xs shrink-0">
                     <Upload className="w-4 h-4 text-indigo-600" />
-                    <span>{uploadingPhoto ? 'Uploading...' : 'कंप्यूटर से फोटो चुनें (Upload)'}</span>
+                    <span>{uploadingPhoto ? 'Uploading...' : (isHindi ? 'कंप्यूटर से फोटो चुनें (Upload)' : 'Upload Photo from Device')}</span>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -1173,7 +1207,7 @@ export default function WebsiteCmsManager() {
                       disabled={uploadingPhoto}
                     />
                   </label>
-                  <span className="text-[11px] text-slate-400">या नीचे लिंक (URL) डालें:</span>
+                  <span className="text-[11px] text-slate-400">{isHindi ? 'या नीचे लिंक (URL) डालें:' : 'or enter direct image URL below:'}</span>
                 </div>
 
                 <input
@@ -1190,7 +1224,7 @@ export default function WebsiteCmsManager() {
               {eventPhotoForm.imageUrl && (
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    लाइव फोटो प्रीव्यू (Live Preview):
+                    {isHindi ? 'लाइव फोटो प्रीव्यू (Live Preview):' : 'Live Photo Preview:'}
                   </span>
                   <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 relative">
                     <img 
@@ -1210,10 +1244,10 @@ export default function WebsiteCmsManager() {
 
               {/* Short Description */}
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">संक्षिप्त विवरण (Short Description)</label>
+                <label className="font-bold text-slate-700 block">{isHindi ? 'संक्षिप्त विवरण (Short Description)' : 'Short Description / Highlights'}</label>
                 <textarea
                   rows={2}
-                  placeholder="कार्यक्रम का विवरण या छात्रों की उपलब्धि..."
+                  placeholder={isHindi ? "कार्यक्रम का विवरण या छात्रों की उपलब्धि..." : "Brief event highlights or student achievements..."}
                   value={eventPhotoForm.description}
                   onChange={(e) => setEventPhotoForm({ ...eventPhotoForm, description: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 leading-relaxed font-normal"
@@ -1230,7 +1264,7 @@ export default function WebsiteCmsManager() {
                   className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
                 <label htmlFor="activePhotoToggle" className="font-bold text-slate-700 cursor-pointer text-xs">
-                  छात्र वेबसाइट पर सक्रिय रखें (Show on Student Homepage Slider)
+                  {isHindi ? 'छात्र वेबसाइट पर सक्रिय रखें (Show on Homepage)' : 'Show on Student Homepage Event Gallery (Active)'}
                 </label>
               </div>
 
@@ -1248,7 +1282,7 @@ export default function WebsiteCmsManager() {
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{editingEventPhoto ? 'बदलाव सेव करें (Update)' : 'फोटो लाइव सेव करें (Save Live)'}</span>
+                  <span>{editingEventPhoto ? (isHindi ? 'बदलाव सेव करें' : 'Save Changes') : (isHindi ? 'फोटो लाइव सेव करें' : 'Save Photo Live')}</span>
                 </button>
               </div>
 

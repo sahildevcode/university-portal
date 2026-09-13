@@ -37,7 +37,7 @@ export default function Navbar({
   onAdminLogout, 
   onStaffLogout 
 }) {
-  const t = translations[lang] || translations.hi;
+  const t = translations[lang] || translations.en;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 

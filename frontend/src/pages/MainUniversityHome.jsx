@@ -22,10 +22,10 @@ export default function MainUniversityHome({
   setActiveTab, 
   courses = [], 
   studentUser, 
-  lang = 'hi',
+  lang = 'en',
   onOpenStudentAuth 
 }) {
-  const t = translations[lang] || translations.hi;
+  const t = translations[lang] || translations.en;
 
   // Newsletter subscribe state
   const [newsletterEmail, setNewsletterEmail] = useState('');

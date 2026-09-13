@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 
-export default function AboutPage({ lang = 'hi', onNavigateTab }) {
-  const t = translations[lang] || translations.hi;
+export default function AboutPage({ lang = 'en', onNavigateTab }) {
+  const t = translations[lang] || translations.en;
   const [aboutData, setAboutData] = useState(null);
 
   useEffect(() => {
