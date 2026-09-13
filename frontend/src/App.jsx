@@ -13,9 +13,21 @@ import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
 
-// Helper to detect initial view based on browser URL pathname
+// Helper to detect if running on dedicated admin domain
+const isAdminHost = () => {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname.toLowerCase();
+  return (
+    import.meta.env.VITE_PORTAL_MODE === 'admin' ||
+    host.includes('admin') ||
+    host.startsWith('pkc-institute')
+  );
+};
+
+// Helper to detect initial view based on browser URL pathname or domain
 const getInitialView = () => {
   if (typeof window !== 'undefined') {
+    if (isAdminHost()) return 'admin';
     const p = window.location.pathname.toLowerCase();
     if (p === '/admin' || p.startsWith('/admin/')) return 'admin';
     if (p === '/staff' || p.startsWith('/staff/')) return 'staff';
@@ -43,8 +55,8 @@ export default function App() {
     setLang(prev => (prev === 'en' ? 'hi' : 'en'));
   };
 
-  // Animated Splash Screen state (Logo + Name animation on first load)
-  const [showSplash, setShowSplash] = useState(true);
+  // Animated Splash Screen state (Logo + Name animation on first load, skipped on admin host)
+  const [showSplash, setShowSplash] = useState(() => !isAdminHost());
 
   // Navigation helper to sync URL and view state
   const navigateTo = (view, path) => {
@@ -58,12 +70,20 @@ export default function App() {
   useEffect(() => {
     const handleLocationChange = () => {
       const p = window.location.pathname.toLowerCase();
-      if (p === '/admin' || p.startsWith('/admin/')) {
-        setActiveView('admin');
-      } else if (p === '/staff' || p.startsWith('/staff/')) {
-        setActiveView('staff');
+      if (isAdminHost()) {
+        if (p === '/staff' || p.startsWith('/staff/')) {
+          setActiveView('staff');
+        } else {
+          setActiveView('admin');
+        }
       } else {
-        setActiveView('public');
+        if (p === '/admin' || p.startsWith('/admin/')) {
+          setActiveView('admin');
+        } else if (p === '/staff' || p.startsWith('/staff/')) {
+          setActiveView('staff');
+        } else {
+          setActiveView('public');
+        }
       }
     };
 
@@ -177,7 +197,11 @@ export default function App() {
   const handleAdminLogout = () => {
     setAdminUser(null);
     localStorage.removeItem('pkc_admin_user');
-    navigateTo('admin', '/admin');
+    if (isAdminHost()) {
+      navigateTo('admin', '/');
+    } else {
+      navigateTo('admin', '/admin');
+    }
   };
 
   // Staff Handlers
@@ -281,7 +305,13 @@ export default function App() {
                   initialTab="admin"
                   onLoginSuccess={handleAdminLoginSuccess} 
                   onStaffLoginSuccess={handleStaffLoginSuccess}
-                  onBackToPublic={() => navigateTo('public', '/')}
+                  onBackToPublic={() => {
+                    if (isAdminHost()) {
+                      window.location.href = 'https://pkc-education-institute.vercel.app';
+                    } else {
+                      navigateTo('public', '/');
+                    }
+                  }}
                   lang={lang}
                   setLang={setLang}
                   toggleLang={toggleLang}

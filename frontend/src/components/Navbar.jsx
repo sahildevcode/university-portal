@@ -121,30 +121,6 @@ export default function Navbar({
 
             <span className="text-slate-700">|</span>
 
-            {/* Staff Desk Link */}
-            <button
-              onClick={() => setActiveView('staff')}
-              className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer text-slate-300 hover:underline"
-              title="Staff Cash & Admission Counter (/staff)"
-            >
-              <UserCheck className="w-3 h-3 text-emerald-400/90" />
-              <span className="hidden sm:inline">Staff Desk</span>
-            </button>
-
-            <span className="text-slate-700">|</span>
-
-            {/* Admin Portal Link */}
-            <button
-              onClick={() => setActiveView('admin')}
-              className="hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer text-amber-400 font-extrabold hover:underline"
-              title="Admin Control Desk (/admin)"
-            >
-              <Shield className="w-3 h-3 text-amber-400" />
-              <span>Admin Portal</span>
-            </button>
-
-            <span className="text-slate-700">|</span>
-
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
