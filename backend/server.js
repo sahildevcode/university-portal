@@ -87,25 +87,28 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ----------------------------------------------------
 // 0. AUTHENTICATION & SETTINGS
 // ----------------------------------------------------
-// Admin / Cashier Staff Login
+// Admin Login
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   const db = readDB();
 
+  const cleanUser = (username || '').trim().toLowerCase();
+  const cleanPass = (password || '').trim();
+
   const user = (db.users || []).find(
-    u => u.username.toLowerCase() === (username || '').trim().toLowerCase() && u.password === password
+    u => (u.username || '').trim().toLowerCase() === cleanUser && (u.password || '').trim() === cleanPass
   );
 
   if (!user) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid User ID or Password. Please verify your credentials.'
+      message: 'Invalid Admin User ID or Password. Please verify your administrator credentials.'
     });
   }
 
   res.json({
     success: true,
-    message: 'Staff authentication successful.',
+    message: 'Admin authentication successful.',
     user: {
       username: user.username,
       name: user.name,
@@ -122,9 +125,32 @@ app.post('/api/auth/staff-login', (req, res) => {
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  const staff = (db.staff_users || []).find(
-    s => (s.username || '').trim().toLowerCase() === cleanUser && (s.password || '').trim() === cleanPass
+  let staff = (db.staff_users || []).find(
+    s => (
+      (s.username || '').trim().toLowerCase() === cleanUser ||
+      (s.name || '').trim().toLowerCase() === cleanUser ||
+      (s.id || '').trim().toLowerCase() === cleanUser
+    ) && (s.password || '').trim() === cleanPass
   );
+
+  // Fallback: check if username is a non-admin staff in db.users
+  if (!staff) {
+    const cashierUser = (db.users || []).find(
+      u => (u.username || '').trim().toLowerCase() === cleanUser && 
+           (u.password || '').trim() === cleanPass && 
+           u.role !== 'admin'
+    );
+    if (cashierUser) {
+      staff = {
+        id: `user-${cashierUser.username}`,
+        name: cashierUser.name || cashierUser.username,
+        username: cashierUser.username,
+        role: cashierUser.role || 'Cash Counter & Admission Desk',
+        department: 'Accounts & Admissions',
+        status: 'Active'
+      };
+    }
+  }
 
   if (!staff) {
     return res.status(401).json({

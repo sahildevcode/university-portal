@@ -20,17 +20,7 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
-  const [staffLinkCopied, setStaffLinkCopied] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const handleCopyStaffLink = () => {
-    const staffUrl = `${window.location.origin}/staff`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(staffUrl);
-    }
-    setStaffLinkCopied(true);
-    setTimeout(() => setStaffLinkCopied(false), 3000);
-  };
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -284,16 +274,6 @@ export default function AdminPortal({ adminUser, courses, onRefreshCourses, onLo
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Share Staff Link */}
-          <button
-            onClick={handleCopyStaffLink}
-            className="flex items-center gap-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
-            title="Copy /staff link to send to cash counter staff"
-          >
-            {staffLinkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-emerald-400" />}
-            <span>{staffLinkCopied ? 'Staff Link Copied!' : '📋 Copy Staff Link (/staff)'}</span>
-          </button>
-
           {/* View Public Student Website */}
           <a
             href="/"

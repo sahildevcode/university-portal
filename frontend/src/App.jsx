@@ -167,6 +167,7 @@ export default function App() {
   const handleAdminLoginSuccess = (user) => {
     setAdminUser(user);
     localStorage.setItem('pkc_admin_user', JSON.stringify(user));
+    navigateTo('admin', '/admin');
   };
 
   const handleAdminLogout = () => {
@@ -185,7 +186,7 @@ export default function App() {
   const handleStaffLogout = () => {
     setStaffUser(null);
     localStorage.removeItem('pkc_staff_user');
-    navigateTo('staff', '/staff');
+    navigateTo('admin', '/admin');
   };
 
   return (
@@ -262,10 +263,20 @@ export default function App() {
         {activeView === 'admin' && (
           <div className="p-4 sm:p-6 lg:p-8">
             {!adminUser ? (
-              <AdminLoginScreen 
-                onLoginSuccess={handleAdminLoginSuccess} 
-                onBackToPublic={() => navigateTo('public', '/')}
-              />
+              staffUser ? (
+                <CashCounterPortal 
+                  courses={courses} 
+                  staffUser={staffUser}
+                  onStaffLogout={handleStaffLogout}
+                />
+              ) : (
+                <AdminLoginScreen 
+                  initialTab="admin"
+                  onLoginSuccess={handleAdminLoginSuccess} 
+                  onStaffLoginSuccess={handleStaffLoginSuccess}
+                  onBackToPublic={() => navigateTo('public', '/')}
+                />
+              )
             ) : (
               <AdminPortal 
                 adminUser={adminUser} 
@@ -283,34 +294,21 @@ export default function App() {
         {activeView === 'staff' && (
           <div className="p-4 sm:p-6 lg:p-8">
             {!staffUser ? (
-              <div className="min-h-[70vh] flex items-center justify-center">
-                <div className="text-center space-y-4 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full animate-fadeIn">
-                  <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center mx-auto font-black shadow-lg shadow-emerald-500/20 text-2xl">
-                    🔒
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900">Staff Authentication</h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Please login with your Admin-issued Staff ID and Password to access the cash desk.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setStaffAuthModalOpen(true)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-                  >
-                    Open Staff Login Form
-                  </button>
-                  <div className="pt-2 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => navigateTo('public', '/')}
-                      className="text-xs font-semibold text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
-                    >
-                      ← Return to Student Website
-                    </button>
-                  </div>
-                </div>
-              </div>
+              adminUser ? (
+                <AdminPortal 
+                  adminUser={adminUser} 
+                  courses={courses} 
+                  onRefreshCourses={fetchGlobalData}
+                  onLogout={handleAdminLogout}
+                />
+              ) : (
+                <AdminLoginScreen 
+                  initialTab="staff"
+                  onLoginSuccess={handleAdminLoginSuccess} 
+                  onStaffLoginSuccess={handleStaffLoginSuccess}
+                  onBackToPublic={() => navigateTo('public', '/')}
+                />
+              )
             ) : (
               <CashCounterPortal 
                 courses={courses} 
