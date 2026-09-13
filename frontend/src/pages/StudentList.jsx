@@ -471,13 +471,13 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-900 text-white uppercase text-[11px] font-bold tracking-wider">
               <tr>
-                <th className="p-3.5">Roll No</th>
-                <th className="p-3.5">Student Name</th>
-                <th className="p-3.5">Course</th>
-                <th className="p-3.5">Semester</th>
-                <th className="p-3.5">Fee Status</th>
-                <th className="p-3.5">Contact</th>
-                <th className="p-3.5 text-center">Actions</th>
+                <th className="py-2.5 px-3">Roll No</th>
+                <th className="py-2.5 px-3">Student Name</th>
+                <th className="py-2.5 px-3">Course</th>
+                <th className="py-2.5 px-3">Semester</th>
+                <th className="py-2.5 px-3">Fee Status</th>
+                <th className="py-2.5 px-3">Contact</th>
+                <th className="py-2.5 px-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -543,234 +543,244 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                   return (
                     <React.Fragment key={std.id}>
                       <tr className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3.5 font-mono font-bold text-indigo-700">
-                          {std.rollNo}
-                          <span className="block text-[10px] text-slate-400 font-sans font-normal">{std.registrationNo}</span>
-                          {std.aadhaarNo && (
-                            <span className="block text-[9px] text-slate-500 font-mono font-normal">Aadhaar: {std.aadhaarNo}</span>
-                          )}
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="font-mono font-bold text-indigo-900 text-xs tracking-tight">
+                            {std.rollNo}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {std.registrationNo}
+                          </div>
                         </td>
-                        <td className="p-3.5 font-semibold text-slate-900 uppercase">
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span>{std.fullName}</span>
+                            <span className="font-bold text-slate-900 text-xs uppercase">{std.fullName}</span>
                             {std.isDualEnrolled && (
-                              <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded-md text-[9px] font-black tracking-normal">
-                                🎓 dual course ({std.dualEnrollmentCount || 2} programs)
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black">
+                                🎓 Dual
                               </span>
                             )}
                           </div>
-                          <span className="block text-[10px] text-slate-400 capitalize">Father: {std.fatherName}</span>
-                          {std.admissionDate && (
-                            <span className="inline-flex items-center gap-1 text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-bold mt-0.5 border border-indigo-100">
-                              <Calendar className="w-2.5 h-2.5 text-indigo-600" />
-                              <span>Admitted: {new Date(std.admissionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-900 block truncate max-w-xs">{std.courseName}</span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              {std.courseType || 'Degree'}
-                            </span>
+                          <div className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[220px]">
+                            {std.fatherName && <span>S/o {std.fatherName}</span>}
+                            {std.fatherName && std.admissionDate && <span>•</span>}
+                            {std.admissionDate && (
+                              <span>Adm: {new Date(std.admissionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                            )}
                           </div>
-                          <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
-                            {std.collegeName || 'PKC Institute'} ({std.universityName || 'University'})
-                          </span>
                         </td>
-                        <td className="p-3.5">
-                          <div className="flex flex-col gap-1.5 items-start">
-                            <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-black bg-indigo-100 text-indigo-900 border border-indigo-200">
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-slate-800 text-xs truncate max-w-[210px]" title={std.courseName}>
+                              {std.courseName}
+                            </span>
+                            {std.courseType && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                {std.courseType}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate max-w-[210px]">
+                            {std.universityName ? std.universityName.split('(')[0].trim() : 'MCBU'}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-50 text-indigo-900 border border-indigo-200">
                               {std.currentClass || `SEM-${std.currentSemester || 1}`}
                             </span>
                             <button
                               type="button"
                               onClick={() => handlePromoteStudent(std)}
                               disabled={promotingRoll === std.rollNo}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer shadow-2xs"
-                              title="Admin Power: Promote to Next Semester"
+                              className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-colors cursor-pointer"
+                              title="Promote to Next Semester (+1)"
                             >
                               <Zap className="w-3 h-3 text-emerald-600" />
-                              <span>{promotingRoll === std.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
                             </button>
                           </div>
                         </td>
-                        <td className="p-3.5">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                            isPartial ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-rose-50 text-rose-700 border border-rose-200'
-                          }`}>
-                            {isFullyPaid ? 'Fully Paid' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span>
-                          <span className="block text-[9px] text-slate-400">
-                            Total: ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}
-                            {Number(std.scholarshipAmount) > 0 && ` (Sch: -₹${Number(std.scholarshipAmount).toLocaleString('en-IN')})`}
-                          </span>
-                          {Number(std.scholarshipAmount) > 0 && (
-                            <span className="inline-block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">
-                              🎓 Sch: ₹{Number(std.scholarshipAmount).toLocaleString('en-IN')}
-                            </span>
-                          )}
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                isFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                isPartial ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                                'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}>
+                                {isFullyPaid ? '✓ Cleared' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : `Unpaid: ₹${Number(std.totalFee || 0).toLocaleString('en-IN')}`}
+                              </span>
+                              {Number(std.scholarshipAmount) > 0 && (
+                                <span className="text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full" title={`Scholarship: ₹${Number(std.scholarshipAmount).toLocaleString('en-IN')}`}>
+                                  🎓 ₹{Number(std.scholarshipAmount).toLocaleString('en-IN')}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium">
+                              Paid <span className="font-semibold text-slate-700">₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span> / ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}
+                            </div>
+                          </div>
                         </td>
-                        <td className="p-3.5 text-slate-600">
-                          <span>{std.phone}</span>
-                          <span className="block text-[10px] text-slate-400 truncate max-w-xs">{std.email}</span>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="font-mono text-xs font-semibold text-slate-800">{std.phone}</div>
+                          <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={std.email}>{std.email}</div>
                         </td>
-                        <td className="p-3.5 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => handleOpenProfile(std.rollNo)}
-                              className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
+                              className="p-1 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
                               title="View Full Profile & Uploaded Documents"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleOpenEditModal(std)}
-                              className="p-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
+                              className="p-1 rounded-md bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
                               title="Edit Student Information & Courses"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setPrintSlipStudent(std)}
-                              className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                              className="p-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                               title="Print Admission Slip"
                             >
-                              <Printer className="w-4 h-4" />
+                              <Printer className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => {
                                 if (onSelectStudentForFee) onSelectStudentForFee(std);
                                 setActiveTab('accounts');
                               }}
-                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                              className="p-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
                               title="Open Fee Payment Ledger"
                             >
-                              <CreditCard className="w-4 h-4" />
+                              <CreditCard className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteStudent(std.rollNo)}
-                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                              className="p-1 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                               title="Delete Student"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
                       </tr>
 
                       {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
-                      {std.linkedCourses && std.linkedCourses.map((linked, lIdx) => (
-                        <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 transition-colors">
-                          <td className="p-3.5 pl-5 font-mono font-bold text-indigo-900">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-amber-600 font-black text-sm">↳</span>
-                              <span className="bg-white px-1.5 py-0.5 rounded border border-amber-300 text-xs font-mono font-bold">{linked.rollNo}</span>
-                            </div>
-                            <span className="inline-block text-[8px] font-black uppercase text-amber-900 bg-amber-200/70 px-1.5 py-0.2 rounded ml-4 mt-0.5">
-                              Dual Course
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-slate-700">
-                            <div className="flex items-center gap-1.5 flex-wrap text-xs font-bold text-slate-900">
-                              <span className="text-amber-600 font-black">↳</span>
-                              <span className="uppercase">{std.fullName}</span>
-                              <span className="inline-block bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black px-1.5 py-0.2 rounded">
-                                {linked.courseType || 'Diploma'}
-                              </span>
-                            </div>
-                            <span className="block text-[10px] text-slate-400 ml-3">Same Student (Dual Enrollment)</span>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-amber-950 block truncate max-w-xs">{linked.courseName}</span>
-                              <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
-                                {linked.courseType || 'Diploma'}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-600 font-medium block mt-0.5">
-                              {linked.collegeName} ({linked.universityName})
-                            </span>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-1.5 items-start">
-                              <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300">
-                                {linked.currentClass || `SEM-${linked.currentSemester || 1}`}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handlePromoteStudent(linked)}
-                                disabled={promotingRoll === linked.rollNo}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer shadow-2xs"
-                                title="Admin Power: Promote to Next Semester"
-                              >
-                                <Zap className="w-3 h-3 text-emerald-600" />
-                                <span>{promotingRoll === linked.rollNo ? 'Promoting...' : '+ Next Sem'}</span>
-                              </button>
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              linked.balanceDue <= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                              linked.totalPaid > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                              'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}>
-                              {linked.balanceDue <= 0 ? 'Fully Paid' : linked.totalPaid > 0 ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : 'Unpaid'}
-                            </span>
-                            <span className="block text-[10px] text-slate-400 mt-0.5">Paid: ₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span>
-                            <span className="block text-[9px] text-slate-400">
-                              Total: ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
-                              {Number(linked.scholarshipAmount) > 0 && ` (Sch: -₹${Number(linked.scholarshipAmount).toLocaleString('en-IN')})`}
-                            </span>
-                            {Number(linked.scholarshipAmount) > 0 && (
-                              <span className="inline-block mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">
-                                🎓 Sch: ₹{Number(linked.scholarshipAmount).toLocaleString('en-IN')}
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-slate-600">
-                            <span>{std.phone}</span>
-                          </td>
-                          <td className="p-3.5 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => handleOpenProfile(linked.rollNo)}
-                                className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
-                                title={`View Profile for ${linked.courseName}`}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenEditModal(linked)}
-                                className="p-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
-                                title={`Edit ${linked.courseName} Enrollment Details`}
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (onSelectStudentForFee) onSelectStudentForFee(linked);
-                                  setActiveTab('accounts');
-                                }}
-                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                title={`Open Fee Ledger for ${linked.courseName}`}
-                              >
-                                <CreditCard className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteStudent(linked.rollNo)}
-                                className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                                title="Delete Enrollment"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {std.linkedCourses && std.linkedCourses.map((linked, lIdx) => {
+                        const isLinkedFullyPaid = (linked.totalPaid || 0) >= (linked.totalFee || 0);
+                        const isLinkedPartial = (linked.totalPaid || 0) > 0 && !isLinkedFullyPaid;
+                        return (
+                          <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/40 hover:bg-amber-100/50 border-l-4 border-l-amber-500 transition-colors">
+                            <td className="py-2 px-3 pl-5 whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                <span className="text-amber-600 font-black text-xs">↳</span>
+                                <span className="font-mono font-bold text-slate-800 text-xs">{linked.rollNo}</span>
+                              </div>
+                              <div className="text-[9px] font-bold text-amber-700 pl-3.5">Dual Enrollment</div>
+                            </td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-1">
+                                <span className="text-amber-600 font-black text-xs">↳</span>
+                                <span className="font-bold text-slate-800 text-xs uppercase">{std.fullName}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 pl-3.5 truncate max-w-[200px]">
+                                Second Course ({linked.courseType || 'Diploma'})
+                              </div>
+                            </td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-amber-950 text-xs truncate max-w-[210px]" title={linked.courseName}>
+                                  {linked.courseName}
+                                </span>
+                                <span className="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                                  {linked.courseType || 'Diploma'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate max-w-[210px]">
+                                {linked.universityName ? linked.universityName.split('(')[0].trim() : 'MCBU'}
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                  {linked.currentClass || `SEM-${linked.currentSemester || 1}`}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePromoteStudent(linked)}
+                                  disabled={promotingRoll === linked.rollNo}
+                                  className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-colors cursor-pointer"
+                                  title="Promote to Next Semester (+1)"
+                                >
+                                  <Zap className="w-3 h-3 text-emerald-600" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    isLinkedFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                    isLinkedPartial ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                                    'bg-rose-50 text-rose-700 border border-rose-200'
+                                  }`}>
+                                    {isLinkedFullyPaid ? '✓ Cleared' : isLinkedPartial ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : `Unpaid: ₹${Number(linked.totalFee || 0).toLocaleString('en-IN')}`}
+                                  </span>
+                                  {Number(linked.scholarshipAmount) > 0 && (
+                                    <span className="text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full" title={`Scholarship: ₹${Number(linked.scholarshipAmount).toLocaleString('en-IN')}`}>
+                                      🎓 ₹{Number(linked.scholarshipAmount).toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-medium">
+                                  Paid <span className="font-semibold text-slate-700">₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span> / ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 whitespace-nowrap font-mono text-xs text-slate-600">
+                              {std.phone}
+                            </td>
+                            <td className="py-2 px-3 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => handleOpenProfile(linked.rollNo)}
+                                  className="p-1 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
+                                  title={`View Profile for ${linked.courseName}`}
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditModal(linked)}
+                                  className="p-1 rounded-md bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
+                                  title={`Edit ${linked.courseName} Enrollment Details`}
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (onSelectStudentForFee) onSelectStudentForFee(linked);
+                                    setActiveTab('accounts');
+                                  }}
+                                  className="p-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                  title={`Open Fee Ledger for ${linked.courseName}`}
+                                >
+                                  <CreditCard className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteStudent(linked.rollNo)}
+                                  className="p-1 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                  title="Delete Enrollment"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </React.Fragment>
                   );
                 });
