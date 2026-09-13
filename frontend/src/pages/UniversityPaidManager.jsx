@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Building2, 
   Landmark, 
@@ -95,6 +96,30 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setFeedback({ msg, type });
     setTimeout(() => setFeedback(null), 4500);
   };
+
+  // Lock body scroll and listen for Escape key when any modal is active
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(payModalStudent || editFeeStudent || showRateModal || voucherToPrint);
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setPayModalStudent(null);
+          setEditFeeStudent(null);
+          setShowRateModal(false);
+          setVoucherToPrint(null);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [payModalStudent, editFeeStudent, showRateModal, voucherToPrint]);
 
   // Fetch Summary Statistics
   const fetchStats = async () => {
@@ -335,7 +360,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   };
 
   return (
-    <div className="space-y-6 text-slate-900 animate-fadeIn">
+    <div className="space-y-6 text-slate-900">
       {/* Toast Feedback Notification */}
       {feedback && (
         <div className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border text-sm font-semibold transition-all ${
@@ -998,8 +1023,11 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ======================================================== */}
       {/* MODAL 1: PAY TO UNIVERSITY */}
       {/* ======================================================== */}
-      {payModalStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+      {payModalStudent && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          onClick={() => setPayModalStudent(null)}
+        >
           <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl border border-amber-200 space-y-5 my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -1184,14 +1212,18 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL 2: EDIT STUDENT UNIVERSITY FEE & AFFILIATION */}
       {/* ======================================================== */}
-      {editFeeStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+      {editFeeStudent && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          onClick={() => setEditFeeStudent(null)}
+        >
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -1275,14 +1307,18 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
       {/* MODAL 3: ADD/UPDATE STANDARD COURSE FEE RATE */}
       {/* ======================================================== */}
-      {showRateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+      {showRateModal && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          onClick={() => setShowRateModal(false)}
+        >
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -1385,7 +1421,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ======================================================== */}
