@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
-  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud
+  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
+  PlusCircle, BookOpen, School, GraduationCap
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
@@ -38,6 +39,52 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [editError, setEditError] = useState(null);
   const [editSuccess, setEditSuccess] = useState(null);
   const [promotingRoll, setPromotingRoll] = useState(null);
+
+  // Institution catalogs & additional course form state
+  const [universitiesList, setUniversitiesList] = useState([]);
+  const [collegesList, setCollegesList] = useState([]);
+  const [allCoursesList, setAllCoursesList] = useState([]);
+  const [showAddCourse, setShowAddCourse] = useState(false);
+  const [newCourseData, setNewCourseData] = useState({
+    universityName: '',
+    collegeName: '',
+    courseName: '',
+    branch: '',
+    courseType: 'Diploma',
+    courseMode: 'Regular',
+    currentSemester: 1,
+    currentClass: 'SEM-1',
+    admissionDate: new Date().toISOString().split('T')[0],
+    admissionYear: new Date().getFullYear(),
+    totalFee: 25000,
+    initialPaid: 0,
+    scholarshipAmount: 0,
+    paymentMode: 'Cash',
+    remark: ''
+  });
+
+  useEffect(() => {
+    const loadInstitutions = async () => {
+      try {
+        const [uRes, cRes, crsRes] = await Promise.all([
+          fetch('/api/universities'),
+          fetch('/api/colleges'),
+          fetch('/api/courses')
+        ]);
+        const [uData, cData, crsData] = await Promise.all([
+          uRes.json(),
+          cRes.json(),
+          crsRes.json()
+        ]);
+        if (uData.success) setUniversitiesList(uData.universities || []);
+        if (cData.success) setCollegesList(cData.colleges || []);
+        if (crsData.success) setAllCoursesList(crsData.courses || []);
+      } catch (e) {
+        console.warn('Could not load institution catalogs for student edit:', e);
+      }
+    };
+    loadInstitutions();
+  }, []);
 
   const fetchStudents = async (customSearch = null, customCourse = null, customSem = null, customTimeframe = null) => {
     setLoading(true);
@@ -118,6 +165,24 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
 
   const handleOpenEditModal = (std) => {
     setEditingStudent(std);
+    setShowAddCourse(false);
+    setNewCourseData({
+      universityName: std.universityName || (universitiesList[0]?.name || ''),
+      collegeName: std.collegeName || (collegesList[0]?.name || ''),
+      courseName: '',
+      branch: '',
+      courseType: 'Diploma',
+      courseMode: 'Regular',
+      currentSemester: 1,
+      currentClass: 'SEM-1',
+      admissionDate: new Date().toISOString().split('T')[0],
+      admissionYear: new Date().getFullYear(),
+      totalFee: 25000,
+      initialPaid: 0,
+      scholarshipAmount: 0,
+      paymentMode: 'Cash',
+      remark: ''
+    });
     setEditFormData({
       rollNo: std.rollNo || '',
       fullName: std.fullName || '',
@@ -154,35 +219,32 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     setEditLoading(true);
     setEditError(null);
     try {
+      const payload = {
+        ...editFormData,
+        ...(showAddCourse && (newCourseData.courseName || newCourseData.branch) ? { additionalCourse: newCourseData } : {})
+      };
       const res = await fetch(`/api/students/${editingStudent.rollNo}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editFormData)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Failed to update student details');
       }
-      setEditSuccess('Student details updated successfully!');
-      setStudents(prev => prev.map(s => {
-        if (s.rollNo === editingStudent.rollNo) {
-          return { ...s, ...data.student };
-        }
-        if (s.linkedCourses) {
-          return {
-            ...s,
-            linkedCourses: s.linkedCourses.map(l => l.rollNo === editingStudent.rollNo ? { ...l, ...data.student } : l)
-          };
-        }
-        return s;
-      }));
+      setEditSuccess(data.message || 'Student details updated successfully!');
+      
+      // Reload students directory immediately to reflect new course and linked dual sub-row
+      await fetchStudents();
+
       if (selectedStudent?.rollNo === editingStudent.rollNo) {
         setSelectedStudent(prev => ({ ...prev, ...data.student }));
       }
       setTimeout(() => {
         setEditingStudent(null);
         setEditSuccess(null);
-      }, 1000);
+        setShowAddCourse(false);
+      }, 1200);
     } catch (err) {
       setEditError(err.message || 'Failed to update student');
     } finally {
@@ -1492,6 +1554,328 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                   </div>
                 </div>
               </div>
+
+              {/* Display existing secondary / dual programs if student already has them */}
+              {editingStudent.linkedCourses && editingStudent.linkedCourses.length > 0 && (
+                <div className="space-y-3 bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-amber-950 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-amber-600" />
+                      <span>Enrolled Secondary / Dual Programs (पहले से जुड़े कोर्स)</span>
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black">
+                      {editingStudent.linkedCourses.length} Connected Program(s)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {editingStudent.linkedCourses.map((lc, idx) => (
+                      <div key={lc.id || idx} className="p-3 bg-white rounded-xl border border-amber-300 shadow-2xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 text-xs">{lc.courseName}</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                            {lc.courseType || 'Diploma'}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          Roll: <strong className="font-mono text-slate-800">{lc.rollNo}</strong> • {lc.collegeName || lc.universityName}
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-100">
+                          <span className="font-semibold text-slate-600">Total: ₹{Number(lc.totalFee || 0).toLocaleString('en-IN')}</span>
+                          <span className="font-bold text-emerald-700">Paid: ₹{Number(lc.totalPaid || 0).toLocaleString('en-IN')}</span>
+                          <span className={`font-bold ${lc.balanceDue > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                            Due: ₹{Number(lc.balanceDue || 0).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Button to Add Another Course / University */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCourse(!showAddCourse)}
+                  className={`w-full py-3 px-4 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2.5 font-extrabold text-xs transition-all cursor-pointer ${
+                    showAddCourse
+                      ? 'bg-amber-50 border-amber-400 text-amber-900 shadow-inner'
+                      : 'bg-indigo-50/70 hover:bg-indigo-100 border-indigo-300 text-indigo-900 hover:scale-[1.005]'
+                  }`}
+                >
+                  <PlusCircle className={`w-4 h-4 ${showAddCourse ? 'text-amber-600' : 'text-indigo-600'}`} />
+                  <span>
+                    {showAddCourse 
+                      ? '▲ Cancel Adding Another Course / University (रद्द करें)' 
+                      : '+ Add Another Course / University (नया कोर्स / यूनिवर्सिटी जोड़ें)'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Form Section: Add Another Course / University */}
+              {showAddCourse && (
+                <div className="p-5 rounded-2xl bg-amber-50/50 border-2 border-amber-300 space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-amber-200 text-amber-950 flex items-center justify-center text-[10px] font-black">3</span>
+                      <h4 className="font-extrabold text-amber-950 text-xs uppercase tracking-wider">
+                        New Additional Program / Course Particulars (नया कोर्स विवरण)
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">
+                      🎓 Dual Enrollment
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    {/* University Name */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">University Name (विश्वविद्यालय) *</label>
+                      <select
+                        value={newCourseData.universityName}
+                        onChange={(e) => {
+                          const uName = e.target.value;
+                          setNewCourseData({
+                            ...newCourseData,
+                            universityName: uName,
+                            collegeName: ''
+                          });
+                        }}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
+                      >
+                        <option value="">-- Select University --</option>
+                        {universitiesList.map(u => (
+                          <option key={u.id} value={u.name}>{u.name} {u.shortName ? `(${u.shortName})` : ''}</option>
+                        ))}
+                        <option value="Maharaja Chhatrasal Bundelkhand University (MCBU Chhatarpur)">MCBU Chhatarpur</option>
+                        <option value="Makhanlal Chaturvedi National University (MCU Bhopal)">MCU Bhopal</option>
+                        <option value="Barkatullah University (BU Bhopal)">BU Bhopal</option>
+                      </select>
+                    </div>
+
+                    {/* College Name */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">College Name (महाविद्यालय) *</label>
+                      <select
+                        value={newCourseData.collegeName}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, collegeName: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
+                      >
+                        <option value="">-- Select College --</option>
+                        {collegesList
+                          .filter(c => !newCourseData.universityName || !c.universityName || c.universityName.toLowerCase().includes(newCourseData.universityName.toLowerCase().split(' ')[0]))
+                          .map(c => (
+                            <option key={c.id} value={c.name}>{c.code ? `${c.code} - ` : ''}{c.name}</option>
+                          ))
+                        }
+                        <option value="PKC Education Learning Institute & Consultancy">PKC Education Learning Institute & Consultancy</option>
+                        <option value="Govt PG College Chhatarpur">Govt PG College Chhatarpur</option>
+                        <option value="Maharaja Chhatrasal College Chhatarpur">Maharaja Chhatrasal College Chhatarpur</option>
+                      </select>
+                    </div>
+
+                    {/* Course Name */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Course / Degree Name *</label>
+                      <select
+                        value={newCourseData.courseName}
+                        onChange={(e) => {
+                          const cName = e.target.value;
+                          const foundCourse = allCoursesList.find(c => c.name === cName);
+                          const cFee = foundCourse?.totalFee || (cName.toLowerCase().includes('diploma') || cName.toLowerCase().includes('dca') ? 25000 : 32000);
+                          const isDip = cName.toLowerCase().includes('diploma') || cName.toLowerCase().includes('dca') || cName.toLowerCase().includes('pgdca');
+                          setNewCourseData({
+                            ...newCourseData,
+                            courseName: cName,
+                            branch: foundCourse?.branch || cName,
+                            courseType: isDip ? 'Diploma' : (foundCourse?.courseType || 'UG'),
+                            totalFee: cFee
+                          });
+                        }}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
+                      >
+                        <option value="">-- Select Course --</option>
+                        {allCoursesList.map(c => (
+                          <option key={c.id} value={c.name}>{c.name} {c.totalFee ? `(₹${Number(c.totalFee).toLocaleString('en-IN')})` : ''}</option>
+                        ))}
+                        <option value="DCA (Diploma in Computer Applications)">DCA (Diploma in Computer Applications)</option>
+                        <option value="PGDCA (Post Graduate Diploma in Computer Applications)">PGDCA (Post Graduate Diploma in Computer Applications)</option>
+                        <option value="B.Tech (Bachelor of Technology)">B.Tech</option>
+                        <option value="BCA (Bachelor of Computer Applications)">BCA</option>
+                        <option value="BA (Bachelor of Arts)">BA</option>
+                        <option value="B.Sc (Bachelor of Science)">B.Sc</option>
+                        <option value="B.Com (Bachelor of Commerce)">B.Com</option>
+                        <option value="MBA (Master of Business Administration)">MBA</option>
+                      </select>
+                    </div>
+
+                    {/* Branch / Specialization */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Branch / Specialization</label>
+                      <input
+                        type="text"
+                        value={newCourseData.branch}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, branch: e.target.value })}
+                        placeholder="e.g. Computer Applications, IT, etc."
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+
+                    {/* Course Type */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Course Type</label>
+                      <select
+                        value={newCourseData.courseType}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, courseType: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-medium focus:outline-none"
+                      >
+                        <option value="Diploma">Diploma (डिप्लोमा)</option>
+                        <option value="UG">UG / Degree (स्नातक)</option>
+                        <option value="PG">PG (स्नातकोत्तर)</option>
+                        <option value="Certificate">Certificate (प्रमाणपत्र)</option>
+                      </select>
+                    </div>
+
+                    {/* Semester */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Semester / Year</label>
+                      <select
+                        value={newCourseData.currentSemester}
+                        onChange={(e) => {
+                          const sem = Number(e.target.value);
+                          setNewCourseData({
+                            ...newCourseData,
+                            currentSemester: sem,
+                            currentClass: `SEM-${sem}`
+                          });
+                        }}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-bold focus:outline-none"
+                      >
+                        <option value={1}>SEM-1 (1st Sem / 1st Year)</option>
+                        <option value={2}>SEM-2 (2nd Sem)</option>
+                        <option value={3}>SEM-3 (3rd Sem / 2nd Year)</option>
+                        <option value={4}>SEM-4 (4th Sem)</option>
+                      </select>
+                    </div>
+
+                    {/* Admission Date - Editable for admissions taken later */}
+                    <div>
+                      <label className="block font-bold text-indigo-950 mb-1 flex items-center justify-between">
+                        <span>Admission Date (प्रवेश तिथि) *</span>
+                        <span className="text-[10px] text-indigo-600 font-bold">Editable Date</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={newCourseData.admissionDate}
+                        onChange={(e) => {
+                          const dt = e.target.value;
+                          const yr = dt ? new Date(dt).getFullYear() : newCourseData.admissionYear;
+                          setNewCourseData({
+                            ...newCourseData,
+                            admissionDate: dt,
+                            admissionYear: yr
+                          });
+                        }}
+                        className="w-full p-2.5 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required
+                      />
+                      <p className="text-[9px] text-slate-500 mt-1">1 saal baad admission lene par date yahan se badal sakte hain</p>
+                    </div>
+
+                    {/* Admission Year */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Admission Year (सत्र वर्ष)</label>
+                      <input
+                        type="number"
+                        value={newCourseData.admissionYear}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, admissionYear: Number(e.target.value) })}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Total Fee for 2nd Course */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">2nd Course Total Fee (₹) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newCourseData.totalFee}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, totalFee: Number(e.target.value) || 0 })}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Scholarship for 2nd Course */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Scholarship (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newCourseData.scholarshipAmount}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, scholarshipAmount: Number(e.target.value) || 0 })}
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-medium focus:outline-none"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Initial Paid Today */}
+                    <div>
+                      <label className="block font-bold text-emerald-900 mb-1">Fee Paid Today / तत्काल जमा (₹)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newCourseData.initialPaid}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, initialPaid: Number(e.target.value) || 0 })}
+                        className="w-full p-2.5 bg-emerald-50/60 border border-emerald-300 rounded-xl font-mono font-bold text-emerald-950 focus:outline-none focus:bg-white"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Payment Mode */}
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1">Payment Mode</label>
+                      <select
+                        value={newCourseData.paymentMode}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, paymentMode: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:outline-none"
+                      >
+                        <option value="Cash">Cash (नकद)</option>
+                        <option value="UPI / Online">UPI / Online QR</option>
+                        <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                        <option value="Cheque">Cheque</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Live Combined Fee Summary Box */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 via-indigo-50 to-emerald-50 border border-amber-300 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div>
+                      <div className="text-[10px] text-slate-600 font-bold">Course 1 ({editFormData.courseName || 'Primary'})</div>
+                      <div className="text-sm font-black text-slate-900">₹{Number(editFormData.totalFee || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-amber-800 font-bold">Course 2 ({newCourseData.courseName || 'New Course'})</div>
+                      <div className="text-sm font-black text-amber-950">₹{Number(newCourseData.totalFee || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-indigo-900 font-bold">Combined Total Fees</div>
+                      <div className="text-sm font-black text-indigo-950">
+                        ₹{(Number(editFormData.totalFee || 0) + Number(newCourseData.totalFee || 0)).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-emerald-900 font-bold">Paid Today (C2)</div>
+                      <div className="text-sm font-black text-emerald-800">
+                        ₹{Number(newCourseData.initialPaid || 0).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">

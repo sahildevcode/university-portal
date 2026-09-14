@@ -2140,13 +2140,237 @@ app.put('/api/students/:rollNo', (req, res) => {
     });
   }
 
+  // Check if an Additional / Secondary Course is being attached to this student
+  let addedSecondaryStudent = null;
+  if (body.additionalCourse && typeof body.additionalCourse === 'object') {
+    const sec = body.additionalCourse;
+    const secCourseName = (sec.courseName || sec.Course_Name || sec.branch || '').trim();
+    if (secCourseName) {
+      const baseRoll = (updatedStudent.primaryRollNo || updatedStudent.rollNo || roll).trim().toUpperCase();
+      const secUnivName = (sec.universityName || sec.University_Name || updatedStudent.universityName || 'University').trim();
+      const secCollegeName = (sec.collegeName || sec.College_Name || updatedStudent.collegeName || 'College').trim();
+      const secCourseType = sec.courseType || sec.Course_Type || 'Diploma';
+      const secBranch = sec.branch || sec.Branch || 'General';
+      const secCode = (secBranch !== 'General' ? secBranch : secCourseName).replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase() || 'PROG';
+
+      let secCandidateRoll = `${baseRoll}-${secCode}`;
+      let counter = 2;
+      while (db.students.some(s => s.rollNo.toUpperCase() === secCandidateRoll.toUpperCase())) {
+        secCandidateRoll = `${baseRoll}-${secCode}${counter++}`;
+      }
+
+      const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 25000);
+      const secAdmissionFee = Number(sec.admissionFee || 0);
+      const secGrandTotal = secCourseFee + secAdmissionFee;
+      const secScholarship = Number(sec.scholarshipAmount) || 0;
+      const secPaid = Number(sec.initialPayment || sec.initialPaid || sec.totalPaid || 0);
+      const secNetTotal = Math.max(0, secGrandTotal - secScholarship);
+      const secBalanceDue = Math.max(0, secNetTotal - secPaid);
+
+      const admissionDate = sec.admissionDate || new Date().toISOString().split('T')[0];
+      const admissionYear = Number(sec.admissionYear) || new Date(admissionDate).getFullYear() || 2026;
+
+      addedSecondaryStudent = {
+        ...updatedStudent,
+        id: 'std-' + (Date.now() + 1),
+        rollNo: secCandidateRoll,
+        registrationNo: `${secUnivName.slice(0, 3).toUpperCase()}-${admissionYear}-${Math.floor(1000 + Math.random() * 9000)}`,
+        universityName: secUnivName,
+        collegeName: secCollegeName,
+        courseName: secCourseName,
+        branch: secBranch,
+        courseType: secCourseType,
+        courseMode: sec.courseMode || 'Regular',
+        currentClass: sec.currentClass || `SEM-${sec.currentSemester || 1}`,
+        currentSemester: Number(sec.currentSemester) || 1,
+        studentFee: secCourseFee,
+        courseFee: secCourseFee,
+        admissionFee: secAdmissionFee,
+        totalFee: secGrandTotal,
+        scholarshipAmount: secScholarship,
+        netTotalFee: secNetTotal,
+        totalPaid: secPaid,
+        balanceDue: secBalanceDue,
+        admissionDate: admissionDate,
+        admissionYear: admissionYear,
+        admissionTimestamp: new Date(admissionDate).toISOString(),
+        isDualEnrollment: true,
+        isSecondaryCourse: true,
+        primaryRollNo: baseRoll,
+        primaryStudentId: updatedStudent.primaryStudentId || updatedStudent.id,
+        dualProgramType: `${secCourseType} / 2nd Program`,
+        status: 'Active',
+        remark: sec.remark || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      updatedStudent.isDualEnrollment = true;
+
+      // Mark primary base student as isDualEnrollment: true if updatedStudent was secondary
+      if (updatedStudent.primaryRollNo) {
+        const baseStd = db.students.find(s => s.rollNo.toUpperCase() === updatedStudent.primaryRollNo.toUpperCase());
+        if (baseStd) baseStd.isDualEnrollment = true;
+      }
+
+      db.students.push(addedSecondaryStudent);
+
+      if (secPaid > 0) {
+        const secReceiptNo = String(getNextReceiptNumber(db));
+        const receipt = {
+          id: 'RCP-' + Date.now(),
+          receiptNo: secReceiptNo,
+          studentId: addedSecondaryStudent.id,
+          rollNo: addedSecondaryStudent.rollNo,
+          studentName: addedSecondaryStudent.fullName,
+          courseName: addedSecondaryStudent.courseName,
+          universityName: addedSecondaryStudent.universityName,
+          collegeName: addedSecondaryStudent.collegeName,
+          amountPaid: secPaid,
+          amount: secPaid,
+          paymentMode: sec.paymentMode || 'Cash',
+          referenceNo: sec.transactionId || `PAY-${Date.now().toString().slice(-6)}`,
+          paymentType: 'Additional Course Admission Fee',
+          paymentDate: new Date().toISOString(),
+          totalFee: secGrandTotal,
+          totalPaidToDate: secPaid,
+          balanceRemaining: secBalanceDue,
+          receivedBy: body.operatorName || 'Admin'
+        };
+        if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+        db.fee_payments.unshift(receipt);
+      }
+    }
+  }
+
   db.students[index] = updatedStudent;
   writeDB(db);
 
   res.json({
     success: true,
-    message: 'Student details updated successfully!',
-    student: updatedStudent
+    message: addedSecondaryStudent
+      ? `Student updated and additional course (${addedSecondaryStudent.courseName}) added successfully!`
+      : 'Student details updated successfully!',
+    student: updatedStudent,
+    addedSecondaryStudent
+  });
+});
+
+// Dedicated endpoint to attach an additional / dual course to an existing student
+app.post('/api/students/:rollNo/add-course', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const existing = db.students.find(s => s.rollNo.toUpperCase() === roll);
+
+  if (!existing) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const sec = req.body;
+  const secCourseName = (sec.courseName || sec.Course_Name || sec.branch || '').trim();
+  if (!secCourseName) {
+    return res.status(400).json({ success: false, message: 'Course name is required' });
+  }
+
+  const baseRoll = (existing.primaryRollNo || existing.rollNo).trim().toUpperCase();
+  const secUnivName = (sec.universityName || sec.University_Name || existing.universityName || 'University').trim();
+  const secCollegeName = (sec.collegeName || sec.College_Name || existing.collegeName || 'College').trim();
+  const secCourseType = sec.courseType || sec.Course_Type || 'Diploma';
+  const secBranch = sec.branch || sec.Branch || 'General';
+  const secCode = (secBranch !== 'General' ? secBranch : secCourseName).replace(/[^a-zA-Z0-9]/g, '').slice(0, 5).toUpperCase() || 'PROG';
+
+  let secCandidateRoll = `${baseRoll}-${secCode}`;
+  let counter = 2;
+  while (db.students.some(s => s.rollNo.toUpperCase() === secCandidateRoll.toUpperCase())) {
+    secCandidateRoll = `${baseRoll}-${secCode}${counter++}`;
+  }
+
+  const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 25000);
+  const secAdmissionFee = Number(sec.admissionFee || 0);
+  const secGrandTotal = secCourseFee + secAdmissionFee;
+  const secScholarship = Number(sec.scholarshipAmount) || 0;
+  const secPaid = Number(sec.initialPayment || sec.initialPaid || sec.totalPaid || 0);
+  const secNetTotal = Math.max(0, secGrandTotal - secScholarship);
+  const secBalanceDue = Math.max(0, secNetTotal - secPaid);
+
+  const admissionDate = sec.admissionDate || new Date().toISOString().split('T')[0];
+  const admissionYear = Number(sec.admissionYear) || new Date(admissionDate).getFullYear() || 2026;
+
+  const addedSecondaryStudent = {
+    ...existing,
+    id: 'std-' + (Date.now() + 1),
+    rollNo: secCandidateRoll,
+    registrationNo: `${secUnivName.slice(0, 3).toUpperCase()}-${admissionYear}-${Math.floor(1000 + Math.random() * 9000)}`,
+    universityName: secUnivName,
+    collegeName: secCollegeName,
+    courseName: secCourseName,
+    branch: secBranch,
+    courseType: secCourseType,
+    courseMode: sec.courseMode || 'Regular',
+    currentClass: sec.currentClass || `SEM-${sec.currentSemester || 1}`,
+    currentSemester: Number(sec.currentSemester) || 1,
+    studentFee: secCourseFee,
+    courseFee: secCourseFee,
+    admissionFee: secAdmissionFee,
+    totalFee: secGrandTotal,
+    scholarshipAmount: secScholarship,
+    netTotalFee: secNetTotal,
+    totalPaid: secPaid,
+    balanceDue: secBalanceDue,
+    admissionDate: admissionDate,
+    admissionYear: admissionYear,
+    admissionTimestamp: new Date(admissionDate).toISOString(),
+    isDualEnrollment: true,
+    isSecondaryCourse: true,
+    primaryRollNo: baseRoll,
+    primaryStudentId: existing.primaryStudentId || existing.id,
+    dualProgramType: `${secCourseType} / 2nd Program`,
+    status: 'Active',
+    remark: sec.remark || '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  existing.isDualEnrollment = true;
+  if (existing.primaryRollNo) {
+    const baseStd = db.students.find(s => s.rollNo.toUpperCase() === existing.primaryRollNo.toUpperCase());
+    if (baseStd) baseStd.isDualEnrollment = true;
+  }
+
+  db.students.push(addedSecondaryStudent);
+
+  if (secPaid > 0) {
+    const secReceiptNo = String(getNextReceiptNumber(db));
+    const receipt = {
+      id: 'RCP-' + Date.now(),
+      receiptNo: secReceiptNo,
+      studentId: addedSecondaryStudent.id,
+      rollNo: addedSecondaryStudent.rollNo,
+      studentName: addedSecondaryStudent.fullName,
+      courseName: addedSecondaryStudent.courseName,
+      universityName: addedSecondaryStudent.universityName,
+      collegeName: addedSecondaryStudent.collegeName,
+      amountPaid: secPaid,
+      amount: secPaid,
+      paymentMode: sec.paymentMode || 'Cash',
+      referenceNo: sec.transactionId || `PAY-${Date.now().toString().slice(-6)}`,
+      paymentType: 'Additional Course Admission Fee',
+      paymentDate: new Date().toISOString(),
+      totalFee: secGrandTotal,
+      totalPaidToDate: secPaid,
+      balanceRemaining: secBalanceDue,
+      receivedBy: sec.operatorName || 'Admin'
+    };
+    if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+    db.fee_payments.unshift(receipt);
+  }
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Additional course (${addedSecondaryStudent.courseName}) added successfully!`,
+    secondaryStudent: addedSecondaryStudent
   });
 });
 
