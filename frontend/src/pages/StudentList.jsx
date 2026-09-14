@@ -238,6 +238,41 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     }
   };
 
+  const q = (search || '').trim().toLowerCase();
+  const cleanNum = q.replace(/[\s-]/g, '');
+
+  const displayedStudents = (dualOnly 
+    ? students.filter(s => s.isDualEnrolled)
+    : students
+  ).filter(s => {
+    if (s.isSecondaryCourse) return false;
+    if (!q) return true;
+
+    const nameMatch = s.fullName?.toLowerCase().includes(q) || s.studentName?.toLowerCase().includes(q);
+    const fatherMatch = s.fatherName?.toLowerCase().includes(q) || s.father_name?.toLowerCase().includes(q) || s.motherName?.toLowerCase().includes(q);
+    const rollMatch = s.rollNo?.toLowerCase().includes(q) || s.enrollmentNo?.toLowerCase().includes(q) || s.registrationNo?.toLowerCase().includes(q);
+    
+    const aadharRaw = (s.aadhaarNo || s.aadharNo || s.aadhar || s.aadhaar || '').toString();
+    const aadharClean = aadharRaw.replace(/[\s-]/g, '');
+    const aadharMatch = aadharRaw.toLowerCase().includes(q) || (cleanNum.length >= 3 && aadharClean.includes(cleanNum));
+
+    const phoneRaw = (s.phone || s.contact || '').toString();
+    const phoneClean = phoneRaw.replace(/\D/g, '');
+    const phoneMatch = phoneRaw.includes(q) || (cleanNum.length >= 3 && phoneClean.includes(cleanNum));
+
+    // STRICT: Only match email if query explicitly contains '@' to prevent dummy emails from causing false positives
+    const emailMatch = q.includes('@') && s.email?.toLowerCase().includes(q);
+
+    const courseMatch = s.courseName?.toLowerCase().includes(q);
+    const linkedMatch = s.linkedCourses && s.linkedCourses.some(l => 
+      l.courseName?.toLowerCase().includes(q) ||
+      l.rollNo?.toLowerCase().includes(q) ||
+      l.registrationNo?.toLowerCase().includes(q)
+    );
+
+    return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || courseMatch || linkedMatch;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
@@ -329,7 +364,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         </div>
 
         <div className="text-[11px] text-slate-400 font-medium">
-          Showing <strong className="text-slate-700">{students.length}</strong> student record(s)
+          Showing <strong className="text-slate-700">{displayedStudents.length}</strong> student record(s)
         </div>
       </div>
 
@@ -430,7 +465,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 Sem {selectedSemester}
               </span>
             )}
-            <span className="text-slate-500 font-medium">({students.filter(s => !s.isSecondaryCourse).length} record(s) found)</span>
+            <span className="text-slate-500 font-medium">({displayedStudents.length} record(s) found)</span>
           </div>
 
           <button
@@ -448,7 +483,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className="text-xs font-bold text-slate-700">Enrolled Students:</span>
           <span className="font-extrabold text-sm text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-            {students.filter(s => !s.isSecondaryCourse).length} Total
+            {displayedStudents.length} Total
           </span>
           <button
             type="button"
@@ -462,7 +497,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           >
             <span>🎓 Dual Courses (Degree + Diploma)</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${dualOnly ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {students.filter(s => s.isDualEnrolled && !s.isSecondaryCourse).length}
+              {displayedStudents.filter(s => s.isDualEnrolled).length}
             </span>
           </button>
         </div>
@@ -491,7 +526,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 <tr>
                   <td colSpan="7" className="p-8 text-center text-slate-400">Loading student directory...</td>
                 </tr>
-              ) : students.length === 0 ? (
+              ) : displayedStudents.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="p-10 text-center bg-slate-50/50">
                     <div className="max-w-md mx-auto space-y-4">
@@ -522,23 +557,6 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 </tr>
               ) : (() => {
                 const renderedSecondaryIds = new Set();
-                const displayedStudents = (dualOnly 
-                  ? students.filter(s => s.isDualEnrolled)
-                  : students
-                ).filter(s => !s.isSecondaryCourse);
-
-                if (displayedStudents.length === 0) {
-                  return (
-                    <tr>
-                      <td colSpan="7" className="p-8 text-center text-slate-400">
-                        <p className="font-bold text-slate-700 text-sm">
-                          {dualOnly ? 'No dual-enrolled students found matching this criteria.' : 'No students found matching this criteria.'}
-                        </p>
-                      </td>
-                    </tr>
-                  );
-                }
-
                 return displayedStudents.map((std) => {
                   if (renderedSecondaryIds.has(std.id)) return null;
 
