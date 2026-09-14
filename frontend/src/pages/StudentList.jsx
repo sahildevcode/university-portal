@@ -430,7 +430,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 Sem {selectedSemester}
               </span>
             )}
-            <span className="text-slate-500 font-medium">({students.length} record(s) found)</span>
+            <span className="text-slate-500 font-medium">({students.filter(s => !s.isSecondaryCourse).length} record(s) found)</span>
           </div>
 
           <button
@@ -448,7 +448,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className="text-xs font-bold text-slate-700">Enrolled Students:</span>
           <span className="font-extrabold text-sm text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-            {students.length} Total
+            {students.filter(s => !s.isSecondaryCourse).length} Total
           </span>
           <button
             type="button"
@@ -462,7 +462,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
           >
             <span>🎓 Dual Courses (Degree + Diploma)</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${dualOnly ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {students.filter(s => s.isDualEnrolled).length}
+              {students.filter(s => s.isDualEnrolled && !s.isSecondaryCourse).length}
             </span>
           </button>
         </div>
@@ -522,15 +522,18 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                 </tr>
               ) : (() => {
                 const renderedSecondaryIds = new Set();
-                const displayedStudents = dualOnly 
+                const displayedStudents = (dualOnly 
                   ? students.filter(s => s.isDualEnrolled)
-                  : students;
+                  : students
+                ).filter(s => !s.isSecondaryCourse);
 
                 if (displayedStudents.length === 0) {
                   return (
                     <tr>
                       <td colSpan="7" className="p-8 text-center text-slate-400">
-                        <p className="font-bold text-slate-700 text-sm">No dual-enrolled students found matching this criteria.</p>
+                        <p className="font-bold text-slate-700 text-sm">
+                          {dualOnly ? 'No dual-enrolled students found matching this criteria.' : 'No students found matching this criteria.'}
+                        </p>
                       </td>
                     </tr>
                   );
@@ -560,7 +563,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-bold text-slate-900 text-xs uppercase">{std.fullName}</span>
-                            {std.isDualEnrolled && (
+                            {std.isDualEnrolled && std.linkedCourses && std.linkedCourses.length > 0 && (
                               <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black">
                                 🎓 Dual
                               </span>
@@ -675,7 +678,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                       </tr>
 
                       {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
-                      {std.linkedCourses && std.linkedCourses.map((linked, lIdx) => {
+                      {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
                         const isLinkedFullyPaid = (linked.totalPaid || 0) >= (linked.totalFee || 0);
                         const isLinkedPartial = (linked.totalPaid || 0) > 0 && !isLinkedFullyPaid;
                         return (
