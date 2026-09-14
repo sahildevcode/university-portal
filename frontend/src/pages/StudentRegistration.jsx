@@ -252,14 +252,14 @@ const getDefaultFormData = (staffUser, adminUser) => ({
   Current_satra: 'July',
   Current_class: 'SEM-1',
 
-  // 5. Fees & Administration (Separate Course Fee & Admission Fee)
-  Student_fee: '30000',          // Total Course Fee (e.g. 30000)
-  Scholarship_Amount: '0',       // Government / Institutional Scholarship (defaults to 0)
-  Course_Fee_Paid: '',           // How much student is paying for course fee now
-  Fee_Type: 'Admission Fee',     // Fee category (Admission Fee, Late Exam Fee, etc.)
-  Admission_Fee: '2000',         // Total Admission / Extra Fee (e.g. 2000)
-  Admission_Fee_Paid: '2000',    // How much student is paying for admission fee now (e.g. 2000)
-  Initial_Payment: '2000',       // Combined total paid
+  // 5. Fees & Administration (Default 0 - fees collected separately)
+  Student_fee: '0',              // Total Course Fee (e.g. 30000 or 0)
+  Scholarship_Amount: '0',       // Government / Institutional Scholarship
+  Course_Fee_Paid: '0',          // Course fee paid at admission
+  Fee_Type: 'Admission Fee',     // Fee category
+  Admission_Fee: '0',            // Admission / Extra Fee
+  Admission_Fee_Paid: '0',       // Admission fee paid now
+  Initial_Payment: '0',          // Combined total paid
   Payment_Mode: 'Cash / Desk',
   Fee_Collected_By: 'Cashier',
   Transaction_Ref: '',
@@ -280,7 +280,7 @@ const getDefaultSecFormData = () => ({
   Course_Type: 'Diploma',
   Course_Mode: 'Regular',
   Medium: 'Hindi Medium',
-  Student_fee: '25000',
+  Student_fee: '0',
   Scholarship_Amount: '0',
   Course_Fee_Paid: '0',
   Admission_Fee: '0',
@@ -806,27 +806,29 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (!formData.University_Name) throw new Error('Please select a valid University.');
       if (!formData.College_Name) throw new Error('Please select an affiliated College.');
       const courseFeeCalc = Number(formData.Student_fee) || 0;
-      const courseFeePaidCalc = Number(formData.Course_Fee_Paid) || 0;
-      const admissionFeeCalc = Number(formData.Admission_Fee) || 0;
-      const admissionFeePaidCalc = Number(formData.Admission_Fee_Paid) || 0;
-      const scholarshipCalc = Number(formData.Scholarship_Amount) || 0;
-      const grandTotalFeeCalc = courseFeeCalc + admissionFeeCalc;
-      const netTotalFeeCalc = Math.max(0, grandTotalFeeCalc - scholarshipCalc);
-      const totalPaidTodayCalc = courseFeePaidCalc + admissionFeePaidCalc;
-      const grandBalanceDueCalc = Math.max(0, netTotalFeeCalc - totalPaidTodayCalc);
+      const courseFeePaidCalc = 0;
+      const admissionFeeCalc = 0;
+      const admissionFeePaidCalc = 0;
+      const scholarshipCalc = 0;
+      const grandTotalFeeCalc = courseFeeCalc;
+      const netTotalFeeCalc = courseFeeCalc;
+      const totalPaidTodayCalc = 0;
+      const grandBalanceDueCalc = courseFeeCalc;
 
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
       data.set('Student_fee', String(courseFeeCalc));
-      data.set('Course_Fee_Paid', String(courseFeePaidCalc));
-      data.set('Admission_Fee', String(admissionFeeCalc));
-      data.set('Admission_Fee_Paid', String(admissionFeePaidCalc));
-      data.set('Initial_Payment', String(totalPaidTodayCalc));
+      data.set('Course_Fee_Paid', '0');
+      data.set('Admission_Fee', '0');
+      data.set('Admission_Fee_Paid', '0');
+      data.set('Initial_Payment', '0');
       data.set('totalFee', String(grandTotalFeeCalc));
-      data.set('scholarshipAmount', String(scholarshipCalc));
-      data.set('Scholarship_Amount', String(scholarshipCalc));
+      data.set('scholarshipAmount', '0');
+      data.set('Scholarship_Amount', '0');
       data.set('netTotalFee', String(netTotalFeeCalc));
       data.set('balanceDue', String(grandBalanceDueCalc));
+      data.set('Payment_Mode', formData.Payment_Mode || 'Cash / Desk');
+      data.set('Fee_Collected_By', formData.Fee_Collected_By || 'Cashier');
       data.append('Document_Submit', JSON.stringify(submittedDocs));
 
       const docStatusMap = {};
@@ -872,7 +874,12 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (hasSecondaryCourse) {
         data.append('secondaryCourse', JSON.stringify({
           ...secFormData,
-          degree: secSelectedDegree
+          degree: secSelectedDegree,
+          Student_fee: secFormData.Student_fee || 0,
+          Course_Fee_Paid: 0,
+          Admission_Fee: 0,
+          Admission_Fee_Paid: 0,
+          Initial_Payment: 0
         }));
       }
 
@@ -1912,36 +1919,6 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 </select>
               </div>
 
-              {/* Secondary Course Fee */}
-              <div>
-                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
-                  2nd Course Fee (₹)
-                </label>
-                <input
-                  type="number"
-                  name="Student_fee"
-                  value={secFormData.Student_fee}
-                  onChange={handleSecInputChange}
-                  placeholder="e.g. 25000"
-                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl font-mono font-bold text-slate-900"
-                />
-              </div>
-
-              {/* Secondary Initial Fee Paid Today */}
-              <div>
-                <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
-                  2nd Fee Paid Today (₹)
-                </label>
-                <input
-                  type="number"
-                  name="Course_Fee_Paid"
-                  value={secFormData.Course_Fee_Paid}
-                  onChange={handleSecInputChange}
-                  placeholder="e.g. 5000 (or 0 if unpaid)"
-                  className="w-full p-2.5 bg-white border border-rose-300 rounded-xl font-mono font-bold text-emerald-700"
-                />
-              </div>
-
               {/* Secondary Course Mode & Medium */}
               <div>
                 <label className="block font-bold text-rose-950 uppercase tracking-wider mb-1">
@@ -2100,393 +2077,12 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 5: FEES, PAYMENT, STATUS & REFERENCE */}
-        {/* ========================================================================= */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-2">
-            <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base">
-              <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-extrabold text-xs">5</span>
-              <span>Fee Particulars &amp; Dual Collection Breakdown</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-0.5 rounded-full">
-                {hasSecondaryCourse ? (
-                  <>
-                    Primary (₹{courseFeeVal.toLocaleString('en-IN')}) + 2nd Course (₹{secCourseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
-                  </>
-                ) : (
-                  <>
-                    Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-emerald-50/50 border border-emerald-200 p-5 rounded-2xl space-y-5 text-xs">
-            
-            {/* DUAL FEE SECTION: Part 1 - Course Fee & Part 2 - Admission Fee */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              
-              {/* SECTION A: Course Fee Particulars */}
-              <div className="bg-white p-4 rounded-xl border border-indigo-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
-                  <span className="font-extrabold text-xs text-indigo-950 uppercase flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    <span>1. Primary Course Fee ({selectedDegree || 'कोर्स फीस'})</span>
-                  </span>
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                    Total: ₹{courseFeeVal.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Total Course Fee */}
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                      Course Fee (Total ₹) *
-                    </label>
-                    <input
-                      type="number"
-                      name="Student_fee"
-                      value={formData.Student_fee}
-                      onChange={handleInputChange}
-                      placeholder="30000"
-                      className="w-full p-2.5 bg-indigo-50/40 border border-indigo-200 rounded-xl font-black text-sm text-indigo-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
-                      required
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">e.g. 30,000 (total package)</span>
-                  </div>
-
-                  {/* Scholarship Amount (Default 0, auto-deducts) */}
-                  <div>
-                    <label className="block font-bold text-indigo-950 uppercase tracking-wider mb-1 text-[11px] flex items-center justify-between">
-                      <span>Scholarship (₹)</span>
-                      <span className="text-[9px] text-indigo-600 bg-indigo-50 px-1 rounded border border-indigo-200">Default 0</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      name="Scholarship_Amount"
-                      value={formData.Scholarship_Amount}
-                      onChange={handleInputChange}
-                      placeholder="0"
-                      className="w-full p-2.5 bg-indigo-50/40 border border-indigo-300 rounded-xl font-black text-sm text-indigo-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
-                    />
-                    <span className="text-[10px] text-indigo-600 mt-0.5 block">Auto-deducted from total</span>
-                  </div>
-
-                  {/* Course Fee Paid Now */}
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                      Course Fee Paid Now (₹)
-                    </label>
-                    <input
-                      type="number"
-                      name="Course_Fee_Paid"
-                      value={formData.Course_Fee_Paid}
-                      onChange={handleInputChange}
-                      placeholder="0 (or installment)"
-                      className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-black text-sm text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">Course fee given at admission</span>
-                  </div>
-                </div>
-
-                {/* Secondary Course Live Indicator in Section 5 */}
-                {hasSecondaryCourse && (
-                  <div className="mt-2.5 p-2.5 bg-rose-50/90 border border-rose-200 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🎓</span>
-                      <div>
-                        <span className="font-extrabold text-rose-950 block">
-                          2nd Course ({secSelectedDegree || 'Diploma'}) Package: ₹{secCourseFeeVal.toLocaleString('en-IN')}
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          {secFormData.Course_Name || secSelectedDegree} • Paid Today: <strong className="text-emerald-700">₹{secCoursePaidVal.toLocaleString('en-IN')}</strong>
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] bg-rose-200/80 text-rose-900 font-bold px-2 py-0.5 rounded">
-                      Included in Combined Total Below
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* SECTION B: Admission / Extra Fee Particulars */}
-              <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
-                  <span className="font-extrabold text-xs text-emerald-950 uppercase flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span>2. Admission / Extra Fee (एडमिशन फीस)</span>
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                    Total: ₹{admissionFeeVal.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {/* Fee Head / Type */}
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                      Fee Head / Type *
-                    </label>
-                    <input
-                      type="text"
-                      list="feeTypeOptions"
-                      name="Fee_Type"
-                      value={formData.Fee_Type}
-                      onChange={handleInputChange}
-                      placeholder="Admission Fee"
-                      className="w-full p-2.5 bg-emerald-50/40 border border-emerald-200 rounded-xl font-bold text-xs text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                      required
-                    />
-                    <datalist id="feeTypeOptions">
-                      <option value="Admission Fee" />
-                      <option value="Late Exam Fee" />
-                      <option value="Registration Fee" />
-                      <option value="Exam Fee" />
-                      <option value="Tuition Installment" />
-                      <option value="Enrollment Fee" />
-                    </datalist>
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">Category name</span>
-                  </div>
-
-                  {/* Admission Fee Total (e.g. 2000) */}
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                      Admission Fee (Total ₹) *
-                    </label>
-                    <input
-                      type="number"
-                      name="Admission_Fee"
-                      value={formData.Admission_Fee}
-                      onChange={handleInputChange}
-                      placeholder="2000"
-                      className="w-full p-2.5 bg-emerald-50/40 border border-emerald-200 rounded-xl font-black text-sm text-emerald-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                      required
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">e.g. 2,000 or 2,500</span>
-                  </div>
-
-                  {/* Admission Fee Paid Now (e.g. 2000) */}
-                  <div>
-                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                      Fee Paid Now (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      name="Admission_Fee_Paid"
-                      value={formData.Admission_Fee_Paid}
-                      onChange={handleInputChange}
-                      placeholder="2000"
-                      className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-sm text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                      required
-                    />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">Admission fee paid now</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* SECTION C: Payment Mode, Fee Collector, Reference & Remark */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
-              <span className="font-extrabold text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                <span className="w-2 h-2 rounded-full bg-slate-500"></span>
-                <span>3. Payment Mode, Collector &amp; Reference</span>
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {/* Payment Mode */}
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                    Payment Mode *
-                  </label>
-                  <select
-                    name="Payment_Mode"
-                    value={formData.Payment_Mode}
-                    onChange={handleInputChange}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-slate-800 shadow-2xs cursor-pointer"
-                  >
-                    <option value="Cash / Desk">Cash / Desk</option>
-                    <option value="UPI / QR Scan">UPI / QR Scan (PhonePe / GPay / Paytm)</option>
-                    <option value="Card Swipe POS">Debit / Credit Card Swipe</option>
-                    <option value="Bank NEFT / RTGS">Bank NEFT / RTGS Netbanking</option>
-                    <option value="Bank DD / Cheque">Demand Draft / Cheque</option>
-                  </select>
-                </div>
-
-                {/* Fee Collected By */}
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                    Fee Collected By *
-                  </label>
-                  <input
-                    type="text"
-                    list="collectedByList"
-                    name="Fee_Collected_By"
-                    value={formData.Fee_Collected_By}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Cashier, Accounts, Admin"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
-                    required
-                  />
-                  <datalist id="collectedByList">
-                    <option value="Cashier" />
-                    <option value="Accounts" />
-                    <option value="Admin" />
-                    <option value="Desk Counter" />
-                    <option value="Counselor" />
-                  </datalist>
-                </div>
-
-                {/* Reference (Typeable text - NO dropdown!) */}
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                    Reference (Referred By)
-                  </label>
-                  <input
-                    type="text"
-                    name="Reference"
-                    value={formData.Reference}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Direct Walk-in, Rahul Sharma..."
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold text-xs text-slate-800 shadow-2xs"
-                  />
-                </div>
-
-                {/* Attending Officer */}
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                    Attending Officer
-                  </label>
-                  <input
-                    type="text"
-                    name="operatorName"
-                    value={formData.operatorName}
-                    onChange={handleInputChange}
-                    className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl focus:outline-none font-semibold text-slate-700 text-xs shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              {/* Remark */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 text-[11px]">
-                  Remark / Special Notes
-                </label>
-                <input
-                  type="text"
-                  name="Remark"
-                  value={formData.Remark}
-                  onChange={handleInputChange}
-                  placeholder="Special notes / scholarship remark"
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium text-xs shadow-2xs"
-                />
-              </div>
-            </div>
-
-            {/* LIVE ACCOUNTING BANNER: Combined Fee Structure Display */}
-            <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3">
-                <div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 flex items-center gap-2">
-                    <span>Combined Fee Structure</span>
-                    {hasSecondaryCourse && (
-                      <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.2 rounded-full shadow-xs">
-                        🎓 Dual Course Package Active (Both Courses Added)
-                      </span>
-                    )}
-                  </span>
-                  <div className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span>Total Fee:</span>
-                    <span className="text-emerald-300 text-xl font-mono">
-                      ₹{grandTotalFee.toLocaleString('en-IN')}
-                    </span>
-                    {hasSecondaryCourse && (
-                      <span className="text-[11px] font-semibold text-slate-200 bg-white/10 px-2 py-0.5 rounded border border-white/15">
-                        (Primary: ₹{courseFeeVal.toLocaleString('en-IN')} + 2nd Course: ₹{secCourseFeeVal.toLocaleString('en-IN')} + Adm: ₹{admissionFeeVal.toLocaleString('en-IN')})
-                      </span>
-                    )}
-                    {scholarshipVal > 0 && (
-                      <span className="text-indigo-300 text-xs font-bold bg-indigo-900/60 px-2 py-0.5 rounded-md border border-indigo-500/40">
-                        − ₹{scholarshipVal.toLocaleString('en-IN')} (Scholarship) = Net ₹{netTotalFee.toLocaleString('en-IN')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 block">
-                    Mode &amp; Authority
-                  </span>
-                  <span className="text-xs font-bold text-white block">
-                    {formData.Payment_Mode} • {formData.Fee_Collected_By || 'Cashier'}
-                  </span>
-                </div>
-              </div>
-
-              <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasSecondaryCourse ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3 text-xs`}>
-                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-slate-300 block font-medium">1. Primary Course Fee</span>
-                  <span className="font-extrabold text-sm text-white block">₹{courseFeeVal.toLocaleString('en-IN')}</span>
-                  <span className="text-[10px] text-emerald-300">Paid Now: ₹{courseFeePaidVal.toLocaleString('en-IN')}</span>
-                </div>
-
-                {hasSecondaryCourse && (
-                  <div className="bg-amber-500/20 p-2.5 rounded-xl border border-amber-400/40 animate-fadeIn">
-                    <span className="text-[10px] text-amber-200 block font-medium">2. 2nd Course ({secSelectedDegree || 'Diploma'})</span>
-                    <span className="font-extrabold text-sm text-amber-300 block">₹{secCourseFeeVal.toLocaleString('en-IN')}</span>
-                    <span className="text-[10px] text-amber-100">Paid Now: ₹{secCoursePaidVal.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-indigo-300 block font-medium">Scholarship / छात्रवृत्ति</span>
-                  <span className="font-extrabold text-sm text-indigo-300 block">
-                    {scholarshipVal > 0 ? `− ₹${scholarshipVal.toLocaleString('en-IN')}` : '₹0 (None)'}
-                  </span>
-                  <span className="text-[10px] text-slate-300">
-                    Net Fee: ₹{netTotalFee.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-slate-300 block font-medium">{hasSecondaryCourse ? '3.' : '2.'} {formData.Fee_Type || 'Admission Fee'}</span>
-                  <span className="font-extrabold text-sm text-white block">₹{admissionFeeVal.toLocaleString('en-IN')}</span>
-                  <span className="text-[10px] text-emerald-300">Paid Now: ₹{admissionFeePaidVal.toLocaleString('en-IN')}</span>
-                </div>
-
-                <div className="bg-emerald-500/20 p-2.5 rounded-xl border border-emerald-400/30">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-emerald-200 block font-medium">Total Paid Today:</span>
-                    <strong className="text-xs text-emerald-300 font-mono">₹{totalPaidToday.toLocaleString('en-IN')}</strong>
-                  </div>
-                  {hasSecondaryCourse && (
-                    <div className="text-[9px] text-emerald-300/80 font-mono mt-0.5">
-                      (C1: ₹{courseFeePaidVal} + Adm: ₹{admissionFeePaidVal} + C2: ₹{secCoursePaidVal})
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-400/20">
-                    <span className="text-[10px] text-rose-300 block font-bold">Remaining Balance:</span>
-                    <strong className="text-sm text-rose-300 font-black font-mono">₹{grandBalanceDue.toLocaleString('en-IN')}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* SECTION 6: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE REMOVE/CANCEL */}
+        {/* SECTION 5: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE REMOVE/CANCEL */}
         {/* ========================================================================= */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-extrabold text-xs">6</span>
+              <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-extrabold text-xs">5</span>
               <span>Document Submission (100% Optional) &amp; Student Photo Upload</span>
             </div>
             <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-full">
