@@ -20,6 +20,43 @@ const memUpload = multer({
 });
 
 initDB();
+
+// Sanitize student dual enrollment linkages so standalone degree admissions are never merged
+try {
+  const db = readDB();
+  let dbChanged = false;
+  if (Array.isArray(db.students)) {
+    db.students.forEach(s => {
+      const r = (s.rollNo || '').toUpperCase();
+      // If a student has a standalone base roll number (no hyphen '-') and is a degree course:
+      if (r && !r.includes('-')) {
+        if (s.primaryRollNo || s.primaryStudentId || s.isSecondaryCourse) {
+          s.primaryRollNo = null;
+          s.primaryStudentId = null;
+          s.isSecondaryCourse = false;
+          dbChanged = true;
+        }
+      }
+      // If a student is a suffixed secondary course (contains '-'), ensure primaryRollNo points to its base roll:
+      if (r && r.includes('-')) {
+        const baseRoll = r.split('-')[0];
+        if (s.primaryRollNo?.toUpperCase() !== baseRoll) {
+          s.primaryRollNo = baseRoll;
+          s.isSecondaryCourse = true;
+          s.isDualEnrollment = true;
+          dbChanged = true;
+        }
+      }
+    });
+  }
+  if (dbChanged) {
+    writeDB(db);
+    console.log('Sanitized dual enrollment linkages in database.json');
+  }
+} catch (err) {
+  console.warn('DB sanitization notice:', err);
+}
+
 const uploadDir = path.join(__dirname, 'uploads', 'documents');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -780,45 +817,22 @@ function isSameStudent(s1, s2) {
   if (!s1 || !s2) return false;
   if (s1.id === s2.id) return false;
 
-  // 1. Explicit linking properties
-  if (s1.primaryRollNo && s2.rollNo && s1.primaryRollNo.toUpperCase() === s2.rollNo.toUpperCase()) return true;
-  if (s2.primaryRollNo && s1.rollNo && s2.primaryRollNo.toUpperCase() === s1.rollNo.toUpperCase()) return true;
+  const r1 = (s1.rollNo || '').toUpperCase().trim();
+  const r2 = (s2.rollNo || '').toUpperCase().trim();
+
+  // 1. Explicit linking properties (secondary points directly to primary)
+  if (s1.primaryRollNo && r2 && s1.primaryRollNo.toUpperCase() === r2) return true;
+  if (s2.primaryRollNo && r1 && s2.primaryRollNo.toUpperCase() === r1) return true;
   if (s1.primaryStudentId && s1.primaryStudentId === s2.id) return true;
   if (s2.primaryStudentId && s2.primaryStudentId === s1.id) return true;
 
-  // 2. Roll No Prefix match (e.g. 233324 and 233324-DCA)
-  const r1 = (s1.rollNo || '').toUpperCase().trim();
-  const r2 = (s2.rollNo || '').toUpperCase().trim();
+  // 2. Roll No Prefix match: One is base roll, the other is its exact hyphenated child (e.g. UNIV2026003 and UNIV2026003-COMPU)
   if (r1 && r2) {
-    if (r1.startsWith(r2 + '-') || r2.startsWith(r1 + '-')) return true;
-    const base1 = r1.split('-')[0];
-    const base2 = r2.split('-')[0];
-    if (base1 && base2 && base1 === base2 && base1.length >= 4) return true;
+    if (r1.startsWith(r2 + '-') && !r2.includes('-')) return true;
+    if (r2.startsWith(r1 + '-') && !r1.includes('-')) return true;
   }
 
-  // 3. Aadhaar Number Match (Aadhaar is strictly 1:1 per citizen)
-  const a1 = (s1.aadhaarNo || s1.aadharNo || s1.aadhar || '').replace(/[\s-]/g, '').trim();
-  const a2 = (s2.aadhaarNo || s2.aadharNo || s2.aadhar || '').replace(/[\s-]/g, '').trim();
-  if (a1 && a2 && a1.length >= 10 && a1 === a2) return true;
-
-  // 4. Samagra ID Match (MP specific citizen ID)
-  const sam1 = (s1.samagraId || '').trim();
-  const sam2 = (s2.samagraId || '').trim();
-  if (sam1 && sam2 && sam1.length >= 6 && sam1 === sam2) return true;
-
-  // 5. Phone Number + Student Name or Father Name match
-  const p1 = (s1.phone || s1.contact || '').replace(/\D/g, '').slice(-10);
-  const p2 = (s2.phone || s2.contact || '').replace(/\D/g, '').slice(-10);
-  if (p1 && p2 && p1.length === 10 && p1 === p2) {
-    const name1 = (s1.fullName || s1.studentName || '').trim().toLowerCase();
-    const name2 = (s2.fullName || s2.studentName || '').trim().toLowerCase();
-    const f1 = (s1.fatherName || s1.father_name || '').trim().toLowerCase();
-    const f2 = (s2.fatherName || s2.father_name || '').trim().toLowerCase();
-
-    if (name1 && name2 && (name1 === name2 || name1.includes(name2) || name2.includes(name1))) return true;
-    if (f1 && f2 && (f1 === f2 || f1.includes(f2) || f2.includes(f1))) return true;
-  }
-
+  // Never match separate admissions by phone, Aadhaar, or name!
   return false;
 }
 
@@ -1755,23 +1769,6 @@ app.post(
           candidateRoll = `${rollNo}-${courseCodePart}${counter++}`;
         }
         rollNo = candidateRoll;
-      } else {
-        // Also check if existing student matches by Aadhaar / Phone (Dual Course detection)
-        const aadharInput = (body.Aadhaar_No || body.aadhaarNo || '').replace(/[\s-]/g, '').trim();
-        const phoneInput = (body.Contact || body.phone || '').replace(/\D/g, '').slice(-10);
-        const matchedExisting = db.students.find(s => {
-          const sAadhaar = (s.aadhaarNo || s.aadharNo || '').replace(/[\s-]/g, '').trim();
-          if (aadharInput && sAadhaar && aadharInput.length >= 10 && aadharInput === sAadhaar) return true;
-          const sPhone = (s.phone || s.contact || '').replace(/\D/g, '').slice(-10);
-          if (phoneInput && sPhone && phoneInput.length === 10 && phoneInput === sPhone) return true;
-          return false;
-        });
-
-        if (matchedExisting) {
-          isDualEnrollment = true;
-          primaryRollNo = matchedExisting.rollNo;
-          primaryStudentId = matchedExisting.id;
-        }
       }
 
       const selectedCourse = db.courses.find(c => c.id === body.courseId || c.name === body.Course_Name || c.name === body.courseName) || {
@@ -2208,9 +2205,15 @@ app.delete('/api/students/:rollNo', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const deleted = db.students.splice(index, 1);
+  const deleted = db.students.splice(index, 1)[0];
+
+  // If deleting a primary course, also delete its attached secondary dual course:
+  if (!deleted.primaryRollNo) {
+    db.students = db.students.filter(s => s.primaryRollNo?.toUpperCase() !== roll && s.primaryStudentId !== deleted.id);
+  }
+
   writeDB(db);
-  res.json({ success: true, message: 'Student removed successfully', student: deleted[0] });
+  res.json({ success: true, message: 'Student removed successfully', student: deleted });
 });
 
 // ----------------------------------------------------

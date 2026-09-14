@@ -588,8 +588,8 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[210px]">
-                            {std.universityName ? std.universityName.split('(')[0].trim() : 'MCBU'}
+                          <div className="text-[10px] text-slate-500 truncate max-w-[210px]" title={std.collegeName || std.universityName || ''}>
+                            {std.collegeName || (std.universityName ? std.universityName.split('(')[0].trim() : 'MCBU')}
                           </div>
                         </td>
                         <td className="py-2.5 px-3 whitespace-nowrap">
@@ -708,8 +708,8 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                                   {linked.courseType || 'Diploma'}
                                 </span>
                               </div>
-                              <div className="text-[10px] text-slate-500 truncate max-w-[210px]">
-                                {linked.universityName ? linked.universityName.split('(')[0].trim() : 'MCBU'}
+                              <div className="text-[10px] text-slate-500 truncate max-w-[210px]" title={linked.collegeName || linked.universityName || ''}>
+                                {linked.collegeName || (linked.universityName ? linked.universityName.split('(')[0].trim() : 'MCBU')}
                               </div>
                             </td>
                             <td className="py-2 px-3 whitespace-nowrap">
