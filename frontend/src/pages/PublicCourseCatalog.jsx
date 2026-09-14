@@ -73,9 +73,7 @@ export default function PublicCourseCatalog({ courses, studentUser, onOpenStuden
       {/* Courses List */}
       <div className="space-y-6">
         {filteredCourses.map((course) => {
-          const isExpanded = expandedSyllabusCourseId === course.id;
           const totalSem = course.totalSemesters || 6;
-          const currentSemFile = course.syllabusFiles?.[selectedSemForView];
 
           return (
             <div 
