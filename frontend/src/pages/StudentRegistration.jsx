@@ -285,8 +285,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     Student_fee: '25000',
     Scholarship_Amount: '0',
     Course_Fee_Paid: '0',
-    Admission_Fee: '1000',
-    Admission_Fee_Paid: '1000',
+    Admission_Fee: '0',
+    Admission_Fee_Paid: '0',
     Current_class: 'SEM-1',
     Current_session: '2026-2027',
     Current_satra: 'July'
@@ -824,17 +824,23 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }));
   };
 
-    // Live Dual-Fee Calculations (Course Fee + Admission Fee = Total Package, minus Scholarship)
+  // Live Dual-Fee Calculations (Primary Course + Secondary Dual Course + Admission Fee - Scholarship)
   const courseFeeVal = Number(formData.Student_fee) || 0;
   const courseFeePaidVal = Number(formData.Course_Fee_Paid) || 0;
   const admissionFeeVal = Number(formData.Admission_Fee) || 0;
   const admissionFeePaidVal = Number(formData.Admission_Fee_Paid) || 0;
   const scholarshipVal = Number(formData.Scholarship_Amount) || 0;
 
-  const grandTotalFee = courseFeeVal + admissionFeeVal; // e.g. 30000 + 2000 = 32000
+  // Secondary Course Fees (from Section 3B "+ Add Course")
+  const secCourseFeeVal = hasSecondaryCourse ? (Number(secFormData.Student_fee) || 0) : 0;
+  const secCoursePaidVal = hasSecondaryCourse ? (Number(secFormData.Course_Fee_Paid) || 0) : 0;
+
+  // Combined totals across all enrolled programs
+  const totalCoursesFee = courseFeeVal + secCourseFeeVal; // Combined course fees (e.g. 50,000 + 25,000 = 75,000)
+  const grandTotalFee = totalCoursesFee + admissionFeeVal; // Total package fee (e.g. 75,000 + 2,000 = 77,000)
   const netTotalFee = Math.max(0, grandTotalFee - scholarshipVal); // Deduct scholarship
-  const totalPaidToday = courseFeePaidVal + admissionFeePaidVal; // e.g. 0 + 2000 = 2000
-  const grandBalanceDue = Math.max(0, netTotalFee - totalPaidToday); // e.g. (32000 - sch) - 2000
+  const totalPaidToday = courseFeePaidVal + admissionFeePaidVal + secCoursePaidVal; // Total paid today across both courses
+  const grandBalanceDue = Math.max(0, netTotalFee - totalPaidToday); // Total remaining due across both courses
 
   const standardDocuments = [
     '10th Marksheet',
@@ -1975,7 +1981,15 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-0.5 rounded-full">
-                Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
+                {hasSecondaryCourse ? (
+                  <>
+                    Primary (₹{courseFeeVal.toLocaleString('en-IN')}) + 2nd Course (₹{secCourseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
+                  </>
+                ) : (
+                  <>
+                    Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + {formData.Fee_Type || 'Admission Fee'} (₹{admissionFeeVal.toLocaleString('en-IN')}) = Total ₹{grandTotalFee.toLocaleString('en-IN')}
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -1990,7 +2004,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
                   <span className="font-extrabold text-xs text-indigo-950 uppercase flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    <span>1. Course Fee (प्रोग्राम / कोर्स फीस)</span>
+                    <span>1. Primary Course Fee ({selectedDegree || 'कोर्स फीस'})</span>
                   </span>
                   <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                     Total: ₹{courseFeeVal.toLocaleString('en-IN')}
@@ -2049,6 +2063,26 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                     <span className="text-[10px] text-slate-500 mt-0.5 block">Course fee given at admission</span>
                   </div>
                 </div>
+
+                {/* Secondary Course Live Indicator in Section 5 */}
+                {hasSecondaryCourse && (
+                  <div className="mt-2.5 p-2.5 bg-rose-50/90 border border-rose-200 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🎓</span>
+                      <div>
+                        <span className="font-extrabold text-rose-950 block">
+                          2nd Course ({secSelectedDegree || 'Diploma'}) Package: ₹{secCourseFeeVal.toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {secFormData.Course_Name || secSelectedDegree} • Paid Today: <strong className="text-emerald-700">₹{secCoursePaidVal.toLocaleString('en-IN')}</strong>
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-rose-200/80 text-rose-900 font-bold px-2 py-0.5 rounded">
+                      Included in Combined Total Below
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* SECTION B: Admission / Extra Fee Particulars */}
@@ -2225,18 +2259,28 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
               </div>
             </div>
 
-            {/* LIVE ACCOUNTING BANNER: The 30,000 + 2,000 = 32,000 Math Display */}
+            {/* LIVE ACCOUNTING BANNER: Combined Fee Structure Display */}
             <div className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-3">
                 <div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 block">
-                    Combined Fee Structure
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-300 flex items-center gap-2">
+                    <span>Combined Fee Structure</span>
+                    {hasSecondaryCourse && (
+                      <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.2 rounded-full shadow-xs">
+                        🎓 Dual Course Package Active (Both Courses Added)
+                      </span>
+                    )}
                   </span>
                   <div className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 mt-0.5 flex-wrap">
                     <span>Total Fee:</span>
-                    <span className="text-emerald-300">
+                    <span className="text-emerald-300 text-xl font-mono">
                       ₹{grandTotalFee.toLocaleString('en-IN')}
                     </span>
+                    {hasSecondaryCourse && (
+                      <span className="text-[11px] font-semibold text-slate-200 bg-white/10 px-2 py-0.5 rounded border border-white/15">
+                        (Primary: ₹{courseFeeVal.toLocaleString('en-IN')} + 2nd Course: ₹{secCourseFeeVal.toLocaleString('en-IN')} + Adm: ₹{admissionFeeVal.toLocaleString('en-IN')})
+                      </span>
+                    )}
                     {scholarshipVal > 0 && (
                       <span className="text-indigo-300 text-xs font-bold bg-indigo-900/60 px-2 py-0.5 rounded-md border border-indigo-500/40">
                         − ₹{scholarshipVal.toLocaleString('en-IN')} (Scholarship) = Net ₹{netTotalFee.toLocaleString('en-IN')}
@@ -2255,12 +2299,20 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasSecondaryCourse ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3 text-xs`}>
                 <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-slate-300 block font-medium">1. Total Course Fee</span>
+                  <span className="text-[10px] text-slate-300 block font-medium">1. Primary Course Fee</span>
                   <span className="font-extrabold text-sm text-white block">₹{courseFeeVal.toLocaleString('en-IN')}</span>
                   <span className="text-[10px] text-emerald-300">Paid Now: ₹{courseFeePaidVal.toLocaleString('en-IN')}</span>
                 </div>
+
+                {hasSecondaryCourse && (
+                  <div className="bg-amber-500/20 p-2.5 rounded-xl border border-amber-400/40 animate-fadeIn">
+                    <span className="text-[10px] text-amber-200 block font-medium">2. 2nd Course ({secSelectedDegree || 'Diploma'})</span>
+                    <span className="font-extrabold text-sm text-amber-300 block">₹{secCourseFeeVal.toLocaleString('en-IN')}</span>
+                    <span className="text-[10px] text-amber-100">Paid Now: ₹{secCoursePaidVal.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
 
                 <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
                   <span className="text-[10px] text-indigo-300 block font-medium">Scholarship / छात्रवृत्ति</span>
@@ -2273,19 +2325,24 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 </div>
 
                 <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] text-slate-300 block font-medium">2. {formData.Fee_Type || 'Admission Fee'}</span>
+                  <span className="text-[10px] text-slate-300 block font-medium">{hasSecondaryCourse ? '3.' : '2.'} {formData.Fee_Type || 'Admission Fee'}</span>
                   <span className="font-extrabold text-sm text-white block">₹{admissionFeeVal.toLocaleString('en-IN')}</span>
                   <span className="text-[10px] text-emerald-300">Paid Now: ₹{admissionFeePaidVal.toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="bg-emerald-500/20 p-2.5 rounded-xl border border-emerald-400/30">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-emerald-200 block font-medium">Paid Today:</span>
-                    <strong className="text-xs text-emerald-300">₹{totalPaidToday.toLocaleString('en-IN')}</strong>
+                    <span className="text-[10px] text-emerald-200 block font-medium">Total Paid Today:</span>
+                    <strong className="text-xs text-emerald-300 font-mono">₹{totalPaidToday.toLocaleString('en-IN')}</strong>
                   </div>
+                  {hasSecondaryCourse && (
+                    <div className="text-[9px] text-emerald-300/80 font-mono mt-0.5">
+                      (C1: ₹{courseFeePaidVal} + Adm: ₹{admissionFeePaidVal} + C2: ₹{secCoursePaidVal})
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-400/20">
                     <span className="text-[10px] text-rose-300 block font-bold">Remaining Balance:</span>
-                    <strong className="text-sm text-rose-300 font-black">₹{grandBalanceDue.toLocaleString('en-IN')}</strong>
+                    <strong className="text-sm text-rose-300 font-black font-mono">₹{grandBalanceDue.toLocaleString('en-IN')}</strong>
                   </div>
                 </div>
               </div>
@@ -2508,11 +2565,40 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
       {/* Printable Slip Modal */}
       {showAdmissionSlip && successData && (
-        <PrintAdmissionSlip 
-          student={printSlipTarget === 'secondary' && successData.secondaryStudent ? successData.secondaryStudent : successData.student} 
-          receipt={printSlipTarget === 'secondary' && successData.secondaryReceipt ? successData.secondaryReceipt : successData.receipt} 
-          onClose={() => setShowAdmissionSlip(false)} 
-        />
+        <div className="relative">
+          {successData.secondaryStudent && (
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] no-print bg-slate-900/95 backdrop-blur-md text-white px-4 py-2 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2.5 animate-fadeIn">
+              <span className="text-xs font-bold text-amber-400">🎓 Dual Admission:</span>
+              <button
+                type="button"
+                onClick={() => setPrintSlipTarget('primary')}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  printSlipTarget === 'primary' 
+                    ? 'bg-indigo-600 text-white shadow-md' 
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                1. {successData.student?.courseName || 'Primary Course'} Slip
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintSlipTarget('secondary')}
+                className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  printSlipTarget === 'secondary' 
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-black' 
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                }`}
+              >
+                2. {successData.secondaryStudent?.courseName || '2nd Course'} Slip
+              </button>
+            </div>
+          )}
+          <PrintAdmissionSlip 
+            student={printSlipTarget === 'secondary' && successData.secondaryStudent ? successData.secondaryStudent : successData.student} 
+            receipt={printSlipTarget === 'secondary' && successData.secondaryReceipt ? successData.secondaryReceipt : successData.receipt} 
+            onClose={() => setShowAdmissionSlip(false)} 
+          />
+        </div>
       )}
 
     </div>
