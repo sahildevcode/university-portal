@@ -28,14 +28,86 @@ export default function AdminPortal({
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
 
-  const [activeTab, setActiveTab] = useState('syllabus');
-  const [admissionSubTab, setAdmissionSubTab] = useState('directory');
+  const getInitialAdminTab = () => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (p.includes('registration') || p.includes('register') || p.includes('admissions') || p.includes('admission') || search.includes('registration') || search.includes('admission')) {
+        return 'admissions';
+      }
+      if (p.includes('cashcounter') || p.includes('fee') || p.includes('account') || search.includes('cashcounter') || search.includes('fee')) {
+        return 'cashcounter';
+      }
+      if (p.includes('documents') || p.includes('document') || search.includes('document')) {
+        return 'documents';
+      }
+      if (p.includes('university-paid') || search.includes('university-paid')) {
+        return 'university-paid';
+      }
+      if (p.includes('cms') || search.includes('cms')) {
+        return 'cms';
+      }
+      if (p.includes('staff') || search.includes('staff')) {
+        return 'staff';
+      }
+      if (p.includes('syllabus') || p.includes('course') || search.includes('syllabus')) {
+        return 'syllabus';
+      }
+      try {
+        const saved = localStorage.getItem('pkc_admin_active_tab');
+        if (saved) return saved;
+      } catch {}
+    }
+    return 'syllabus';
+  };
+
+  const getInitialAdmissionSubTab = () => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (p.includes('registration') || p.includes('register') || search.includes('sub=new') || search.includes('new') || search.includes('register')) {
+        return 'new';
+      }
+      try {
+        const saved = localStorage.getItem('pkc_admin_admission_subtab');
+        if (saved) return saved;
+      } catch {}
+    }
+    return 'directory';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialAdminTab);
+  const [admissionSubTab, setAdmissionSubTab] = useState(getInitialAdmissionSubTab);
   const [localCourses, setLocalCourses] = useState(courses || []);
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+
+  // Sync activeTab and admissionSubTab to localStorage and update browser URL
+  useEffect(() => {
+    try {
+      localStorage.setItem('pkc_admin_active_tab', activeTab);
+      localStorage.setItem('pkc_admin_admission_subtab', admissionSubTab);
+
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        if (activeTab === 'admissions') {
+          const target = admissionSubTab === 'new' ? '/admin/registration' : '/admin/admissions';
+          if (window.location.pathname !== target) {
+            window.history.replaceState({}, '', target);
+          }
+        } else {
+          const target = `/admin/${activeTab}`;
+          if (window.location.pathname !== target) {
+            window.history.replaceState({}, '', target);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error updating admin tab state:', e);
+    }
+  }, [activeTab, admissionSubTab]);
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -77,10 +149,10 @@ export default function AdminPortal({
     const handleAIAction = (event) => {
       const detail = event.detail || {};
       if (detail.type === 'focus-fees') {
-        setActiveTab('accounts');
+        setActiveTab('cashcounter');
       } else if (detail.type === 'open-admission') {
         setActiveTab('admissions');
-        setAdmissionSubTab('register');
+        setAdmissionSubTab('new');
       } else if (detail.type === 'focus-students') {
         setActiveTab('admissions');
         setAdmissionSubTab('directory');

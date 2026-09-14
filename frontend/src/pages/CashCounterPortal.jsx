@@ -17,10 +17,36 @@ export default function CashCounterPortal({
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
 
-  const [activeTab, setActiveTab] = useState('collect-fee'); // 'collect-fee' | 'walkin-admission' | 'documents'
+  const getInitialStaffTab = () => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      if (p.includes('admission') || p.includes('registration') || p.includes('walkin')) return 'walkin-admission';
+      if (p.includes('document')) return 'documents';
+      if (p.includes('collect') || p.includes('fee')) return 'collect-fee';
+      try {
+        const saved = localStorage.getItem('pkc_staff_active_tab');
+        if (saved) return saved;
+      } catch {}
+    }
+    return 'collect-fee';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialStaffTab);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [isDeskDropdownOpen, setIsDeskDropdownOpen] = useState(false);
   const deskDropdownRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pkc_staff_active_tab', activeTab);
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        const target = activeTab === 'walkin-admission' ? '/staff/admission' : (activeTab === 'documents' ? '/staff/documents' : '/staff');
+        if (window.location.pathname !== target) {
+          window.history.replaceState({}, '', target);
+        }
+      }
+    } catch (e) {}
+  }, [activeTab]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

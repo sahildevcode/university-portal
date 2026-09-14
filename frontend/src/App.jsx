@@ -29,8 +29,15 @@ const getInitialView = () => {
   if (typeof window !== 'undefined') {
     if (isAdminHost()) return 'admin';
     const p = window.location.pathname.toLowerCase();
-    if (p === '/admin' || p.startsWith('/admin/')) return 'admin';
-    if (p === '/staff' || p.startsWith('/staff/')) return 'staff';
+    if (p === '/admin' || p.startsWith('/admin')) return 'admin';
+    if (p === '/staff' || p.startsWith('/staff')) return 'staff';
+    try {
+      const saved = localStorage.getItem('pkc_active_view');
+      const hasAdmin = !!localStorage.getItem('pkc_admin_user');
+      const hasStaff = !!localStorage.getItem('pkc_staff_user');
+      if (saved === 'admin' && hasAdmin) return 'admin';
+      if (saved === 'staff' && (hasStaff || hasAdmin)) return 'staff';
+    } catch {}
   }
   return 'public';
 };
@@ -40,7 +47,13 @@ export default function App() {
   const [activeView, setActiveView] = useState(getInitialView);
 
   // Active Sub-Tab in Public Portal: 'home' | 'about' | 'courses' | 'inquiry'
-  const [publicTab, setPublicTab] = useState('home');
+  const [publicTab, setPublicTab] = useState(() => {
+    try {
+      return localStorage.getItem('pkc_public_tab') || 'home';
+    } catch {
+      return 'home';
+    }
+  });
 
   // Language state: 'en' (English default) | 'hi' (Hindi)
   const [lang, setLang] = useState(() => {
@@ -61,6 +74,9 @@ export default function App() {
   // Navigation helper to sync URL and view state
   const navigateTo = (view, path) => {
     setActiveView(view);
+    try {
+      localStorage.setItem('pkc_active_view', view);
+    } catch {}
     if (typeof window !== 'undefined' && window.location.pathname !== path) {
       window.history.pushState({}, '', path);
     }
@@ -98,6 +114,25 @@ export default function App() {
       console.error(e);
     }
   }, [lang]);
+
+  // Sync activeView and publicTab to localStorage and keep URL clean
+  useEffect(() => {
+    try {
+      localStorage.setItem('pkc_active_view', activeView);
+      localStorage.setItem('pkc_public_tab', publicTab);
+    } catch (e) {}
+
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      const p = window.location.pathname.toLowerCase();
+      if (activeView === 'admin' && !p.startsWith('/admin')) {
+        window.history.replaceState({}, '', '/admin');
+      } else if (activeView === 'staff' && !p.startsWith('/staff')) {
+        window.history.replaceState({}, '', '/staff');
+      } else if (activeView === 'public' && (p.startsWith('/admin') || p.startsWith('/staff'))) {
+        window.history.replaceState({}, '', '/');
+      }
+    }
+  }, [activeView, publicTab]);
 
   // Shared Data States
   const [courses, setCourses] = useState([]);
@@ -191,16 +226,20 @@ export default function App() {
   const handleAdminLoginSuccess = (user) => {
     setAdminUser(user);
     localStorage.setItem('pkc_admin_user', JSON.stringify(user));
+    localStorage.setItem('pkc_active_view', 'admin');
     navigateTo('admin', '/admin');
   };
 
   const handleAdminLogout = () => {
     setAdminUser(null);
     localStorage.removeItem('pkc_admin_user');
+    localStorage.removeItem('pkc_admin_active_tab');
+    localStorage.removeItem('pkc_admin_admission_subtab');
     if (isAdminHost()) {
       navigateTo('admin', '/');
     } else {
-      navigateTo('admin', '/admin');
+      localStorage.setItem('pkc_active_view', 'public');
+      navigateTo('public', '/');
     }
   };
 
@@ -208,13 +247,20 @@ export default function App() {
   const handleStaffLoginSuccess = (staff) => {
     setStaffUser(staff);
     localStorage.setItem('pkc_staff_user', JSON.stringify(staff));
+    localStorage.setItem('pkc_active_view', 'staff');
     navigateTo('staff', '/staff');
   };
 
   const handleStaffLogout = () => {
     setStaffUser(null);
     localStorage.removeItem('pkc_staff_user');
-    navigateTo('admin', '/admin');
+    localStorage.removeItem('pkc_staff_active_tab');
+    if (isAdminHost()) {
+      navigateTo('admin', '/');
+    } else {
+      localStorage.setItem('pkc_active_view', 'public');
+      navigateTo('public', '/');
+    }
   };
 
   return (

@@ -3,7 +3,7 @@ import {
   UserPlus, Upload, FileText, CheckCircle2, AlertCircle, Printer, 
   CreditCard, Image as ImageIcon, FileCheck, Building, ShieldCheck,
   Calendar, Key, Hash, School, BookOpen, Layers, CheckSquare, Square,
-  Trash2, X, RefreshCw, Search, Sparkles, GraduationCap, PlusCircle
+  Trash2, X, RefreshCw, Search, Sparkles, GraduationCap, PlusCircle, RotateCcw
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 
@@ -194,118 +194,216 @@ const ACADEMIC_PROGRAMS = [
   }
 ];
 
+// LocalStorage key for saving draft admission form
+const REGISTRATION_DRAFT_KEY = 'pkc_registration_draft_v1';
+
+const getSavedRegistrationDraft = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(REGISTRATION_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (e) {
+    console.warn('Could not parse registration draft:', e);
+    return null;
+  }
+};
+
+const getDefaultFormData = (staffUser, adminUser) => ({
+  // 1. Personal & Contact
+  Student_Name: '',
+  Mother_Name: '',
+  Father_Name: '',
+  Date_Of_Birth: '',
+  Gender: 'Male',
+  Blood_Group: 'NA',
+  Contact: '',
+  Email_ID: '',
+  Address: '',
+
+  // 2. Government & Portal KYC IDs
+  Aadhaar_No: '',
+  Samagra_id: '',
+  Enrollment_No: '',
+  Abc_id: '',
+  MPTass_id: '',
+  MPTass_Password: '',
+  OTR_id: '',
+  Deb_id: '',
+  Scholer_id: '',
+  User_id: '',
+
+  // 3. Academic & Institutional (Cascading)
+  University_Name: FALLBACK_UNIVERSITIES[0]?.name || '',
+  College_Name: FALLBACK_COLLEGES[0]?.name || '',
+  Course_Name: 'B.Tech- Artificial Intelligence & Machine Learning (A)',
+  Branch: 'Artificial Intelligence & Machine Learning (A)',
+  Course_Type: 'UG',
+  Course_Mode: 'Regular',
+  Medium: 'English',
+  Social_category: 'General',
+
+  // 4. Session & Class Particulars
+  Admission_Session: '2026-2027',
+  Admission_Satra: 'July',
+  Admission_Date: new Date().toISOString().split('T')[0],
+  Current_session: '2026-2027',
+  Current_satra: 'July',
+  Current_class: 'SEM-1',
+
+  // 5. Fees & Administration (Separate Course Fee & Admission Fee)
+  Student_fee: '30000',          // Total Course Fee (e.g. 30000)
+  Scholarship_Amount: '0',       // Government / Institutional Scholarship (defaults to 0)
+  Course_Fee_Paid: '',           // How much student is paying for course fee now
+  Fee_Type: 'Admission Fee',     // Fee category (Admission Fee, Late Exam Fee, etc.)
+  Admission_Fee: '2000',         // Total Admission / Extra Fee (e.g. 2000)
+  Admission_Fee_Paid: '2000',    // How much student is paying for admission fee now (e.g. 2000)
+  Initial_Payment: '2000',       // Combined total paid
+  Payment_Mode: 'Cash / Desk',
+  Fee_Collected_By: 'Cashier',
+  Transaction_Ref: '',
+  Status: 'Active',
+  Reference: '',
+  Remark: '',
+  isDualEnrollment: false,
+  primaryRollNo: null,
+  primaryStudentId: null,
+  operatorName: staffUser ? `${staffUser.name} (${staffUser.role || 'Cashier'})` : (adminUser ? 'Institute Administrator' : 'Admissions Authority')
+});
+
+const getDefaultSecFormData = () => ({
+  University_Name: FALLBACK_UNIVERSITIES[1]?.name || FALLBACK_UNIVERSITIES[0]?.name || '',
+  College_Name: FALLBACK_COLLEGES[4]?.name || FALLBACK_COLLEGES[0]?.name || '',
+  Course_Name: 'DCA (Diploma in Computer Applications)',
+  Branch: 'Computer Applications & Office Suite',
+  Course_Type: 'Diploma',
+  Course_Mode: 'Regular',
+  Medium: 'Hindi Medium',
+  Student_fee: '25000',
+  Scholarship_Amount: '0',
+  Course_Fee_Paid: '0',
+  Admission_Fee: '0',
+  Admission_Fee_Paid: '0',
+  Current_class: 'SEM-1',
+  Current_session: '2026-2027',
+  Current_satra: 'July'
+});
+
 export default function StudentRegistration({ courses = [], onStudentCreated, defaultCourseId, staffUser, adminUser }) {
+  const savedDraft = getSavedRegistrationDraft();
+
   // Universities & Colleges list from API with database fallbacks
   const [universitiesList, setUniversitiesList] = useState(FALLBACK_UNIVERSITIES);
   const [collegesList, setCollegesList] = useState(FALLBACK_COLLEGES);
   const [allCoursesList, setAllCoursesList] = useState(courses.length > 0 ? courses : []);
 
   // Cascading Selection State
-  const [selectedDegree, setSelectedDegree] = useState('B.Tech');
+  const [selectedDegree, setSelectedDegree] = useState(() => savedDraft?.selectedDegree || 'B.Tech');
 
-  const [formData, setFormData] = useState({
-    // 1. Personal & Contact
-    Student_Name: '',
-    Mother_Name: '',
-    Father_Name: '',
-    Date_Of_Birth: '',
-    Gender: 'Male',
-    Blood_Group: 'NA',
-    Contact: '',
-    Email_ID: '',
-    Address: '',
-
-    // 2. Government & Portal KYC IDs
-    Aadhaar_No: '',
-    Samagra_id: '',
-    Enrollment_No: '',
-    Abc_id: '',
-    MPTass_id: '',
-    MPTass_Password: '',
-    OTR_id: '',
-    Deb_id: '',
-    Scholer_id: '',
-    User_id: '',
-
-    // 3. Academic & Institutional (Cascading)
-    University_Name: FALLBACK_UNIVERSITIES[0].name,
-    College_Name: FALLBACK_COLLEGES[0].name,
-    Course_Name: 'B.Tech- Artificial Intelligence & Machine Learning (A)',
-    Branch: 'Artificial Intelligence & Machine Learning (A)',
-    Course_Type: 'UG',
-    Course_Mode: 'Regular',
-    Medium: 'English',
-    Social_category: 'General',
-
-    // 4. Session & Class Particulars
-    Admission_Session: '2026-2027',
-    Admission_Satra: 'July',
-    Admission_Date: new Date().toISOString().split('T')[0],
-    Current_session: '2026-2027',
-    Current_satra: 'July',
-    Current_class: 'SEM-1',
-
-    // 5. Fees & Administration (Separate Course Fee & Admission Fee)
-    Student_fee: '30000',          // Total Course Fee (e.g. 30000)
-    Scholarship_Amount: '0',       // Government / Institutional Scholarship (defaults to 0)
-    Course_Fee_Paid: '',           // How much student is paying for course fee now
-    Fee_Type: 'Admission Fee',     // Fee category (Admission Fee, Late Exam Fee, etc.)
-    Admission_Fee: '2000',         // Total Admission / Extra Fee (e.g. 2000)
-    Admission_Fee_Paid: '2000',    // How much student is paying for admission fee now (e.g. 2000)
-    Initial_Payment: '2000',       // Combined total paid
-    Payment_Mode: 'Cash / Desk',
-    Fee_Collected_By: 'Cashier',
-    Transaction_Ref: '',
-    Status: 'Active',
-    Reference: '',
-    Remark: '',
-    isDualEnrollment: false,
-    primaryRollNo: null,
-    primaryStudentId: null,
-    operatorName: staffUser ? `${staffUser.name} (${staffUser.role || 'Cashier'})` : (adminUser ? 'Institute Administrator' : 'Admissions Authority')
+  const [formData, setFormData] = useState(() => {
+    const defaults = getDefaultFormData(staffUser, adminUser);
+    if (savedDraft?.formData) {
+      return {
+        ...defaults,
+        ...savedDraft.formData,
+        operatorName: defaults.operatorName
+      };
+    }
+    return defaults;
   });
 
   // Dual Program / 2nd Course Fast-Fill Lookup State
   const [lookupQuery, setLookupQuery] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState(null);
-  const [isDualMode, setIsDualMode] = useState(false);
+  const [isDualMode, setIsDualMode] = useState(() => !!savedDraft?.isDualMode);
 
   // In-Form Secondary Course State (Section 3 Red Button "+ Add Course")
-  const [hasSecondaryCourse, setHasSecondaryCourse] = useState(false);
-  const [secSelectedDegree, setSecSelectedDegree] = useState('DCA');
-  const [secFormData, setSecFormData] = useState({
-    University_Name: FALLBACK_UNIVERSITIES[1]?.name || FALLBACK_UNIVERSITIES[0].name,
-    College_Name: FALLBACK_COLLEGES[4]?.name || FALLBACK_COLLEGES[0].name,
-    Course_Name: 'DCA (Diploma in Computer Applications)',
-    Branch: 'Computer Applications & Office Suite',
-    Course_Type: 'Diploma',
-    Course_Mode: 'Regular',
-    Medium: 'Hindi Medium',
-    Student_fee: '25000',
-    Scholarship_Amount: '0',
-    Course_Fee_Paid: '0',
-    Admission_Fee: '0',
-    Admission_Fee_Paid: '0',
-    Current_class: 'SEM-1',
-    Current_session: '2026-2027',
-    Current_satra: 'July'
+  const [hasSecondaryCourse, setHasSecondaryCourse] = useState(() => {
+    return typeof savedDraft?.hasSecondaryCourse === 'boolean' ? savedDraft.hasSecondaryCourse : false;
+  });
+  const [secSelectedDegree, setSecSelectedDegree] = useState(() => savedDraft?.secSelectedDegree || 'DCA');
+  const [secFormData, setSecFormData] = useState(() => {
+    const defaults = getDefaultSecFormData();
+    if (savedDraft?.secFormData) {
+      return { ...defaults, ...savedDraft.secFormData };
+    }
+    return defaults;
   });
   const [printSlipTarget, setPrintSlipTarget] = useState('primary'); // 'primary' or 'secondary'
 
   // Selected Documents Submitted Checklist (100% Optional at Admission)
-  const [submittedDocs, setSubmittedDocs] = useState([]);
-  const [docModes, setDocModes] = useState({});
+  const [submittedDocs, setSubmittedDocs] = useState(() => {
+    return Array.isArray(savedDraft?.submittedDocs) ? savedDraft.submittedDocs : [];
+  });
+  const [docModes, setDocModes] = useState(() => {
+    return savedDraft?.docModes && typeof savedDraft.docModes === 'object' ? savedDraft.docModes : {};
+  });
   const [docFiles, setDocFiles] = useState({});
 
   // Student Photo Upload State with Cancel/Remove
   const [studentImageFile, setStudentImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreview, setImagePreview] = useState(() => savedDraft?.imagePreview || null);
+  const [draftSavedAt, setDraftSavedAt] = useState(() => savedDraft?.savedAt || null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successData, setSuccessData] = useState(null);
   const [showAdmissionSlip, setShowAdmissionSlip] = useState(false);
+
+  // Auto-save registration form draft on any user change
+  useEffect(() => {
+    const hasAnyInput = Boolean(
+      formData.Student_Name?.trim() ||
+      formData.Mother_Name?.trim() ||
+      formData.Father_Name?.trim() ||
+      formData.Contact?.trim() ||
+      formData.Aadhaar_No?.trim() ||
+      formData.Email_ID?.trim() ||
+      formData.Address?.trim() ||
+      submittedDocs.length > 0 ||
+      hasSecondaryCourse ||
+      imagePreview
+    );
+
+    if (!hasAnyInput) return;
+
+    try {
+      const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const payload = {
+        formData,
+        secFormData,
+        hasSecondaryCourse,
+        secSelectedDegree,
+        selectedDegree,
+        submittedDocs,
+        docModes,
+        isDualMode,
+        imagePreview: (imagePreview && imagePreview.length < 2000000) ? imagePreview : null,
+        savedAt: now
+      };
+      localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(payload));
+      setDraftSavedAt(now);
+    } catch (err) {
+      console.warn('LocalStorage draft save error:', err);
+      try {
+        const payloadNoImg = {
+          formData,
+          secFormData,
+          hasSecondaryCourse,
+          secSelectedDegree,
+          selectedDegree,
+          submittedDocs,
+          docModes,
+          isDualMode,
+          imagePreview: null,
+          savedAt: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        };
+        localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(payloadNoImg));
+      } catch (e) {}
+    }
+  }, [formData, secFormData, hasSecondaryCourse, secSelectedDegree, selectedDegree, submittedDocs, docModes, isDualMode, imagePreview]);
 
   // 1. Fetch live Universities and Colleges from API (created in University section)
   useEffect(() => {
@@ -675,7 +773,11 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     const file = e.target.files?.[0];
     if (file) {
       setStudentImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -746,8 +848,25 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         }
       });
 
-      if (studentImageFile) {
-        data.append('student_image', studentImageFile);
+      // Handle student image (from live file input OR restored base64 draft)
+      let fileToAppend = studentImageFile;
+      if (!fileToAppend && imagePreview && typeof imagePreview === 'string' && imagePreview.startsWith('data:image')) {
+        try {
+          const arr = imagePreview.split(',');
+          const mime = arr[0].match(/:(.*?);/)[1];
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          fileToAppend = new File([u8arr], `student_photo_${Date.now()}.jpg`, { type: mime });
+        } catch (e) {
+          console.warn('Could not reconstruct file from imagePreview:', e);
+        }
+      }
+      if (fileToAppend) {
+        data.append('student_image', fileToAppend);
       }
 
       if (hasSecondaryCourse) {
@@ -767,6 +886,12 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         throw new Error(result.message || 'Failed to complete admission registration.');
       }
 
+      // Successful registration: clear the auto-saved draft so next student starts clean
+      try {
+        localStorage.removeItem(REGISTRATION_DRAFT_KEY);
+      } catch (e) {}
+      setDraftSavedAt(null);
+
       setSuccessData(result);
       setPrintSlipTarget('primary');
       setShowAdmissionSlip(true);
@@ -779,6 +904,10 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   };
 
   const resetForm = () => {
+    try {
+      localStorage.removeItem(REGISTRATION_DRAFT_KEY);
+    } catch (e) {}
+    setDraftSavedAt(null);
     setSuccessData(null);
     handleRemoveImage();
     setSubmittedDocs([]);
@@ -789,39 +918,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setLookupQuery('');
     setHasSecondaryCourse(false);
     setPrintSlipTarget('primary');
-    setFormData(prev => ({
-      ...prev,
-      Student_Name: '',
-      Mother_Name: '',
-      Father_Name: '',
-      Date_Of_Birth: '',
-      Contact: '',
-      Email_ID: '',
-      Address: '',
-      Aadhaar_No: '',
-      Samagra_id: '',
-      Enrollment_No: '',
-      Abc_id: '',
-      MPTass_id: '',
-      MPTass_Password: '',
-      OTR_id: '',
-      Deb_id: '',
-      Scholer_id: '',
-      User_id: '',
-      Student_fee: '30000',
-      Scholarship_Amount: '0',
-      Course_Fee_Paid: '',
-      Fee_Type: 'Admission Fee',
-      Admission_Fee: '2000',
-      Admission_Fee_Paid: '2000',
-      Initial_Payment: '2000',
-      Fee_Collected_By: 'Cashier',
-      Reference: '',
-      Remark: '',
-      isDualEnrollment: false,
-      primaryRollNo: null,
-      primaryStudentId: null
-    }));
+    setFormData(getDefaultFormData(staffUser, adminUser));
+    setSecFormData(getDefaultSecFormData());
   };
 
   // Live Dual-Fee Calculations (Primary Course + Secondary Dual Course + Admission Fee - Scholarship)
@@ -885,6 +983,37 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
           </span>
         </div>
       </div>
+
+      {/* Auto-Save & Draft Recovery Status Banner */}
+      {(draftSavedAt || Boolean(formData.Student_Name?.trim() || formData.Father_Name?.trim())) && (
+        <div className="bg-gradient-to-r from-amber-50 via-emerald-50 to-amber-50 border-2 border-emerald-400/80 rounded-2xl p-3.5 px-5 text-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-3 text-xs">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
+            <div>
+              <span className="font-extrabold text-slate-950 flex items-center gap-1.5">
+                💾 Auto-Save Active &amp; Surakshit
+                {draftSavedAt && (
+                  <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-300">
+                    Draft Restored: {draftSavedAt}
+                  </span>
+                )}
+              </span>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Aapka bhara hua data browser mein save ho raha hai. Page reload hone ya galti se band hone par bhi form khali nahi hoga!
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={resetForm}
+            className="shrink-0 text-xs font-bold text-rose-700 hover:text-rose-950 hover:bg-rose-100 bg-white border border-rose-300 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            title="Form ko poori tarah khali karke naya registration shuru karein"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+            <span>Naya Form / Clear Draft</span>
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 flex items-center gap-3 text-sm shadow-xs">
@@ -2545,20 +2674,32 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             <span>Admissions are synchronized live to Student Directory and University Treasury.</span>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold py-3.5 px-10 rounded-2xl text-sm shadow-xl shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
-          >
-            {loading ? (
-              <span>Enrolling Student Particulars...</span>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4" />
-                <span>Complete Admission Registration</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-5 py-3.5 rounded-2xl text-xs font-bold text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-300 transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+              title="Form reset karein"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Form</span>
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-extrabold py-3.5 px-8 rounded-2xl text-sm shadow-xl shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {loading ? (
+                <span>Enrolling Student Particulars...</span>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  <span>Complete Admission Registration</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
       </form>
