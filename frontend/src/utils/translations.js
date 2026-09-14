@@ -12,7 +12,7 @@ export const translations = {
     trustHindi: 'P.K.C. Shiksha Prasar Evam Jan Kalyan Samiti, Chhatarpur',
     home: 'Home',
     about: 'About Us',
-    courses: 'Courses & Syllabi',
+    courses: 'Academic Courses',
     inquiry: 'Admission Inquiry',
     student: 'Student Portal',
     admin: 'Admin Panel',
@@ -23,11 +23,11 @@ export const translations = {
     heroTag: 'Central India\'s Trusted Higher Education Partner',
     heroTitle: 'Shape Your Future With Certified Degrees & Tech Programs',
     heroSubtitle: 'Authorized University Counseling, Professional Degree Programs, Government Recognized Diplomas, and 100% Student Support.',
-    viewCourses: 'View Courses & Syllabi',
+    viewCourses: 'View Academic Courses',
     onlineInquiry: 'Direct Admission Inquiry',
     studentLoginBtn: 'Student Dashboard',
     popularCourses: 'Popular Degree & Diploma Programs',
-    popularDesc: 'Explore our top programs with syllabus and duration. Zero hidden fees.',
+    popularDesc: 'Explore our top degree and diploma programs. Zero hidden fees.',
     
     // Testimonial
     testimonialsHeader: 'Student Success & Campus Voices',
@@ -87,19 +87,14 @@ export const translations = {
     callHelp: 'Call Helpline',
     
     // Course Catalog
-    coursesBadge: 'Academic Programs & Curricula 2026-27',
-    coursesTitle: 'Academic Programs, Courses & Semester Syllabi',
-    coursesSubtitle: 'Approved academic curricula, program duration, semester-wise official syllabi, and study schemes for enrolled & prospective students.',
+    coursesBadge: 'Academic Programs 2026-27',
+    coursesTitle: 'Academic Programs & Partner Colleges',
+    coursesSubtitle: 'Approved academic courses, program duration, affiliated colleges and eligibility criteria for enrolled & prospective students.',
     searchPlaceholder: 'Search degree, diploma, code, or topics...',
     allDepts: 'All Departments',
     durationYears: 'Years',
     semestersCount: 'Semesters',
     eligibilityLabel: 'Eligibility',
-    viewDownloadSyllabus: 'View & Download Semester Syllabus',
-    closeSyllabus: 'Close Syllabus',
-    selectSemester: 'Select Semester',
-    downloadPdf: 'Download Syllabus PDF',
-    syllabusPending: 'Semester syllabus document is being updated by Academic Council.',
     noCoursesFound: 'No courses found matching your criteria.'
   },
   
@@ -116,7 +111,7 @@ export const translations = {
     trustHindi: 'पी.के.सी. शिक्षा प्रसार एवं जनकल्याण समिति, छतरपुर',
     home: 'मुख्य पृष्ठ',
     about: 'हमारे बारे में',
-    courses: 'कोर्स एवं सिलेबस',
+    courses: 'कोर्स एवं कॉलेज',
     inquiry: 'पूछताछ / इंक्वायरी',
     student: 'छात्र पोर्टल',
     admin: 'एडमिन पैनल',
@@ -127,11 +122,11 @@ export const translations = {
     heroTag: 'मध्य भारत का विश्वसनीय उच्च शिक्षा एवं कैरियर संस्थान',
     heroTitle: 'मान्यता प्राप्त डिग्री एवं तकनीकी कोर्सेज के साथ संवारें भविष्य',
     heroSubtitle: 'विश्वविद्यालय एडमिशन परामर्श, डिग्री प्रोग्राम्स, मध्य प्रदेश शासन मान्यता प्राप्त कंप्यूटर डिप्लोमा और 100% छात्र सहायता।',
-    viewCourses: 'कोर्स एवं सिलेबस देखें',
+    viewCourses: 'कोर्स एवं कॉलेज देखें',
     onlineInquiry: 'एडमिशन हेतु पूछताछ करें',
     studentLoginBtn: 'छात्र डैशबोर्ड',
     popularCourses: 'प्रमुख डिग्री एवं डिप्लोमा कोर्सेज',
-    popularDesc: 'हमारे प्रमुख कोर्सेज, अवधि और आधिकारिक सिलेबस देखें। छात्रों के लिए कोई फीस नहीं दिखाई गई है।',
+    popularDesc: 'हमारे प्रमुख कोर्सेज, अवधि और संबद्ध कॉलेज देखें। छात्रों के लिए कोई फीस नहीं दिखाई गई है।',
     
     // Testimonial
     testimonialsHeader: 'छात्रों की सफलता एवं विचार',

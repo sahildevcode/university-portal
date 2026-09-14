@@ -328,7 +328,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Dedicated exam desk, admit card &amp; syllabus support</span>
+                <span>Dedicated exam desk, admit card &amp; academic counseling support</span>
               </li>
             </ul>
           </div>

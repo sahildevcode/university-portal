@@ -307,7 +307,7 @@ export default function MainUniversityHome({
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
-                      <span className="uppercase tracking-wider text-[11px]">EXPLORE SYLLABUS</span>
+                      <span className="uppercase tracking-wider text-[11px]">EXPLORE PROGRAM</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
@@ -518,7 +518,7 @@ export default function MainUniversityHome({
                   STAY CONNECTED
                 </span>
                 <h3 className="font-bold text-lg sm:text-xl text-slate-950 mt-0.5">
-                  Subscribe for admission alerts, exam forms &amp; syllabus updates.
+                  Subscribe for admission alerts, counseling &amp; academic updates.
                 </h3>
               </div>
             </div>
