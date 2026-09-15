@@ -349,7 +349,7 @@ export default function AdminPortal({
   const ActiveIcon = activeModule ? activeModule.icon : LayoutGrid;
 
   return (
-    <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 text-slate-900">
+    <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 text-slate-900">
       
       {/* Top Header */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-slate-800">
