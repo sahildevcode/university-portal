@@ -1811,6 +1811,10 @@ app.post(
       const studentNameVal = body.Student_Name || body.fullName || 'Student Name';
       const contactVal = body.Contact || body.phone || '';
       const socialCatVal = body.Social_category || body.category || 'General';
+      const courseNameInput = (body.Course_Name || body.courseName || '').trim();
+      const selectedCourse = (body.courseId && db.courses?.find(c => c.id === body.courseId))
+        || (courseNameInput && db.courses?.find(c => c.name && c.name.toLowerCase() === courseNameInput.toLowerCase()))
+        || null;
 
       const newStudent = {
         id: `std-${Date.now()}`,
@@ -1844,8 +1848,8 @@ app.post(
         admissionDate: body.Admission_Date || body.admissionDate || new Date().toISOString().split('T')[0],
         universityName: body.University_Name || body.universityName || 'PKC Education & Consultancy',
         collegeName: body.College_Name || body.collegeName || 'PKC Education Learning Institute & Consultancy',
-        courseId: body.courseId || selectedCourse.id || 'custom',
-        courseName: body.Course_Name || selectedCourse.name || body.courseName || 'General Degree',
+        courseId: body.courseId || selectedCourse?.id || 'custom',
+        courseName: courseNameInput || selectedCourse?.name || 'General Degree',
         branch: body.Branch || body.branch || 'General',
         courseType: body.Course_Type || body.courseType || 'UG',
         courseMode: body.Course_Mode || body.courseMode || 'Regular',
