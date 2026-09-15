@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
+import PrintFeeReceipt from '../components/PrintFeeReceipt';
+import PrintFeeCard from '../components/PrintFeeCard';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -37,27 +39,25 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 1. Set Student Fee Modal State (Green Button)
-  const [feeModalStudent, setFeeModalStudent] = useState(null);
-  const [feeModalAmount, setFeeModalAmount] = useState('');
-  const [feeModalRemark, setFeeModalRemark] = useState('');
-  const [feeModalLoading, setFeeModalLoading] = useState(false);
-  const [feeModalError, setFeeModalError] = useState(null);
+  // Unified "Paid Student Fee" & Fee Desk Modal State (Matching User Ref Images)
+  const [feeDeskStudent, setFeeDeskStudent] = useState(null);
+  const [feeDeskMode, setFeeDeskMode] = useState('receive'); // 'receive' | 'set_fee' | 'set_scholarship'
+  const [feeDeskPayments, setFeeDeskPayments] = useState([]);
+  const [feeDeskClass, setFeeDeskClass] = useState('SEM-1');
+  const [feeDeskDate, setFeeDeskDate] = useState(new Date().toISOString().split('T')[0]);
+  const [feeDeskPurpose, setFeeDeskPurpose] = useState('Tuition Fee');
+  const [feeDeskModePayment, setFeeDeskModePayment] = useState('Cash');
+  const [feeDeskRefNo, setFeeDeskRefNo] = useState('');
+  const [feeDeskReceivedBy, setFeeDeskReceivedBy] = useState('Admin Desk');
+  const [feeDeskAmount, setFeeDeskAmount] = useState('');
+  const [feeDeskRemark, setFeeDeskRemark] = useState('');
+  const [feeDeskLoading, setFeeDeskLoading] = useState(false);
+  const [feeDeskError, setFeeDeskError] = useState(null);
+  const [feeDeskSuccess, setFeeDeskSuccess] = useState(null);
 
-  // 2. Set Scholarship Modal State (Dark Green Button)
-  const [scholarshipModalStudent, setScholarshipModalStudent] = useState(null);
-  const [scholarshipModalAmount, setScholarshipModalAmount] = useState('');
-  const [scholarshipModalLoading, setScholarshipModalLoading] = useState(false);
-  const [scholarshipModalError, setScholarshipModalError] = useState(null);
-
-  // 3. Receive Student Fee Modal State (Blue Button)
-  const [receiveFeeModalStudent, setReceiveFeeModalStudent] = useState(null);
-  const [receiveFeeAmount, setReceiveFeeAmount] = useState('');
-  const [receiveFeeMode, setReceiveFeeMode] = useState('Cash');
-  const [receiveFeeReceiptNo, setReceiveFeeReceiptNo] = useState('');
-  const [receiveFeeRemark, setReceiveFeeRemark] = useState('');
-  const [receiveFeeLoading, setReceiveFeeLoading] = useState(false);
-  const [receiveFeeError, setReceiveFeeError] = useState(null);
+  // Fee Receipt & Fee Card Print Modals
+  const [printReceiptData, setPrintReceiptData] = useState(null);
+  const [printFeeCardStudent, setPrintFeeCardStudent] = useState(null);
 
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -192,124 +192,169 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     fetchStudents('', 'all', 'all', 'all');
   };
 
-  const handleOpenSetFeeModal = (student) => {
-    setFeeModalStudent(student);
-    const currFee = student.academicFee !== undefined ? student.academicFee : (student.studentFee || student.courseFee || 0);
-    setFeeModalAmount(currFee > 0 ? String(currFee) : '');
-    setFeeModalRemark(student.remark || '');
-    setFeeModalError(null);
-  };
+  const handleOpenFeeDesk = async (student, initialMode = 'receive') => {
+    setFeeDeskStudent(student);
+    setFeeDeskMode(initialMode);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+    setFeeDeskClass(student.currentClass || `SEM-${student.currentSemester || 1}`);
+    setFeeDeskDate(new Date().toISOString().split('T')[0]);
+    setFeeDeskModePayment('Cash');
+    setFeeDeskRefNo('');
+    setFeeDeskReceivedBy('Admin Desk');
+    setFeeDeskRemark(student.remark || '');
 
-  const handleSaveFee = async (e) => {
-    e.preventDefault();
-    if (!feeModalStudent) return;
-    setFeeModalLoading(true);
-    setFeeModalError(null);
-    try {
-      const res = await fetch(`/api/students/${encodeURIComponent(feeModalStudent.rollNo)}/set-fee`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          academicFee: Number(feeModalAmount) || 0,
-          remark: feeModalRemark
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update academic fee');
-      }
-      setStudents(prev => prev.map(s => s.rollNo === feeModalStudent.rollNo ? { ...s, ...data.student } : s));
-      setFeeModalStudent(null);
-      fetchStudents();
-    } catch (err) {
-      setFeeModalError(err.message || 'Error updating fee');
-    } finally {
-      setFeeModalLoading(false);
-    }
-  };
-
-  const handleOpenSetScholarshipModal = (student) => {
-    setScholarshipModalStudent(student);
-    const currSch = student.scholarshipAmount || 0;
-    setScholarshipModalAmount(currSch > 0 ? String(currSch) : '');
-    setScholarshipModalError(null);
-  };
-
-  const handleSaveScholarship = async (e) => {
-    e.preventDefault();
-    if (!scholarshipModalStudent) return;
-    setScholarshipModalLoading(true);
-    setScholarshipModalError(null);
-    try {
-      const res = await fetch(`/api/students/${encodeURIComponent(scholarshipModalStudent.rollNo)}/set-scholarship`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scholarshipAmount: Number(scholarshipModalAmount) || 0
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update scholarship');
-      }
-      setStudents(prev => prev.map(s => s.rollNo === scholarshipModalStudent.rollNo ? { ...s, ...data.student } : s));
-      setScholarshipModalStudent(null);
-      fetchStudents();
-    } catch (err) {
-      setScholarshipModalError(err.message || 'Error updating scholarship');
-    } finally {
-      setScholarshipModalLoading(false);
-    }
-  };
-
-  const handleOpenReceiveFeeModal = (student) => {
-    setReceiveFeeModalStudent(student);
     const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || student.courseFee || 0));
     const sch = Number(student.scholarshipAmount || 0);
     const tot = acadFee + sch;
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
 
-    setReceiveFeeAmount(rem > 0 ? String(rem) : '');
-    setReceiveFeeMode('Cash');
-    setReceiveFeeReceiptNo(`RCP-${Date.now().toString().slice(-6)}`);
-    setReceiveFeeRemark('');
-    setReceiveFeeError(null);
+    if (initialMode === 'receive') {
+      setFeeDeskPurpose('Tuition Fee');
+      setFeeDeskAmount(rem > 0 ? String(rem) : '');
+    } else if (initialMode === 'set_fee') {
+      setFeeDeskPurpose('Center Fee');
+      setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
+    } else if (initialMode === 'set_scholarship') {
+      setFeeDeskPurpose('Scholarship');
+      setFeeDeskAmount(sch > 0 ? String(sch) : '');
+    }
+
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(student.rollNo)}`);
+      const data = await res.json();
+      if (data.success && data.student) {
+        setFeeDeskPayments(data.student.payments || []);
+        setFeeDeskStudent(data.student);
+      } else {
+        setFeeDeskPayments(student.payments || []);
+      }
+    } catch (e) {
+      setFeeDeskPayments(student.payments || []);
+    }
   };
 
-  const handleSaveReceiveFee = async (e) => {
+  const switchFeeDeskMode = (newMode) => {
+    if (!feeDeskStudent) return;
+    setFeeDeskMode(newMode);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+
+    const acadFee = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+    const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+    const tot = acadFee + sch;
+    const paid = Number(feeDeskStudent.totalPaid || 0);
+    const rem = Math.max(0, tot - paid);
+
+    if (newMode === 'receive') {
+      setFeeDeskPurpose('Tuition Fee');
+      setFeeDeskAmount(rem > 0 ? String(rem) : '');
+    } else if (newMode === 'set_fee') {
+      setFeeDeskPurpose('Center Fee');
+      setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
+    } else if (newMode === 'set_scholarship') {
+      setFeeDeskPurpose('Scholarship');
+      setFeeDeskAmount(sch > 0 ? String(sch) : '');
+    }
+  };
+
+  const handleOpenSetFeeModal = (student) => handleOpenFeeDesk(student, 'set_fee');
+  const handleOpenSetScholarshipModal = (student) => handleOpenFeeDesk(student, 'set_scholarship');
+  const handleOpenReceiveFeeModal = (student) => handleOpenFeeDesk(student, 'receive');
+
+  const handleFeeDeskSubmit = async (e) => {
     e.preventDefault();
-    if (!receiveFeeModalStudent) return;
-    const amt = Number(receiveFeeAmount);
-    if (!amt || amt <= 0) {
-      setReceiveFeeError('Please enter a valid payment amount greater than 0.');
+    if (!feeDeskStudent) return;
+
+    const amt = Number(feeDeskAmount);
+    if (isNaN(amt) || amt < 0 || (feeDeskMode === 'receive' && amt <= 0)) {
+      setFeeDeskError('Please enter a valid amount.');
       return;
     }
-    setReceiveFeeLoading(true);
-    setReceiveFeeError(null);
+
+    setFeeDeskLoading(true);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+
     try {
-      const res = await fetch(`/api/students/${encodeURIComponent(receiveFeeModalStudent.rollNo)}/receive-fee`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: amt,
-          paymentMode: receiveFeeMode,
-          receiptNo: receiveFeeReceiptNo,
-          remark: receiveFeeRemark,
-          receivedBy: 'Admin Desk'
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to record payment');
+      if (feeDeskMode === 'receive') {
+        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/receive-fee`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amt,
+            paymentMode: feeDeskModePayment,
+            feeDate: feeDeskDate,
+            purpose: feeDeskPurpose,
+            currentClass: feeDeskClass,
+            refNo: feeDeskRefNo,
+            receivedBy: feeDeskReceivedBy,
+            remark: feeDeskRemark
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to record payment');
+        }
+
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        if (data.payments) {
+          setFeeDeskPayments(data.payments);
+        } else if (data.receipt) {
+          setFeeDeskPayments(prev => [data.receipt, ...prev]);
+        }
+
+        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`₹${amt.toLocaleString('en-IN')} fee payment recorded successfully! Receipt: ${data.receipt?.receiptNo || 'Generated'}`);
+
+        const newRem = Math.max(0, (Number(updatedStudent.totalFee) || 0) - (Number(updatedStudent.totalPaid) || 0));
+        setFeeDeskAmount(newRem > 0 ? String(newRem) : '');
+        setFeeDeskRefNo('');
+        fetchStudents();
+      } else if (feeDeskMode === 'set_fee') {
+        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-fee`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            academicFee: amt,
+            remark: feeDeskRemark
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to update academic fee');
+        }
+
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Academic Center Fee set to ₹${amt.toLocaleString('en-IN')} successfully!`);
+        fetchStudents();
+      } else if (feeDeskMode === 'set_scholarship') {
+        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-scholarship`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scholarshipAmount: amt
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to update scholarship');
+        }
+
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Scholarship set to ₹${amt.toLocaleString('en-IN')} successfully!`);
+        fetchStudents();
       }
-      setStudents(prev => prev.map(s => s.rollNo === receiveFeeModalStudent.rollNo ? { ...s, ...data.student } : s));
-      setReceiveFeeModalStudent(null);
-      fetchStudents();
     } catch (err) {
-      setReceiveFeeError(err.message || 'Error recording payment');
+      setFeeDeskError(err.message || 'Error processing request');
     } finally {
-      setReceiveFeeLoading(false);
+      setFeeDeskLoading(false);
     }
   };
 
@@ -1130,409 +1175,484 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         );
       })()}
 
-      {/* 1. Set Student Fee Modal (Green Button) */}
-      {feeModalStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
-            <div className="bg-[#28a745] text-white px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <span>🟢 Set Student Academic Fee</span>
-              </div>
-              <button onClick={() => setFeeModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleSaveFee} className="p-5 space-y-4">
-              {feeModalError && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{feeModalError}</span>
+      {/* Unified "Paid Student Fee" & Fee Desk Modal (Matching User Reference Images) */}
+      {feeDeskStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
+            
+            {/* Modal Header */}
+            <div className="bg-[#1e7e34] text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-black text-white text-base">
+                  ₹
                 </div>
-              )}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Student:</span>
-                  <strong className="text-slate-900 uppercase">{feeModalStudent.fullName || feeModalStudent.studentName}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Roll No:</span>
-                  <strong className="font-mono text-indigo-700">{feeModalStudent.rollNo}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Course / Sem:</span>
-                  <span className="text-slate-800">{feeModalStudent.courseName} ({feeModalStudent.currentClass || 'SEM-1'})</span>
+                <div>
+                  <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
+                    {feeDeskMode === 'receive' && 'Paid Student Fee (छात्र शुल्क भुगतान)'}
+                    {feeDeskMode === 'set_fee' && 'Set Student Academic Fee (Center Fee)'}
+                    {feeDeskMode === 'set_scholarship' && 'Set Student Scholarship (छात्रवृत्ति निर्धारण)'}
+                  </h3>
+                  <div className="text-xs text-emerald-100 flex items-center gap-2">
+                    <span className="font-bold uppercase">{feeDeskStudent.fullName || feeDeskStudent.studentName}</span>
+                    <span>•</span>
+                    <span className="font-mono">Roll: {feeDeskStudent.rollNo}</span>
+                    <span>•</span>
+                    <span>{feeDeskStudent.courseName}</span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Academic / Tuition Fee (₹) <span className="text-rose-600">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  value={feeModalAmount}
-                  onChange={(e) => setFeeModalAmount(e.target.value)}
-                  placeholder="e.g. 20000"
-                  className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Remark / Note (रिमार्क)
-                </label>
-                <input
-                  type="text"
-                  value={feeModalRemark}
-                  onChange={(e) => setFeeModalRemark(e.target.value)}
-                  placeholder="e.g. Total Fees: 22500/- or installment note"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Live Calculation Preview */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-xs space-y-1.5">
-                <div className="font-bold text-emerald-950 flex justify-between">
-                  <span>Academic Fee:</span>
-                  <span>₹{Number(feeModalAmount || 0).toLocaleString('en-IN')}/-</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>+ Scholarship:</span>
-                  <span>₹{Number(feeModalStudent.scholarshipAmount || 0).toLocaleString('en-IN')}/-</span>
-                </div>
-                <div className="border-t border-emerald-200 pt-1.5 flex justify-between font-extrabold text-emerald-900">
-                  <span>= New Total Fee:</span>
-                  <span>₹{(Number(feeModalAmount || 0) + Number(feeModalStudent.scholarshipAmount || 0)).toLocaleString('en-IN')}/-</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>- Paid Fee:</span>
-                  <span>₹{Number(feeModalStudent.totalPaid || 0).toLocaleString('en-IN')}/-</span>
-                </div>
-                <div className="border-t border-emerald-200 pt-1 flex justify-between font-bold text-rose-700">
-                  <span>= New Remaining Balance:</span>
-                  <span>₹{Math.max(0, (Number(feeModalAmount || 0) + Number(feeModalStudent.scholarshipAmount || 0)) - Number(feeModalStudent.totalPaid || 0)).toLocaleString('en-IN')}/-</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
+              {/* Mode Switcher Tabs */}
+              <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => setFeeModalStudent(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                  onClick={() => switchFeeDeskMode('receive')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    feeDeskMode === 'receive'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
                 >
-                  Cancel
+                  Paid_Fee
                 </button>
                 <button
-                  type="submit"
-                  disabled={feeModalLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#28a745] hover:bg-[#218838] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  type="button"
+                  onClick={() => switchFeeDeskMode('set_fee')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    feeDeskMode === 'set_fee'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
                 >
-                  {feeModalLoading ? 'Saving...' : 'Save Student Fee'}
+                  Set_Fee
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchFeeDeskMode('set_scholarship')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    feeDeskMode === 'set_scholarship'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Set_Scholarship
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeeDeskStudent(null)}
+                  className="p-1 hover:bg-white/20 rounded-lg text-white ml-2 transition-colors cursor-pointer"
+                  title="Close (ESC)"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Set Scholarship Modal (Dark Green Button) */}
-      {scholarshipModalStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
-            <div className="bg-[#1e7e34] text-white px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <span>🎓 Set Scholarship Amount</span>
-              </div>
-              <button onClick={() => setScholarshipModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
             </div>
-            <form onSubmit={handleSaveScholarship} className="p-5 space-y-4">
-              {scholarshipModalError && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+
+            {/* Scrollable Content Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs flex-1">
+              
+              {/* Alert Feedback Messages */}
+              {feeDeskError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2 font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{scholarshipModalError}</span>
+                  <span>{feeDeskError}</span>
                 </div>
               )}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Student:</span>
-                  <strong className="text-slate-900 uppercase">{scholarshipModalStudent.fullName || scholarshipModalStudent.studentName}</strong>
+              {feeDeskSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-xl flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>{feeDeskSuccess}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Roll No:</span>
-                  <strong className="font-mono text-indigo-700">{scholarshipModalStudent.rollNo}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Course / Sem:</span>
-                  <span className="text-slate-800">{scholarshipModalStudent.courseName} ({scholarshipModalStudent.currentClass || 'SEM-1'})</span>
-                </div>
-              </div>
+              )}
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Scholarship Amount (₹) <span className="text-rose-600">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  value={scholarshipModalAmount}
-                  onChange={(e) => setScholarshipModalAmount(e.target.value)}
-                  placeholder="e.g. 5000"
-                  className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
+              {/* Form matching media_1789491211570.jpg */}
+              <form onSubmit={handleFeeDeskSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  
+                  {/* 1. Student Name */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Student_Name:
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''}
+                      className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none"
+                    />
+                  </div>
 
-              {/* Live Calculation Preview */}
-              {(() => {
-                const acad = Number(scholarshipModalStudent.academicFee !== undefined ? scholarshipModalStudent.academicFee : (scholarshipModalStudent.studentFee || scholarshipModalStudent.courseFee || 0));
-                const schAmt = Number(scholarshipModalAmount || 0);
-                const newTot = acad + schAmt;
-                const paid = Number(scholarshipModalStudent.totalPaid || 0);
-                const rem = Math.max(0, newTot - paid);
-                return (
-                  <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 text-xs space-y-1.5">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Academic Fee:</span>
-                      <span>₹{acad.toLocaleString('en-IN')}/-</span>
-                    </div>
-                    <div className="font-bold text-purple-950 flex justify-between">
-                      <span>+ Scholarship:</span>
-                      <span>₹{schAmt.toLocaleString('en-IN')}/-</span>
-                    </div>
-                    <div className="border-t border-purple-200 pt-1.5 flex justify-between font-extrabold text-purple-900">
-                      <span>= New Total Fee:</span>
-                      <span>₹{newTot.toLocaleString('en-IN')}/-</span>
-                    </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>- Paid Fee:</span>
-                      <span>₹{paid.toLocaleString('en-IN')}/-</span>
-                    </div>
-                    <div className="border-t border-purple-200 pt-1 flex justify-between font-bold text-rose-700">
-                      <span>= New Remaining Balance:</span>
-                      <span>₹{rem.toLocaleString('en-IN')}/-</span>
+                  {/* 2. Father Name */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Father_Name:
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={feeDeskStudent.fatherName || '-'}
+                      className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none"
+                    />
+                  </div>
+
+                  {/* 3. University Name */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      University_Name:
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={feeDeskStudent.universityName || 'PKC University / Board'}
+                      className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate"
+                    />
+                  </div>
+
+                  {/* 4. Course Name */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Course_Name:
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={feeDeskStudent.courseName || '-'}
+                      className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate"
+                    />
+                  </div>
+
+                  {/* 5. Class */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Class:
+                    </label>
+                    <select
+                      value={feeDeskClass}
+                      onChange={(e) => setFeeDeskClass(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
+                      <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                      <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
+                      <option value="SEM-4">SEM-4 (4th Semester)</option>
+                      <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
+                      <option value="SEM-6">SEM-6 (6th Semester)</option>
+                      <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
+                      <option value="SEM-8">SEM-8 (8th Semester)</option>
+                      <option value="Year-1">Year-1 (1st Year Annual)</option>
+                      <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                      <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                    </select>
+                  </div>
+
+                  {/* 6. Fee Date */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Fee_Date* :
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={feeDeskDate}
+                      onChange={(e) => setFeeDeskDate(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* 7. Purpose */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Purpose* :
+                    </label>
+                    <select
+                      value={feeDeskPurpose}
+                      onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Tuition Fee">Tuition Fee</option>
+                      <option value="Admission Fee">Admission Fee</option>
+                      <option value="Center Fee">Center Fee (Academic Fee)</option>
+                      <option value="Examination Fee">Examination Fee</option>
+                      <option value="Scholarship">Scholarship Adjustment</option>
+                      <option value="Registration Fee">Registration Fee</option>
+                      <option value="Caution Money">Caution Money Deposit</option>
+                      <option value="Library Fee">Library / Lab Fee</option>
+                      <option value="Other Fee">Other Academic Dues</option>
+                    </select>
+                  </div>
+
+                  {/* 8. Payment Mode */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Payment_Mode* :
+                    </label>
+                    <select
+                      value={feeDeskModePayment}
+                      onChange={(e) => setFeeDeskModePayment(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Online / UPI">Online / UPI QR</option>
+                      <option value="Bank Transfer">Bank Transfer (IMPS / NEFT)</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Card / POS">Card Swipe / POS</option>
+                    </select>
+                  </div>
+
+                  {/* 9. Ref No */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Ref_No:
+                    </label>
+                    <input
+                      type="text"
+                      value={feeDeskRefNo}
+                      onChange={(e) => setFeeDeskRefNo(e.target.value)}
+                      placeholder="UTR / Cheque No / Txn ID"
+                      className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* 10. Received By */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Received_By:
+                    </label>
+                    <input
+                      type="text"
+                      value={feeDeskReceivedBy}
+                      onChange={(e) => setFeeDeskReceivedBy(e.target.value)}
+                      placeholder="Admin Desk"
+                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* 11. Enter Fee Amount */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-900 mb-1">
+                      {feeDeskMode === 'receive' && 'Enter_Fee_Amount* :'}
+                      {feeDeskMode === 'set_fee' && 'Enter Academic / Center Fee Amount (₹)* :'}
+                      {feeDeskMode === 'set_scholarship' && 'Enter Scholarship Amount (₹)* :'}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={feeDeskAmount}
+                        onChange={(e) => setFeeDeskAmount(e.target.value)}
+                        placeholder="Enter amount (e.g. 5000)"
+                        className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
+                      />
+                      {feeDeskMode === 'receive' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const acad = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+                            const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                            const tot = acad + sch;
+                            const paid = Number(feeDeskStudent.totalPaid || 0);
+                            const rem = Math.max(0, tot - paid);
+                            setFeeDeskAmount(String(rem));
+                          }}
+                          className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
+                          title="Auto fill full balance remaining"
+                        >
+                          Full Due
+                        </button>
+                      )}
                     </div>
                   </div>
-                );
-              })()}
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setScholarshipModalStudent(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={scholarshipModalLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#1e7e34] hover:bg-[#155d27] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  {scholarshipModalLoading ? 'Saving...' : 'Save Scholarship'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Receive Student Fee Modal (Blue Button) */}
-      {receiveFeeModalStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
-            <div className="bg-[#1d72b8] text-white px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <CreditCard className="w-4 h-4" />
-                <span>Receive Student Fee Payment</span>
-              </div>
-              <button onClick={() => setReceiveFeeModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleSaveReceiveFee} className="p-5 space-y-4">
-              {receiveFeeError && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{receiveFeeError}</span>
                 </div>
-              )}
 
+                {/* Submit Row matching reference button */}
+                <div className="flex items-center justify-end gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={feeDeskLoading}
+                    className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>
+                      {feeDeskLoading
+                        ? 'Saving...'
+                        : feeDeskMode === 'receive'
+                        ? 'Paid Fee'
+                        : feeDeskMode === 'set_fee'
+                        ? 'Set Center Fee'
+                        : 'Set Scholarship'}
+                    </span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Fee Summary Strip matching media_1789491211561.jpg */}
               {(() => {
-                const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
-                const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
+                const acad = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
                 const tot = acad + sch;
-                const paid = Number(receiveFeeModalStudent.totalPaid || 0);
+                const paid = Number(feeDeskStudent.totalPaid || 0);
                 const rem = Math.max(0, tot - paid);
 
                 return (
-                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
-                    <div className="flex justify-between items-center pb-1.5 border-b border-slate-200">
-                      <div>
-                        <strong className="text-slate-900 uppercase text-xs">{receiveFeeModalStudent.fullName || receiveFeeModalStudent.studentName}</strong>
-                        <div className="text-[10px] text-slate-500 font-mono">Roll No: {receiveFeeModalStudent.rollNo}</div>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-slate-800">{receiveFeeModalStudent.courseName}</span>
-                        <div className="text-[10px] text-slate-500">{receiveFeeModalStudent.currentClass || 'SEM-1'}</div>
-                      </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center pt-2">
+                    <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
+                      <div className="text-sm font-black text-slate-900 font-mono">₹{acad.toLocaleString('en-IN')}/-</div>
                     </div>
-
-                    <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                      <div className="bg-white p-2 rounded-lg border border-slate-200">
-                        <div className="text-[10px] text-slate-400 uppercase font-bold">Total Fee</div>
-                        <div className="font-bold text-slate-900 text-xs">₹{tot.toLocaleString('en-IN')}/-</div>
-                      </div>
-                      <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                        <div className="text-[10px] text-emerald-600 uppercase font-bold">Paid Fee</div>
-                        <div className="font-bold text-emerald-700 text-xs">₹{paid.toLocaleString('en-IN')}/-</div>
-                      </div>
-                      <div className="bg-rose-50 p-2 rounded-lg border border-rose-200">
-                        <div className="text-[10px] text-rose-600 uppercase font-bold">Remaining Fee</div>
-                        <div className="font-bold text-rose-700 text-xs">₹{rem.toLocaleString('en-IN')}/-</div>
-                      </div>
+                    <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 shadow-2xs">
+                      <div className="text-[10px] text-purple-700 uppercase font-bold">Scholarship</div>
+                      <div className="text-sm font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
+                    </div>
+                    <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-2.5 shadow-2xs">
+                      <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Fee</div>
+                      <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
+                    </div>
+                    <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
+                      <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
+                      <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
+                    </div>
+                    <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
+                      <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
+                      <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
                     </div>
                   </div>
                 );
               })()}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Amount to Receive (₹) <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={receiveFeeAmount}
-                    onChange={(e) => setReceiveFeeAmount(e.target.value)}
-                    placeholder="Enter amount"
-                    className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
+              {/* Payment History Ledger Table matching media_1789491211561.jpg */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Payment History (कब-कब फीस दी है, किस-किस डेट को)</span>
+                  </h4>
+                  <span className="text-[10px] font-bold text-slate-500">
+                    Total Transactions: {feeDeskPayments.length}
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Payment Mode
-                  </label>
-                  <select
-                    value={receiveFeeMode}
-                    onChange={(e) => setReceiveFeeMode(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white cursor-pointer"
-                  >
-                    <option value="Cash">Cash (कैश)</option>
-                    <option value="UPI / QR">UPI / QR Code</option>
-                    <option value="Bank Transfer">Bank Transfer / IMPS / NEFT</option>
-                    <option value="Cheque / DD">Cheque / Demand Draft</option>
-                    <option value="POS Card">Card Swipe / POS</option>
-                  </select>
+                <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
+                  <table className="w-full text-left border-collapse text-[11px] min-w-[700px]">
+                    <thead>
+                      <tr className="bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
+                        <th className="py-2.5 px-2 border-r border-slate-700 text-center w-8">#</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Date</th>
+                        <th className="py-2.5 px-2 border-r border-slate-700 text-center">Class</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Receipt No</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
+                        <th className="py-2.5 px-2 text-center">Fee Recipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {feeDeskPayments.length === 0 ? (
+                        <tr>
+                          <td colSpan="10" className="py-6 text-center text-slate-400 italic">
+                            No payment installments recorded yet for this student.
+                          </td>
+                        </tr>
+                      ) : (
+                        feeDeskPayments.map((p, idx) => {
+                          const pDate = p.feeDate || (p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('en-IN') : '-');
+                          const pAmt = Number(p.amountPaid || p.amount || 0);
+
+                          return (
+                            <tr key={p.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'}>
+                              <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap font-medium text-slate-800">{pDate}</td>
+                              <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-700">{p.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 font-mono font-bold text-indigo-900">{p.receiptNo || '-'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800">{p.purpose || p.feeType || 'Tuition Fee'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.paymentMode || 'Cash'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 font-mono text-slate-600">{p.refNo || p.transactionRef || '-'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.receivedBy || 'Admin Desk'}</td>
+                              <td className="py-2 px-2.5 border-r border-slate-200 text-right font-black font-mono text-emerald-800 whitespace-nowrap">
+                                {pAmt > 0 ? `${pAmt}/-` : '0/-'}
+                              </td>
+                              <td className="py-2 px-2 text-center whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPrintReceiptData({
+                                      ...p,
+                                      studentName: p.studentName || feeDeskStudent.fullName || feeDeskStudent.studentName,
+                                      rollNo: p.rollNo || feeDeskStudent.rollNo,
+                                      collegeName: p.collegeName || feeDeskStudent.collegeName,
+                                      universityName: p.universityName || feeDeskStudent.universityName,
+                                      courseName: p.courseName || feeDeskStudent.courseName,
+                                      currentClass: p.currentClass || feeDeskStudent.currentClass,
+                                      transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
+                                    });
+                                  }}
+                                  className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-3 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer"
+                                  title="Print Official Fee Receipt"
+                                >
+                                  Print
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Receipt / Reference No.
-                  </label>
-                  <input
-                    type="text"
-                    value={receiveFeeReceiptNo}
-                    onChange={(e) => setReceiveFeeReceiptNo(e.target.value)}
-                    placeholder="RCP-123456"
-                    className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
+            </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Remark / Description
-                  </label>
-                  <input
-                    type="text"
-                    value={receiveFeeRemark}
-                    onChange={(e) => setReceiveFeeRemark(e.target.value)}
-                    placeholder="e.g. SEM-1 fee payment"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
+            {/* Bottom Action Buttons matching media_1789491211561.jpg & media_1789491211564.jpg */}
+            <div className="bg-slate-100 px-5 py-3 border-t border-slate-300 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setPrintFeeCardStudent({
+                    ...feeDeskStudent,
+                    payments: feeDeskPayments
+                  });
+                }}
+                className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:scale-102 transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print Fee Card</span>
+              </button>
 
-              {/* Quick Fill Buttons */}
-              <div className="flex items-center gap-2 pt-1 flex-wrap">
-                <span className="text-[11px] text-slate-500 font-medium">Quick Amount:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
-                    const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
-                    const tot = acad + sch;
-                    const paid = Number(receiveFeeModalStudent.totalPaid || 0);
-                    const rem = Math.max(0, tot - paid);
-                    setReceiveFeeAmount(String(rem));
-                  }}
-                  className="px-2.5 py-1 text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg cursor-pointer transition-colors"
-                >
-                  Full Remaining Due
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReceiveFeeAmount('5000')}
-                  className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
-                >
-                  ₹5,000
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setReceiveFeeAmount('10000')}
-                  className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
-                >
-                  ₹10,000
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFeeDeskStudent(null);
+                  fetchStudents();
+                }}
+                className="px-5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+              >
+                Go Back
+              </button>
+            </div>
 
-              {/* Live calculation after payment */}
-              {(() => {
-                const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
-                const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
-                const tot = acad + sch;
-                const paid = Number(receiveFeeModalStudent.totalPaid || 0);
-                const entered = Number(receiveFeeAmount || 0);
-                const remainingAfter = Math.max(0, tot - (paid + entered));
-
-                return (
-                  <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-xs flex items-center justify-between font-bold text-blue-950">
-                    <span>Remaining Due After This Payment:</span>
-                    <span className="text-sm font-extrabold text-blue-900">₹{remainingAfter.toLocaleString('en-IN')}/-</span>
-                  </div>
-                );
-              })()}
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setReceiveFeeModalStudent(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={receiveFeeLoading}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#1d72b8] hover:bg-[#155a96] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  {receiveFeeLoading ? 'Processing...' : 'Confirm Fee Payment'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
+      )}
+
+      {/* Individual Official Fee Receipt Print Modal */}
+      {printReceiptData && (
+        <PrintFeeReceipt
+          receipt={printReceiptData}
+          onClose={() => setPrintReceiptData(null)}
+        />
+      )}
+
+      {/* Full Student Fee Card Statement Print Modal */}
+      {printFeeCardStudent && (
+        <PrintFeeCard
+          student={printFeeCardStudent}
+          payments={feeDeskPayments}
+          onClose={() => setPrintFeeCardStudent(null)}
+        />
       )}
 
       {/* Full Student Profile & Document Viewer Modal */}

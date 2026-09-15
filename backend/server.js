@@ -2494,7 +2494,7 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { amount, paymentMode, receiptNo, remark, receivedBy } = req.body;
+  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo } = req.body;
   const payAmt = Number(amount);
 
   if (!payAmt || payAmt <= 0) {
@@ -2507,6 +2507,9 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 
   student.totalPaid = newTotalPaid;
   student.balanceDue = newBalance;
+  if (currentClass) {
+    student.currentClass = currentClass;
+  }
   if (remark) {
     student.remark = remark;
   }
@@ -2514,7 +2517,9 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 
   const rNo = receiptNo && String(receiptNo).trim() 
     ? String(receiptNo).trim() 
-    : `RCP-${Date.now().toString().slice(-6)}`;
+    : String(getNextReceiptNumber(db));
+
+  const pDate = feeDate ? new Date(feeDate).toISOString() : new Date().toISOString();
 
   const receipt = {
     id: `pay-${Date.now()}`,
@@ -2522,16 +2527,21 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     studentId: student.id,
     rollNo: student.rollNo,
     studentName: student.fullName || student.studentName,
+    fatherName: student.fatherName || '',
     collegeName: student.collegeName || '',
     universityName: student.universityName || '',
     courseName: student.courseName || '',
     branch: student.branch || 'General',
     currentSemester: student.currentSemester || 1,
-    currentClass: student.currentClass || 'SEM-1',
+    currentClass: currentClass || student.currentClass || 'SEM-1',
     amountPaid: payAmt,
     paymentMode: paymentMode || 'Cash',
-    feeType: 'Tuition / Academic Fee Payment',
-    paymentDate: new Date().toISOString(),
+    feeType: purpose || 'Tuition / Academic Fee Payment',
+    purpose: purpose || 'Tuition Fee',
+    paymentDate: pDate,
+    feeDate: feeDate || pDate.split('T')[0],
+    transactionRef: refNo || '',
+    refNo: refNo || '',
     totalFee: totalFee,
     totalPaidToDate: newTotalPaid,
     balanceRemaining: newBalance,
@@ -2545,11 +2555,15 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 
   writeDB(db);
 
+  // Return all payments for this student so frontend can update immediately
+  const studentPayments = db.fee_payments.filter(p => p.rollNo.toUpperCase() === student.rollNo.toUpperCase());
+
   res.status(201).json({
     success: true,
     message: `Payment of ₹${payAmt.toLocaleString('en-IN')} received successfully!`,
     student,
-    receipt
+    receipt,
+    payments: studentPayments
   });
 });
 
