@@ -1771,14 +1771,10 @@ app.post(
         rollNo = candidateRoll;
       }
 
-      const selectedCourse = db.courses.find(c => c.id === body.courseId || c.name === body.Course_Name || c.name === body.courseName) || {
-        name: body.Course_Name || body.courseName || "General Degree",
-        totalFee: Number(body.Student_fee) || Number(body.totalFee) || 100000
-      };
-
-      const courseFee = Number(body.Student_fee) || Number(body.courseFee) || selectedCourse.totalFee || 30000;
+      const courseFee = body.Student_fee !== undefined ? Number(body.Student_fee) : (body.courseFee !== undefined ? Number(body.courseFee) : (body.totalFee !== undefined ? Number(body.totalFee) : 0));
       const admissionFee = Number(body.Admission_Fee) || Number(body.admissionFee) || 0;
-      const grandTotalFee = Number(body.totalFee) || (courseFee + admissionFee);
+      const scholarshipAmt = Number(body.scholarshipAmount || body.Scholarship_Amount) || 0;
+      const grandTotalFee = courseFee + admissionFee + scholarshipAmt;
 
       const courseFeePaid = Number(body.Course_Fee_Paid) || Number(body.courseFeePaid) || 0;
       const admissionFeePaid = Number(body.Admission_Fee_Paid) || Number(body.admissionFeePaid) || 0;
@@ -1861,17 +1857,18 @@ app.post(
         currentSatra: body.Current_satra || body.currentSatra || 'July',
         currentClass: body.Current_class || body.currentClass || 'SEM-1',
         currentSemester: Number(body.currentSemester) || (body.Current_class?.includes('SEM-') ? Number(body.Current_class.replace('SEM-', '')) : 1),
+        academicFee: courseFee,
         studentFee: courseFee,
         courseFee: courseFee,
         admissionFee: admissionFee,
+        scholarshipAmount: scholarshipAmt,
         totalFee: grandTotalFee,
-        scholarshipAmount: Number(body.scholarshipAmount || body.Scholarship_Amount) || 0,
-        netTotalFee: Math.max(0, grandTotalFee - (Number(body.scholarshipAmount || body.Scholarship_Amount) || 0)),
+        netTotalFee: grandTotalFee,
         courseFeePaid: courseFeePaid,
         admissionFeePaid: admissionFeePaid,
         initialPayment: initialPaid,
         totalPaid: initialPaid,
-        balanceDue: Math.max(0, Math.max(0, grandTotalFee - (Number(body.scholarshipAmount || body.Scholarship_Amount) || 0)) - initialPaid),
+        balanceDue: Math.max(0, grandTotalFee - initialPaid),
         universityFee: Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5),
         universityPaid: Number(body.universityPaid) || 0,
         universityDue: Math.max(0, (Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5)) - (Number(body.universityPaid) || 0)),
@@ -2417,6 +2414,138 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
       currentClass: student.currentClass,
       promotedAt: student.promotedAt
     }
+  });
+});
+
+// Set Student Fee (Academic Fee & Remark)
+app.put('/api/students/:rollNo/set-fee', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const { academicFee, remark } = req.body;
+  const acadFee = Number(academicFee) >= 0 ? Number(academicFee) : 0;
+  student.academicFee = acadFee;
+  student.studentFee = acadFee;
+  student.courseFee = acadFee;
+  if (remark !== undefined) {
+    student.remark = remark;
+  }
+
+  const sch = Number(student.scholarshipAmount) || 0;
+  student.totalFee = acadFee + sch;
+  student.netTotalFee = student.totalFee;
+  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Academic fee for ${student.fullName || student.rollNo} set to ₹${acadFee.toLocaleString('en-IN')}`,
+    student
+  });
+});
+
+// Set Student Scholarship
+app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const { scholarshipAmount } = req.body;
+  const sch = Math.max(0, Number(scholarshipAmount) || 0);
+  student.scholarshipAmount = sch;
+
+  const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
+  student.totalFee = acadFee + sch;
+  student.netTotalFee = student.totalFee;
+  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Scholarship for ${student.fullName || student.rollNo} set to ₹${sch.toLocaleString('en-IN')}`,
+    student
+  });
+});
+
+// Receive Student Fee
+app.post('/api/students/:rollNo/receive-fee', (req, res) => {
+  const db = readDB();
+  const roll = req.params.rollNo.toUpperCase();
+  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  const { amount, paymentMode, receiptNo, remark, receivedBy } = req.body;
+  const payAmt = Number(amount);
+
+  if (!payAmt || payAmt <= 0) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid fee payment amount.' });
+  }
+
+  const newTotalPaid = (Number(student.totalPaid) || 0) + payAmt;
+  const totalFee = Number(student.totalFee) || 0;
+  const newBalance = Math.max(0, totalFee - newTotalPaid);
+
+  student.totalPaid = newTotalPaid;
+  student.balanceDue = newBalance;
+  if (remark) {
+    student.remark = remark;
+  }
+  student.updatedAt = new Date().toISOString();
+
+  const rNo = receiptNo && String(receiptNo).trim() 
+    ? String(receiptNo).trim() 
+    : `RCP-${Date.now().toString().slice(-6)}`;
+
+  const receipt = {
+    id: `pay-${Date.now()}`,
+    receiptNo: rNo,
+    studentId: student.id,
+    rollNo: student.rollNo,
+    studentName: student.fullName || student.studentName,
+    collegeName: student.collegeName || '',
+    universityName: student.universityName || '',
+    courseName: student.courseName || '',
+    branch: student.branch || 'General',
+    currentSemester: student.currentSemester || 1,
+    currentClass: student.currentClass || 'SEM-1',
+    amountPaid: payAmt,
+    paymentMode: paymentMode || 'Cash',
+    feeType: 'Tuition / Academic Fee Payment',
+    paymentDate: new Date().toISOString(),
+    totalFee: totalFee,
+    totalPaidToDate: newTotalPaid,
+    balanceRemaining: newBalance,
+    remainingDues: newBalance,
+    remark: remark || '',
+    receivedBy: receivedBy || 'Admin Desk'
+  };
+
+  if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+  db.fee_payments.unshift(receipt);
+
+  writeDB(db);
+
+  res.status(201).json({
+    success: true,
+    message: `Payment of ₹${payAmt.toLocaleString('en-IN')} received successfully!`,
+    student,
+    receipt
   });
 });
 

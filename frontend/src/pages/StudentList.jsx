@@ -24,7 +24,41 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   const [timeframe, setTimeframe] = useState('all'); // 'all', 'week', 'month', 'year'
   const [timeframeCounts, setTimeframeCounts] = useState({ all: 0, week: 0, month: 0, year: 0 });
   const [dualOnly, setDualOnly] = useState(false);
-  
+
+  // New Filters matching user screenshots
+  const [filterSession, setFilterSession] = useState('all');
+  const [filterSatra, setFilterSatra] = useState('all');
+  const [filterUniversity, setFilterUniversity] = useState('all');
+  const [appliedSession, setAppliedSession] = useState('all');
+  const [appliedSatra, setAppliedSatra] = useState('all');
+  const [appliedUniversity, setAppliedUniversity] = useState('all');
+
+  // Entries / Pagination state
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 1. Set Student Fee Modal State (Green Button)
+  const [feeModalStudent, setFeeModalStudent] = useState(null);
+  const [feeModalAmount, setFeeModalAmount] = useState('');
+  const [feeModalRemark, setFeeModalRemark] = useState('');
+  const [feeModalLoading, setFeeModalLoading] = useState(false);
+  const [feeModalError, setFeeModalError] = useState(null);
+
+  // 2. Set Scholarship Modal State (Dark Green Button)
+  const [scholarshipModalStudent, setScholarshipModalStudent] = useState(null);
+  const [scholarshipModalAmount, setScholarshipModalAmount] = useState('');
+  const [scholarshipModalLoading, setScholarshipModalLoading] = useState(false);
+  const [scholarshipModalError, setScholarshipModalError] = useState(null);
+
+  // 3. Receive Student Fee Modal State (Blue Button)
+  const [receiveFeeModalStudent, setReceiveFeeModalStudent] = useState(null);
+  const [receiveFeeAmount, setReceiveFeeAmount] = useState('');
+  const [receiveFeeMode, setReceiveFeeMode] = useState('Cash');
+  const [receiveFeeReceiptNo, setReceiveFeeReceiptNo] = useState('');
+  const [receiveFeeRemark, setReceiveFeeRemark] = useState('');
+  const [receiveFeeLoading, setReceiveFeeLoading] = useState(false);
+  const [receiveFeeError, setReceiveFeeError] = useState(null);
+
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [activeProfileTab, setActiveProfileTab] = useState('profile');
@@ -133,6 +167,149 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     setSearch(val);
     if (val === '') {
       fetchStudents('', selectedCourse, selectedSemester, timeframe);
+    }
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedSession(filterSession);
+    setAppliedSatra(filterSatra);
+    setAppliedUniversity(filterUniversity);
+    setCurrentPage(1);
+  };
+
+  const handleResetFiltersToAll = () => {
+    setFilterSession('all');
+    setFilterSatra('all');
+    setFilterUniversity('all');
+    setAppliedSession('all');
+    setAppliedSatra('all');
+    setAppliedUniversity('all');
+    setSearch('');
+    setSelectedCourse('all');
+    setSelectedSemester('all');
+    setTimeframe('all');
+    setCurrentPage(1);
+    fetchStudents('', 'all', 'all', 'all');
+  };
+
+  const handleOpenSetFeeModal = (student) => {
+    setFeeModalStudent(student);
+    const currFee = student.academicFee !== undefined ? student.academicFee : (student.studentFee || student.courseFee || 0);
+    setFeeModalAmount(currFee > 0 ? String(currFee) : '');
+    setFeeModalRemark(student.remark || '');
+    setFeeModalError(null);
+  };
+
+  const handleSaveFee = async (e) => {
+    e.preventDefault();
+    if (!feeModalStudent) return;
+    setFeeModalLoading(true);
+    setFeeModalError(null);
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(feeModalStudent.rollNo)}/set-fee`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          academicFee: Number(feeModalAmount) || 0,
+          remark: feeModalRemark
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update academic fee');
+      }
+      setStudents(prev => prev.map(s => s.rollNo === feeModalStudent.rollNo ? { ...s, ...data.student } : s));
+      setFeeModalStudent(null);
+      fetchStudents();
+    } catch (err) {
+      setFeeModalError(err.message || 'Error updating fee');
+    } finally {
+      setFeeModalLoading(false);
+    }
+  };
+
+  const handleOpenSetScholarshipModal = (student) => {
+    setScholarshipModalStudent(student);
+    const currSch = student.scholarshipAmount || 0;
+    setScholarshipModalAmount(currSch > 0 ? String(currSch) : '');
+    setScholarshipModalError(null);
+  };
+
+  const handleSaveScholarship = async (e) => {
+    e.preventDefault();
+    if (!scholarshipModalStudent) return;
+    setScholarshipModalLoading(true);
+    setScholarshipModalError(null);
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(scholarshipModalStudent.rollNo)}/set-scholarship`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scholarshipAmount: Number(scholarshipModalAmount) || 0
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update scholarship');
+      }
+      setStudents(prev => prev.map(s => s.rollNo === scholarshipModalStudent.rollNo ? { ...s, ...data.student } : s));
+      setScholarshipModalStudent(null);
+      fetchStudents();
+    } catch (err) {
+      setScholarshipModalError(err.message || 'Error updating scholarship');
+    } finally {
+      setScholarshipModalLoading(false);
+    }
+  };
+
+  const handleOpenReceiveFeeModal = (student) => {
+    setReceiveFeeModalStudent(student);
+    const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || student.courseFee || 0));
+    const sch = Number(student.scholarshipAmount || 0);
+    const tot = acadFee + sch;
+    const paid = Number(student.totalPaid || 0);
+    const rem = Math.max(0, tot - paid);
+
+    setReceiveFeeAmount(rem > 0 ? String(rem) : '');
+    setReceiveFeeMode('Cash');
+    setReceiveFeeReceiptNo(`RCP-${Date.now().toString().slice(-6)}`);
+    setReceiveFeeRemark('');
+    setReceiveFeeError(null);
+  };
+
+  const handleSaveReceiveFee = async (e) => {
+    e.preventDefault();
+    if (!receiveFeeModalStudent) return;
+    const amt = Number(receiveFeeAmount);
+    if (!amt || amt <= 0) {
+      setReceiveFeeError('Please enter a valid payment amount greater than 0.');
+      return;
+    }
+    setReceiveFeeLoading(true);
+    setReceiveFeeError(null);
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(receiveFeeModalStudent.rollNo)}/receive-fee`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amt,
+          paymentMode: receiveFeeMode,
+          receiptNo: receiveFeeReceiptNo,
+          remark: receiveFeeRemark,
+          receivedBy: 'Admin Desk'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to record payment');
+      }
+      setStudents(prev => prev.map(s => s.rollNo === receiveFeeModalStudent.rollNo ? { ...s, ...data.student } : s));
+      setReceiveFeeModalStudent(null);
+      fetchStudents();
+    } catch (err) {
+      setReceiveFeeError(err.message || 'Error recording payment');
+    } finally {
+      setReceiveFeeLoading(false);
     }
   };
 
@@ -308,6 +485,22 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     : students
   ).filter(s => {
     if (s.isSecondaryCourse) return false;
+
+    if (appliedSession !== 'all') {
+      const sess = s.currentSession || s.admissionSession || '';
+      if (sess && sess !== appliedSession) return false;
+    }
+
+    if (appliedSatra !== 'all') {
+      const satra = s.currentSatra || s.admissionSatra || '';
+      if (satra && satra.toLowerCase() !== appliedSatra.toLowerCase()) return false;
+    }
+
+    if (appliedUniversity !== 'all') {
+      const univ = (s.universityName || s.collegeName || '').toLowerCase();
+      if (univ && !univ.includes(appliedUniversity.toLowerCase())) return false;
+    }
+
     if (!q) return true;
 
     const nameMatch = s.fullName?.toLowerCase().includes(q) || s.studentName?.toLowerCase().includes(q);
@@ -375,509 +568,901 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         </div>
       </div>
 
-      {/* Admission Timeframe Filter Dropdown */}
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-indigo-600" />
-            <span>Admission Filter (प्रवेश अवधि फ़िल्टर):</span>
-          </label>
-          <div className="relative min-w-[270px]">
+      {/* Top University, Session & Satra Filter Form (Matching User Screenshots) */}
+      <div className="bg-[#f0f7f9] p-4 rounded-xl border border-[#bce0ee] shadow-sm space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Select Session:
+            </label>
             <select
-              value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value)}
-              className={`w-full appearance-none border font-extrabold text-xs py-2 pl-3.5 pr-9 rounded-xl focus:outline-none cursor-pointer shadow-2xs ${
-                timeframe === 'week'
-                  ? 'bg-indigo-50 border-indigo-300 text-indigo-900'
-                  : timeframe === 'month'
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                  : timeframe === 'year'
-                  ? 'bg-amber-50 border-amber-300 text-amber-950'
-                  : 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-800'
-              }`}
+              value={filterSession}
+              onChange={(e) => setFilterSession(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
             >
-              <option value="all">
-                👥 All Enrolled Students ({timeframeCounts.all || students.length})
-              </option>
-              <option value="week">
-                ⚡ This Week New Admissions ({timeframeCounts.week || 0})
-              </option>
-              <option value="month">
-                🗓️ This Month Admissions ({timeframeCounts.month || 0})
-              </option>
-              <option value="year">
-                📆 This Year Admissions ({timeframeCounts.year || 0})
-              </option>
+              <option value="all">All Sessions</option>
+              <option value="2024-2025">2024-2025</option>
+              <option value="2025-2026">2025-2026</option>
+              <option value="2026-2027">2026-2027</option>
+              <option value="2027-2028">2027-2028</option>
             </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
           </div>
 
-          {timeframe !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setTimeframe('all')}
-              className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer border border-slate-200"
-              title="Reset Admission Filter"
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Select Satra(July/Jan):
+            </label>
+            <select
+              value={filterSatra}
+              onChange={(e) => setFilterSatra(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
-            </button>
-          )}
+              <option value="all">All Satras</option>
+              <option value="July">July</option>
+              <option value="January">January</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Select University:
+            </label>
+            <select
+              value={filterUniversity}
+              onChange={(e) => setFilterUniversity(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+            >
+              <option value="all">Select University (All)</option>
+              {universitiesList.map((u, i) => (
+                <option key={u.id || i} value={u.name}>{u.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="text-[11px] text-slate-400 font-medium">
-          Showing <strong className="text-slate-700">{displayedStudents.length}</strong> student record(s)
+        <div>
+          <button
+            type="button"
+            onClick={handleApplyFilters}
+            className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-md shadow-sm transition-colors text-sm cursor-pointer"
+          >
+            Show Students
+          </button>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-        {/* Search Input with Integrated Clear (X) Button */}
-        <div className="sm:col-span-6 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-          <form onSubmit={handleSearchSubmit}>
-            <input
-              type="text"
-              placeholder="Search by Roll No, Name, Father's Name (पिता का नाम), Aadhar No, Phone..."
-              value={search}
-              onChange={handleSearchChange}
-              className="w-full pl-10 pr-9 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 focus:bg-white text-slate-900 font-medium"
-            />
-          </form>
-          {search && (
-            <button
-              type="button"
-              onClick={handleResetSearch}
-              className="absolute right-2.5 top-2 p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full cursor-pointer transition-colors"
-              title="Clear search (सर्च हटाएं)"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+      {/* Dark Active Filter Status Strip (Image 1 & 2) */}
+      <div className="bg-[#0b1f33] text-white py-2.5 px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-bold items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-normal">Session:</span>
+          <span className="text-emerald-400 font-mono tracking-wide">{appliedSession === 'all' ? 'All Sessions' : appliedSession}</span>
         </div>
-
-        <div className="sm:col-span-3">
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none"
-          >
-            <option value="all">All Courses / Degrees</option>
-            {courses.map(c => (
-              <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2 sm:justify-center">
+          <span className="text-slate-400 font-normal">Current Satra:</span>
+          <span className="text-cyan-300 tracking-wide">{appliedSatra === 'all' ? 'All Satras' : appliedSatra}</span>
         </div>
-
-        <div className="sm:col-span-2">
-          <select
-            value={selectedSemester}
-            onChange={(e) => setSelectedSemester(e.target.value)}
-            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none"
-          >
-            <option value="all">All Semesters</option>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-              <option key={s} value={s}>Semester {s}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="sm:col-span-1 flex items-center gap-1.5">
-          <button
-            onClick={() => fetchStudents()}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-xl cursor-pointer shadow-xs transition-colors"
-            title="Search / Filter"
-          >
-            Filter
-          </button>
-          {(search || selectedCourse !== 'all' || selectedSemester !== 'all' || timeframe !== 'all') && (
-            <button
-              onClick={handleResetSearch}
-              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl cursor-pointer transition-colors border border-slate-200"
-              title="Reset All Filters / Back to All Students (फ़िल्टर रीसेट करें)"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Active Filter & Back Indicator Ribbon */}
-      {(search || selectedCourse !== 'all' || selectedSemester !== 'all' || timeframe !== 'all') && (
-        <div className="bg-indigo-50/90 border border-indigo-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
-          <div className="flex flex-wrap items-center gap-2 text-indigo-900">
-            <span className="font-bold">Active Filter:</span>
-            {timeframe !== 'all' && (
-              <span className="bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-bold shadow-2xs">
-                {timeframe === 'week' ? '⚡ Weekly New' : timeframe === 'month' ? '🗓️ This Month' : '📆 This Year'}
-              </span>
-            )}
-            {search && (
-              <span className="bg-white px-2.5 py-1 rounded-lg border border-indigo-200 font-bold text-indigo-700 shadow-2xs">
-                "{search}"
-              </span>
-            )}
-            {selectedCourse !== 'all' && (
-              <span className="bg-white px-2.5 py-1 rounded-lg border border-indigo-200 text-slate-700">
-                Course: {courses.find(c => c.id === selectedCourse)?.code || selectedCourse}
-              </span>
-            )}
-            {selectedSemester !== 'all' && (
-              <span className="bg-white px-2.5 py-1 rounded-lg border border-indigo-200 text-slate-700">
-                Sem {selectedSemester}
-              </span>
-            )}
-            <span className="text-slate-500 font-medium">({displayedStudents.length} record(s) found)</span>
-          </div>
-
-          <button
-            onClick={handleResetSearch}
-            className="flex items-center gap-1.5 bg-[#071530] hover:bg-indigo-950 text-[#C59B27] hover:text-amber-300 font-bold px-3.5 py-1.5 rounded-xl shadow-xs cursor-pointer text-xs transition-all border border-[#C59B27]/40 hover:scale-102"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>← Back to All Students (वापस सभी छात्र देखें)</span>
-          </button>
-        </div>
-      )}
-
-      {/* Table Header Bar with Dual Courses Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-xs font-bold text-slate-700">Enrolled Students:</span>
-          <span className="font-extrabold text-sm text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-            {displayedStudents.length} Total
+        <div className="flex items-center gap-2 sm:justify-end">
+          <span className="text-slate-400 font-normal">University_Name:</span>
+          <span className="text-amber-300 truncate max-w-[280px]" title={appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}>
+            {appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}
           </span>
+        </div>
+      </div>
+
+      {/* Controls Bar: Show entries + Dual filter + Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <span>Show</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="px-2 py-1 bg-slate-50 border border-slate-300 rounded font-bold text-slate-800 focus:outline-none cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value="all">All</option>
+          </select>
+          <span>entries</span>
+
           <button
             type="button"
             onClick={() => setDualOnly(!dualOnly)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer border ${
+            className={`ml-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
               dualOnly
-                ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs ring-2 ring-amber-400/40'
-                : 'bg-slate-50 text-slate-700 hover:bg-amber-50 border-slate-300'
+                ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300'
             }`}
-            title="Filter only students who are doing multiple courses simultaneously"
           >
-            <span>🎓 Dual Courses (Degree + Diploma)</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${dualOnly ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {displayedStudents.filter(s => s.isDualEnrolled).length}
+            <span>🎓 Dual Courses</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-white text-slate-900">
+              {students.filter(s => s.isDualEnrolled).length}
             </span>
           </button>
         </div>
-        <span className="text-[11px] text-slate-400 font-medium">
-          Students with multiple programs are grouped together with nested courses
-        </span>
+
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-600 font-bold whitespace-nowrap">Search:</label>
+          <div className="relative min-w-[220px]">
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearchChange}
+              placeholder="Search students..."
+              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 text-slate-900 font-medium"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={handleResetSearch}
+                className="absolute right-2 top-1.5 p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {(search || appliedSession !== 'all' || appliedSatra !== 'all' || appliedUniversity !== 'all') && (
+            <button
+              type="button"
+              onClick={handleResetFiltersToAll}
+              className="px-2.5 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors cursor-pointer"
+              title="Reset All Filters"
+            >
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Students Data Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-900 text-white uppercase text-[11px] font-bold tracking-wider">
-              <tr>
-                <th className="py-2.5 px-3">Roll No</th>
-                <th className="py-2.5 px-3">Student Name</th>
-                <th className="py-2.5 px-3">Course</th>
-                <th className="py-2.5 px-3">Semester</th>
-                <th className="py-2.5 px-3">Fee Status</th>
-                <th className="py-2.5 px-3">Contact</th>
-                <th className="py-2.5 px-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-400">Loading student directory...</td>
-                </tr>
-              ) : displayedStudents.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="p-10 text-center bg-slate-50/50">
-                    <div className="max-w-md mx-auto space-y-4">
-                      <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
-                        <Search className="w-7 h-7" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-slate-800">
-                          {search 
-                            ? (isHindi ? `"${search}" नाम, रोल नं., पिता का नाम या आधार से कोई छात्र नहीं मिला` : `No students found matching "${search}" by name, roll no, father name or Aadhaar`)
-                            : (isHindi ? 'चुने गए फ़िल्टर के अनुसार कोई छात्र नहीं मिला' : 'No students found matching the selected filters')}
-                        </h4>
-                        <p className="text-xs text-slate-500">
-                          {isHindi ? "कृपया रोल नंबर, छात्र का नाम, पिता का नाम (Father's Name) या आधार नंबर सही जांचें।" : "Please verify the Roll No, student name, father's name or Aadhaar number."}
-                        </p>
-                      </div>
+      {/* Students Data Table (Exact Match to User Images) */}
+      {(() => {
+        const totalEntries = displayedStudents.length;
+        const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(totalEntries / (pageSize || 10)));
+        const startIndex = pageSize === 'all' ? 0 : (currentPage - 1) * pageSize;
+        const endIndex = pageSize === 'all' ? totalEntries : Math.min(startIndex + pageSize, totalEntries);
+        const paginatedStudents = pageSize === 'all' ? displayedStudents : displayedStudents.slice(startIndex, endIndex);
 
-                      {/* Prominent Back Button requested by user */}
-                      <button
-                        onClick={handleResetSearch}
-                        className="inline-flex items-center gap-2 bg-[#071530] hover:bg-indigo-950 text-[#C59B27] hover:text-amber-300 font-bold px-5 py-2.5 rounded-xl text-xs shadow-md border border-[#C59B27]/40 cursor-pointer transition-all hover:scale-105"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>{isHindi ? '← वापस सभी छात्र दिखाएं (Back to All)' : '← Back to All Students'}</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (() => {
-                const renderedSecondaryIds = new Set();
-                return displayedStudents.map((std) => {
-                  if (renderedSecondaryIds.has(std.id)) return null;
-
-                  if (std.linkedCourses && std.linkedCourses.length > 0) {
-                    std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
-                  }
-
-                  const isFullyPaid = (std.totalPaid || 0) >= (std.totalFee || 0);
-                  const isPartial = (std.totalPaid || 0) > 0 && !isFullyPaid;
-
-                  return (
-                    <React.Fragment key={std.id}>
-                      <tr className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="font-mono font-bold text-indigo-900 text-xs tracking-tight">
-                            {std.rollNo}
+        return (
+          <div className="bg-white rounded-xl border border-slate-300 shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-[#0b1f33] text-white uppercase text-[10.5px] font-extrabold tracking-wider select-none">
+                  <tr>
+                    <th className="py-2.5 px-2 text-center border-r border-slate-700 w-10">#</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Name</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Father_Name</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Contact</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">College_Name</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Course_Names</th>
+                    <th className="py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Type</th>
+                    <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Remark</th>
+                    <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Semester</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Scholarship</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
+                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
+                    <th className="py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="19" className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
+                    </tr>
+                  ) : paginatedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan="19" className="p-10 text-center bg-slate-50">
+                        <div className="max-w-md mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
+                            <Search className="w-6 h-6" />
                           </div>
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            {std.registrationNo}
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-bold text-slate-800">
+                              {search 
+                                ? `No students found matching "${search}"`
+                                : 'No students found matching selected filters'}
+                            </h4>
+                            <p className="text-xs text-slate-500">
+                              Try adjusting Session, Satra, University or clearing search query.
+                            </p>
                           </div>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-900 text-xs uppercase">{std.fullName}</span>
-                            {std.isDualEnrolled && std.linkedCourses && std.linkedCourses.length > 0 && (
-                              <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black">
-                                🎓 Dual
+                          <button
+                            type="button"
+                            onClick={handleResetFiltersToAll}
+                            className="inline-flex items-center gap-1.5 bg-[#0b1f33] text-amber-300 font-bold px-4 py-2 rounded-lg text-xs shadow cursor-pointer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Show All Students</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (() => {
+                    const renderedSecondaryIds = new Set();
+                    return paginatedStudents.map((std, idx) => {
+                      if (renderedSecondaryIds.has(std.id)) return null;
+
+                      if (std.linkedCourses && std.linkedCourses.length > 0) {
+                        std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
+                      }
+
+                      const acadFee = Number(std.academicFee !== undefined ? std.academicFee : (std.studentFee || std.courseFee || 0));
+                      const sch = Number(std.scholarshipAmount || 0);
+                      const tot = acadFee + sch;
+                      const paid = Number(std.totalPaid || 0);
+                      const rem = Math.max(0, tot - paid);
+
+                      return (
+                        <React.Fragment key={std.id}>
+                          <tr className="hover:bg-[#eaf3fa] transition-colors border-b border-slate-200 text-xs">
+                            <td className="py-2.5 px-2 text-center font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                              {startIndex + idx + 1}
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap">
+                              <div
+                                onClick={() => handleOpenProfile(std.rollNo)}
+                                className="font-bold text-slate-900 uppercase tracking-tight hover:text-indigo-600 cursor-pointer"
+                              >
+                                {std.fullName || std.studentName}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                {std.rollNo}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-medium">
+                              {std.fatherName || std.Father_Name || '-'}
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                              {std.contact || std.phone || '-'}
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 max-w-[200px] truncate" title={std.collegeName || std.universityName || ''}>
+                              {std.collegeName || std.universityName || '-'}
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-800 font-semibold whitespace-nowrap">
+                              {std.courseName || '-'}
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-slate-700 whitespace-nowrap">
+                              {std.courseType || 'Semester'}
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                {std.status || 'Active'}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-slate-400 flex items-center gap-1 truncate max-w-[220px]">
-                            {std.fatherName && <span>S/o {std.fatherName}</span>}
-                            {std.fatherName && std.admissionDate && <span>•</span>}
-                            {std.admissionDate && (
-                              <span>Adm: {new Date(std.admissionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-slate-800 text-xs truncate max-w-[210px]" title={std.courseName}>
-                              {std.courseName}
-                            </span>
-                            {std.courseType && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                                {std.courseType}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-slate-500 truncate max-w-[210px]" title={std.collegeName || std.universityName || ''}>
-                            {std.collegeName || (std.universityName ? std.universityName.split('(')[0].trim() : 'MCBU')}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-50 text-indigo-900 border border-indigo-200">
-                              {std.currentClass || `SEM-${std.currentSemester || 1}`}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handlePromoteStudent(std)}
-                              disabled={promotingRoll === std.rollNo}
-                              className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-colors cursor-pointer"
-                              title="Promote to Next Semester (+1)"
-                            >
-                              <Zap className="w-3 h-3 text-emerald-600" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                isFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                isPartial ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                                'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}>
-                                {isFullyPaid ? '✓ Cleared' : isPartial ? `Due: ₹${Number(std.balanceDue).toLocaleString('en-IN')}` : `Unpaid: ₹${Number(std.totalFee || 0).toLocaleString('en-IN')}`}
-                              </span>
-                              {Number(std.scholarshipAmount) > 0 && (
-                                <span className="text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full" title={`Scholarship: ₹${Number(std.scholarshipAmount).toLocaleString('en-IN')}`}>
-                                  🎓 ₹{Number(std.scholarshipAmount).toLocaleString('en-IN')}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-slate-500 font-medium">
-                              Paid <span className="font-semibold text-slate-700">₹{Number(std.totalPaid || 0).toLocaleString('en-IN')}</span> / ₹{Number(std.totalFee || 0).toLocaleString('en-IN')}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          <div className="font-mono text-xs font-semibold text-slate-800">{std.phone}</div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={std.email}>{std.email}</div>
-                        </td>
-                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleOpenProfile(std.rollNo)}
-                              className="p-1 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
-                              title="View Full Profile & Uploaded Documents"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEditModal(std)}
-                              className="p-1 rounded-md bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
-                              title="Edit Student Information & Courses"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setPrintSlipStudent(std)}
-                              className="p-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                              title="Print Admission Slip"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (onSelectStudentForFee) onSelectStudentForFee(std);
-                                setActiveTab('accounts');
-                              }}
-                              className="p-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
-                              title="Open Fee Payment Ledger"
-                            >
-                              <CreditCard className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(std.rollNo)}
-                              className="p-1 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                              title="Delete Student"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
-                      {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
-                        const isLinkedFullyPaid = (linked.totalPaid || 0) >= (linked.totalFee || 0);
-                        const isLinkedPartial = (linked.totalPaid || 0) > 0 && !isLinkedFullyPaid;
-                        return (
-                          <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/40 hover:bg-amber-100/50 border-l-4 border-l-amber-500 transition-colors">
-                            <td className="py-2 px-3 pl-5 whitespace-nowrap">
-                              <div className="flex items-center gap-1">
-                                <span className="text-amber-600 font-black text-xs">↳</span>
-                                <span className="font-mono font-bold text-slate-800 text-xs">{linked.rollNo}</span>
-                              </div>
-                              <div className="text-[9px] font-bold text-amber-700 pl-3.5">Dual Enrollment</div>
                             </td>
-                            <td className="py-2 px-3">
-                              <div className="flex items-center gap-1">
-                                <span className="text-amber-600 font-black text-xs">↳</span>
-                                <span className="font-bold text-slate-800 text-xs uppercase">{std.fullName}</span>
-                              </div>
-                              <div className="text-[10px] text-slate-400 pl-3.5 truncate max-w-[200px]">
-                                Second Course ({linked.courseType || 'Diploma'})
-                              </div>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-600 max-w-[160px] truncate font-medium" title={std.remark || ''}>
+                              {std.remark || '-'}
                             </td>
-                            <td className="py-2 px-3">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-amber-950 text-xs truncate max-w-[210px]" title={linked.courseName}>
-                                  {linked.courseName}
-                                </span>
-                                <span className="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
-                                  {linked.courseType || 'Diploma'}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-slate-500 truncate max-w-[210px]" title={linked.collegeName || linked.universityName || ''}>
-                                {linked.collegeName || (linked.universityName ? linked.universityName.split('(')[0].trim() : 'MCBU')}
-                              </div>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
+                              {std.currentClass || (std.currentSemester ? `SEM-${std.currentSemester}` : 'SEM-1')}
                             </td>
-                            <td className="py-2 px-3 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5">
-                                <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                                  {linked.currentClass || `SEM-${linked.currentSemester || 1}`}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePromoteStudent(linked)}
-                                  disabled={promotingRoll === linked.rollNo}
-                                  className="p-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-colors cursor-pointer"
-                                  title="Promote to Next Semester (+1)"
-                                >
-                                  <Zap className="w-3 h-3 text-emerald-600" />
-                                </button>
-                              </div>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">
+                              {acadFee > 0 ? `${acadFee}/-` : '0/-'}
                             </td>
-                            <td className="py-2 px-3 whitespace-nowrap">
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    isLinkedFullyPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                    isLinkedPartial ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                                    'bg-rose-50 text-rose-700 border border-rose-200'
-                                  }`}>
-                                    {isLinkedFullyPaid ? '✓ Cleared' : isLinkedPartial ? `Due: ₹${Number(linked.balanceDue).toLocaleString('en-IN')}` : `Unpaid: ₹${Number(linked.totalFee || 0).toLocaleString('en-IN')}`}
-                                  </span>
-                                  {Number(linked.scholarshipAmount) > 0 && (
-                                    <span className="text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full" title={`Scholarship: ₹${Number(linked.scholarshipAmount).toLocaleString('en-IN')}`}>
-                                      🎓 ₹{Number(linked.scholarshipAmount).toLocaleString('en-IN')}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-500 font-medium">
-                                  Paid <span className="font-semibold text-slate-700">₹{Number(linked.totalPaid || 0).toLocaleString('en-IN')}</span> / ₹{Number(linked.totalFee || 0).toLocaleString('en-IN')}
-                                </div>
-                              </div>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">
+                              {sch > 0 ? `${sch}/-` : '0/-'}
                             </td>
-                            <td className="py-2 px-3 whitespace-nowrap font-mono text-xs text-slate-600">
-                              {std.phone}
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900 bg-slate-50/50">
+                              {tot > 0 ? `${tot}/-` : '0/-'}
                             </td>
-                            <td className="py-2 px-3 text-center whitespace-nowrap">
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                              {paid > 0 ? `${paid}/-` : '0/-'}
+                            </td>
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
+                              {rem > 0 ? `${rem}/-` : '0/-'}
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReceiveFeeModal(std)}
+                                className="bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                title="Receive Fee from Student"
+                              >
+                                Receive_Student_Fee
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSetFeeModal(std)}
+                                className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                title="Set Student Academic Fee"
+                              >
+                                Set_Student_Fee
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSetScholarshipModal(std)}
+                                className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                title="Set Student Scholarship"
+                              >
+                                Set_Scholarship
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-2 text-center whitespace-nowrap">
                               <div className="flex items-center justify-center gap-1">
                                 <button
-                                  onClick={() => handleOpenProfile(linked.rollNo)}
-                                  className="p-1 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
-                                  title={`View Profile for ${linked.courseName}`}
+                                  type="button"
+                                  onClick={() => handleOpenProfile(std.rollNo)}
+                                  className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
+                                  title="View Profile & KYC Documents"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleOpenEditModal(linked)}
-                                  className="p-1 rounded-md bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer border border-amber-200"
-                                  title={`Edit ${linked.courseName} Enrollment Details`}
+                                  type="button"
+                                  onClick={() => handleOpenEditModal(std)}
+                                  className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
+                                  title="Edit Details"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    if (onSelectStudentForFee) onSelectStudentForFee(linked);
-                                    setActiveTab('accounts');
-                                  }}
-                                  className="p-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                  title={`Open Fee Ledger for ${linked.courseName}`}
+                                  type="button"
+                                  onClick={() => setPrintSlipStudent(std)}
+                                  className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                  title="Print Admission Slip"
                                 >
-                                  <CreditCard className="w-3.5 h-3.5" />
+                                  <Printer className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteStudent(linked.rollNo)}
-                                  className="p-1 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                                  title="Delete Enrollment"
+                                  type="button"
+                                  onClick={() => handleDeleteStudent(std.rollNo)}
+                                  className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                  title="Delete Student"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
-                    </React.Fragment>
-                  );
-                });
-              })()}
-            </tbody>
-          </table>
+
+                          {/* Connected Dual Program Secondary Row */}
+                          {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
+                            const lAcadFee = Number(linked.academicFee !== undefined ? linked.academicFee : (linked.studentFee || linked.courseFee || 0));
+                            const lSch = Number(linked.scholarshipAmount || 0);
+                            const lTot = lAcadFee + lSch;
+                            const lPaid = Number(linked.totalPaid || 0);
+                            const lRem = Math.max(0, lTot - lPaid);
+                            return (
+                              <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
+                                <td className="py-2.5 px-2 text-center font-bold text-amber-700 border-r border-slate-200">↳</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap">
+                                  <div className="font-bold text-slate-800 uppercase tracking-tight">{std.fullName || std.studentName}</div>
+                                  <div className="text-[10px] text-amber-700 font-mono font-bold">Dual: {linked.rollNo}</div>
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600">{std.fatherName || '-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.contact || std.phone || '-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 truncate max-w-[180px]">{linked.collegeName || linked.universityName || std.collegeName || '-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-amber-900 font-semibold whitespace-nowrap">{linked.courseName || '-'}</td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-slate-600 whitespace-nowrap">{linked.courseType || 'Diploma'}</td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                    {linked.status || 'Active'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-600 truncate max-w-[150px]">{linked.remark || '-'}</td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">{lAcadFee > 0 ? `${lAcadFee}/-` : '0/-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">{lSch > 0 ? `${lSch}/-` : '0/-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">{lTot > 0 ? `${lTot}/-` : '0/-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">{lPaid > 0 ? `${lPaid}/-` : '0/-'}</td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">{lRem > 0 ? `${lRem}/-` : '0/-'}</td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenReceiveFeeModal(linked)}
+                                    className="bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                  >
+                                    Receive_Student_Fee
+                                  </button>
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenSetFeeModal(linked)}
+                                    className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                  >
+                                    Set_Student_Fee
+                                  </button>
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenSetScholarshipModal(linked)}
+                                    className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
+                                  >
+                                    Set_Scholarship
+                                  </button>
+                                </td>
+                                <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenProfile(linked.rollNo)}
+                                      className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
+                                      title="View Profile"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditModal(linked)}
+                                      className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
+                                      title="Edit Details"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteStudent(linked.rollNo)}
+                                      className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                      title="Delete Enrollment"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer with Pagination Controls */}
+            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+              <div>
+                Showing <strong className="text-slate-900">{totalEntries > 0 ? startIndex + 1 : 0}</strong> to{' '}
+                <strong className="text-slate-900">{endIndex}</strong> of{' '}
+                <strong className="text-slate-900">{totalEntries}</strong> entries
+              </div>
+              {pageSize !== 'all' && totalPages > 1 && (
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white font-semibold disabled:opacity-40 hover:bg-slate-100 cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-1 font-bold text-slate-800">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-2.5 py-1 rounded border border-slate-300 bg-white font-semibold disabled:opacity-40 hover:bg-slate-100 cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 1. Set Student Fee Modal (Green Button) */}
+      {feeModalStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
+            <div className="bg-[#28a745] text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <span>🟢 Set Student Academic Fee</span>
+              </div>
+              <button onClick={() => setFeeModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveFee} className="p-5 space-y-4">
+              {feeModalError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{feeModalError}</span>
+                </div>
+              )}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Student:</span>
+                  <strong className="text-slate-900 uppercase">{feeModalStudent.fullName || feeModalStudent.studentName}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Roll No:</span>
+                  <strong className="font-mono text-indigo-700">{feeModalStudent.rollNo}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Course / Sem:</span>
+                  <span className="text-slate-800">{feeModalStudent.courseName} ({feeModalStudent.currentClass || 'SEM-1'})</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Academic / Tuition Fee (₹) <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={feeModalAmount}
+                  onChange={(e) => setFeeModalAmount(e.target.value)}
+                  placeholder="e.g. 20000"
+                  className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Remark / Note (रिमार्क)
+                </label>
+                <input
+                  type="text"
+                  value={feeModalRemark}
+                  onChange={(e) => setFeeModalRemark(e.target.value)}
+                  placeholder="e.g. Total Fees: 22500/- or installment note"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Live Calculation Preview */}
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-xs space-y-1.5">
+                <div className="font-bold text-emerald-950 flex justify-between">
+                  <span>Academic Fee:</span>
+                  <span>₹{Number(feeModalAmount || 0).toLocaleString('en-IN')}/-</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>+ Scholarship:</span>
+                  <span>₹{Number(feeModalStudent.scholarshipAmount || 0).toLocaleString('en-IN')}/-</span>
+                </div>
+                <div className="border-t border-emerald-200 pt-1.5 flex justify-between font-extrabold text-emerald-900">
+                  <span>= New Total Fee:</span>
+                  <span>₹{(Number(feeModalAmount || 0) + Number(feeModalStudent.scholarshipAmount || 0)).toLocaleString('en-IN')}/-</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>- Paid Fee:</span>
+                  <span>₹{Number(feeModalStudent.totalPaid || 0).toLocaleString('en-IN')}/-</span>
+                </div>
+                <div className="border-t border-emerald-200 pt-1 flex justify-between font-bold text-rose-700">
+                  <span>= New Remaining Balance:</span>
+                  <span>₹{Math.max(0, (Number(feeModalAmount || 0) + Number(feeModalStudent.scholarshipAmount || 0)) - Number(feeModalStudent.totalPaid || 0)).toLocaleString('en-IN')}/-</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setFeeModalStudent(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={feeModalLoading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#28a745] hover:bg-[#218838] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  {feeModalLoading ? 'Saving...' : 'Save Student Fee'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 2. Set Scholarship Modal (Dark Green Button) */}
+      {scholarshipModalStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
+            <div className="bg-[#1e7e34] text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <span>🎓 Set Scholarship Amount</span>
+              </div>
+              <button onClick={() => setScholarshipModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveScholarship} className="p-5 space-y-4">
+              {scholarshipModalError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{scholarshipModalError}</span>
+                </div>
+              )}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Student:</span>
+                  <strong className="text-slate-900 uppercase">{scholarshipModalStudent.fullName || scholarshipModalStudent.studentName}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Roll No:</span>
+                  <strong className="font-mono text-indigo-700">{scholarshipModalStudent.rollNo}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Course / Sem:</span>
+                  <span className="text-slate-800">{scholarshipModalStudent.courseName} ({scholarshipModalStudent.currentClass || 'SEM-1'})</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Scholarship Amount (₹) <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={scholarshipModalAmount}
+                  onChange={(e) => setScholarshipModalAmount(e.target.value)}
+                  placeholder="e.g. 5000"
+                  className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Live Calculation Preview */}
+              {(() => {
+                const acad = Number(scholarshipModalStudent.academicFee !== undefined ? scholarshipModalStudent.academicFee : (scholarshipModalStudent.studentFee || scholarshipModalStudent.courseFee || 0));
+                const schAmt = Number(scholarshipModalAmount || 0);
+                const newTot = acad + schAmt;
+                const paid = Number(scholarshipModalStudent.totalPaid || 0);
+                const rem = Math.max(0, newTot - paid);
+                return (
+                  <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 text-xs space-y-1.5">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Academic Fee:</span>
+                      <span>₹{acad.toLocaleString('en-IN')}/-</span>
+                    </div>
+                    <div className="font-bold text-purple-950 flex justify-between">
+                      <span>+ Scholarship:</span>
+                      <span>₹{schAmt.toLocaleString('en-IN')}/-</span>
+                    </div>
+                    <div className="border-t border-purple-200 pt-1.5 flex justify-between font-extrabold text-purple-900">
+                      <span>= New Total Fee:</span>
+                      <span>₹{newTot.toLocaleString('en-IN')}/-</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>- Paid Fee:</span>
+                      <span>₹{paid.toLocaleString('en-IN')}/-</span>
+                    </div>
+                    <div className="border-t border-purple-200 pt-1 flex justify-between font-bold text-rose-700">
+                      <span>= New Remaining Balance:</span>
+                      <span>₹{rem.toLocaleString('en-IN')}/-</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setScholarshipModalStudent(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={scholarshipModalLoading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#1e7e34] hover:bg-[#155d27] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  {scholarshipModalLoading ? 'Saving...' : 'Save Scholarship'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Receive Student Fee Modal (Blue Button) */}
+      {receiveFeeModalStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150">
+            <div className="bg-[#1d72b8] text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <CreditCard className="w-4 h-4" />
+                <span>Receive Student Fee Payment</span>
+              </div>
+              <button onClick={() => setReceiveFeeModalStudent(null)} className="p-1 hover:bg-white/20 rounded-lg text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveReceiveFee} className="p-5 space-y-4">
+              {receiveFeeError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{receiveFeeError}</span>
+                </div>
+              )}
+
+              {(() => {
+                const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
+                const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
+                const tot = acad + sch;
+                const paid = Number(receiveFeeModalStudent.totalPaid || 0);
+                const rem = Math.max(0, tot - paid);
+
+                return (
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                    <div className="flex justify-between items-center pb-1.5 border-b border-slate-200">
+                      <div>
+                        <strong className="text-slate-900 uppercase text-xs">{receiveFeeModalStudent.fullName || receiveFeeModalStudent.studentName}</strong>
+                        <div className="text-[10px] text-slate-500 font-mono">Roll No: {receiveFeeModalStudent.rollNo}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-slate-800">{receiveFeeModalStudent.courseName}</span>
+                        <div className="text-[10px] text-slate-500">{receiveFeeModalStudent.currentClass || 'SEM-1'}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                      <div className="bg-white p-2 rounded-lg border border-slate-200">
+                        <div className="text-[10px] text-slate-400 uppercase font-bold">Total Fee</div>
+                        <div className="font-bold text-slate-900 text-xs">₹{tot.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                        <div className="text-[10px] text-emerald-600 uppercase font-bold">Paid Fee</div>
+                        <div className="font-bold text-emerald-700 text-xs">₹{paid.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-rose-50 p-2 rounded-lg border border-rose-200">
+                        <div className="text-[10px] text-rose-600 uppercase font-bold">Remaining Fee</div>
+                        <div className="font-bold text-rose-700 text-xs">₹{rem.toLocaleString('en-IN')}/-</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Amount to Receive (₹) <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value={receiveFeeAmount}
+                    onChange={(e) => setReceiveFeeAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="w-full px-3 py-2 text-sm font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Payment Mode
+                  </label>
+                  <select
+                    value={receiveFeeMode}
+                    onChange={(e) => setReceiveFeeMode(e.target.value)}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white cursor-pointer"
+                  >
+                    <option value="Cash">Cash (कैश)</option>
+                    <option value="UPI / QR">UPI / QR Code</option>
+                    <option value="Bank Transfer">Bank Transfer / IMPS / NEFT</option>
+                    <option value="Cheque / DD">Cheque / Demand Draft</option>
+                    <option value="POS Card">Card Swipe / POS</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Receipt / Reference No.
+                  </label>
+                  <input
+                    type="text"
+                    value={receiveFeeReceiptNo}
+                    onChange={(e) => setReceiveFeeReceiptNo(e.target.value)}
+                    placeholder="RCP-123456"
+                    className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Remark / Description
+                  </label>
+                  <input
+                    type="text"
+                    value={receiveFeeRemark}
+                    onChange={(e) => setReceiveFeeRemark(e.target.value)}
+                    placeholder="e.g. SEM-1 fee payment"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Fill Buttons */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <span className="text-[11px] text-slate-500 font-medium">Quick Amount:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
+                    const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
+                    const tot = acad + sch;
+                    const paid = Number(receiveFeeModalStudent.totalPaid || 0);
+                    const rem = Math.max(0, tot - paid);
+                    setReceiveFeeAmount(String(rem));
+                  }}
+                  className="px-2.5 py-1 text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg cursor-pointer transition-colors"
+                >
+                  Full Remaining Due
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiveFeeAmount('5000')}
+                  className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
+                >
+                  ₹5,000
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceiveFeeAmount('10000')}
+                  className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
+                >
+                  ₹10,000
+                </button>
+              </div>
+
+              {/* Live calculation after payment */}
+              {(() => {
+                const acad = Number(receiveFeeModalStudent.academicFee !== undefined ? receiveFeeModalStudent.academicFee : (receiveFeeModalStudent.studentFee || receiveFeeModalStudent.courseFee || 0));
+                const sch = Number(receiveFeeModalStudent.scholarshipAmount || 0);
+                const tot = acad + sch;
+                const paid = Number(receiveFeeModalStudent.totalPaid || 0);
+                const entered = Number(receiveFeeAmount || 0);
+                const remainingAfter = Math.max(0, tot - (paid + entered));
+
+                return (
+                  <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-xs flex items-center justify-between font-bold text-blue-950">
+                    <span>Remaining Due After This Payment:</span>
+                    <span className="text-sm font-extrabold text-blue-900">₹{remainingAfter.toLocaleString('en-IN')}/-</span>
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReceiveFeeModalStudent(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={receiveFeeLoading}
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#1d72b8] hover:bg-[#155a96] disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  {receiveFeeLoading ? 'Processing...' : 'Confirm Fee Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Full Student Profile & Document Viewer Modal */}
       {selectedStudent && (
