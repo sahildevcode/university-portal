@@ -2137,6 +2137,16 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
                       <option value="Cancelled">Cancelled</option>
                     </select>
                   </div>
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <label className="block font-bold text-slate-700 mb-1">Remark (रिमार्क / विशेष टिप्पणी)</label>
+                    <input
+                      type="text"
+                      value={editFormData.remark || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, remark: e.target.value })}
+                      placeholder="e.g. Total Fees: 22500/-, Scholarship + 20000/-, or admission note"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white text-slate-900"
+                    />
+                  </div>
                 </div>
               </div>
 

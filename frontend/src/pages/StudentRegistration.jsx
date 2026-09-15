@@ -768,6 +768,20 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
   };
 
+  const handleRemoveDocFile = (docName) => {
+    setDocFiles(prev => {
+      const copy = { ...prev };
+      delete copy[docName];
+      return copy;
+    });
+    setDocModes(prev => {
+      const copy = { ...prev };
+      delete copy[docName];
+      return copy;
+    });
+    setSubmittedDocs(prev => prev.filter(d => d !== docName));
+  };
+
   // Image Selection Handler
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -829,15 +843,17 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       data.set('balanceDue', String(grandBalanceDueCalc));
       data.set('Payment_Mode', formData.Payment_Mode || 'Cash / Desk');
       data.set('Fee_Collected_By', formData.Fee_Collected_By || 'Cashier');
+      data.set('Remark', formData.Remark || '');
+      data.set('remark', formData.Remark || '');
       data.append('Document_Submit', JSON.stringify(submittedDocs));
 
       const docStatusMap = {};
       standardDocuments.forEach(doc => {
-        const mode = docModes[doc] || (submittedDocs.includes(doc) ? 'Manually' : 'Pending');
+        const hasFile = Boolean(docFiles[doc]);
         docStatusMap[doc] = {
           docName: doc,
-          mode: mode === 'PDF' ? 'PDF / Digital Upload' : (mode === 'Manually' ? 'Hardcopy (Physical)' : 'Not Submitted'),
-          status: mode === 'PDF' ? 'submitted_pdf' : (mode === 'Manually' ? 'submitted_manual' : 'pending'),
+          mode: hasFile ? 'Uploaded File' : 'Not Uploaded',
+          status: hasFile ? 'submitted_file' : 'pending',
           updatedAt: new Date().toISOString()
         };
       });
@@ -2091,101 +2107,71 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Dual Mode Document Submission (PDF vs Hardcopy) */}
+            {/* Direct Document Uploads (Only Name and File Upload) */}
             <div className="lg:col-span-2 space-y-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block font-bold text-slate-800 uppercase tracking-wider text-xs">
-                    Document_Submit (Choose submission mode for each document)
+                    Document Upload (दस्तावेज़ अपलोड)
                   </label>
                   <p className="text-[11px] text-slate-500">
-                    Record documents currently submitted by candidate as <strong className="text-indigo-700">PDF</strong> or <strong className="text-emerald-700">Hardcopy (Physical)</strong>, leave others as <strong className="text-slate-500">Pending</strong>.
+                    Upload candidate documents (PDF or Image) if available. (100% Optional)
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
                 {standardDocuments.map(doc => {
-                  const currentMode = docModes[doc] || (submittedDocs.includes(doc) ? 'Manually' : 'Pending');
                   const attachedFile = docFiles[doc];
 
                   return (
                     <div
                       key={doc}
-                      className={`p-2.5 rounded-xl border transition-all ${
-                        currentMode === 'PDF'
-                          ? 'bg-purple-50/80 border-purple-300'
-                          : currentMode === 'Manually'
-                          ? 'bg-emerald-50/80 border-emerald-300'
-                          : 'bg-white border-slate-200'
+                      className={`p-3 rounded-xl border transition-all ${
+                        attachedFile
+                          ? 'bg-purple-50/80 border-purple-300 shadow-2xs'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            currentMode === 'PDF' ? 'bg-purple-600' : currentMode === 'Manually' ? 'bg-emerald-600' : 'bg-slate-300'
-                          }`} />
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${attachedFile ? 'bg-emerald-600' : 'bg-slate-300'}`} />
                           <span className="text-xs font-bold text-slate-800">{doc}</span>
                         </div>
 
-                        {/* Mode Selectors */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {/* Pending Option */}
-                          <button
-                            type="button"
-                            onClick={() => handleDocModeSelect(doc, 'Pending')}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                              currentMode === 'Pending'
-                                ? 'bg-slate-200 text-slate-700 shadow-2xs'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
-                            }`}
-                          >
-                            Pending (Later)
-                          </button>
-
-                          {/* Hardcopy (Physical) Option */}
-                          <button
-                            type="button"
-                            onClick={() => handleDocModeSelect(doc, 'Manually')}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                              currentMode === 'Manually'
-                                ? 'bg-emerald-600 text-white shadow-2xs'
-                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            }`}
-                          >
-                            ✓ Hardcopy (Physical)
-                          </button>
-
-                          {/* PDF Upload Option */}
-                          <label
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all ${
-                              currentMode === 'PDF'
-                                ? 'bg-purple-600 text-white shadow-2xs'
-                                : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-                            }`}
-                          >
-                            <span>📄 PDF Upload</span>
-                            <input
-                              type="file"
-                              accept=".pdf,application/pdf"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  handleDocFileUpload(doc, e.target.files[0]);
-                                }
-                              }}
-                              className="hidden"
-                            />
-                          </label>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {attachedFile ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-purple-900 bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg truncate max-w-[200px]" title={attachedFile.name}>
+                                📎 {attachedFile.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDocFile(doc)}
+                                className="p-1 rounded-lg text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition-colors cursor-pointer"
+                                title="Remove / Cancel this document"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs">
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload Document</span>
+                              <input
+                                type="file"
+                                accept=".pdf,image/*,application/pdf"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    handleDocFileUpload(doc, e.target.files[0]);
+                                  }
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
                         </div>
                       </div>
-
-                      {/* Display attached file name if PDF was chosen */}
-                      {currentMode === 'PDF' && (
-                        <div className="mt-1.5 pt-1.5 border-t border-purple-200 text-[11px] text-purple-900 font-semibold flex items-center justify-between">
-                          <span className="truncate">📎 {attachedFile ? attachedFile.name : 'PDF file selected'}</span>
-                          <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">Ready to upload</span>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -2260,6 +2246,33 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 6: ADMISSION REMARK & SPECIAL NOTES (रिमार्क) */}
+        {/* ========================================================================= */}
+        <div className="space-y-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
+            <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-extrabold text-xs">6</span>
+            <span>Admission Remark &amp; Fee Notes (रिमार्क / विशेष टिप्पणी)</span>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider text-xs mb-1.5">
+              Remark (रिमार्क)
+            </label>
+            <textarea
+              rows={3}
+              name="Remark"
+              value={formData.Remark || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. Total Fees: 22500/-, Scholarship + 20000/-, Special concession, or admission notes..."
+              className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none font-medium text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20"
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Yeh remark Student Directory table ke Remark column me directly display hoga.
+            </p>
           </div>
         </div>
 
