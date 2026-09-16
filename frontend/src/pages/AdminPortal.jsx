@@ -183,7 +183,7 @@ export default function AdminPortal({
     setEditingCourseId(null);
     setCourseForm({
       name: '', code: '', department: 'School of Computing & Management',
-      durationYears: 3, totalSemesters: 6, totalFee: 180000, feePerSemester: 30000,
+      durationYears: 3, totalSemesters: 6, totalFee: 0, feePerSemester: 0,
       eligibility: '10+2 with minimum 50% aggregate marks',
       description: 'Comprehensive curriculum recognized under UGC guidelines.'
     });
@@ -195,7 +195,7 @@ export default function AdminPortal({
     setCourseForm({
       name: course.name, code: course.code, department: course.department || 'School of Management',
       durationYears: course.durationYears || 3, totalSemesters: course.totalSemesters || 6,
-      totalFee: course.totalFee || 150000, feePerSemester: course.feePerSemester || 25000,
+      totalFee: course.totalFee !== undefined ? course.totalFee : 0, feePerSemester: course.feePerSemester !== undefined ? course.feePerSemester : 0,
       eligibility: course.eligibility || '10+2', description: course.description || ''
     });
     setShowCourseModal(true);

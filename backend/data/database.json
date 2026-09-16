@@ -8,8 +8,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 280000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in AI & ML covering Neural Networks, Deep Learning, Natural Language Processing and Robotics."
     },
@@ -21,8 +21,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 280000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in CSE Section A covering Algorithms, Cloud Computing, Full Stack & Software Engineering."
     },
@@ -34,8 +34,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 280000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in CSE Section B covering Data Structures, Web Systems, DevOps & Cybersecurity."
     },
@@ -47,8 +47,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 280000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Data Science covering Big Data Analytics, Statistical Modeling, Python & Business Intelligence."
     },
@@ -60,8 +60,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in EEE covering Electrical Power Systems, Electronic Circuits, Microcontrollers & IoT."
     },
@@ -73,8 +73,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Electrical Engineering covering High Voltage, Power Grids, Electric Vehicles & Renewable Systems."
     },
@@ -86,8 +86,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in ECE Section A covering Wireless Networks, 5G/6G, Embedded Systems & VLSI Chip Design."
     },
@@ -99,8 +99,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM/PCB (Min 50%)",
       "description": "B.Tech in Agricultural Engineering covering Farm Machinery, Soil Hydrology, Precision Farming & Agro Processing."
     },
@@ -112,8 +112,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Civil Engineering covering Structural Analysis, Transportation, Surveying & Construction Management."
     },
@@ -125,8 +125,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Electronics & Communication covering Signal Processing, Telecommunications & Microelectronics."
     },
@@ -138,8 +138,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Mechanical Engineering Section A covering Thermodynamics, Fluid Dynamics, CAD/CAM & Machine Design."
     },
@@ -151,8 +151,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 240000,
-      "feePerSemester": 30000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Mechanical Engineering Section B covering Robotics, Automated Manufacturing & Thermal Systems."
     },
@@ -164,8 +164,8 @@
       "department": "School of Engineering & Technology",
       "durationYears": 4,
       "totalSemesters": 8,
-      "totalFee": 260000,
-      "feePerSemester": 32500,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "10+2 with PCM (Min 50%)",
       "description": "B.Tech in Mining Engineering covering Surface Mining, Underground Excavation, Rock Mechanics & Mineral Processing."
     },
@@ -177,8 +177,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 160000,
-      "feePerSemester": 40000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "MBA in Agri Business Management covering Commodity Trading, Rural Marketing, Supply Chain & Agricultural Finance."
     },
@@ -190,8 +190,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 160000,
-      "feePerSemester": 40000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "MBA in Banking & Insurance covering Financial Risk, Commercial Banking, Underwriting & Wealth Management."
     },
@@ -203,8 +203,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 160000,
-      "feePerSemester": 40000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "MBA in Entrepreneurship covering Startup Incubation, Venture Capital, Product Strategy & Business Scaling."
     },
@@ -216,8 +216,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 180000,
-      "feePerSemester": 45000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream / Life Sciences (Min 50%)",
       "description": "MBA in Hospital Administration covering Healthcare Quality, Hospital Logistics, Clinical Governance & Public Health."
     },
@@ -229,8 +229,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 160000,
-      "feePerSemester": 40000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation with IT/CS or Any Discipline (Min 50%)",
       "description": "MBA in Information Technology covering Enterprise Systems, IT Project Management, Cloud Strategies & Digital Transformation."
     },
@@ -242,8 +242,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 140000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "MBA in NGO & Social Management covering CSR Initiatives, Grant Management, Community Development & Public Policy."
     },
@@ -255,8 +255,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 140000,
-      "feePerSemester": 35000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "General MBA program covering Core Marketing, Human Resource Management, Corporate Finance & Operations."
     },
@@ -268,8 +268,8 @@
       "department": "School of Management & Business",
       "durationYears": 2,
       "totalSemesters": 4,
-      "totalFee": 160000,
-      "feePerSemester": 40000,
+      "totalFee": 0,
+      "feePerSemester": 0,
       "eligibility": "Graduation in any stream (Min 50%)",
       "description": "MBA in Retail Management covering Merchandising, Supply Chain, E-Commerce, Consumer Behavior & Store Operations."
     }
@@ -318,11 +318,11 @@
       "currentSatra": "July",
       "currentClass": "SEM-2",
       "currentSemester": 2,
-      "studentFee": 32000,
-      "totalFee": 32000,
+      "studentFee": 0,
+      "totalFee": 0,
       "initialPayment": 2000,
       "totalPaid": 7000,
-      "balanceDue": 25000,
+      "balanceDue": 0,
       "universityFee": 20000,
       "universityPaid": 10000,
       "universityDue": 10000,
@@ -409,7 +409,10 @@
           "status": "pending",
           "updatedAt": "2026-09-09T10:58:11.074Z"
         }
-      }
+      },
+      "academicFee": 0,
+      "courseFee": 0,
+      "netTotalFee": 0
     },
     {
       "id": "std-1788859728952",
@@ -456,11 +459,11 @@
       "currentSatra": "July",
       "currentClass": "SEM-2",
       "currentSemester": 2,
-      "studentFee": 100000,
-      "totalFee": 100000,
+      "studentFee": 0,
+      "totalFee": 0,
       "initialPayment": 0,
       "totalPaid": 12500,
-      "balanceDue": 87500,
+      "balanceDue": 0,
       "universityFee": 70000,
       "universityPaid": 11000,
       "universityDue": 59000,
@@ -580,7 +583,10 @@
           "verifiedBy": "Admin",
           "updatedAt": "2026-09-08T09:37:28.204Z"
         }
-      }
+      },
+      "academicFee": 0,
+      "courseFee": 0,
+      "netTotalFee": 0
     }
   ],
   "fee_payments": [
@@ -1756,39 +1762,39 @@
       "id": "ucf-mcbu-ba",
       "universityName": "Maharaja Chhatrasal Bundelkhand University (MCBU)",
       "courseName": "Bachelor of Arts (BA)",
-      "officialFee": 15000,
-      "feePerSemester": 2500,
+      "officialFee": 0,
+      "feePerSemester": 0,
       "notes": "Standard affiliated government/private college rate"
     },
     {
       "id": "ucf-mcbu-bca",
       "universityName": "Maharaja Chhatrasal Bundelkhand University (MCBU)",
       "courseName": "Bachelor of Computer Applications (BCA)",
-      "officialFee": 30000,
-      "feePerSemester": 5000,
+      "officialFee": 0,
+      "feePerSemester": 0,
       "notes": "Annual composite university base fee"
     },
     {
       "id": "ucf-bu-bca",
       "universityName": "Barkatullah University",
       "courseName": "Bachelor of Computer Applications (BCA)",
-      "officialFee": 35000,
-      "feePerSemester": 5833,
+      "officialFee": 0,
+      "feePerSemester": 0,
       "notes": "Standard state university IT department rate"
     },
     {
       "id": "ucf-state-btech",
       "universityName": "State University",
       "courseName": "B.Tech Computer Science & Engineering",
-      "officialFee": 120000,
-      "feePerSemester": 15000,
+      "officialFee": 0,
+      "feePerSemester": 0,
       "notes": "Standard technical education department rate"
     },
     {
       "id": "ucf-1788859115422",
       "universityName": "Maharaja Chhatrasal Bundelkhand University (MCBU)",
       "courseName": "Bca",
-      "officialFee": 30000,
+      "officialFee": 0,
       "feePerSemester": 0,
       "notes": ""
     }

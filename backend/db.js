@@ -60,7 +60,7 @@ const INITIAL_DATA = {
       durationYears: 4,
       totalSemesters: 8,
       totalFee: 320000,
-      feePerSemester: 40000,
+      feePerSemester: 0,
       eligibility: "10+2 with Physics, Chemistry, Math (Min 60%)",
       description: "Comprehensive 4-year engineering program covering AI, Cloud Computing, Full Stack Development, DSA and Operating Systems.",
       subjectsBySemester: {
@@ -88,7 +88,7 @@ const INITIAL_DATA = {
       durationYears: 3,
       totalSemesters: 6,
       totalFee: 180000,
-      feePerSemester: 30000,
+      feePerSemester: 0,
       eligibility: "10+2 in any stream with Math/Computer (Min 50%)",
       description: "Practical and application-oriented software engineering program focusing on Web Development, Databases, Mobile App and Python.",
       subjectsBySemester: {
@@ -114,7 +114,7 @@ const INITIAL_DATA = {
       durationYears: 3,
       totalSemesters: 6,
       totalFee: 150000,
-      feePerSemester: 25000,
+      feePerSemester: 0,
       eligibility: "10+2 in any stream (Min 50%)",
       description: "Leadership, Marketing, Business Analytics, Human Resources, and Corporate Finance management program.",
       subjectsBySemester: {
@@ -134,7 +134,7 @@ const INITIAL_DATA = {
       durationYears: 2,
       totalSemesters: 4,
       totalFee: 240000,
-      feePerSemester: 60000,
+      feePerSemester: 0,
       eligibility: "Graduation in any stream (Min 50%) + Entrance Score",
       description: "Postgraduate degree in Global Business Strategy, Fintech, Digital Marketing, and Operations.",
       subjectsBySemester: {
@@ -154,7 +154,7 @@ const INITIAL_DATA = {
       durationYears: 3,
       totalSemesters: 6,
       totalFee: 210000,
-      feePerSemester: 35000,
+      feePerSemester: 0,
       eligibility: "10+2 with Mathematics / Statistics (Min 55%)",
       description: "Modern curriculum on Machine Learning, Big Data, Data Visualisation, Python, and Predictive Analytics.",
       subjectsBySemester: {
@@ -319,32 +319,32 @@ export function readDB() {
           id: 'ucf-mcbu-ba',
           universityName: 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
           courseName: 'Bachelor of Arts (BA)',
-          officialFee: 15000,
-          feePerSemester: 2500,
+          officialFee: 0,
+          feePerSemester: 0,
           notes: 'Standard affiliated government/private college rate'
         },
         {
           id: 'ucf-mcbu-bca',
           universityName: 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
           courseName: 'Bachelor of Computer Applications (BCA)',
-          officialFee: 30000,
-          feePerSemester: 5000,
+          officialFee: 0,
+          feePerSemester: 0,
           notes: 'Annual composite university base fee'
         },
         {
           id: 'ucf-bu-bca',
           universityName: 'Barkatullah University',
           courseName: 'Bachelor of Computer Applications (BCA)',
-          officialFee: 35000,
-          feePerSemester: 5833,
+          officialFee: 0,
+          feePerSemester: 0,
           notes: 'Standard state university IT department rate'
         },
         {
           id: 'ucf-state-btech',
           universityName: 'State University',
           courseName: 'B.Tech Computer Science & Engineering',
-          officialFee: 120000,
-          feePerSemester: 15000,
+          officialFee: 0,
+          feePerSemester: 0,
           notes: 'Standard technical education department rate'
         }
       ];
@@ -359,7 +359,7 @@ export function readDB() {
         }
         if (std.universityFee === undefined || std.universityFee === null) {
           // Standard base university fee (approx 40-50% of student package fee by default)
-          std.universityFee = Math.round((Number(std.totalFee) || 30000) * 0.5);
+          std.universityFee = Number(std.universityFee) || 0;
         }
         if (std.universityPaid === undefined || std.universityPaid === null) {
           std.universityPaid = 0;

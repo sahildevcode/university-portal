@@ -60,136 +60,136 @@ const ACADEMIC_PROGRAMS = [
     degree: 'B.Tech',
     name: 'B.Tech (Bachelor of Technology)',
     courseType: 'UG',
-    defaultFee: 280000,
+    defaultFee: 0,
     branches: [
-      { name: 'Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', fullName: 'B.Tech- Artificial Intelligence & Machine Learning (A)', fee: 280000 },
-      { name: 'Computer Science & Engineering (A)', code: 'BTECH-CSE-A', fullName: 'B.Tech- Computer Science & Engineering (A)', fee: 280000 },
-      { name: 'Computer Science & Engineering (B)', code: 'BTECH-CSE-B', fullName: 'B.Tech- Computer Science & Engineering (B)', fee: 280000 },
-      { name: 'Data Science (A)', code: 'BTECH-DS', fullName: 'B.Tech- Data Science (A)', fee: 280000 },
-      { name: 'Electrical and Electronics Engineering', code: 'BTECH-EEE', fullName: 'B.Tech- Electrical and Electronics Engineering', fee: 280000 },
-      { name: 'Electrical Engineering', code: 'BTECH-EE', fullName: 'B.Tech- Electrical Engineering', fee: 280000 },
-      { name: 'Electronics & Communication Engineering (A)', code: 'BTECH-ECE-A', fullName: 'B.Tech- Electronics & Communication Engineering (A)', fee: 280000 },
-      { name: 'Agricultural Engineering', code: 'BTECH-AGRI', fullName: 'B.Tech- Agricultural Engineering', fee: 280000 },
-      { name: 'Civil Engineering', code: 'BTECH-CIVIL', fullName: 'B.Tech- Civil Engineering', fee: 280000 },
-      { name: 'Electronics and Communication Engineering', code: 'BTECH-EC', fullName: 'B.Tech- Electronics and Communication Engineering', fee: 280000 },
-      { name: 'Mechanical Engineering (A)', code: 'BTECH-ME-A', fullName: 'B.Tech- Mechanical Engineering (A)', fee: 280000 },
-      { name: 'Mechanical Engineering (B)', code: 'BTECH-ME-B', fullName: 'B.Tech- Mechanical Engineering (B)', fee: 280000 },
-      { name: 'Mining Engineering', code: 'BTECH-MINING', fullName: 'B.Tech- Mining Engineering', fee: 280000 }
+      { name: 'Artificial Intelligence & Machine Learning (A)', code: 'BTECH-AIML', fullName: 'B.Tech- Artificial Intelligence & Machine Learning (A)', fee: 0 },
+      { name: 'Computer Science & Engineering (A)', code: 'BTECH-CSE-A', fullName: 'B.Tech- Computer Science & Engineering (A)', fee: 0 },
+      { name: 'Computer Science & Engineering (B)', code: 'BTECH-CSE-B', fullName: 'B.Tech- Computer Science & Engineering (B)', fee: 0 },
+      { name: 'Data Science (A)', code: 'BTECH-DS', fullName: 'B.Tech- Data Science (A)', fee: 0 },
+      { name: 'Electrical and Electronics Engineering', code: 'BTECH-EEE', fullName: 'B.Tech- Electrical and Electronics Engineering', fee: 0 },
+      { name: 'Electrical Engineering', code: 'BTECH-EE', fullName: 'B.Tech- Electrical Engineering', fee: 0 },
+      { name: 'Electronics & Communication Engineering (A)', code: 'BTECH-ECE-A', fullName: 'B.Tech- Electronics & Communication Engineering (A)', fee: 0 },
+      { name: 'Agricultural Engineering', code: 'BTECH-AGRI', fullName: 'B.Tech- Agricultural Engineering', fee: 0 },
+      { name: 'Civil Engineering', code: 'BTECH-CIVIL', fullName: 'B.Tech- Civil Engineering', fee: 0 },
+      { name: 'Electronics and Communication Engineering', code: 'BTECH-EC', fullName: 'B.Tech- Electronics and Communication Engineering', fee: 0 },
+      { name: 'Mechanical Engineering (A)', code: 'BTECH-ME-A', fullName: 'B.Tech- Mechanical Engineering (A)', fee: 0 },
+      { name: 'Mechanical Engineering (B)', code: 'BTECH-ME-B', fullName: 'B.Tech- Mechanical Engineering (B)', fee: 0 },
+      { name: 'Mining Engineering', code: 'BTECH-MINING', fullName: 'B.Tech- Mining Engineering', fee: 0 }
     ]
   },
   {
     degree: 'MBA',
     name: 'MBA (Master of Business Administration)',
     courseType: 'PG',
-    defaultFee: 120000,
+    defaultFee: 0,
     branches: [
-      { name: 'Agri Business Management', code: 'MBA-AGRI', fullName: 'MBA- Agri Business Management', fee: 120000 },
-      { name: 'Banking Insurance', code: 'MBA-BANK', fullName: 'MBA- Banking Insurance', fee: 120000 },
-      { name: 'Entrepreneurship', code: 'MBA-ENTR', fullName: 'MBA- Entrepreneurship', fee: 120000 },
-      { name: 'Hospital Administration', code: 'MBA-HOSP', fullName: 'MBA- Hospital Administration', fee: 120000 },
-      { name: 'IT', code: 'MBA-IT', fullName: 'MBA- IT', fee: 120000 },
-      { name: 'NGO', code: 'MBA-NGO', fullName: 'MBA- NGO', fee: 120000 },
-      { name: 'Plain', code: 'MBA-PLAIN', fullName: 'MBA- Plain', fee: 120000 },
-      { name: 'Retail', code: 'MBA-RETAIL', fullName: 'MBA- Retail', fee: 120000 }
+      { name: 'Agri Business Management', code: 'MBA-AGRI', fullName: 'MBA- Agri Business Management', fee: 0 },
+      { name: 'Banking Insurance', code: 'MBA-BANK', fullName: 'MBA- Banking Insurance', fee: 0 },
+      { name: 'Entrepreneurship', code: 'MBA-ENTR', fullName: 'MBA- Entrepreneurship', fee: 0 },
+      { name: 'Hospital Administration', code: 'MBA-HOSP', fullName: 'MBA- Hospital Administration', fee: 0 },
+      { name: 'IT', code: 'MBA-IT', fullName: 'MBA- IT', fee: 0 },
+      { name: 'NGO', code: 'MBA-NGO', fullName: 'MBA- NGO', fee: 0 },
+      { name: 'Plain', code: 'MBA-PLAIN', fullName: 'MBA- Plain', fee: 0 },
+      { name: 'Retail', code: 'MBA-RETAIL', fullName: 'MBA- Retail', fee: 0 }
     ]
   },
   {
     degree: 'B.Ed',
     name: 'B.Ed (Bachelor of Education)',
     courseType: 'UG',
-    defaultFee: 80000,
+    defaultFee: 0,
     branches: [
-      { name: 'Teacher Education & Pedagogy', code: 'BED-EDU', fullName: 'B.Ed Teacher Education & Pedagogy', fee: 80000 },
-      { name: 'Elementary Education', code: 'BED-ELEM', fullName: 'B.Ed Elementary Education', fee: 80000 },
-      { name: 'Special Education', code: 'BED-SPEC', fullName: 'B.Ed Special Education', fee: 85000 }
+      { name: 'Teacher Education & Pedagogy', code: 'BED-EDU', fullName: 'B.Ed Teacher Education & Pedagogy', fee: 0 },
+      { name: 'Elementary Education', code: 'BED-ELEM', fullName: 'B.Ed Elementary Education', fee: 0 },
+      { name: 'Special Education', code: 'BED-SPEC', fullName: 'B.Ed Special Education', fee: 0 }
     ]
   },
   {
     degree: 'B.El.Ed',
     name: 'B.El.Ed (Bachelor of Elementary Education)',
     courseType: 'UG',
-    defaultFee: 85000,
+    defaultFee: 0,
     branches: [
-      { name: 'Elementary Education & Child Pedagogy', code: 'BELED-01', fullName: 'B.El.Ed Elementary Education', fee: 85000 }
+      { name: 'Elementary Education & Child Pedagogy', code: 'BELED-01', fullName: 'B.El.Ed Elementary Education', fee: 0 }
     ]
   },
   {
     degree: 'BCA',
     name: 'BCA (Bachelor of Computer Applications)',
     courseType: 'UG',
-    defaultFee: 90000,
+    defaultFee: 0,
     branches: [
-      { name: 'Computer Applications & Software Development', code: 'BCA-CS', fullName: 'BCA Computer Applications', fee: 90000 },
-      { name: 'Data Science & Web Technologies', code: 'BCA-DS', fullName: 'BCA Data Science & Web Tech', fee: 95000 }
+      { name: 'Computer Applications & Software Development', code: 'BCA-CS', fullName: 'BCA Computer Applications', fee: 0 },
+      { name: 'Data Science & Web Technologies', code: 'BCA-DS', fullName: 'BCA Data Science & Web Tech', fee: 0 }
     ]
   },
   {
     degree: 'BBA',
     name: 'BBA (Bachelor of Business Administration)',
     courseType: 'UG',
-    defaultFee: 90000,
+    defaultFee: 0,
     branches: [
-      { name: 'General Business Management', code: 'BBA-GEN', fullName: 'BBA Business Administration', fee: 90000 },
-      { name: 'Marketing & Digital Sales', code: 'BBA-MKT', fullName: 'BBA Marketing & Digital Sales', fee: 95000 }
+      { name: 'General Business Management', code: 'BBA-GEN', fullName: 'BBA Business Administration', fee: 0 },
+      { name: 'Marketing & Digital Sales', code: 'BBA-MKT', fullName: 'BBA Marketing & Digital Sales', fee: 0 }
     ]
   },
   {
     degree: 'B.Sc',
     name: 'B.Sc (Bachelor of Science)',
     courseType: 'UG',
-    defaultFee: 60000,
+    defaultFee: 0,
     branches: [
-      { name: 'Computer Science', code: 'BSC-CS', fullName: 'B.Sc Computer Science', fee: 65000 },
-      { name: 'Mathematics, Physics & Chemistry (PCM)', code: 'BSC-PCM', fullName: 'B.Sc PCM', fee: 60000 },
-      { name: 'Biology, Chemistry & Botany (CBZ)', code: 'BSC-CBZ', fullName: 'B.Sc CBZ', fee: 60000 }
+      { name: 'Computer Science', code: 'BSC-CS', fullName: 'B.Sc Computer Science', fee: 0 },
+      { name: 'Mathematics, Physics & Chemistry (PCM)', code: 'BSC-PCM', fullName: 'B.Sc PCM', fee: 0 },
+      { name: 'Biology, Chemistry & Botany (CBZ)', code: 'BSC-CBZ', fullName: 'B.Sc CBZ', fee: 0 }
     ]
   },
   {
     degree: 'B.Com',
     name: 'B.Com (Bachelor of Commerce)',
     courseType: 'UG',
-    defaultFee: 50000,
+    defaultFee: 0,
     branches: [
-      { name: 'Computer Applications', code: 'BCOM-CA', fullName: 'B.Com Computer Applications', fee: 55000 },
-      { name: 'Taxation & Financial Accounting', code: 'BCOM-TAX', fullName: 'B.Com Taxation & Accounting', fee: 50000 }
+      { name: 'Computer Applications', code: 'BCOM-CA', fullName: 'B.Com Computer Applications', fee: 0 },
+      { name: 'Taxation & Financial Accounting', code: 'BCOM-TAX', fullName: 'B.Com Taxation & Accounting', fee: 0 }
     ]
   },
   {
     degree: 'B.A.',
     name: 'B.A. (Bachelor of Arts)',
     courseType: 'UG',
-    defaultFee: 40000,
+    defaultFee: 0,
     branches: [
-      { name: 'Humanities & Social Sciences', code: 'BA-HUM', fullName: 'B.A. Humanities & Social Sciences', fee: 40000 },
-      { name: 'History, Political Science & Economics', code: 'BA-GEN', fullName: 'B.A. General Studies', fee: 40000 }
+      { name: 'Humanities & Social Sciences', code: 'BA-HUM', fullName: 'B.A. Humanities & Social Sciences', fee: 0 },
+      { name: 'History, Political Science & Economics', code: 'BA-GEN', fullName: 'B.A. General Studies', fee: 0 }
     ]
   },
   {
     degree: 'MCA',
     name: 'MCA (Master of Computer Applications)',
     courseType: 'PG',
-    defaultFee: 120000,
+    defaultFee: 0,
     branches: [
-      { name: 'Cloud Computing & Full Stack Development', code: 'MCA-CS', fullName: 'MCA Cloud & Full Stack', fee: 120000 },
-      { name: 'Artificial Intelligence & Machine Learning', code: 'MCA-AI', fullName: 'MCA AI & Machine Learning', fee: 130000 }
+      { name: 'Cloud Computing & Full Stack Development', code: 'MCA-CS', fullName: 'MCA Cloud & Full Stack', fee: 0 },
+      { name: 'Artificial Intelligence & Machine Learning', code: 'MCA-AI', fullName: 'MCA AI & Machine Learning', fee: 0 }
     ]
   },
   {
     degree: 'DCA',
     name: 'DCA (Diploma in Computer Applications)',
     courseType: 'Diploma',
-    defaultFee: 25000,
+    defaultFee: 0,
     branches: [
-      { name: 'Computer Applications & Office Suite', code: 'DCA-GEN', fullName: 'DCA Computer Applications', fee: 25000 }
+      { name: 'Computer Applications & Office Suite', code: 'DCA-GEN', fullName: 'DCA Computer Applications', fee: 0 }
     ]
   },
   {
     degree: 'PGDCA',
     name: 'PGDCA (Post Graduate Diploma in Computer Applications)',
     courseType: 'PG Diploma',
-    defaultFee: 30000,
+    defaultFee: 0,
     branches: [
-      { name: 'Advanced Computer Applications & IT', code: 'PGDCA-IT', fullName: 'PGDCA Advanced Computer Applications', fee: 30000 }
+      { name: 'Advanced Computer Applications & IT', code: 'PGDCA-IT', fullName: 'PGDCA Advanced Computer Applications', fee: 0 }
     ]
   }
 ];
@@ -517,7 +517,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         name: branchName.trim() || c.name,
         code: c.code,
         fullName: c.name,
-        fee: c.totalFee
+        fee: 0
       };
     });
 
@@ -558,7 +558,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Course_Name: firstBranch?.fullName || `${newDegree} - ${firstBranch?.name || 'General'}`,
       Branch: firstBranch?.name || 'General',
       Course_Type: prog.courseType,
-      Student_fee: String(firstBranch?.fee || prog.defaultFee)
+      Student_fee: prev.Student_fee || "0"
     }));
   };
 
@@ -571,7 +571,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       ...prev,
       Branch: newBranchName,
       Course_Name: branchObj?.fullName || `${selectedDegree}- ${newBranchName}`,
-      Student_fee: String(branchObj?.fee || prev.Student_fee)
+      Student_fee: prev.Student_fee || "0"
     }));
   };
 
@@ -606,7 +606,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         name: branchName.trim() || c.name,
         code: c.code,
         fullName: c.name,
-        fee: c.totalFee
+        fee: 0
       };
     });
 
@@ -644,8 +644,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       ...prev,
       Course_Name: firstBranch?.fullName || `${newDegree} - ${firstBranch?.name || 'General'}`,
       Branch: firstBranch?.name || 'General',
-      Course_Type: prog.courseType || 'Diploma',
-      Student_fee: String(firstBranch?.fee || prog.defaultFee || 25000)
+      Course_Type: prog.courseType || "Diploma",
+      Student_fee: prev.Student_fee || "0"
     }));
   };
 
@@ -657,7 +657,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       ...prev,
       Branch: newBranchName,
       Course_Name: branchObj?.fullName || `${secSelectedDegree}- ${newBranchName}`,
-      Student_fee: String(branchObj?.fee || prev.Student_fee)
+      Student_fee: prev.Student_fee || "0"
     }));
   };
 
@@ -732,13 +732,13 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       User_id: student.userId || student.User_id || '',
       Course_Name: firstBranch?.fullName || `${targetDegree} - ${firstBranch?.name || 'General'}`,
       Branch: firstBranch?.name || 'General',
-      Course_Type: prog.courseType || 'Diploma',
-      Student_fee: String(firstBranch?.fee || prog.defaultFee || 25000),
+      Course_Type: prog.courseType || "Diploma",
+      Student_fee: prev.Student_fee || "0",
       Scholarship_Amount: '0',
       Course_Fee_Paid: '',
-      Admission_Fee: '2000',
-      Admission_Fee_Paid: '2000',
-      Initial_Payment: '2000',
+      Admission_Fee: '0',
+      Admission_Fee_Paid: '0',
+      Initial_Payment: '0',
       Reference: `Dual Admission (Primary: ${cleanPrimaryRoll})`,
       isDualEnrollment: 'true',
       primaryRollNo: cleanPrimaryRoll,

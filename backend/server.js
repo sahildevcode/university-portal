@@ -1125,7 +1125,7 @@ function normalizeStudentRow(row, idx = 0) {
   const currentClass = currentClassVal.toUpperCase().startsWith('SEM') ? currentClassVal.toUpperCase() : `SEM-${currentSemester}`;
 
   const rawFee = getColVal(row, ['Total_Fee', 'TotalFee', 'CourseFee', 'Fee', 'कुल फीस', 'PackageFee']);
-  const totalFee = Number(rawFee.replace(/[^0-9.]/g, '')) || 30000;
+  const totalFee = Number(rawFee.replace(/[^0-9.]/g, '')) || 0;
 
   const rawSch = getColVal(row, ['Scholarship_Amount', 'ScholarshipAmount', 'Scholarship', 'छात्रवृत्ति']);
   const scholarshipAmount = Number(rawSch.replace(/[^0-9.]/g, '')) || 0;
@@ -1222,7 +1222,7 @@ function parsePdfTextToStudents(rawText) {
         let father = cols.length >= 2 && !/^\d+$/.test(cols[1]) && !cols[1].startsWith('UNIV') && !cols[1].startsWith('REG') ? cols[1] : '';
         let course = 'General Degree';
         let roll = '';
-        let fee = 30000;
+        let fee = 0;
         let paid = 0;
         let phone = '';
         let session = '2024-2025';
@@ -1296,7 +1296,7 @@ function parsePdfTextToStudents(rawText) {
           Course_Name: course || 'General Degree',
           Roll_No: roll,
           Admission_Session: session || '2024-2025',
-          Total_Fee: fee || 30000,
+          Total_Fee: fee || 0,
           Fee_Paid: paid || 0,
           Contact_No: contact
         }, results.length));
@@ -1528,7 +1528,7 @@ app.post('/api/students/bulk-import', (req, res) => {
 
       const regNo = row.enrollmentNo ? String(row.enrollmentNo).trim() : `REG-${yr}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const courseFee = Number(row.totalFee) || 30000;
+      const courseFee = Number(row.totalFee) || 0;
       const schAmt = Number(row.scholarshipAmount) || 0;
       const netFee = Math.max(0, courseFee - schAmt);
       const paid = Number(row.totalPaid) || 0;
@@ -1597,9 +1597,9 @@ app.post('/api/students/bulk-import', (req, res) => {
         initialPayment: paid,
         totalPaid: paid,
         balanceDue: due,
-        universityFee: Math.round(courseFee * 0.5),
+        universityFee: 0,
         universityPaid: 0,
-        universityDue: Math.round(courseFee * 0.5),
+        universityDue: 0,
         remark: row.remark || 'Imported via Bulk Data Migration (Legacy)',
         status: 'Active',
         feeType: 'Past Session Legacy Fee Deposit',
@@ -1873,9 +1873,9 @@ app.post(
         initialPayment: initialPaid,
         totalPaid: initialPaid,
         balanceDue: Math.max(0, grandTotalFee - initialPaid),
-        universityFee: Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5),
+        universityFee: Number(body.universityFee) || Number(body.University_Fee) || 0,
         universityPaid: Number(body.universityPaid) || 0,
-        universityDue: Math.max(0, (Number(body.universityFee) || Number(body.University_Fee) || Math.round(courseFee * 0.5)) - (Number(body.universityPaid) || 0)),
+        universityDue: Math.max(0, (Number(body.universityFee) || Number(body.University_Fee) || 0) - (Number(body.universityPaid) || 0)),
         remark: body.Remark || body.remark || '',
         status: body.Status && !['Cashier', 'Accounts', 'Admin'].includes(body.Status) ? body.Status : 'Active',
         feeType: body.Fee_Type || body.feeType || 'Admission Fee',
@@ -1972,7 +1972,7 @@ app.post(
             secCandidateRoll = `${newStudent.rollNo}-${secCourseCode}${secCounter++}`;
           }
 
-          const secCourseFee = Number(sec.Student_fee || sec.courseFee || sec.totalFee || 25000);
+          const secCourseFee = Number(sec.Student_fee || sec.courseFee || sec.totalFee || 0);
           const secAdmissionFee = Number(sec.Admission_Fee || sec.admissionFee || 0);
           const secGrandTotal = secCourseFee + secAdmissionFee;
           const secPaid = Number(sec.Initial_Payment || sec.Course_Fee_Paid || sec.totalPaid || 0);
@@ -2160,7 +2160,7 @@ app.put('/api/students/:rollNo', (req, res) => {
         secCandidateRoll = `${baseRoll}-${secCode}${counter++}`;
       }
 
-      const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 25000);
+      const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 0);
       const secAdmissionFee = Number(sec.admissionFee || 0);
       const secGrandTotal = secCourseFee + secAdmissionFee;
       const secScholarship = Number(sec.scholarshipAmount) || 0;
@@ -2286,7 +2286,7 @@ app.post('/api/students/:rollNo/add-course', (req, res) => {
     secCandidateRoll = `${baseRoll}-${secCode}${counter++}`;
   }
 
-  const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 25000);
+  const secCourseFee = Number(sec.totalFee || sec.studentFee || sec.courseFee || 0);
   const secAdmissionFee = Number(sec.admissionFee || 0);
   const secGrandTotal = secCourseFee + secAdmissionFee;
   const secScholarship = Number(sec.scholarshipAmount) || 0;

@@ -214,7 +214,7 @@ export default function StudentList({
     setFeeDeskReceivedBy('Admin Desk');
     setFeeDeskRemark(student.remark || '');
 
-    const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || student.courseFee || 0));
+    const acadFee = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : 0));
     const sch = Number(student.scholarshipAmount || 0);
     const tot = acadFee + sch;
     const paid = Number(student.totalPaid || 0);
@@ -251,7 +251,7 @@ export default function StudentList({
     setFeeDeskError(null);
     setFeeDeskSuccess(null);
 
-    const acadFee = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+    const acadFee = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
     const sch = Number(feeDeskStudent.scholarshipAmount || 0);
     const tot = acadFee + sch;
     const paid = Number(feeDeskStudent.totalPaid || 0);
@@ -412,7 +412,7 @@ export default function StudentList({
       currentClass: 'SEM-1',
       admissionDate: new Date().toISOString().split('T')[0],
       admissionYear: new Date().getFullYear(),
-      totalFee: 25000,
+      totalFee: 0,
       initialPaid: 0,
       scholarshipAmount: 0,
       paymentMode: 'Cash',
@@ -546,25 +546,25 @@ export default function StudentList({
 
     // Due Filter support (for Accounts Dashboard integration)
     if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
-      const acadFee = Number(s.academicFee !== undefined ? s.academicFee : (s.studentFee || s.courseFee || 0));
+      const acadFee = Number(s.academicFee !== undefined && s.academicFee !== null ? s.academicFee : (s.studentFee !== undefined && s.studentFee !== null ? s.studentFee : 0));
       const sch = Number(s.scholarshipAmount || 0);
       const tot = acadFee + sch;
       const paid = Number(s.totalPaid || 0);
       const rem = Math.max(0, tot - paid);
       const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
-        const lTot = Number(lc.academicFee !== undefined ? lc.academicFee : (lc.studentFee || lc.courseFee || 0)) + Number(lc.scholarshipAmount || 0);
+        const lTot = Number(lc.academicFee !== undefined && lc.academicFee !== null ? lc.academicFee : (lc.studentFee !== undefined && lc.studentFee !== null ? lc.studentFee : 0)) + Number(lc.scholarshipAmount || 0);
         const lPaid = Number(lc.totalPaid || 0);
         return sum + Math.max(0, lTot - lPaid);
       }, 0) || 0;
       if (rem + linkedRem <= 0) return false;
     } else if (dueFilter === 'cleared') {
-      const acadFee = Number(s.academicFee !== undefined ? s.academicFee : (s.studentFee || s.courseFee || 0));
+      const acadFee = Number(s.academicFee !== undefined && s.academicFee !== null ? s.academicFee : (s.studentFee !== undefined && s.studentFee !== null ? s.studentFee : 0));
       const sch = Number(s.scholarshipAmount || 0);
       const tot = acadFee + sch;
       const paid = Number(s.totalPaid || 0);
       const rem = Math.max(0, tot - paid);
       const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
-        const lTot = Number(lc.academicFee !== undefined ? lc.academicFee : (lc.studentFee || lc.courseFee || 0)) + Number(lc.scholarshipAmount || 0);
+        const lTot = Number(lc.academicFee !== undefined && lc.academicFee !== null ? lc.academicFee : (lc.studentFee !== undefined && lc.studentFee !== null ? lc.studentFee : 0)) + Number(lc.scholarshipAmount || 0);
         const lPaid = Number(lc.totalPaid || 0);
         return sum + Math.max(0, lTot - lPaid);
       }, 0) || 0;
@@ -934,7 +934,7 @@ export default function StudentList({
                         std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
                       }
 
-                      const acadFee = Number(std.academicFee !== undefined ? std.academicFee : (std.studentFee || std.courseFee || 0));
+                      const acadFee = Number(std.academicFee !== undefined && std.academicFee !== null ? std.academicFee : (std.studentFee !== undefined && std.studentFee !== null ? std.studentFee : 0));
                       const sch = Number(std.scholarshipAmount || 0);
                       const tot = acadFee + sch;
                       const paid = Number(std.totalPaid || 0);
@@ -1087,7 +1087,7 @@ export default function StudentList({
 
                           {/* Connected Dual Program Secondary Row */}
                           {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
-                            const lAcadFee = Number(linked.academicFee !== undefined ? linked.academicFee : (linked.studentFee || linked.courseFee || 0));
+                            const lAcadFee = Number(linked.academicFee !== undefined && linked.academicFee !== null ? linked.academicFee : (linked.studentFee !== undefined && linked.studentFee !== null ? linked.studentFee : 0));
                             const lSch = Number(linked.scholarshipAmount || 0);
                             const lTot = lAcadFee + lSch;
                             const lPaid = Number(linked.totalPaid || 0);
@@ -1491,7 +1491,7 @@ export default function StudentList({
                         <button
                           type="button"
                           onClick={() => {
-                            const acad = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+                            const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
                             const sch = Number(feeDeskStudent.scholarshipAmount || 0);
                             const tot = acad + sch;
                             const paid = Number(feeDeskStudent.totalPaid || 0);
@@ -1531,7 +1531,7 @@ export default function StudentList({
 
               {/* Fee Summary Strip matching media_1789491211561.jpg */}
               {(() => {
-                const acad = Number(feeDeskStudent.academicFee !== undefined ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || feeDeskStudent.courseFee || 0));
+                const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
                 const sch = Number(feeDeskStudent.scholarshipAmount || 0);
                 const tot = acad + sch;
                 const paid = Number(feeDeskStudent.totalPaid || 0);
