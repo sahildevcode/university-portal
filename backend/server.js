@@ -21,14 +21,13 @@ const memUpload = multer({
 
 initDB();
 
-// Sanitize student dual enrollment linkages so standalone degree admissions are never merged
+// Sanitize student records (dual enrollment linkages, N/A strings, legacy remarks)
 try {
   const db = readDB();
   let dbChanged = false;
   if (Array.isArray(db.students)) {
     db.students.forEach(s => {
       const r = (s.rollNo || '').toUpperCase();
-      // If a student has a standalone base roll number (no hyphen '-') and is a degree course:
       if (r && !r.includes('-')) {
         if (s.primaryRollNo || s.primaryStudentId || s.isSecondaryCourse) {
           s.primaryRollNo = null;
@@ -37,7 +36,6 @@ try {
           dbChanged = true;
         }
       }
-      // If a student is a suffixed secondary course (contains '-'), ensure primaryRollNo points to its base roll:
       if (r && r.includes('-')) {
         const baseRoll = r.split('-')[0];
         if (s.primaryRollNo?.toUpperCase() !== baseRoll) {
@@ -47,11 +45,22 @@ try {
           dbChanged = true;
         }
       }
+      // Clean up legacy N/A strings
+      if (s.remark === 'Imported via Bulk Data Migration (Legacy)' || s.remark === 'Legacy Session Archive') {
+        s.remark = '';
+        dbChanged = true;
+      }
+      ['aadhaarNo', 'samagraId', 'abcId', 'mptassId', 'mptassPassword', 'otrId', 'debId', 'scholerId', 'userId', 'motherName'].forEach(field => {
+        if (s[field] === 'N/A' || s[field] === 'NA' || s[field] === 'null' || s[field] === 'undefined') {
+          s[field] = '';
+          dbChanged = true;
+        }
+      });
     });
   }
   if (dbChanged) {
     writeDB(db);
-    console.log('Sanitized dual enrollment linkages in database.json');
+    console.log('Sanitized database records successfully.');
   }
 } catch (err) {
   console.warn('DB sanitization notice:', err);
@@ -752,8 +761,33 @@ app.post('/api/students/bulk-import', (req, res) => {
         }
       };
 
-      db.students.unshift(newStudent);
-      importedStudents.push(newStudent);
+      // Upsert logic: Update existing student if rollNo, enrollmentNo, aadhaarNo, or name+fatherName matches
+      const existingIndex = db.students.findIndex(s => {
+        if (finalRoll && s.rollNo && s.rollNo.toUpperCase() === finalRoll) return true;
+        if (finalRoll && s.enrollmentNo && s.enrollmentNo.toUpperCase() === finalRoll) return true;
+        if (newStudent.aadhaarNo && s.aadhaarNo && s.aadhaarNo.replace(/\D/g, '') === newStudent.aadhaarNo.replace(/\D/g, '')) return true;
+        if (newStudent.fullName && newStudent.fatherName && 
+            s.fullName.trim().toLowerCase() === newStudent.fullName.trim().toLowerCase() && 
+            s.fatherName.trim().toLowerCase() === newStudent.fatherName.trim().toLowerCase()) {
+          return true;
+        }
+        return false;
+      });
+
+      if (existingIndex !== -1) {
+        const existingStudent = db.students[existingIndex];
+        db.students[existingIndex] = {
+          ...existingStudent,
+          ...newStudent,
+          id: existingStudent.id,
+          rollNo: finalRoll || existingStudent.rollNo || '',
+          enrollmentNo: row.enrollmentNo || finalRoll || existingStudent.enrollmentNo || ''
+        };
+        importedStudents.push(db.students[existingIndex]);
+      } else {
+        db.students.unshift(newStudent);
+        importedStudents.push(newStudent);
+      }
 
       // Create Payment Ledger entry if fee was paid
       if (paid > 0) {
