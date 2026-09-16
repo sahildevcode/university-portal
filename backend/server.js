@@ -381,6 +381,252 @@ app.post('/api/auth/student-register', (req, res) => {
   });
 });
 
+// ----------------------------------------------------
+// HELPER FUNCTIONS FOR EXCEL & BULK IMPORT
+// ----------------------------------------------------
+function formatExcelDate(val) {
+  if (!val) return '';
+  if (typeof val === 'number') {
+    try {
+      const dateObj = XLSX.SSF.parse_date_code(val);
+      if (dateObj) {
+        const y = dateObj.y;
+        const m = String(dateObj.m).padStart(2, '0');
+        const d = String(dateObj.d).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+    } catch (e) {}
+  }
+  const str = String(val).trim();
+  if (!str) return '';
+  
+  // Standard YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+  // DD-MM-YYYY or DD/MM/YYYY
+  const dmY = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmY) {
+    const day = String(dmY[1]).padStart(2, '0');
+    const month = String(dmY[2]).padStart(2, '0');
+    const year = dmY[3];
+    return `${year}-${month}-${day}`;
+  }
+  // YYYY/MM/DD
+  const yMD = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (yMD) {
+    const year = yMD[1];
+    const month = String(yMD[2]).padStart(2, '0');
+    const day = String(yMD[3]).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return str;
+}
+
+function getColVal(row, possibleKeys) {
+  if (!row || typeof row !== 'object') return '';
+  
+  const rowKeys = Object.keys(row);
+  for (const pKey of possibleKeys) {
+    if (row[pKey] !== undefined && row[pKey] !== null && String(row[pKey]).trim() !== '') {
+      return String(row[pKey]).trim();
+    }
+    const normPKey = pKey.toLowerCase().replace(/[\s_]/g, '');
+    for (const rKey of rowKeys) {
+      const normRKey = rKey.toLowerCase().replace(/[\s_]/g, '');
+      if (normPKey === normRKey) {
+        const val = row[rKey];
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+          return String(val).trim();
+        }
+      }
+    }
+  }
+  return '';
+}
+
+function normalizeStudentRow(row, idx = 0) {
+  const studentName = getColVal(row, ['student_name', 'Student_Name', 'studentName', 'fullName', 'Name', 'Student', 'नाम', 'विद्यार्थी का नाम']) || `Student ${idx + 1}`;
+  const fatherName = getColVal(row, ['father_name', 'Father_Name', 'fatherName', 'Father', 'पिता का नाम', 'FathersName']);
+  const motherName = getColVal(row, ['mother_name', 'Mother_Name', 'motherName', 'Mother', 'माता का नाम']);
+  const rawDob = getColVal(row, ['dob', 'Date_Of_Birth', 'DateOfBirth', 'DOB', 'जन्म तिथि']);
+  const dob = formatExcelDate(rawDob);
+  const gender = getColVal(row, ['gender', 'Gender', 'Sex', 'लिंग']) || 'Male';
+  const phone = getColVal(row, ['contact', 'phone', 'Contact_No', 'Contact', 'Phone', 'Mobile', 'मोबाइल', 'ContactNumber']);
+  const email = getColVal(row, ['email', 'Email_ID', 'Email', 'EmailId', 'Mail']);
+  const address = getColVal(row, ['address', 'Address', 'City', 'District', 'पता']);
+  const aadhaarNo = getColVal(row, ['aadhaar_no', 'Aadhaar_No', 'Aadhaar', 'Aadhar', 'AadhaarNo', 'आधार']);
+  const samagraId = getColVal(row, ['samagra_id', 'Samagra_ID', 'Samagra', 'SamagraId', 'समग्र']);
+  const enrollmentNo = getColVal(row, ['enrollment_no', 'Enrollment_No', 'Enrollment', 'EnrollmentNo', 'RegNo', 'Registration_No', 'पंजीयन क्र']);
+  const rollNo = getColVal(row, ['rollNo', 'Roll_No', 'RollNo', 'Roll', 'अनुक्रमांक', 'RollNumber']) || enrollmentNo;
+  
+  const abcId = getColVal(row, ['abc_id', 'Abc_id', 'ABC_ID', 'ABCID', 'AbcId']);
+  const mpTassId = getColVal(row, ['mptass_id', 'MPTass_id', 'MPTASS_ID', 'MPTASSID', 'MpTassId']);
+  const mpTassPassword = getColVal(row, ['mptass_password', 'MPTass_Password', 'MPTASS_Password', 'MpTassPassword']);
+  const otrId = getColVal(row, ['otr_id', 'OTR_id', 'OTR_ID', 'OTRID', 'OtrId']);
+  const debId = getColVal(row, ['deb_id', 'Deb_id', 'DEB_ID', 'DEBID', 'DebId']);
+  const scholerId = getColVal(row, ['scholer_id', 'Scholer_id', 'Scholar_ID', 'ScholarID', 'ScholerId', 'scholarId']);
+  const userId = getColVal(row, ['user_id', 'User_id', 'USER_ID', 'UserID', 'UserId']);
+  
+  const medium = getColVal(row, ['medium', 'Medium', 'माध्यम']) || 'Hindi';
+  const admissionSession = getColVal(row, ['admission_session', 'Admission_Session', 'AdmissionSession', 'Session', 'सत्र', 'AcademicSession', 'Batch']) || '2024-2025';
+  const admissionSatra = getColVal(row, ['admission_satra', 'Admission_Satra', 'AdmissionSatra', 'Satra']) || 'July';
+  const rawAdmDate = getColVal(row, ['admission_date', 'Admission_Date', 'AdmissionDate']);
+  const admissionDate = formatExcelDate(rawAdmDate);
+  const universityName = getColVal(row, ['university_name', 'University_Name', 'UniversityName', 'University', 'विश्वविद्यालय']) || 'Maharaja Chhatrasal Bundelkhand University (MCBU)';
+  const collegeName = getColVal(row, ['college_name', 'College_Name', 'CollegeName', 'College', 'महाविद्यालय']) || 'PKC Education & Consultancy';
+  const courseName = getColVal(row, ['course_name', 'Course_Name', 'CourseName', 'Course', 'कोर्स', 'Program', 'Degree']) || 'General Degree';
+  const branch = getColVal(row, ['branch', 'Branch', 'Stream', 'Department', 'शाखा']) || 'General';
+  const courseType = getColVal(row, ['course_type', 'Course_Type', 'CourseType']) || 'UG';
+  const courseMode = getColVal(row, ['course_mode', 'Course_Mode', 'CourseMode']) || 'Regular';
+  const socialCategory = getColVal(row, ['socialCategory', 'social_category', 'Social_category', 'Category', 'SocialCategory', 'Caste', 'वर्ग', 'जाति']) || 'General';
+  const docsSubmitted = getColVal(row, ['document_submit', 'Document_Submit', 'DocumentSubmit', 'Documents_Submitted', 'Documents', 'Docs', 'दस्तावेज']) || '10th, 12th, Aadhaar';
+  const bloodGroup = getColVal(row, ['blood_group', 'Blood_Group', 'BloodGroup']) || 'NA';
+  
+  const rawFee = getColVal(row, ['student_fee', 'Student_fee', 'Total_Fee', 'TotalFee', 'CourseFee', 'Fee', 'PackageFee']);
+  const totalFee = Number(rawFee.replace(/[^0-9.]/g, '')) || 0;
+  
+  const rawSch = getColVal(row, ['scholarship_amount', 'Scholarship_Amount', 'ScholarshipAmount', 'Scholarship', 'छात्रवृत्ति']);
+  const scholarshipAmount = Number(rawSch.replace(/[^0-9.]/g, '')) || 0;
+
+  const rawPaid = getColVal(row, ['fee_paid', 'Fee_Paid', 'FeePaid', 'Paid', 'TotalPaid', 'जमा फीस', 'AmountPaid']);
+  const totalPaid = Number(rawPaid.replace(/[^0-9.]/g, '')) || 0;
+
+  const netTotalFee = Math.max(0, totalFee - scholarshipAmount);
+  const balanceDue = Math.max(0, netTotalFee - totalPaid);
+  
+  const remark = getColVal(row, ['remark', 'Remark', 'Remarks', 'टिप्पणी']);
+  const statusVal = getColVal(row, ['cancel', 'Cancel', 'status', 'Status']);
+  const status = statusVal === 'true' || statusVal === 'Cancelled' ? 'Cancelled' : 'Active';
+  const studentImage = getColVal(row, ['student_image', 'Student_image', 'StudentImage', 'Photo', 'photo']);
+
+  const currentClassVal = getColVal(row, ['current_class', 'Current_Class', 'CurrentClass', 'Class', 'Semester', 'Sem', 'कक्षा', 'सेमेस्टर']) || 'SEM-1';
+  let currentSemester = 1;
+  const semMatch = currentClassVal.match(/\d+/);
+  if (semMatch) {
+    currentSemester = parseInt(semMatch[0], 10);
+  }
+  const currentClass = currentClassVal.toUpperCase().startsWith('SEM') ? currentClassVal.toUpperCase() : `SEM-${currentSemester}`;
+
+  return {
+    studentName,
+    fatherName,
+    motherName,
+    dob,
+    gender,
+    phone,
+    email,
+    address,
+    aadhaarNo,
+    samagraId,
+    enrollmentNo,
+    rollNo,
+    abcId,
+    mpTassId,
+    mpTassPassword,
+    otrId,
+    debId,
+    scholerId,
+    userId,
+    medium,
+    admissionSession,
+    admissionSatra,
+    admissionDate,
+    universityName,
+    collegeName,
+    courseName,
+    branch,
+    courseType,
+    courseMode,
+    socialCategory,
+    docsSubmitted,
+    bloodGroup,
+    totalFee,
+    scholarshipAmount,
+    totalPaid,
+    netTotalFee,
+    balanceDue,
+    remark,
+    status,
+    studentImage,
+    currentClass,
+    currentSemester
+  };
+}
+
+// Parse Excel Endpoint
+app.post('/api/students/parse-excel', memUpload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please upload an Excel file (.xlsx or .xls).' });
+    }
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+    if (!rawRows || rawRows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Excel sheet is empty or contains no valid rows.' });
+    }
+
+    const normalizedRecords = rawRows.map((row, idx) => normalizeStudentRow(row, idx));
+
+    res.json({
+      success: true,
+      sheetName: firstSheetName,
+      totalRows: rawRows.length,
+      records: normalizedRecords
+    });
+  } catch (err) {
+    console.error('Error parsing Excel:', err);
+    res.status(500).json({ success: false, message: 'Failed to parse Excel file: ' + err.message });
+  }
+});
+
+// Parse PDF Endpoint
+app.post('/api/students/parse-pdf', memUpload.single('file'), async (req, res) => {
+  try {
+    let text = '';
+    if (req.file) {
+      const data = await PDFParse(req.file.buffer);
+      text = data.text || '';
+    } else if (req.body.rawText) {
+      text = req.body.rawText;
+    }
+
+    if (!text.trim()) {
+      return res.status(400).json({ success: false, message: 'No text extracted from PDF file.' });
+    }
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const records = [];
+    lines.forEach((line, idx) => {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 3) {
+        records.push({
+          studentName: parts[0] || `Student ${idx + 1}`,
+          fatherName: parts[1] || '',
+          courseName: parts[2] || 'General Degree',
+          admissionSession: parts[3] || '2024-2025',
+          currentClass: parts[4] || 'SEM-1',
+          totalFee: Number((parts[5] || '').replace(/\D/g, '')) || 0,
+          totalPaid: Number((parts[6] || '').replace(/\D/g, '')) || 0,
+          phone: parts[7] || ''
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      totalRows: records.length,
+      records: records
+    });
+  } catch (err) {
+    console.error('Error parsing PDF:', err);
+    res.status(500).json({ success: false, message: 'Failed to parse PDF file: ' + err.message });
+  }
+});
+
 // Bulk Data Import (Excel / JSON) for Legacy Students
 app.post('/api/students/bulk-import', (req, res) => {
   try {
@@ -403,34 +649,29 @@ app.post('/api/students/bulk-import', (req, res) => {
     const timestamp = new Date().toISOString();
 
     for (let i = 0; i < rawStudents.length; i++) {
-      const row = normalizeStudentRow(rawStudents[i]);
+      const row = normalizeStudentRow(rawStudents[i], i);
       const studentIdx = db.students.length + 1;
       const yr = row.admissionSession ? row.admissionSession.split('-')[0] : '2024';
 
-      let rollBase = (row.enrollmentNo || row.rollNo || '').toUpperCase();
-      if (!rollBase) {
-        rollBase = `PKC${yr}${String(studentIdx).padStart(3, '0')}`;
-      }
-
-      const finalRoll = rollBase;
+      // Roll Number / Enrollment handling:
+      // DO NOT auto-generate fake roll numbers if left blank in Excel! Keep empty string "" if not in Excel.
+      const finalRoll = (row.enrollmentNo || row.rollNo || '').toUpperCase();
       const regNo = `REG-IMP-${yr}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const courseFee = Number(row.studentFee || row.totalFee || 0);
+      const courseFee = Number(row.totalFee || row.studentFee || 0);
       const schAmt = Number(row.scholarshipAmount || 0);
       const netFee = Math.max(0, courseFee - schAmt);
 
       let paid = 0;
       if (row.totalPaid !== undefined && row.totalPaid !== null) {
         paid = Number(row.totalPaid);
-      } else if (row.paidAmount !== undefined && row.paidAmount !== null) {
-        paid = Number(row.paidAmount);
       } else {
         paid = courseFee > 0 ? courseFee : 0;
       }
 
       const due = Math.max(0, netFee - paid);
 
-      const docList = Array.isArray(row.documentSubmit) ? row.documentSubmit.join(', ') : (row.documentSubmit || 'Pending Document Submission');
+      const docList = Array.isArray(row.docsSubmitted) ? row.docsSubmitted.join(', ') : (row.docsSubmitted || 'Pending Document Submission');
       const docStatusMap = {
         doc10th: docList.toLowerCase().includes('10th') ? 'Verified' : 'Pending',
         doc12th: docList.toLowerCase().includes('12th') ? 'Verified' : 'Pending',
@@ -441,22 +682,22 @@ app.post('/api/students/bulk-import', (req, res) => {
         id: `std-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
         rollNo: finalRoll,
         registrationNo: regNo,
-        studentName: row.studentName || row.fullName || `Student ${studentIdx}`,
-        fullName: row.fullName || row.studentName || `Student ${studentIdx}`,
+        studentName: row.studentName || `Student ${studentIdx}`,
+        fullName: row.studentName || `Student ${studentIdx}`,
         fatherName: row.fatherName || '',
         motherName: row.motherName || '',
         dob: row.dob || '',
         gender: row.gender || 'Male',
-        contact: row.phone || row.contact || '',
-        phone: row.phone || row.contact || '',
+        contact: row.phone || '',
+        phone: row.phone || '',
         email: row.email || '',
         address: row.address || '',
         aadhaarNo: row.aadhaarNo || '',
         samagraId: row.samagraId || '',
         enrollmentNo: row.enrollmentNo || finalRoll,
         abcId: row.abcId || '',
-        mptassId: row.mptassId || '',
-        mptassPassword: row.mptassPassword || '',
+        mptassId: row.mpTassId || '',
+        mptassPassword: row.mpTassPassword || '',
         otrId: row.otrId || '',
         debId: row.debId || '',
         scholerId: row.scholerId || '',
@@ -466,7 +707,7 @@ app.post('/api/students/bulk-import', (req, res) => {
         admissionSatra: row.admissionSatra || 'July',
         admissionDate: row.admissionDate || `${yr}-07-15`,
         universityName: row.universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
-        collegeName: row.collegeName || 'PKC Education Learning Institute & Consultancy',
+        collegeName: row.collegeName || 'PKC Education & Consultancy',
         courseId: 'legacy-course',
         courseName: row.courseName || 'General Degree',
         branch: row.branch || 'General',
@@ -496,7 +737,6 @@ app.post('/api/students/bulk-import', (req, res) => {
         universityPaid: 0,
         universityDue: 0,
         remark: row.remark !== undefined && row.remark !== null ? String(row.remark).trim() : '',
-        cancel: row.cancel || '',
         status: row.status || 'Active',
         feeType: 'Past Session Legacy Fee Deposit',
         feeCollectedBy: operatorName,
@@ -511,13 +751,6 @@ app.post('/api/students/bulk-import', (req, res) => {
           photo: row.studentImage || ''
         }
       };
-
-      // Calculate semester progression
-      const prog = computeStudentSemesterProgress(newStudent, db.courses);
-      if (!row.currentClass) {
-        newStudent.currentClass = prog.currentClass;
-        newStudent.currentSemester = prog.currentSemester;
-      }
 
       db.students.unshift(newStudent);
       importedStudents.push(newStudent);
@@ -563,6 +796,7 @@ app.post('/api/students/bulk-import', (req, res) => {
     res.status(500).json({ success: false, message: 'Bulk import failed: ' + err.message });
   }
 });
+
 
 // Reset / Clear Demo Student Data
 app.post('/api/students/reset-demo-data', (req, res) => {
