@@ -705,10 +705,13 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                   className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
                 >
                   <option value="all">All Sessions</option>
-                  <option value="2024-2025">2024-2025</option>
-                  <option value="2025-2026">2025-2026</option>
-                  <option value="2026-2027">2026-2027</option>
-                  <option value="2027-2028">2027-2028</option>
+                  {Array.from(new Set([
+                    '2020-2021', '2021-2022', '2022-2023', '2023-2024', '2024-2025',
+                    '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030',
+                    ...students.map(s => s.currentSession || s.admissionSession || s.session).filter(Boolean)
+                  ])).sort().map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
 

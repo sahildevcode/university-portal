@@ -419,29 +419,45 @@ export default function StudentList({
       remark: ''
     });
     setEditFormData({
-      rollNo: std.rollNo || '',
-      fullName: std.fullName || '',
-      fatherName: std.fatherName || '',
+      rollNo: std.rollNo || std.enrollmentNo || '',
+      fullName: std.fullName || std.studentName || '',
+      fatherName: std.fatherName || std.father_name || '',
       motherName: std.motherName || '',
       dob: std.dob || '',
       gender: std.gender || 'Male',
-      phone: std.phone || '',
+      phone: std.phone || std.contact || '',
       email: std.email || '',
       address: std.address || '',
-      aadhaarNo: std.aadhaarNo || '',
+      aadhaarNo: std.aadhaarNo || std.aadharNo || '',
       samagraId: std.samagraId || '',
       abcId: std.abcId || '',
+      mptassId: std.mptassId || '',
+      mptassPassword: std.mptassPassword || '',
+      otrId: std.otrId || '',
+      debId: std.debId || '',
+      scholerId: std.scholerId || '',
+      userId: std.userId || '',
+      medium: std.medium || 'Hindi',
+      admissionSession: std.admissionSession || std.currentSession || '2024-2025',
+      admissionSatra: std.admissionSatra || std.currentSatra || 'July',
+      admissionDate: std.admissionDate || '',
       universityName: std.universityName || '',
       collegeName: std.collegeName || '',
       courseName: std.courseName || '',
       branch: std.branch || '',
       courseType: std.courseType || 'UG',
+      courseMode: std.courseMode || 'Regular',
+      socialCategory: std.socialCategory || 'General',
+      documentSubmit: std.documentSubmit || '',
+      bloodGroup: std.bloodGroup || '',
+      studentImage: std.studentImage || '',
       currentSemester: std.currentSemester || 1,
       currentClass: std.currentClass || `SEM-${std.currentSemester || 1}`,
-      totalFee: std.totalFee || 0,
+      totalFee: std.totalFee || std.studentFee || 0,
       scholarshipAmount: std.scholarshipAmount !== undefined ? std.scholarshipAmount : 0,
       admissionYear: std.admissionYear || 2026,
       remark: std.remark || '',
+      cancel: std.cancel || '',
       status: std.status || 'Active'
     });
     setEditError(null);
@@ -668,10 +684,13 @@ export default function StudentList({
               className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
             >
               <option value="all">All Sessions</option>
-              <option value="2024-2025">2024-2025</option>
-              <option value="2025-2026">2025-2026</option>
-              <option value="2026-2027">2026-2027</option>
-              <option value="2027-2028">2027-2028</option>
+              {Array.from(new Set([
+                '2020-2021', '2021-2022', '2022-2023', '2023-2024', '2024-2025',
+                '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030',
+                ...students.map(s => s.currentSession || s.admissionSession).filter(Boolean)
+              ])).sort().map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
           </div>
 
@@ -2197,10 +2216,11 @@ export default function StudentList({
             {/* Edit Form */}
             <form onSubmit={handleSaveEdit} className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
               {/* Section: Personal Information */}
+              {/* Section 1: Basic & Demographic Details */}
               <div className="space-y-3">
                 <h4 className="font-bold text-slate-900 border-b pb-1.5 text-xs uppercase tracking-wider text-indigo-900 flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
-                  <span>Personal &amp; Contact Details</span>
+                  <span>Basic Personal Information &amp; Contact Details (मूल व व्यक्तिगत जानकारी)</span>
                 </h4>
 
                 {/* Student Photo & Identity Display */}
@@ -2228,6 +2248,7 @@ export default function StudentList({
                     </span>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
@@ -2259,7 +2280,7 @@ export default function StudentList({
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Date of Birth</label>
+                    <label className="block font-bold text-slate-700 mb-1">Date of Birth (DOB)</label>
                     <input
                       type="date"
                       value={editFormData.dob || ''}
@@ -2288,7 +2309,7 @@ export default function StudentList({
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white"
                     />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="block font-bold text-slate-700 mb-1">Email ID</label>
                     <input
                       type="email"
@@ -2315,8 +2336,44 @@ export default function StudentList({
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono focus:bg-white"
                     />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block font-bold text-slate-700 mb-1">Address</label>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Category (वर्ग)</label>
+                    <select
+                      value={editFormData.socialCategory || 'General'}
+                      onChange={(e) => setEditFormData({ ...editFormData, socialCategory: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="General">General</option>
+                      <option value="OBC">OBC</option>
+                      <option value="SC">SC</option>
+                      <option value="ST">ST</option>
+                      <option value="EWS">EWS</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Medium (माध्यम)</label>
+                    <select
+                      value={editFormData.medium || 'Hindi'}
+                      onChange={(e) => setEditFormData({ ...editFormData, medium: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="Hindi">Hindi</option>
+                      <option value="English">English</option>
+                      <option value="Both">Both</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Blood Group</label>
+                    <input
+                      type="text"
+                      value={editFormData.bloodGroup || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, bloodGroup: e.target.value })}
+                      placeholder="e.g. O+, A+, B+"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium uppercase focus:bg-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-3">
+                    <label className="block font-bold text-slate-700 mb-1">Address (स्थायी पता)</label>
                     <input
                       type="text"
                       value={editFormData.address || ''}
@@ -2327,11 +2384,94 @@ export default function StudentList({
                 </div>
               </div>
 
-              {/* Section: Academic & Institutional Particulars */}
+              {/* Section 2: Government KYC & Portal IDs */}
+              <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
+                <h4 className="font-bold text-slate-900 border-b pb-1.5 text-xs uppercase tracking-wider text-emerald-900 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">2</span>
+                  <span>Government Portal, KYC &amp; Scholarship IDs (सरकारी पोर्टल एवं छात्रवृत्ति आईडी)</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">ABC ID (Academic Bank of Credits)</label>
+                    <input
+                      type="text"
+                      value={editFormData.abcId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, abcId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">MPTASS User ID</label>
+                    <input
+                      type="text"
+                      value={editFormData.mptassId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, mptassId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">MPTASS Password</label>
+                    <input
+                      type="text"
+                      value={editFormData.mptassPassword || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, mptassPassword: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">OTR ID (One Time Registration)</label>
+                    <input
+                      type="text"
+                      value={editFormData.otrId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, otrId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">DEB ID (Distance Education Bureau)</label>
+                    <input
+                      type="text"
+                      value={editFormData.debId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, debId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Scholar ID (स्कॉलर आईडी)</label>
+                    <input
+                      type="text"
+                      value={editFormData.scholerId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, scholerId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Portal User ID</label>
+                    <input
+                      type="text"
+                      value={editFormData.userId || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, userId: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block font-bold text-slate-700 mb-1">Student Photo URL / File Path</label>
+                    <input
+                      type="text"
+                      value={editFormData.studentImage || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, studentImage: e.target.value })}
+                      placeholder="/uploads/documents/... or image URL"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono text-xs focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Academic & Institutional Particulars */}
               <div className="space-y-3">
                 <h4 className="font-bold text-slate-900 border-b pb-1.5 text-xs uppercase tracking-wider text-indigo-900 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">2</span>
-                  <span>Academic, University &amp; Promotion Controls</span>
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">3</span>
+                  <span>Academic, University &amp; Session Details (शैक्षणिक व यूनिवर्सिटी विवरण)</span>
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -2377,6 +2517,62 @@ export default function StudentList({
                       type="text"
                       value={editFormData.branch || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Course Type</label>
+                    <select
+                      value={editFormData.courseType || 'UG'}
+                      onChange={(e) => setEditFormData({ ...editFormData, courseType: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="UG">UG (Under Graduate)</option>
+                      <option value="PG">PG (Post Graduate)</option>
+                      <option value="Diploma">Diploma</option>
+                      <option value="Certificate">Certificate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Course Mode</label>
+                    <select
+                      value={editFormData.courseMode || 'Regular'}
+                      onChange={(e) => setEditFormData({ ...editFormData, courseMode: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="Regular">Regular</option>
+                      <option value="Private">Private</option>
+                      <option value="Distance">Distance</option>
+                      <option value="Online">Online</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Admission Session (सत्र)</label>
+                    <input
+                      type="text"
+                      value={editFormData.admissionSession || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, admissionSession: e.target.value })}
+                      placeholder="e.g. 2022-2023, 2024-2025"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-semibold focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Admission Satra (जुलाई/जनवरी)</label>
+                    <select
+                      value={editFormData.admissionSatra || 'July'}
+                      onChange={(e) => setEditFormData({ ...editFormData, admissionSatra: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    >
+                      <option value="July">July</option>
+                      <option value="January">January</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Admission Date</label>
+                    <input
+                      type="date"
+                      value={editFormData.admissionDate || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, admissionDate: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
                     />
                   </div>
@@ -2462,6 +2658,16 @@ export default function StudentList({
                       <option value="Cancelled">Cancelled</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Cancelled Admission?</label>
+                    <input
+                      type="text"
+                      value={editFormData.cancel || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, cancel: e.target.value })}
+                      placeholder="Leave blank if not cancelled"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white"
+                    />
+                  </div>
                   <div className="sm:col-span-2 lg:col-span-3">
                     <label className="block font-bold text-slate-700 mb-1">Remark (रिमार्क / विशेष टिप्पणी)</label>
                     <input
@@ -2475,7 +2681,7 @@ export default function StudentList({
                 </div>
               </div>
 
-              {/* Display existing secondary / dual programs if student already has them */}
+              {/* Display existing secondary / dual programs{/* Display existing secondary / dual programs if student already has them */}
               {editingStudent.linkedCourses && editingStudent.linkedCourses.length > 0 && (
                 <div className="space-y-3 bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
                   <div className="flex items-center justify-between">
