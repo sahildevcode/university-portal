@@ -395,6 +395,15 @@ app.post('/api/auth/student-register', (req, res) => {
 // ----------------------------------------------------
 function formatExcelDate(val) {
   if (!val) return '';
+  if (val instanceof Date) {
+    if (!isNaN(val.getTime())) {
+      const y = val.getFullYear();
+      const m = String(val.getMonth() + 1).padStart(2, '0');
+      const d = String(val.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return '';
+  }
   if (typeof val === 'number') {
     try {
       const dateObj = XLSX.SSF.parse_date_code(val);
@@ -413,6 +422,16 @@ function formatExcelDate(val) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     return str;
   }
+  // ISO strings with T
+  if (str.includes('T') && !isNaN(Date.parse(str))) {
+    const dObj = new Date(str);
+    if (!isNaN(dObj.getTime())) {
+      const y = dObj.getFullYear();
+      const m = String(dObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+  }
   // DD-MM-YYYY or DD/MM/YYYY
   const dmY = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (dmY) {
@@ -428,6 +447,14 @@ function formatExcelDate(val) {
     const month = String(yMD[2]).padStart(2, '0');
     const day = String(yMD[3]).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+  // Try fallback Date parse
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1900 && parsed.getFullYear() < 2100) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
   return str;
 }
@@ -653,6 +680,8 @@ app.post('/api/students/bulk-import', (req, res) => {
       db.fee_payments = [];
     }
 
+    // Keep snapshot of pre-existing students so imported rows from the same sheet never overwrite each other
+    const existingStudentsSnapshot = clearExisting ? [] : [...db.students];
     const importedStudents = [];
     const generatedReceipts = [];
     const timestamp = new Date().toISOString();
@@ -761,18 +790,22 @@ app.post('/api/students/bulk-import', (req, res) => {
         }
       };
 
-      // Upsert logic: Update existing student if rollNo, enrollmentNo, aadhaarNo, or name+fatherName matches
-      const existingIndex = db.students.findIndex(s => {
-        if (finalRoll && s.rollNo && s.rollNo.toUpperCase() === finalRoll) return true;
-        if (finalRoll && s.enrollmentNo && s.enrollmentNo.toUpperCase() === finalRoll) return true;
-        if (newStudent.aadhaarNo && s.aadhaarNo && s.aadhaarNo.replace(/\D/g, '') === newStudent.aadhaarNo.replace(/\D/g, '')) return true;
-        if (newStudent.fullName && newStudent.fatherName && 
-            s.fullName.trim().toLowerCase() === newStudent.fullName.trim().toLowerCase() && 
-            s.fatherName.trim().toLowerCase() === newStudent.fatherName.trim().toLowerCase()) {
-          return true;
-        }
-        return false;
-      });
+      // Bulk Import: Every row in the uploaded file is an individual student admission record.
+      // We only update an existing student if clearExisting is false AND:
+      // 1. Explicit row.id matches an existing student in database
+      // 2. OR non-empty finalRoll, courseName, and admissionSession all match an already-existing student
+      let existingIndex = -1;
+      if (!clearExisting && existingStudentsSnapshot.length > 0) {
+        existingIndex = db.students.findIndex(s => {
+          if (row.id && s.id === row.id) return true;
+          if (finalRoll && s.rollNo && s.rollNo.toUpperCase() === finalRoll &&
+              s.courseName && newStudent.courseName && s.courseName.trim().toLowerCase() === newStudent.courseName.trim().toLowerCase() &&
+              s.admissionSession === newStudent.admissionSession) {
+            return true;
+          }
+          return false;
+        });
+      }
 
       if (existingIndex !== -1) {
         const existingStudent = db.students[existingIndex];
@@ -785,7 +818,7 @@ app.post('/api/students/bulk-import', (req, res) => {
         };
         importedStudents.push(db.students[existingIndex]);
       } else {
-        db.students.unshift(newStudent);
+        db.students.push(newStudent);
         importedStudents.push(newStudent);
       }
 
@@ -795,7 +828,7 @@ app.post('/api/students/bulk-import', (req, res) => {
         const receipt = {
           id: `pay-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
           receiptNo: receiptNo,
-          studentId: newStudent.id,
+          studentId: existingIndex !== -1 ? db.students[existingIndex].id : newStudent.id,
           rollNo: newStudent.rollNo,
           studentName: newStudent.fullName,
           courseName: newStudent.courseName,
@@ -928,21 +961,33 @@ app.get('/api/students', (req, res) => {
 });
 
 app.get('/api/students/:rollNo', (req, res) => {
-  const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const student = db.students.find(s => s.rollNo.toUpperCase() === roll || s.registrationNo.toUpperCase() === roll || s.id === req.params.rollNo);
-  
-  if (!student) {
-    return res.status(404).json({ success: false, message: 'Student not found with this Roll / Reg No.' });
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) || 
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+    
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found with this Roll / Reg No.' });
+    }
+
+    const sRoll = student.rollNo ? student.rollNo.toUpperCase() : '';
+    const payments = sRoll ? (db.fee_payments || []).filter(p => p.rollNo && p.rollNo.toUpperCase() === sRoll) : [];
+    const results = sRoll ? (db.results || []).filter(r => r.rollNo && r.rollNo.toUpperCase() === sRoll) : [];
+
+    res.json({
+      success: true,
+      student: { ...student, payments, results }
+    });
+  } catch (err) {
+    console.error('Error fetching student profile:', err);
+    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
-
-  const payments = db.fee_payments.filter(p => p.rollNo.toUpperCase() === student.rollNo.toUpperCase());
-  const results = db.results.filter(r => r.rollNo.toUpperCase() === student.rollNo.toUpperCase());
-
-  res.json({
-    success: true,
-    student: { ...student, payments, results }
-  });
 });
 
 // Physical On-Campus Admission with Multipart Docs & Payment (Cash, Card, Online)
@@ -1296,82 +1341,96 @@ app.post(
 
 // Full Student Edit Endpoint
 app.put('/api/students/:rollNo', (req, res) => {
-  const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const index = db.students.findIndex(s => s.rollNo.toUpperCase() === roll);
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const index = db.students.findIndex(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
 
-  if (index === -1) {
-    return res.status(404).json({ success: false, message: 'Student not found' });
-  }
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
 
-  const existing = db.students[index];
-  const body = req.body;
+    const existing = db.students[index];
+    const body = req.body;
 
-  // Handle potential Roll Number change
-  let newRoll = (body.rollNo || body.Roll_No || existing.rollNo).trim().toUpperCase();
-  if (newRoll !== roll && db.students.some((s, idx) => idx !== index && s.rollNo.toUpperCase() === newRoll)) {
-    return res.status(400).json({ success: false, message: `Roll Number ${newRoll} is already in use by another student!` });
-  }
+    // Handle potential Roll Number change
+    let newRoll = (body.rollNo || body.Roll_No || existing.rollNo || '').trim().toUpperCase();
+    if (newRoll && newRoll !== (existing.rollNo || '').toUpperCase() && db.students.some((s, idx) => idx !== index && s.rollNo && s.rollNo.toUpperCase() === newRoll)) {
+      return res.status(400).json({ success: false, message: `Roll Number ${newRoll} is already in use by another student!` });
+    }
 
-  // Update student fields
-  const updatedStudent = {
-    ...existing,
-    rollNo: newRoll,
-    fullName: body.fullName || body.Student_Name || existing.fullName,
-    motherName: body.motherName || body.Mother_Name || existing.motherName,
-    fatherName: body.fatherName || body.Father_Name || existing.fatherName,
-    dob: body.dob || body.Date_Of_Birth || existing.dob,
-    gender: body.gender || body.Gender || existing.gender,
-    bloodGroup: body.bloodGroup || body.Blood_Group || existing.bloodGroup,
-    phone: body.phone || body.Contact || existing.phone,
-    email: body.email || body.Email_ID || existing.email,
-    address: body.address || body.Address || existing.address,
-    aadhaarNo: body.aadhaarNo || body.Aadhaar_No || existing.aadhaarNo,
-    samagraId: body.samagraId || body.Samagra_id || existing.samagraId,
-    abcId: body.abcId || body.Abc_id || existing.abcId,
-    mptassId: body.mptassId || body.MPTass_id || existing.mptassId,
-    otrId: body.otrId || body.OTR_id || existing.otrId,
-    debId: body.debId || body.Deb_id || existing.debId,
-    scholarId: body.scholarId || body.Scholer_id || existing.scholarId,
-    userId: body.userId || body.User_id || existing.userId,
-    universityName: body.universityName || body.University_Name || existing.universityName,
-    collegeName: body.collegeName || body.College_Name || existing.collegeName,
-    courseName: body.courseName || body.Course_Name || existing.courseName,
-    branch: body.branch || body.Branch || existing.branch,
-    courseType: body.courseType || body.Course_Type || existing.courseType,
-    courseMode: body.courseMode || body.Course_Mode || existing.courseMode,
-    socialCategory: body.socialCategory || body.Social_category || existing.socialCategory,
-    currentSession: body.currentSession || body.Current_session || existing.currentSession,
-    currentClass: body.currentClass || body.Current_class || existing.currentClass,
-    currentSemester: Number(body.currentSemester) || existing.currentSemester,
-    manualSemester: body.manualSemester !== undefined ? Number(body.manualSemester) : existing.manualSemester,
-    totalFee: body.totalFee !== undefined ? Number(body.totalFee) : existing.totalFee,
-    studentFee: body.totalFee !== undefined ? Number(body.totalFee) : (existing.studentFee || existing.totalFee),
-    scholarshipAmount: body.scholarshipAmount !== undefined ? Math.max(0, Number(body.scholarshipAmount)) : (existing.scholarshipAmount || 0),
-    admissionYear: Number(body.admissionYear) || existing.admissionYear,
-    remark: body.remark || body.Remark || existing.remark,
-    status: body.status || existing.status || 'Active',
-    updatedAt: new Date().toISOString()
-  };
+    // Update student fields
+    const updatedStudent = {
+      ...existing,
+      rollNo: newRoll,
+      fullName: body.fullName || body.studentName || body.Student_Name || existing.fullName,
+      studentName: body.fullName || body.studentName || body.Student_Name || existing.studentName || existing.fullName,
+      motherName: body.motherName !== undefined ? body.motherName : (body.mother_name !== undefined ? body.mother_name : existing.motherName),
+      fatherName: body.fatherName || body.father_name || body.Father_Name || existing.fatherName,
+      dob: body.dob !== undefined ? body.dob : (body.Date_Of_Birth !== undefined ? body.Date_Of_Birth : existing.dob),
+      gender: body.gender || body.Gender || existing.gender,
+      bloodGroup: body.bloodGroup || body.Blood_Group || existing.bloodGroup,
+      phone: body.phone !== undefined ? body.phone : (body.contact !== undefined ? body.contact : existing.phone),
+      contact: body.phone !== undefined ? body.phone : (body.contact !== undefined ? body.contact : existing.contact || existing.phone),
+      email: body.email !== undefined ? body.email : (body.Email_ID !== undefined ? body.Email_ID : existing.email),
+      address: body.address !== undefined ? body.address : (body.Address !== undefined ? body.Address : existing.address),
+      aadhaarNo: body.aadhaarNo !== undefined ? body.aadhaarNo : (body.aadhaar_no !== undefined ? body.aadhaar_no : (body.aadharNo !== undefined ? body.aadharNo : existing.aadhaarNo)),
+      samagraId: body.samagraId !== undefined ? body.samagraId : (body.samagra_id !== undefined ? body.samagra_id : existing.samagraId),
+      abcId: body.abcId !== undefined ? body.abcId : (body.abc_id !== undefined ? body.abc_id : existing.abcId),
+      mptassId: body.mptassId !== undefined ? body.mptassId : (body.mpTassId !== undefined ? body.mpTassId : (body.mptass_id !== undefined ? body.mptass_id : existing.mptassId)),
+      mptassPassword: body.mptassPassword !== undefined ? body.mptassPassword : (body.mpTassPassword !== undefined ? body.mpTassPassword : existing.mptassPassword),
+      otrId: body.otrId !== undefined ? body.otrId : (body.otr_id !== undefined ? body.otr_id : existing.otrId),
+      debId: body.debId !== undefined ? body.debId : (body.deb_id !== undefined ? body.deb_id : existing.debId),
+      scholarId: body.scholarId !== undefined ? body.scholarId : (body.scholerId !== undefined ? body.scholerId : (body.scholer_id !== undefined ? body.scholer_id : existing.scholarId)),
+      scholerId: body.scholarId !== undefined ? body.scholarId : (body.scholerId !== undefined ? body.scholerId : (body.scholer_id !== undefined ? body.scholer_id : existing.scholerId)),
+      userId: body.userId !== undefined ? body.userId : (body.user_id !== undefined ? body.user_id : existing.userId),
+      universityName: body.universityName || body.University_Name || existing.universityName,
+      collegeName: body.collegeName || body.College_Name || existing.collegeName,
+      courseName: body.courseName || body.Course_Name || existing.courseName,
+      branch: body.branch || body.Branch || existing.branch,
+      courseType: body.courseType || body.Course_Type || existing.courseType,
+      courseMode: body.courseMode || body.Course_Mode || existing.courseMode,
+      socialCategory: body.socialCategory || body.Social_category || existing.socialCategory,
+      admissionSession: body.admissionSession || body.Admission_Session || body.currentSession || existing.admissionSession,
+      admissionSatra: body.admissionSatra || body.Admission_Satra || existing.admissionSatra,
+      admissionDate: body.admissionDate || body.Admission_Date || existing.admissionDate,
+      currentSession: body.currentSession || body.Current_session || existing.currentSession,
+      currentClass: body.currentClass || body.Current_class || existing.currentClass,
+      currentSemester: Number(body.currentSemester) || existing.currentSemester,
+      manualSemester: body.manualSemester !== undefined ? Number(body.manualSemester) : existing.manualSemester,
+      totalFee: body.totalFee !== undefined ? Number(body.totalFee) : existing.totalFee,
+      studentFee: body.totalFee !== undefined ? Number(body.totalFee) : (existing.studentFee || existing.totalFee),
+      scholarshipAmount: body.scholarshipAmount !== undefined ? Math.max(0, Number(body.scholarshipAmount)) : (existing.scholarshipAmount || 0),
+      admissionYear: Number(body.admissionYear) || existing.admissionYear,
+      remark: body.remark !== undefined ? body.remark : (body.Remark !== undefined ? body.Remark : existing.remark),
+      status: body.status || existing.status || 'Active',
+      updatedAt: new Date().toISOString()
+    };
 
-  // Re-calculate net fee and balance due considering scholarship
-  const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
-  updatedStudent.netTotalFee = Math.max(0, (updatedStudent.totalFee || 0) - schAmt);
-  updatedStudent.balanceDue = Math.max(0, updatedStudent.netTotalFee - (updatedStudent.totalPaid || 0));
+    // Re-calculate net fee and balance due considering scholarship
+    const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
+    updatedStudent.netTotalFee = Math.max(0, (updatedStudent.totalFee || 0) - schAmt);
+    updatedStudent.balanceDue = Math.max(0, updatedStudent.netTotalFee - (updatedStudent.totalPaid || 0));
 
-  // If roll number changed, update linked fee_payments and dual references
-  if (newRoll !== roll) {
-    (db.fee_payments || []).forEach(p => {
-      if (p.rollNo && p.rollNo.toUpperCase() === roll) {
-        p.rollNo = newRoll;
-      }
-    });
-    db.students.forEach(s => {
-      if (s.primaryRollNo && s.primaryRollNo.toUpperCase() === roll) {
-        s.primaryRollNo = newRoll;
-      }
-    });
-  }
+    // If roll number changed, update linked fee_payments and dual references
+    if (newRoll && newRoll !== (existing.rollNo || '').toUpperCase()) {
+      (db.fee_payments || []).forEach(p => {
+        if (p.rollNo && p.rollNo.toUpperCase() === (existing.rollNo || '').toUpperCase()) {
+          p.rollNo = newRoll;
+        }
+      });
+      db.students.forEach(s => {
+        if (s.primaryRollNo && s.primaryRollNo.toUpperCase() === (existing.rollNo || '').toUpperCase()) {
+          s.primaryRollNo = newRoll;
+        }
+      });
+    }
 
   // Check if an Additional / Secondary Course is being attached to this student
   let addedSecondaryStudent = null;
@@ -1479,14 +1538,18 @@ app.put('/api/students/:rollNo', (req, res) => {
   db.students[index] = updatedStudent;
   writeDB(db);
 
-  res.json({
-    success: true,
-    message: addedSecondaryStudent
-      ? `Student updated and additional course (${addedSecondaryStudent.courseName}) added successfully!`
-      : 'Student details updated successfully!',
-    student: updatedStudent,
-    addedSecondaryStudent
-  });
+    res.json({
+      success: true,
+      message: addedSecondaryStudent
+        ? `Student updated and additional course (${addedSecondaryStudent.courseName}) added successfully!`
+        : 'Student details updated successfully!',
+      student: updatedStudent,
+      addedSecondaryStudent
+    });
+  } catch (err) {
+    console.error('Error updating student:', err);
+    res.status(500).json({ success: false, message: 'Failed to update student: ' + err.message });
+  }
 });
 
 // Dedicated endpoint to attach an additional / dual course to an existing student
@@ -1801,8 +1864,13 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 
 app.delete('/api/students/:rollNo', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const index = db.students.findIndex(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const roll = rawKey.toUpperCase();
+  const index = db.students.findIndex(s => 
+    (s.id && s.id === rawKey) ||
+    (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+    (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll)
+  );
 
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -1812,7 +1880,10 @@ app.delete('/api/students/:rollNo', (req, res) => {
 
   // If deleting a primary course, also delete its attached secondary dual course:
   if (!deleted.primaryRollNo) {
-    db.students = db.students.filter(s => s.primaryRollNo?.toUpperCase() !== roll && s.primaryStudentId !== deleted.id);
+    db.students = db.students.filter(s => 
+      !(s.primaryRollNo && s.primaryRollNo.toUpperCase() === roll) &&
+      !(s.primaryStudentId && s.primaryStudentId === deleted.id)
+    );
   }
 
   writeDB(db);

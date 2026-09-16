@@ -371,27 +371,59 @@ export default function StudentList({
     }
   };
 
-  const handleOpenProfile = async (rollNo) => {
+  const formatDobForInput = (val) => {
+    if (!val) return '';
+    const str = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
     try {
-      const res = await fetch(`/api/students/${rollNo}`);
-      const data = await res.json();
-      if (data.success) {
-        setSelectedStudent(data.student);
+      const d = new Date(val);
+      if (!isNaN(d.getTime()) && d.getFullYear() > 1900 && d.getFullYear() < 2100) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    } catch (e) {}
+    if (str.includes('T')) return str.split('T')[0];
+    const dmY = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmY) return `${dmY[3]}-${String(dmY[2]).padStart(2, '0')}-${String(dmY[1]).padStart(2, '0')}`;
+    return str;
+  };
+
+  const handleOpenProfile = async (studentOrRoll) => {
+    try {
+      let lookupKey = '';
+      if (studentOrRoll && typeof studentOrRoll === 'object') {
+        setSelectedStudent(studentOrRoll);
         setActiveProfileTab('profile');
+        lookupKey = studentOrRoll.rollNo || studentOrRoll.enrollmentNo || studentOrRoll.id || '';
+      } else if (typeof studentOrRoll === 'string') {
+        lookupKey = studentOrRoll.trim();
+      }
+
+      if (lookupKey) {
+        const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}`);
+        const data = await res.json();
+        if (data.success && data.student) {
+          setSelectedStudent(data.student);
+          setActiveProfileTab('profile');
+        }
       }
     } catch (err) {
       console.error('Error fetching student profile:', err);
     }
   };
 
-  const handleDeleteStudent = async (rollNo) => {
-    if (!window.confirm(`Are you sure you want to remove student with Roll Number ${rollNo}?`)) return;
+  const handleDeleteStudent = async (rollOrStudent) => {
+    const rollNo = typeof rollOrStudent === 'object' ? (rollOrStudent.rollNo || rollOrStudent.enrollmentNo || rollOrStudent.id) : rollOrStudent;
+    if (!rollNo) return;
+    if (!window.confirm(`Are you sure you want to remove this student record (${rollNo})?`)) return;
     try {
-      const res = await fetch(`/api/students/${rollNo}`, { method: 'DELETE' });
+      const res = await fetch(`/api/students/${encodeURIComponent(rollNo)}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        setStudents(prev => prev.filter(s => s.rollNo !== rollNo));
-        if (selectedStudent?.rollNo === rollNo) setSelectedStudent(null);
+        setStudents(prev => prev.filter(s => s.rollNo !== rollNo && s.id !== rollNo));
+        if (selectedStudent?.rollNo === rollNo || selectedStudent?.id === rollNo) setSelectedStudent(null);
       }
     } catch (err) {
       alert('Failed to delete student');
@@ -422,32 +454,32 @@ export default function StudentList({
       rollNo: std.rollNo || std.enrollmentNo || '',
       fullName: std.fullName || std.studentName || '',
       fatherName: std.fatherName || std.father_name || '',
-      motherName: std.motherName || '',
-      dob: std.dob || '',
+      motherName: std.motherName || std.mother_name || '',
+      dob: formatDobForInput(std.dob),
       gender: std.gender || 'Male',
       phone: std.phone || std.contact || '',
       email: std.email || '',
       address: std.address || '',
-      aadhaarNo: std.aadhaarNo || std.aadharNo || '',
-      samagraId: std.samagraId || '',
-      abcId: std.abcId || '',
-      mptassId: std.mptassId || '',
-      mptassPassword: std.mptassPassword || '',
-      otrId: std.otrId || '',
-      debId: std.debId || '',
-      scholerId: std.scholerId || '',
-      userId: std.userId || '',
+      aadhaarNo: std.aadhaarNo || std.aadharNo || std.aadhaar_no || '',
+      samagraId: std.samagraId || std.samagra_id || '',
+      abcId: std.abcId || std.abc_id || '',
+      mptassId: std.mptassId || std.mpTassId || std.mptass_id || '',
+      mptassPassword: std.mptassPassword || std.mpTassPassword || std.mptass_password || '',
+      otrId: std.otrId || std.otr_id || '',
+      debId: std.debId || std.deb_id || '',
+      scholerId: std.scholerId || std.scholarId || std.scholer_id || '',
+      userId: std.userId || std.user_id || '',
       medium: std.medium || 'Hindi',
       admissionSession: std.admissionSession || std.currentSession || '2024-2025',
       admissionSatra: std.admissionSatra || std.currentSatra || 'July',
-      admissionDate: std.admissionDate || '',
+      admissionDate: formatDobForInput(std.admissionDate),
       universityName: std.universityName || '',
       collegeName: std.collegeName || '',
       courseName: std.courseName || '',
       branch: std.branch || '',
       courseType: std.courseType || 'UG',
       courseMode: std.courseMode || 'Regular',
-      socialCategory: std.socialCategory || 'General',
+      socialCategory: std.socialCategory || std.category || 'General',
       documentSubmit: std.documentSubmit || '',
       bloodGroup: std.bloodGroup || '',
       studentImage: std.studentImage || '',
@@ -474,7 +506,8 @@ export default function StudentList({
         ...editFormData,
         ...(showAddCourse && (newCourseData.courseName || newCourseData.branch) ? { additionalCourse: newCourseData } : {})
       };
-      const res = await fetch(`/api/students/${editingStudent.rollNo}`, {
+      const lookupId = editingStudent.rollNo || editingStudent.enrollmentNo || editingStudent.id;
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -488,7 +521,7 @@ export default function StudentList({
       // Reload students directory immediately to reflect new course and linked dual sub-row
       await fetchStudents();
 
-      if (selectedStudent?.rollNo === editingStudent.rollNo) {
+      if (selectedStudent?.rollNo === editingStudent.rollNo || selectedStudent?.id === editingStudent.id) {
         setSelectedStudent(prev => ({ ...prev, ...data.student }));
       }
       setTimeout(() => {
@@ -968,7 +1001,7 @@ export default function StudentList({
                             <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap">
                               <div className="flex items-center gap-2.5">
                                 <div
-                                  onClick={() => handleOpenProfile(std.rollNo)}
+                                  onClick={() => handleOpenProfile(std)}
                                   className="w-9 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all shadow-2xs"
                                   title="Click to view full photo & profile"
                                 >
@@ -984,13 +1017,13 @@ export default function StudentList({
                                 </div>
                                 <div>
                                   <div
-                                    onClick={() => handleOpenProfile(std.rollNo)}
+                                    onClick={() => handleOpenProfile(std)}
                                     className="font-bold text-slate-900 uppercase tracking-tight hover:text-indigo-600 cursor-pointer"
                                   >
                                     {std.fullName || std.studentName}
                                   </div>
                                   <div className="text-[10px] text-slate-400 font-mono">
-                                    {std.rollNo}
+                                    {std.rollNo || std.enrollmentNo || ''}
                                   </div>
                                 </div>
                               </div>
@@ -1070,7 +1103,7 @@ export default function StudentList({
                               <div className="flex items-center justify-center gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenProfile(std.rollNo)}
+                                  onClick={() => handleOpenProfile(std)}
                                   className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
                                   title="View Profile & KYC Documents"
                                 >
@@ -1094,7 +1127,7 @@ export default function StudentList({
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteStudent(std.rollNo)}
+                                  onClick={() => handleDeleteStudent(std)}
                                   className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
                                   title="Delete Student"
                                 >
@@ -1166,7 +1199,7 @@ export default function StudentList({
                                   <div className="flex items-center justify-center gap-1">
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenProfile(linked.rollNo)}
+                                      onClick={() => handleOpenProfile(linked)}
                                       className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
                                       title="View Profile"
                                     >
@@ -1182,7 +1215,7 @@ export default function StudentList({
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => handleDeleteStudent(linked.rollNo)}
+                                      onClick={() => handleDeleteStudent(linked)}
                                       className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
                                       title="Delete Enrollment"
                                     >
@@ -1881,11 +1914,11 @@ export default function StudentList({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">Aadhaar No</span>
-                      <p className="font-mono font-bold text-slate-900">{selectedStudent.aadhaarNo || selectedStudent.aadharNo || 'N/A'}</p>
+                      <p className="font-mono font-bold text-slate-900">{selectedStudent.aadhaarNo || selectedStudent.aadharNo || selectedStudent.aadhaar_no || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">Samagra ID</span>
-                      <p className="font-mono font-bold text-indigo-900">{selectedStudent.samagraId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-indigo-900">{selectedStudent.samagraId || selectedStudent.samagra_id || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">Enrollment No</span>
@@ -1893,31 +1926,31 @@ export default function StudentList({
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">ABC ID</span>
-                      <p className="font-mono font-bold text-indigo-900">{selectedStudent.abcId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-indigo-900">{selectedStudent.abcId || selectedStudent.abc_id || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">MPTASS ID</span>
-                      <p className="font-mono font-bold text-emerald-800">{selectedStudent.mpTassId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-emerald-800">{selectedStudent.mptassId || selectedStudent.mpTassId || selectedStudent.mptass_id || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">MPTASS Password</span>
-                      <p className="font-mono font-bold text-slate-700">{selectedStudent.mpTassPassword || '••••••'}</p>
+                      <p className="font-mono font-bold text-slate-700">{selectedStudent.mptassPassword || selectedStudent.mpTassPassword || selectedStudent.mptass_password || '••••••'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">OTR ID</span>
-                      <p className="font-mono font-bold text-slate-900">{selectedStudent.otrId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-slate-900">{selectedStudent.otrId || selectedStudent.otr_id || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">DEB ID / Scholer ID</span>
-                      <p className="font-mono font-bold text-slate-900">{selectedStudent.debId || selectedStudent.scholerId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-slate-900">{selectedStudent.debId || selectedStudent.deb_id || selectedStudent.scholerId || selectedStudent.scholarId || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">Scholarship ID (Scholer_id)</span>
-                      <p className="font-mono font-bold text-slate-900">{selectedStudent.scholerId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-slate-900">{selectedStudent.scholerId || selectedStudent.scholarId || selectedStudent.scholer_id || 'N/A'}</p>
                     </div>
                     <div className="bg-white p-2.5 rounded-xl border border-amber-100">
                       <span className="text-slate-400 block text-[10px]">User ID (User_id)</span>
-                      <p className="font-mono font-bold text-slate-900">{selectedStudent.userId || 'N/A'}</p>
+                      <p className="font-mono font-bold text-slate-900">{selectedStudent.userId || selectedStudent.user_id || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -1928,16 +1961,16 @@ export default function StudentList({
                     👤 Personal &amp; Family Particulars
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div><span className="text-slate-400 block text-[10px]">Student Full Name:</span><p className="font-bold text-slate-900 uppercase">{selectedStudent.fullName}</p></div>
-                    <div><span className="text-slate-400 block text-[10px]">Mother's Name:</span><p className="font-semibold text-slate-800">{selectedStudent.motherName || 'N/A'}</p></div>
-                    <div><span className="text-slate-400 block text-[10px]">Father's Name:</span><p className="font-semibold text-slate-800">{selectedStudent.fatherName}</p></div>
-                    <div><span className="text-slate-400 block text-[10px]">Date of Birth:</span><p className="font-semibold text-slate-800">{selectedStudent.dob}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Student Full Name:</span><p className="font-bold text-slate-900 uppercase">{selectedStudent.fullName || selectedStudent.studentName || '-'}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Mother's Name:</span><p className="font-semibold text-slate-800">{selectedStudent.motherName || selectedStudent.mother_name || 'N/A'}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Father's Name:</span><p className="font-semibold text-slate-800">{selectedStudent.fatherName || selectedStudent.father_name || '-'}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Date of Birth:</span><p className="font-semibold text-slate-800">{selectedStudent.dob || 'N/A'}</p></div>
                     <div><span className="text-slate-400 block text-[10px]">Gender:</span><p className="font-semibold text-slate-800">{selectedStudent.gender || 'Not Specified'}</p></div>
                     <div><span className="text-slate-400 block text-[10px]">Blood Group:</span><p className="font-semibold text-rose-700">{selectedStudent.bloodGroup || 'NA'}</p></div>
-                    <div><span className="text-slate-400 block text-[10px]">Contact Mobile:</span><p className="font-semibold text-slate-800 font-mono">{selectedStudent.phone}</p></div>
-                    <div><span className="text-slate-400 block text-[10px]">Email Address:</span><p className="font-semibold text-slate-800">{selectedStudent.email}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Contact Mobile:</span><p className="font-semibold text-slate-800 font-mono">{selectedStudent.phone || selectedStudent.contact || 'N/A'}</p></div>
+                    <div><span className="text-slate-400 block text-[10px]">Email Address:</span><p className="font-semibold text-slate-800">{selectedStudent.email || 'N/A'}</p></div>
                     <div><span className="text-slate-400 block text-[10px]">Social Category:</span><p className="font-semibold text-indigo-700">{selectedStudent.socialCategory || selectedStudent.category || 'General'}</p></div>
-                    <div className="col-span-2 sm:col-span-3"><span className="text-slate-400 block text-[10px]">Full Residential Address:</span><p className="font-medium text-slate-800">{selectedStudent.address}{selectedStudent.city ? `, ${selectedStudent.city}` : ''}{selectedStudent.state ? `, ${selectedStudent.state}` : ''}{selectedStudent.pincode ? ` - ${selectedStudent.pincode}` : ''}</p></div>
+                    <div className="col-span-2 sm:col-span-3"><span className="text-slate-400 block text-[10px]">Full Residential Address:</span><p className="font-medium text-slate-800">{selectedStudent.address || '-'}{selectedStudent.city ? `, ${selectedStudent.city}` : ''}{selectedStudent.state ? `, ${selectedStudent.state}` : ''}{selectedStudent.pincode ? ` - ${selectedStudent.pincode}` : ''}</p></div>
                   </div>
                 </div>
 
