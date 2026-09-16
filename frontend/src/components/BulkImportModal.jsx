@@ -13,6 +13,9 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
       return JSON.parse(rawText);
     } catch (e) {
       if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error('Data size bahut bada hai (413 Payload Too Large). Server body limit 50MB tak badha di gayi hai, kripya dubara import try karein.');
+        }
         throw new Error(`Server error (${res.status}: ${res.statusText}). Please verify backend server is running.`);
       }
       throw new Error('Server connection error (Invalid JSON response). Please check backend server status.');
