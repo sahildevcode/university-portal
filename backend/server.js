@@ -329,26 +329,134 @@ app.post('/api/auth/student-register', (req, res) => {
   db.student_users.push(newStudentUser);
 
   // Also create student record in database so admin sees them immediately!
-        const newStudent = {
+  const newStudent = {
+    id: `std-${Date.now()}`,
+    rollNo: rollNo,
+    registrationNo: regNo,
+    fullName: fullName.trim(),
+    studentName: fullName.trim(),
+    fatherName: '',
+    motherName: '',
+    dob: '',
+    gender: 'Male',
+    contact: phone || '',
+    phone: phone || '',
+    email: email.trim(),
+    address: '',
+    aadhaarNo: '',
+    samagraId: '',
+    enrollmentNo: rollNo,
+    abcId: '',
+    universityName: selectedCourse?.universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
+    collegeName: selectedCourse?.collegeName || 'PKC Education Learning Institute & Consultancy',
+    courseId: selectedCourse?.id || 'custom',
+    courseName: selectedCourse?.name || selectedCourse?.courseName || 'General Course',
+    branch: selectedCourse?.branch || 'General',
+    courseType: selectedCourse?.courseType || 'UG',
+    courseMode: selectedCourse?.courseMode || 'Regular',
+    socialCategory: 'General',
+    documentSubmit: '',
+    bloodGroup: 'NA',
+    currentSession: '2024-2025',
+    currentSatra: 'July',
+    currentClass: 'SEM-1',
+    currentSemester: 1,
+    studentFee: selectedCourse?.fee || 0,
+    totalFee: selectedCourse?.fee || 0,
+    scholarshipAmount: 0,
+    totalPaid: 0,
+    balanceDue: selectedCourse?.fee || 0,
+    status: 'Active',
+    admissionYear: year,
+    admissionDate: new Date().toISOString().split('T')[0]
+  };
+  db.students.unshift(newStudent);
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: 'Student registration successful!',
+    user: newStudentUser,
+    student: newStudent
+  });
+});
+
+// Bulk Data Import (Excel / JSON) for Legacy Students
+app.post('/api/students/bulk-import', (req, res) => {
+  try {
+    const { students: rawStudents, clearExisting = false, operatorName = 'Admin' } = req.body;
+    if (!Array.isArray(rawStudents) || rawStudents.length === 0) {
+      return res.status(400).json({ success: false, message: 'No student records provided for import.' });
+    }
+
+    const db = readDB();
+    if (!db.students) db.students = [];
+    if (!db.fee_payments) db.fee_payments = [];
+
+    if (clearExisting) {
+      db.students = [];
+      db.fee_payments = [];
+    }
+
+    const importedStudents = [];
+    const generatedReceipts = [];
+    const timestamp = new Date().toISOString();
+
+    for (let i = 0; i < rawStudents.length; i++) {
+      const row = normalizeStudentRow(rawStudents[i]);
+      const studentIdx = db.students.length + 1;
+      const yr = row.admissionSession ? row.admissionSession.split('-')[0] : '2024';
+
+      let rollBase = (row.enrollmentNo || row.rollNo || '').toUpperCase();
+      if (!rollBase) {
+        rollBase = `PKC${yr}${String(studentIdx).padStart(3, '0')}`;
+      }
+
+      const finalRoll = rollBase;
+      const regNo = `REG-IMP-${yr}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const courseFee = Number(row.studentFee || row.totalFee || 0);
+      const schAmt = Number(row.scholarshipAmount || 0);
+      const netFee = Math.max(0, courseFee - schAmt);
+
+      let paid = 0;
+      if (row.totalPaid !== undefined && row.totalPaid !== null) {
+        paid = Number(row.totalPaid);
+      } else if (row.paidAmount !== undefined && row.paidAmount !== null) {
+        paid = Number(row.paidAmount);
+      } else {
+        paid = courseFee > 0 ? courseFee : 0;
+      }
+
+      const due = Math.max(0, netFee - paid);
+
+      const docList = Array.isArray(row.documentSubmit) ? row.documentSubmit.join(', ') : (row.documentSubmit || 'Pending Document Submission');
+      const docStatusMap = {
+        doc10th: docList.toLowerCase().includes('10th') ? 'Verified' : 'Pending',
+        doc12th: docList.toLowerCase().includes('12th') ? 'Verified' : 'Pending',
+        aadhar: docList.toLowerCase().includes('aadhaar') || docList.toLowerCase().includes('aadhar') ? 'Verified' : 'Pending'
+      };
+
+      const newStudent = {
         id: `std-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
         rollNo: finalRoll,
         registrationNo: regNo,
-        studentName: row.studentName || `Student ${studentIdx}`,
-        fullName: row.studentName || `Student ${studentIdx}`,
+        studentName: row.studentName || row.fullName || `Student ${studentIdx}`,
+        fullName: row.fullName || row.studentName || `Student ${studentIdx}`,
         fatherName: row.fatherName || '',
         motherName: row.motherName || '',
         dob: row.dob || '',
         gender: row.gender || 'Male',
-        contact: row.phone || '',
-        phone: row.phone || '',
+        contact: row.phone || row.contact || '',
+        phone: row.phone || row.contact || '',
         email: row.email || '',
         address: row.address || '',
         aadhaarNo: row.aadhaarNo || '',
         samagraId: row.samagraId || '',
         enrollmentNo: row.enrollmentNo || finalRoll,
         abcId: row.abcId || '',
-        mpTassId: row.mpTassId || '',
-        mpTassPassword: row.mpTassPassword || '',
+        mptassId: row.mptassId || '',
+        mptassPassword: row.mptassPassword || '',
         otrId: row.otrId || '',
         debId: row.debId || '',
         scholerId: row.scholerId || '',
@@ -358,7 +466,7 @@ app.post('/api/auth/student-register', (req, res) => {
         admissionSatra: row.admissionSatra || 'July',
         admissionDate: row.admissionDate || `${yr}-07-15`,
         universityName: row.universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
-        collegeName: row.collegeName || 'PKC Education & Consultancy',
+        collegeName: row.collegeName || 'PKC Education Learning Institute & Consultancy',
         courseId: 'legacy-course',
         courseName: row.courseName || 'General Degree',
         branch: row.branch || 'General',
@@ -388,6 +496,7 @@ app.post('/api/auth/student-register', (req, res) => {
         universityPaid: 0,
         universityDue: 0,
         remark: row.remark !== undefined && row.remark !== null ? String(row.remark).trim() : '',
+        cancel: row.cancel || '',
         status: row.status || 'Active',
         feeType: 'Past Session Legacy Fee Deposit',
         feeCollectedBy: operatorName,
