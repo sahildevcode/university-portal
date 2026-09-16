@@ -12,7 +12,17 @@ import PrintFeeCard from '../components/PrintFeeCard';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function StudentList({ courses, setActiveTab, onSelectStudentForFee, onOpenNewAdmission, lang: propLang, toggleLang: propToggleLang }) {
+export default function StudentList({ 
+  courses, 
+  setActiveTab, 
+  onSelectStudentForFee, 
+  onOpenNewAdmission, 
+  lang: propLang, 
+  toggleLang: propToggleLang,
+  hideHeader = false,
+  dueFilter = 'all',
+  onFeeReceived
+}) {
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
@@ -313,6 +323,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         setFeeDeskAmount(newRem > 0 ? String(newRem) : '');
         setFeeDeskRefNo('');
         fetchStudents();
+        if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_fee') {
         const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-fee`, {
           method: 'PUT',
@@ -332,6 +343,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
         setFeeDeskSuccess(`Academic Center Fee set to ₹${amt.toLocaleString('en-IN')} successfully!`);
         fetchStudents();
+        if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
         const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-scholarship`, {
           method: 'PUT',
@@ -350,6 +362,7 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
         setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
         setFeeDeskSuccess(`Scholarship set to ₹${amt.toLocaleString('en-IN')} successfully!`);
         fetchStudents();
+        if (onFeeReceived) onFeeReceived();
       }
     } catch (err) {
       setFeeDeskError(err.message || 'Error processing request');
@@ -531,6 +544,33 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
   ).filter(s => {
     if (s.isSecondaryCourse) return false;
 
+    // Due Filter support (for Accounts Dashboard integration)
+    if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
+      const acadFee = Number(s.academicFee !== undefined ? s.academicFee : (s.studentFee || s.courseFee || 0));
+      const sch = Number(s.scholarshipAmount || 0);
+      const tot = acadFee + sch;
+      const paid = Number(s.totalPaid || 0);
+      const rem = Math.max(0, tot - paid);
+      const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
+        const lTot = Number(lc.academicFee !== undefined ? lc.academicFee : (lc.studentFee || lc.courseFee || 0)) + Number(lc.scholarshipAmount || 0);
+        const lPaid = Number(lc.totalPaid || 0);
+        return sum + Math.max(0, lTot - lPaid);
+      }, 0) || 0;
+      if (rem + linkedRem <= 0) return false;
+    } else if (dueFilter === 'cleared') {
+      const acadFee = Number(s.academicFee !== undefined ? s.academicFee : (s.studentFee || s.courseFee || 0));
+      const sch = Number(s.scholarshipAmount || 0);
+      const tot = acadFee + sch;
+      const paid = Number(s.totalPaid || 0);
+      const rem = Math.max(0, tot - paid);
+      const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
+        const lTot = Number(lc.academicFee !== undefined ? lc.academicFee : (lc.studentFee || lc.courseFee || 0)) + Number(lc.scholarshipAmount || 0);
+        const lPaid = Number(lc.totalPaid || 0);
+        return sum + Math.max(0, lTot - lPaid);
+      }, 0) || 0;
+      if (rem + linkedRem > 0) return false;
+    }
+
     if (appliedSession !== 'all') {
       const sess = s.currentSession || s.admissionSession || '';
       if (sess && sess !== appliedSession) return false;
@@ -577,41 +617,43 @@ export default function StudentList({ courses, setActiveTab, onSelectStudentForF
     <div className="w-full px-2 sm:px-4 lg:px-6 py-4 space-y-6">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-            Student Records Directorate
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-            Enrolled Students Directory &amp; Documents
-          </h1>
-          <p className="text-xs text-slate-500">
-            View student profiles, inspect uploaded marksheets and KYC identity proofs, print admission slips, and check fee status.
-          </p>
-        </div>
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+              Student Records Directorate
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+              Enrolled Students Directory &amp; Documents
+            </h1>
+            <p className="text-xs text-slate-500">
+              View student profiles, inspect uploaded marksheets and KYC identity proofs, print admission slips, and check fee status.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={() => setShowBulkImport(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-emerald-400/30"
-            title="Bulk Import Students & Past Fees from Excel or PDF"
-          >
-            <UploadCloud className="w-4 h-4 text-amber-300" />
-            <span>📥 Bulk Import Data</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setShowBulkImport(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-emerald-400/30"
+              title="Bulk Import Students & Past Fees from Excel or PDF"
+            >
+              <UploadCloud className="w-4 h-4 text-amber-300" />
+              <span>📥 Bulk Import Data</span>
+            </button>
 
-          <button
-            onClick={() => {
-              if (onOpenNewAdmission) onOpenNewAdmission();
-              else if (setActiveTab) setActiveTab('register');
-            }}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer"
-          >
-            <Users className="w-4 h-4" />
-            <span>+ Enroll New Student</span>
-          </button>
+            <button
+              onClick={() => {
+                if (onOpenNewAdmission) onOpenNewAdmission();
+                else if (setActiveTab) setActiveTab('register');
+              }}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer"
+            >
+              <Users className="w-4 h-4" />
+              <span>+ Enroll New Student</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Top University, Session & Satra Filter Form (Matching User Screenshots) */}
       <div className="bg-[#f0f7f9] p-4 rounded-xl border border-[#bce0ee] shadow-sm space-y-3">
