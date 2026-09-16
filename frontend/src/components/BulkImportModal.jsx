@@ -6,6 +6,19 @@ import {
 } from 'lucide-react';
 
 export default function BulkImportModal({ isOpen, onClose, onImportSuccess, operatorName = 'Admin' }) {
+  // Helper to safely parse API JSON response and catch raw HTML / 404 / 500 errors
+  const parseResponseJson = async (res, defaultErrMsg = 'Server error occurred.') => {
+    const rawText = await res.text();
+    try {
+      return JSON.parse(rawText);
+    } catch (e) {
+      if (!res.ok) {
+        throw new Error(`Server error (${res.status}: ${res.statusText}). Please verify backend server is running.`);
+      }
+      throw new Error('Server connection error (Invalid JSON response). Please check backend server status.');
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('excel'); // 'excel' | 'pdf' | 'reset'
   const [file, setFile] = useState(null);
   const [pdfRawText, setPdfRawText] = useState('');
@@ -85,7 +98,7 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         body: formData
       });
 
-      const data = await res.json();
+      const data = await parseResponseJson(res, 'Excel file parse karne me samasya aayi.');
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Excel file parse karne me samasya aayi.');
       }
@@ -96,9 +109,15 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
 
       setParsedStudents(data.records);
       setSelectedIndices(new Set(data.records.map((_, i) => i)));
+      setErrorMsg(null);
       setSuccessMsg(`Sheet "${data.sheetName}" se safalta-purvak ${data.records.length} records extract ho gaye! Niche preview check karein.`);
     } catch (err) {
-      setErrorMsg(err.message || 'Excel parse fail ho gaya.');
+      setSuccessMsg(null);
+      let msg = err.message || 'Excel parse fail ho gaya.';
+      if (msg.includes('Unexpected token') || msg.includes('JSON') || msg.includes('DOCTYPE')) {
+        msg = 'Backend server connection issue (Invalid JSON response). Kripya check karein ki server active hai.';
+      }
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -132,7 +151,7 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         });
       }
 
-      const data = await res.json();
+      const data = await parseResponseJson(res, 'PDF parse karne me samasya aayi.');
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'PDF parse karne me samasya aayi.');
       }
@@ -143,9 +162,15 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
 
       setParsedStudents(data.records);
       setSelectedIndices(new Set(data.records.map((_, i) => i)));
+      setErrorMsg(null);
       setSuccessMsg(`PDF se safalta-purvak ${data.records.length} student records extract ho gaye! Niche preview check karein.`);
     } catch (err) {
-      setErrorMsg(err.message || 'PDF parse fail ho gaya.');
+      setSuccessMsg(null);
+      let msg = err.message || 'PDF parse fail ho gaya.';
+      if (msg.includes('Unexpected token') || msg.includes('JSON') || msg.includes('DOCTYPE')) {
+        msg = 'Backend server connection issue (Invalid JSON response). Kripya check karein ki server active hai.';
+      }
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -219,11 +244,12 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         })
       });
 
-      const data = await res.json();
+      const data = await parseResponseJson(res, 'Import fail ho gaya.');
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Import fail ho gaya.');
       }
 
+      setErrorMsg(null);
       setSuccessMsg(`🎉 Shandaar! ${data.importedCount} student records aur unki ${data.receiptsCount} fee transactions successfully import ho gayi hain!`);
       setParsedStudents([]);
       setFile(null);
@@ -237,7 +263,12 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         onClose();
       }, 2500);
     } catch (err) {
-      setErrorMsg(err.message || 'Import fail ho gaya.');
+      setSuccessMsg(null);
+      let msg = err.message || 'Import fail ho gaya.';
+      if (msg.includes('Unexpected token') || msg.includes('JSON') || msg.includes('DOCTYPE')) {
+        msg = 'Backend server connection issue. Kripya backend status check karein.';
+      }
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -260,11 +291,12 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         body: JSON.stringify({ confirmationKey: 'CLEAR_DEMO_DATA' })
       });
 
-      const data = await res.json();
+      const data = await parseResponseJson(res, 'Reset failed.');
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Reset failed.');
       }
 
+      setErrorMsg(null);
       setSuccessMsg(data.message);
       setResetConfirmText('');
       if (onImportSuccess) {
