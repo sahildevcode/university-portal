@@ -1640,6 +1640,155 @@ app.delete('/api/students/:rollNo/photo', (req, res) => {
   }
 });
 
+// Dedicated endpoint to cancel student admission
+app.post('/api/students/:rollNo/cancel-admission', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    const { reason, cancelledBy, refundPaid, refundNotes } = req.body || {};
+
+    student.status = 'Cancelled';
+    student.cancel = 'Yes';
+    student.cancellationDate = req.body.cancellationDate || new Date().toISOString().split('T')[0];
+    student.cancellationTimestamp = new Date().toISOString();
+    student.cancellationReason = (reason || 'Admission cancelled by administration').trim();
+    student.cancelledBy = (cancelledBy || 'Admin').trim();
+
+    // Financial refund details
+    if (student.refundPaid === undefined || student.refundPaid === null) {
+      student.refundPaid = Number(refundPaid || 0);
+    }
+    if (!Array.isArray(student.refundHistory)) {
+      student.refundHistory = [];
+    }
+    if (Number(refundPaid) > 0) {
+      student.refundHistory.push({
+        id: 'REF-' + Date.now(),
+        amount: Number(refundPaid),
+        paymentMode: req.body.paymentMode || 'Cash',
+        referenceNo: req.body.referenceNo || `REF-${Date.now().toString().slice(-6)}`,
+        date: student.cancellationDate,
+        recordedBy: student.cancelledBy,
+        remarks: refundNotes || 'Initial refund on cancellation'
+      });
+    }
+
+    student.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Admission successfully cancelled for ${student.fullName || student.rollNo}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error cancelling student admission:', err);
+    res.status(500).json({ success: false, message: 'Failed to cancel admission: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to restore student admission
+app.post('/api/students/:rollNo/restore-admission', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    student.status = 'Active';
+    student.cancel = '';
+    student.restoredAt = new Date().toISOString();
+    student.restoredBy = req.body?.restoredBy || 'Admin';
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Admission restored to Active for ${student.fullName || student.rollNo}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error restoring student admission:', err);
+    res.status(500).json({ success: false, message: 'Failed to restore admission: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to record refund payment for a student
+app.post('/api/students/:rollNo/record-refund', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    const { amount, paymentMode, referenceNo, remarks, recordedBy, date } = req.body || {};
+    const refundAmt = Number(amount) || 0;
+    if (refundAmt <= 0) {
+      return res.status(400).json({ success: false, message: 'Valid refund amount is required.' });
+    }
+
+    student.refundPaid = Number(student.refundPaid || 0) + refundAmt;
+    if (!Array.isArray(student.refundHistory)) {
+      student.refundHistory = [];
+    }
+
+    const refundEntry = {
+      id: 'REF-' + Date.now(),
+      amount: refundAmt,
+      paymentMode: paymentMode || 'Cash',
+      referenceNo: referenceNo || `REF-${Date.now().toString().slice(-6)}`,
+      date: date || new Date().toISOString().split('T')[0],
+      recordedBy: recordedBy || 'Admin',
+      remarks: remarks || 'Fee refund payment'
+    };
+    student.refundHistory.push(refundEntry);
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Refund of ₹${refundAmt.toLocaleString('en-IN')} recorded successfully!`,
+      student,
+      refundEntry
+    });
+  } catch (err) {
+    console.error('Error recording refund payment:', err);
+    res.status(500).json({ success: false, message: 'Failed to record refund: ' + err.message });
+  }
+});
+
 // Dedicated endpoint to attach an additional / dual course to an existing student
 app.post('/api/students/:rollNo/add-course', (req, res) => {
   const db = readDB();

@@ -3,7 +3,8 @@ import {
   Shield, BookOpen, Plus, Edit3, Trash2, Users, CreditCard, 
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
-  Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid
+  Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
+  UserX
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -12,6 +13,7 @@ import StudentRegistration from './StudentRegistration';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
 import WebsiteCmsManager from './WebsiteCmsManager';
 import UniversityPaidManager from './UniversityPaidManager';
+import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -44,8 +46,11 @@ export default function AdminPortal({
       if (p.includes('cashcounter') || p.includes('fee') || p.includes('account') || search.includes('cashcounter') || search.includes('fee')) {
         return 'cashcounter';
       }
-      if (p.includes('documents') || p.includes('document') || search.includes('document')) {
+      if (p.includes('documents') || search.includes('documents')) {
         return 'documents';
+      }
+      if (p.includes('cancelled') || search.includes('cancelled')) {
+        return 'cancelled';
       }
       if (p.includes('university-paid') || search.includes('university-paid')) {
         return 'university-paid';
@@ -342,6 +347,16 @@ export default function AdminPortal({
       icon: Building2, 
       color: 'text-amber-600',
       badge: 'Settlement'
+    },
+    { 
+      id: 'cancelled', 
+      label: 'Cancelled Admissions', 
+      fullName: 'Cancelled Admissions & Student Fee Settlement Registry',
+      sub: 'Cancelled student records, deposited fees & refund clearance ledger',
+      shortDesc: 'Cancelled Records, Paid Fees & Refund Status',
+      icon: UserX, 
+      color: 'text-rose-600',
+      badge: 'Refund Desk'
     }
   ];
 
@@ -441,7 +456,7 @@ export default function AdminPortal({
                       Admin Desks
                     </span>
                     <span className="text-[10px] font-black text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-md">
-                      7 Modules
+                      8 Modules
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
@@ -461,7 +476,7 @@ export default function AdminPortal({
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline-block">Click to launch &rarr;</span>
             </div>
 
-            {/* 7 Big Module Buttons (Matching Screenshot media_1789402789467.png) */}
+            {/* 8 Big Module Buttons (Matching Screenshot media_1789402789467.png) */}
             <div className="space-y-3">
               {adminModules.map((mod, idx) => {
                 const Icon = mod.icon;
@@ -590,7 +605,7 @@ export default function AdminPortal({
                           Admin Desks
                         </span>
                         <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2 py-0.5 rounded-md">
-                          7 Modules
+                          8 Modules
                         </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
@@ -629,7 +644,7 @@ export default function AdminPortal({
                   <span>Select any desk below to open in <strong>100% Full Screen</strong></span>
                 </div>
 
-                {/* Scrollable List of 7 Modules - Bold, Large & Clearly Separated */}
+                {/* Scrollable List of 8 Modules - Bold, Large & Clearly Separated */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
                   {adminModules.map((mod, idx) => {
                     const Icon = mod.icon;
@@ -889,6 +904,11 @@ export default function AdminPortal({
       {/* TAB 7: UNIVERSITY PAID & SETTLEMENT MANAGEMENT */}
       {activeTab === 'university-paid' && (
         <UniversityPaidManager lang={lang} toggleLang={toggleLang} />
+      )}
+
+      {/* TAB 8: CANCELLED ADMISSIONS & REFUND DESK */}
+      {activeTab === 'cancelled' && (
+        <CancelledAdmissionsManager lang={lang} toggleLang={toggleLang} />
       )}
 
       </main>

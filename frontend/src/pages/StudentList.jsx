@@ -3,7 +3,7 @@ import {
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
   ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
-  PlusCircle, BookOpen, School, GraduationCap, Camera
+  PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
@@ -86,6 +86,13 @@ export default function StudentList({
   const [photoUploading, setPhotoUploading] = useState(false);
   const editPhotoInputRef = useRef(null);
   const profilePhotoInputRef = useRef(null);
+
+  // Admission Cancellation State
+  const [cancellingStudent, setCancellingStudent] = useState(null);
+  const [cancelReason, setCancelReason] = useState('Student Request / Discontinued');
+  const [cancelRefundPaid, setCancelRefundPaid] = useState('0');
+  const [cancelPaymentMode, setCancelPaymentMode] = useState('Cash');
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // Institution catalogs & additional course form state
   const [universitiesList, setUniversitiesList] = useState([]);
@@ -643,6 +650,59 @@ export default function StudentList({
     }
   };
 
+  const handleConfirmCancelAdmission = async () => {
+    if (!cancellingStudent) return;
+    try {
+      setCancelLoading(true);
+      const lookupKey = cancellingStudent.id || cancellingStudent.rollNo || cancellingStudent.enrollmentNo;
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/cancel-admission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: cancelReason,
+          refundPaid: Number(cancelRefundPaid) || 0,
+          paymentMode: cancelPaymentMode,
+          operator: 'Admin'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to cancel admission');
+      }
+
+      // Update state in memory
+      setStudents(prev => prev.map(s => {
+        if ((s.id && s.id === lookupKey) || (s.rollNo && s.rollNo === lookupKey)) {
+          return { 
+            ...s, 
+            status: 'Cancelled', 
+            cancel: 'Yes', 
+            cancellationDate: new Date().toISOString().split('T')[0], 
+            cancellationReason: cancelReason,
+            refundPaid: Number(cancelRefundPaid) || 0
+          };
+        }
+        return s;
+      }));
+
+      if (editingStudent && ((editingStudent.id && editingStudent.id === lookupKey) || (editingStudent.rollNo && editingStudent.rollNo === lookupKey))) {
+        setEditingStudent(null);
+      }
+      if (selectedStudent && ((selectedStudent.id && selectedStudent.id === lookupKey) || (selectedStudent.rollNo && selectedStudent.rollNo === lookupKey))) {
+        setSelectedStudent(null);
+      }
+
+      setCancellingStudent(null);
+      setCancelReason('Student Request / Discontinued');
+      setCancelRefundPaid('0');
+      alert(`Admission cancelled for ${data.student?.fullName || data.student?.rollNo || cancellingStudent.fullName}! Record has been archived in Cancelled Admissions.`);
+    } catch (err) {
+      alert(err.message || 'Failed to cancel admission');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const handlePromoteStudent = async (std, targetSem = null) => {
     const currentSem = Number(std.currentSemester) || 1;
     const nextSem = targetSem !== null ? Number(targetSem) : currentSem + 1;
@@ -699,6 +759,8 @@ export default function StudentList({
     : students
   ).filter(s => {
     if (s.isSecondaryCourse) return false;
+    // Exclude cancelled admissions so they disappear from Enrolled Students section
+    if (s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes') return false;
 
     // Due Filter support (for Accounts Dashboard integration)
     if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
@@ -3267,24 +3329,182 @@ export default function StudentList({
               )}
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Cancel Admission Button on the Left */}
                 <button
                   type="button"
-                  onClick={() => setEditingStudent(null)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
+                  onClick={() => setCancellingStudent(editingStudent)}
+                  className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-2xs hover:shadow text-xs"
+                  title="Cancel this student's admission and move to Cancelled Admissions registry"
                 >
-                  Cancel
+                  <Ban className="w-4 h-4 text-rose-600" />
+                  <span>Cancel Admission (एडमिशन रद्द करें)</span>
                 </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{editLoading ? 'Saving...' : 'Save All Changes'}</span>
-                </button>
+
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingStudent(null)}
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editLoading ? 'Saving...' : 'Save All Changes'}</span>
+                  </button>
+                </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Admission Confirmation & Details Modal */}
+      {cancellingStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-rose-200 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-rose-900 via-rose-800 to-slate-900 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/30 border border-rose-400/50 flex items-center justify-center font-black">
+                  <AlertTriangle className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Confirm Admission Cancellation (प्रवेश रद्द करें)
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    This will remove the student from active enrollment and move them to Cancelled Admissions.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancellingStudent(null)}
+                className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              {/* Student Summary Box */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-slate-900 text-sm uppercase">
+                    {cancellingStudent.fullName || cancellingStudent.studentName}
+                  </span>
+                  <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    Roll: {cancellingStudent.rollNo || 'N/A'}
+                  </span>
+                </div>
+                <div className="text-slate-600 text-xs">
+                  🎓 {cancellingStudent.courseName} • {cancellingStudent.collegeName}
+                </div>
+                <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Total Course Fee:</span>
+                    <strong className="text-slate-900 font-bold">₹{Number(cancellingStudent.totalFee || cancellingStudent.studentFee || 0).toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Fee Deposited by Student:</span>
+                    <strong className="text-emerald-700 font-bold">₹{Number(cancellingStudent.totalPaid || 0).toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cancellation Reason Selection */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Reason for Cancellation (रद्द करने का कारण) *
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                >
+                  <option value="Student Request / Discontinued">Student Request (छात्र का व्यक्तिगत अनुरोध)</option>
+                  <option value="College / University Transfer">College / University Transfer (अन्य कॉलेज में प्रवेश)</option>
+                  <option value="Course Fee Constraint">Course Fee Constraint (आर्थिक / फीस समस्या)</option>
+                  <option value="Personal / Family Reasons">Personal / Family Reasons (पारिवारिक / व्यक्तिगत कारण)</option>
+                  <option value="Document Ineligibility">Document Ineligibility (दस्तावेज़ अपूर्ण / अपात्र)</option>
+                  <option value="Other Administration Decision">Other Administration Decision (अन्य प्रशासनिक कारण)</option>
+                </select>
+              </div>
+
+              {/* Immediate Refund Option */}
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-amber-700" /> Immediate Fee Refund Paid (तत्काल रिफंड भुगतान)
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">Optional (बाद में भी कर सकते हैं)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Refund Paid Today (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={cancellingStudent.totalPaid || 0}
+                      value={cancelRefundPaid}
+                      onChange={(e) => setCancelRefundPaid(e.target.value)}
+                      placeholder="0"
+                      className="w-full p-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Refund Mode</label>
+                    <select
+                      value={cancelPaymentMode}
+                      onChange={(e) => setCancelPaymentMode(e.target.value)}
+                      className="w-full p-2 bg-white border border-amber-300 rounded-xl font-semibold text-slate-800"
+                    >
+                      <option value="Cash">Cash (नकद)</option>
+                      <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                      <option value="UPI / Online">UPI / Online</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Total deposited was ₹{Number(cancellingStudent.totalPaid || 0).toLocaleString('en-IN')}. Remaining balance will be tracked in Cancelled Admissions desk.
+                </p>
+              </div>
+
+              {/* Warning Notice */}
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-900 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>
+                  Confirm karne par ye student <strong>Enrolled Students section se hat jayega</strong> aur portal ke <strong>Cancelled Admissions desk</strong> mein move ho jayega. (Aap wahan se kabhi bhi wapas restore kar sakte hain).
+                </span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCancellingStudent(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  Keep Admission (वापस जाएं)
+                </button>
+                <button
+                  type="button"
+                  disabled={cancelLoading}
+                  onClick={handleConfirmCancelAdmission}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Ban className="w-4 h-4" />
+                  <span>{cancelLoading ? 'Cancelling...' : 'Confirm & Cancel Admission'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
