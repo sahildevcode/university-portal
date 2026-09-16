@@ -864,6 +864,69 @@ app.post('/api/students/reset-demo-data', (req, res) => {
   }
 });
 
+// GET all students endpoint with search & filters
+app.get('/api/students', (req, res) => {
+  try {
+    const db = readDB();
+    const { course = 'all', semester = 'all', timeframe = 'all', search = '', session = 'all' } = req.query;
+    let list = [...(db.students || [])];
+
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+    const timeframeCounts = {
+      all: list.length,
+      week: list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneWeekAgo).length,
+      month: list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneMonthAgo).length,
+      year: list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneYearAgo).length
+    };
+
+    if (course !== 'all') {
+      list = list.filter(s => (s.courseId || '').toLowerCase() === course.toLowerCase() || (s.courseName || '').toLowerCase().includes(course.toLowerCase()));
+    }
+
+    if (semester !== 'all') {
+      list = list.filter(s => String(s.currentSemester) === String(semester) || String(s.currentClass).includes(`SEM-${semester}`));
+    }
+
+    if (session !== 'all') {
+      list = list.filter(s => (s.currentSession || s.admissionSession || '') === session);
+    }
+
+    if (timeframe === 'week') {
+      list = list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneWeekAgo);
+    } else if (timeframe === 'month') {
+      list = list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneMonthAgo);
+    } else if (timeframe === 'year') {
+      list = list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneYearAgo);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      const cleanNum = q.replace(/[\s-]/g, '');
+      list = list.filter(s =>
+        (s.fullName || s.studentName || '').toLowerCase().includes(q) ||
+        (s.rollNo || '').toLowerCase().includes(q) ||
+        (s.registrationNo || '').toLowerCase().includes(q) ||
+        (s.fatherName || '').toLowerCase().includes(q) ||
+        (s.phone || s.contact || '').includes(q) ||
+        (s.aadhaarNo && s.aadhaarNo.replace(/[\s-]/g, '').includes(cleanNum)) ||
+        (s.courseName || '').toLowerCase().includes(q)
+      );
+    }
+
+    res.json({
+      success: true,
+      students: list,
+      timeframeCounts
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.get('/api/students/:rollNo', (req, res) => {
   const db = readDB();
   const roll = req.params.rollNo.toUpperCase();
