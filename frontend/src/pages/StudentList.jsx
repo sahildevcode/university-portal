@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
   ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
-  PlusCircle, BookOpen, School, GraduationCap
+  PlusCircle, BookOpen, School, GraduationCap, Camera
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
@@ -83,6 +83,9 @@ export default function StudentList({
   const [editError, setEditError] = useState(null);
   const [editSuccess, setEditSuccess] = useState(null);
   const [promotingRoll, setPromotingRoll] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const editPhotoInputRef = useRef(null);
+  const profilePhotoInputRef = useRef(null);
 
   // Institution catalogs & additional course form state
   const [universitiesList, setUniversitiesList] = useState([]);
@@ -533,6 +536,110 @@ export default function StudentList({
       setEditError(err.message || 'Failed to update student');
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const handleUploadPhotoForStudent = async (targetStudent, file) => {
+    if (!targetStudent || !file) return;
+    try {
+      setPhotoUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const lookupKey = targetStudent.id || targetStudent.rollNo || targetStudent.enrollmentNo || targetStudent.registrationNo;
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/photo`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to upload student photo');
+      }
+
+      const newPhotoUrl = data.photoUrl;
+
+      // Update state in editingStudent
+      if (editingStudent && ((editingStudent.id && editingStudent.id === targetStudent.id) || (editingStudent.rollNo && editingStudent.rollNo === targetStudent.rollNo))) {
+        setEditingStudent(prev => ({ ...prev, studentImage: newPhotoUrl, photo: newPhotoUrl }));
+        setEditFormData(prev => ({ ...prev, studentImage: newPhotoUrl }));
+      }
+
+      // Update state in selectedStudent (Profile View)
+      if (selectedStudent && ((selectedStudent.id && selectedStudent.id === targetStudent.id) || (selectedStudent.rollNo && selectedStudent.rollNo === targetStudent.rollNo))) {
+        setSelectedStudent(prev => ({
+          ...prev,
+          studentImage: newPhotoUrl,
+          photo: newPhotoUrl,
+          documents: { ...(prev.documents || {}), student_image: newPhotoUrl, photo: newPhotoUrl }
+        }));
+      }
+
+      // Update students list in memory
+      setStudents(prev => prev.map(s => {
+        if ((targetStudent.id && s.id === targetStudent.id) || (targetStudent.rollNo && s.rollNo === targetStudent.rollNo)) {
+          return {
+            ...s,
+            studentImage: newPhotoUrl,
+            photo: newPhotoUrl,
+            documents: { ...(s.documents || {}), student_image: newPhotoUrl, photo: newPhotoUrl }
+          };
+        }
+        return s;
+      }));
+
+      return newPhotoUrl;
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      alert(err.message || 'Failed to upload photo');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleRemovePhotoForStudent = async (targetStudent) => {
+    if (!targetStudent) return;
+    if (!window.confirm('Are you sure you want to remove this student photo?')) return;
+    try {
+      setPhotoUploading(true);
+      const lookupKey = targetStudent.id || targetStudent.rollNo || targetStudent.enrollmentNo || targetStudent.registrationNo;
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/photo`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to remove photo');
+      }
+
+      if (editingStudent && ((editingStudent.id && editingStudent.id === targetStudent.id) || (editingStudent.rollNo && editingStudent.rollNo === targetStudent.rollNo))) {
+        setEditingStudent(prev => ({ ...prev, studentImage: '', photo: '' }));
+        setEditFormData(prev => ({ ...prev, studentImage: '' }));
+      }
+
+      if (selectedStudent && ((selectedStudent.id && selectedStudent.id === targetStudent.id) || (selectedStudent.rollNo && selectedStudent.rollNo === targetStudent.rollNo))) {
+        setSelectedStudent(prev => ({
+          ...prev,
+          studentImage: '',
+          photo: '',
+          documents: { ...(prev.documents || {}), student_image: '', photo: '' }
+        }));
+      }
+
+      setStudents(prev => prev.map(s => {
+        if ((targetStudent.id && s.id === targetStudent.id) || (targetStudent.rollNo && s.rollNo === targetStudent.rollNo)) {
+          return {
+            ...s,
+            studentImage: '',
+            photo: '',
+            documents: { ...(s.documents || {}), student_image: '', photo: '' }
+          };
+        }
+        return s;
+      }));
+    } catch (err) {
+      console.error('Error removing photo:', err);
+      alert(err.message || 'Failed to remove photo');
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -1837,8 +1944,12 @@ export default function StudentList({
               <div className="p-6 space-y-6 text-xs">
                 {/* 0. Student Passport Photo & Identity Dossier Card */}
                 <div className="bg-gradient-to-r from-indigo-50/90 via-white to-amber-50/70 p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                  <div className="relative group shrink-0">
-                    <div className="w-28 h-32 rounded-xl overflow-hidden border-2 border-indigo-600 shadow-md bg-white flex items-center justify-center">
+                  <div className="relative group shrink-0 flex flex-col items-center">
+                    <div 
+                      onClick={() => profilePhotoInputRef.current?.click()}
+                      title="Click to Upload or Change Photo"
+                      className="w-28 h-32 rounded-xl overflow-hidden border-2 border-indigo-600 hover:border-indigo-800 shadow-md bg-white flex items-center justify-center cursor-pointer relative group transition-all"
+                    >
                       {selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo ? (
                         <img 
                           src={selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo} 
@@ -1851,16 +1962,58 @@ export default function StudentList({
                           <span className="text-[10px] font-bold">No Photo Uploaded</span>
                         </div>
                       )}
+
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-indigo-950/70 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity p-2 text-center">
+                        <Camera className="w-5 h-5 mb-1 text-white" />
+                        <span className="text-[10px] font-bold">Change Photo</span>
+                      </div>
                     </div>
+
+                    <input 
+                      type="file" 
+                      ref={profilePhotoInputRef} 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadPhotoForStudent(selectedStudent, file);
+                        e.target.value = '';
+                      }} 
+                      className="hidden" 
+                    />
+
+                    <div className="flex items-center gap-1.5 mt-2 w-full">
+                      <button
+                        type="button"
+                        onClick={() => profilePhotoInputRef.current?.click()}
+                        disabled={photoUploading}
+                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                      >
+                        <Camera className="w-3 h-3" />
+                        <span>{photoUploading ? 'Uploading...' : ((selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo) ? 'Change Photo' : 'Upload Photo')}</span>
+                      </button>
+                      {(selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo) && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhotoForStudent(selectedStudent)}
+                          disabled={photoUploading}
+                          className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] transition cursor-pointer"
+                          title="Remove Photo"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
                     {(selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo) && (
                       <a 
                         href={selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="absolute bottom-1 right-1 bg-slate-900/80 hover:bg-slate-950 text-white p-1 rounded-md text-[10px] flex items-center gap-1 shadow cursor-pointer"
+                        className="mt-1 text-[10px] text-indigo-600 hover:underline flex items-center gap-0.5 font-bold"
                         title="Open Full Resolution Photo"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-2.5 h-2.5" /> Full Photo
                       </a>
                     )}
                   </div>
@@ -2257,28 +2410,93 @@ export default function StudentList({
                 </h4>
 
                 {/* Student Photo & Identity Display */}
-                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                  <div className="w-14 h-16 rounded-xl overflow-hidden border border-slate-300 bg-white flex items-center justify-center shrink-0 shadow-2xs">
-                    {editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo ? (
-                      <img 
-                        src={editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo} 
-                        alt="" 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <Users className="w-6 h-6 text-slate-300" />
-                    )}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <div className="flex items-center gap-4">
+                    {/* Clickable Photo Box with Hover Overlay */}
+                    <div 
+                      onClick={() => editPhotoInputRef.current?.click()}
+                      title="Click to Upload or Change Photo (फोटो अपलोड या बदलने के लिए क्लिक करें)"
+                      className="relative group w-16 h-20 rounded-xl overflow-hidden border-2 border-slate-300 hover:border-indigo-600 bg-white flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all"
+                    >
+                      {editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo ? (
+                        <img 
+                          src={editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-300">
+                          <Users className="w-7 h-7" />
+                          <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tight">No Photo</span>
+                        </div>
+                      )}
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-indigo-950/75 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity p-1 text-center">
+                        <Camera className="w-4 h-4 mb-0.5 text-white" />
+                        <span className="text-[9px] font-bold leading-tight">Change</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="font-extrabold text-slate-900 text-sm block uppercase tracking-tight">
+                        {editingStudent.fullName || editFormData.fullName}
+                      </span>
+                      <span className="text-xs text-slate-500 block mt-0.5">
+                        Roll: <strong className="font-mono text-indigo-700">{editingStudent.rollNo || 'N/A'}</strong> • {editingStudent.courseName}
+                      </span>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 inline-block">
+                          Enrolled Student Identity Record
+                        </span>
+                        {(editingStudent.studentImage || editingStudent.photo) && (
+                          <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200 inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-indigo-600" /> Photo Attached
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-extrabold text-slate-900 text-xs block uppercase tracking-tight">
-                      {editingStudent.fullName || editFormData.fullName}
-                    </span>
-                    <span className="text-[11px] text-slate-500 block">
-                      Roll: <strong className="font-mono text-indigo-700">{editingStudent.rollNo}</strong> • {editingStudent.courseName}
-                    </span>
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-1">
-                      Enrolled Student Identity Record
-                    </span>
+
+                  {/* Photo Upload & Manage Actions */}
+                  <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                    <input 
+                      type="file" 
+                      ref={editPhotoInputRef} 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadPhotoForStudent(editingStudent, file);
+                        e.target.value = '';
+                      }} 
+                      className="hidden" 
+                    />
+                    
+                    <button
+                      type="button"
+                      onClick={() => editPhotoInputRef.current?.click()}
+                      disabled={photoUploading}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                      title="Upload Student Photo from Device"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>
+                        {photoUploading ? 'Uploading...' : ((editingStudent.studentImage || editingStudent.photo) ? 'Change Photo (फोटो बदलें)' : 'Upload Photo (फोटो अपलोड करें)')}
+                      </span>
+                    </button>
+
+                    {(editingStudent.studentImage || editingStudent.photo) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhotoForStudent(editingStudent)}
+                        disabled={photoUploading}
+                        className="inline-flex items-center gap-1 px-2.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                        title="Remove Photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -2489,13 +2707,25 @@ export default function StudentList({
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block font-bold text-slate-700 mb-1">Student Photo URL / File Path</label>
-                    <input
-                      type="text"
-                      value={editFormData.studentImage || ''}
-                      onChange={(e) => setEditFormData({ ...editFormData, studentImage: e.target.value })}
-                      placeholder="/uploads/documents/... or image URL"
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono text-xs focus:border-emerald-500"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editFormData.studentImage || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, studentImage: e.target.value })}
+                        placeholder="/uploads/documents/... or image URL"
+                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono text-xs focus:border-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => editPhotoInputRef.current?.click()}
+                        disabled={photoUploading}
+                        className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-xs shrink-0 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        title="Browse & Upload Photo"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Browse</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

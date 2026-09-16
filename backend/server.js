@@ -1390,6 +1390,8 @@ app.put('/api/students/:rollNo', (req, res) => {
       scholarId: body.scholarId !== undefined ? body.scholarId : (body.scholerId !== undefined ? body.scholerId : (body.scholer_id !== undefined ? body.scholer_id : existing.scholarId)),
       scholerId: body.scholarId !== undefined ? body.scholarId : (body.scholerId !== undefined ? body.scholerId : (body.scholer_id !== undefined ? body.scholer_id : existing.scholerId)),
       userId: body.userId !== undefined ? body.userId : (body.user_id !== undefined ? body.user_id : existing.userId),
+      studentImage: body.studentImage !== undefined ? body.studentImage : (body.photo !== undefined ? body.photo : existing.studentImage),
+      photo: body.photo !== undefined ? body.photo : (body.studentImage !== undefined ? body.studentImage : existing.photo),
       universityName: body.universityName || body.University_Name || existing.universityName,
       collegeName: body.collegeName || body.College_Name || existing.collegeName,
       courseName: body.courseName || body.Course_Name || existing.courseName,
@@ -1412,6 +1414,12 @@ app.put('/api/students/:rollNo', (req, res) => {
       status: body.status || existing.status || 'Active',
       updatedAt: new Date().toISOString()
     };
+
+    if (updatedStudent.studentImage) {
+      if (!updatedStudent.documents) updatedStudent.documents = { ...(existing.documents || {}) };
+      updatedStudent.documents.student_image = updatedStudent.studentImage;
+      updatedStudent.documents.photo = updatedStudent.studentImage;
+    }
 
     // Re-calculate net fee and balance due considering scholarship
     const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
@@ -1549,6 +1557,86 @@ app.put('/api/students/:rollNo', (req, res) => {
   } catch (err) {
     console.error('Error updating student:', err);
     res.status(500).json({ success: false, message: 'Failed to update student: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to upload/update student photo
+app.post('/api/students/:rollNo/photo', upload.single('photo'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No photo file uploaded.' });
+    }
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    const photoUrl = `/uploads/documents/${req.file.filename}`;
+    student.studentImage = photoUrl;
+    student.photo = photoUrl;
+    if (!student.documents) student.documents = {};
+    student.documents.student_image = photoUrl;
+    student.documents.photo = photoUrl;
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Photo uploaded successfully for ${student.fullName || student.rollNo}!`,
+      photoUrl,
+      student
+    });
+  } catch (err) {
+    console.error('Error uploading student photo:', err);
+    res.status(500).json({ success: false, message: 'Failed to upload photo: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to remove student photo
+app.delete('/api/students/:rollNo/photo', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const roll = rawKey.toUpperCase();
+    const student = db.students.find(s => 
+      (s.id && s.id === rawKey) ||
+      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
+      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
+      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
+    );
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    student.studentImage = '';
+    student.photo = '';
+    if (student.documents) {
+      student.documents.student_image = '';
+      student.documents.photo = '';
+    }
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Photo removed successfully for ${student.fullName || student.rollNo}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error removing student photo:', err);
+    res.status(500).json({ success: false, message: 'Failed to remove photo: ' + err.message });
   }
 });
 
