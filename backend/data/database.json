@@ -57529,7 +57529,11 @@
       "id": "univ-1789571739470-506",
       "name": "MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya",
       "code": "MCRPV",
-      "active": true
+      "active": true,
+      "shortName": "MCRPV Bhopal",
+      "city": "Bhopal",
+      "state": "Madhya Pradesh",
+      "status": "Active"
     },
     {
       "id": "univ-1789571739470-197",
@@ -57903,17 +57907,40 @@
       "createdAt": "2026-09-17T16:42:05.784Z"
     },
     {
-      "id": "col-mcrpv-campus",
+      "id": "col-mcrpv-8452",
       "universityId": "univ-1789571739470-506",
       "universityName": "MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya",
-      "code": "MCRPV",
-      "name": "Makhanlal Chaturvedi National University of Journalism and Communication (Campus)",
-      "shortName": "MCRPV Bhopal Campus",
-      "district": "Bhopal",
+      "code": "8452",
+      "name": "8452 Mahaveer Memorial Computer College, Rajnagar",
+      "shortName": "Mahaveer Memorial Computer College, Rajnagar",
+      "district": "Chhatarpur",
       "state": "Madhya Pradesh",
-      "address": "Bhopal (M.P.)",
       "status": "Active",
-      "createdAt": "2026-09-17T16:42:05.784Z"
+      "createdAt": "2026-09-17T16:50:10.421Z"
+    },
+    {
+      "id": "col-mcrpv-8446",
+      "universityId": "univ-1789571739470-506",
+      "universityName": "MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya",
+      "code": "8446",
+      "name": "8446 SGM Institute Of Computer Education",
+      "shortName": "SGM Institute Of Computer Education",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active",
+      "createdAt": "2026-09-17T16:50:10.422Z"
+    },
+    {
+      "id": "col-mcrpv-8611",
+      "universityId": "univ-1789571739470-506",
+      "universityName": "MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya",
+      "code": "8611",
+      "name": "8611 Chandla",
+      "shortName": "8611 Chandla",
+      "district": "Chhatarpur",
+      "state": "Madhya Pradesh",
+      "status": "Active",
+      "createdAt": "2026-09-17T16:50:10.422Z"
     }
   ]
 }

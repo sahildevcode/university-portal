@@ -3993,7 +3993,9 @@ app.get('/api/colleges', (req, res) => {
                (uq.includes('mcbu') && (cu.includes('mcbu') || cu.includes('chhatrasal'))) ||
                (uq.includes('chhatrasal') && (cu.includes('chhatrasal') || cu.includes('mcbu'))) ||
                (uq.includes('subharti') && cu.includes('subharti')) ||
-               (uq.includes('ies') && cu.includes('ies'));
+               (uq.includes('ies') && cu.includes('ies')) ||
+               (uq.includes('mcrpv') && (cu.includes('mcrpv') || cu.includes('makhanlal'))) ||
+               (uq.includes('makhanlal') && (cu.includes('makhanlal') || cu.includes('mcrpv')));
       });
     }
 

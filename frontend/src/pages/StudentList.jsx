@@ -4594,6 +4594,7 @@ export default function StudentList({
                             if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
                             if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
                             if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
+                            if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
                             return cu.includes(tu.split(' ')[0]);
                           })
                           .map(c => (

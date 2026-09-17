@@ -35,6 +35,15 @@ const FALLBACK_UNIVERSITIES = [
     city: 'Bhopal',
     state: 'Madhya Pradesh',
     status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-506',
+    name: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    shortName: 'MCRPV Bhopal',
+    code: 'MCRPV',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
   }
 ];
 
@@ -231,6 +240,34 @@ const FALLBACK_COLLEGES = [
     name: 'IES University, Bhopal (Campus)',
     shortName: 'IES University Campus',
     district: 'Bhopal'
+  },
+  // 3 MCRPV Affiliated Colleges
+  {
+    id: 'col-mcrpv-8452',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8452',
+    name: '8452 Mahaveer Memorial Computer College, Rajnagar',
+    shortName: 'Mahaveer Memorial Computer College, Rajnagar',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-mcrpv-8446',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8446',
+    name: '8446 SGM Institute Of Computer Education',
+    shortName: 'SGM Institute Of Computer Education',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-mcrpv-8611',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8611',
+    name: '8611 Chandla',
+    shortName: '8611 Chandla',
+    district: 'Chhatarpur'
   }
 ];
 
@@ -676,7 +713,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     (formData.University_Name && (
       (formData.University_Name.toLowerCase().includes('mcbu') && (u.code === 'MCBU' || (u.shortName || '').toLowerCase().includes('mcbu') || (u.name || '').toLowerCase().includes('mcbu'))) ||
       (formData.University_Name.toLowerCase().includes('subharti') && (u.code === 'SUBHARTI' || (u.name || '').toLowerCase().includes('subharti'))) ||
-      (formData.University_Name.toLowerCase().includes('ies') && (u.code === 'IES' || (u.name || '').toLowerCase().includes('ies')))
+      (formData.University_Name.toLowerCase().includes('ies') && (u.code === 'IES' || (u.name || '').toLowerCase().includes('ies'))) ||
+      ((formData.University_Name.toLowerCase().includes('mcrpv') || formData.University_Name.toLowerCase().includes('makhanlal')) && (u.code === 'MCRPV' || (u.name || '').toLowerCase().includes('mcrpv') || (u.name || '').toLowerCase().includes('makhanlal')))
     ))
   ) || universitiesList[0];
 
@@ -695,6 +733,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
     if (sId === 'univ-ies' || sId === 'univ-1789571739470-940' || sName.includes('ies')) {
       return c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940' || cUnivName.includes('ies');
+    }
+    if (sId === 'univ-1789571739470-506' || sName.includes('mcrpv') || sName.includes('makhanlal')) {
+      return c.universityId === 'univ-1789571739470-506' || cUnivName.includes('mcrpv') || cUnivName.includes('makhanlal');
     }
     return false;
   });
@@ -737,6 +778,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
       if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
       if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
+      if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
       return false;
     });
 
@@ -791,7 +833,8 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     (secFormData.University_Name && (
       (secFormData.University_Name.toLowerCase().includes('mcbu') && (u.code === 'MCBU' || (u.shortName || '').toLowerCase().includes('mcbu') || (u.name || '').toLowerCase().includes('mcbu'))) ||
       (secFormData.University_Name.toLowerCase().includes('subharti') && (u.code === 'SUBHARTI' || (u.name || '').toLowerCase().includes('subharti'))) ||
-      (secFormData.University_Name.toLowerCase().includes('ies') && (u.code === 'IES' || (u.name || '').toLowerCase().includes('ies')))
+      (secFormData.University_Name.toLowerCase().includes('ies') && (u.code === 'IES' || (u.name || '').toLowerCase().includes('ies'))) ||
+      ((secFormData.University_Name.toLowerCase().includes('mcrpv') || secFormData.University_Name.toLowerCase().includes('makhanlal')) && (u.code === 'MCRPV' || (u.name || '').toLowerCase().includes('mcrpv') || (u.name || '').toLowerCase().includes('makhanlal')))
     ))
   ) || universitiesList[0];
 
@@ -810,6 +853,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
     if (sId === 'univ-ies' || sId === 'univ-1789571739470-940' || sName.includes('ies')) {
       return c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940' || cUnivName.includes('ies');
+    }
+    if (sId === 'univ-1789571739470-506' || sName.includes('mcrpv') || sName.includes('makhanlal')) {
+      return c.universityId === 'univ-1789571739470-506' || cUnivName.includes('mcrpv') || cUnivName.includes('makhanlal');
     }
     return false;
   });
@@ -849,6 +895,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
       if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
       if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
+      if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
       return false;
     });
 

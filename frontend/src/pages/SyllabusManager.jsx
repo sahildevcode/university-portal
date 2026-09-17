@@ -66,6 +66,18 @@ const INITIAL_UNIVERSITIES = [
     establishedYear: 2019,
     status: 'Active',
     description: 'UGC & AICTE recognized university offering engineering, pharmacy, and management education.'
+  },
+  {
+    id: 'univ-1789571739470-506',
+    name: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    shortName: 'MCRPV Bhopal',
+    code: 'MCRPV',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    website: 'https://mcu.ac.in',
+    establishedYear: 1990,
+    status: 'Active',
+    description: 'National university for journalism, media, computer science, and mass communications.'
   }
 ];
 
@@ -302,6 +314,40 @@ const INITIAL_COLLEGES = [
     name: 'IES University, Bhopal (Campus)',
     shortName: 'IES University Campus',
     district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  // 3 MCRPV Affiliated Colleges
+  {
+    id: 'col-mcrpv-8452',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8452',
+    name: '8452 Mahaveer Memorial Computer College, Rajnagar',
+    shortName: 'Mahaveer Memorial Computer College, Rajnagar',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-mcrpv-8446',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8446',
+    name: '8446 SGM Institute Of Computer Education',
+    shortName: 'SGM Institute Of Computer Education',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-mcrpv-8611',
+    universityId: 'univ-1789571739470-506',
+    universityName: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: '8611',
+    name: '8611 Chandla',
+    shortName: '8611 Chandla',
+    district: 'Chhatarpur',
     state: 'Madhya Pradesh',
     status: 'Active'
   }
