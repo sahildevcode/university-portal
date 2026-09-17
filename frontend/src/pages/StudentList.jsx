@@ -412,7 +412,12 @@ export default function StudentList({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             academicFee: amt,
-            remark: feeDeskRemark
+            remark: feeDeskRemark,
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass,
+            paymentMode: feeDeskModePayment || 'Official Record',
+            refNo: feeDeskRefNo,
+            receivedBy: feeDeskReceivedBy
           })
         });
         const data = await res.json();
@@ -446,7 +451,12 @@ export default function StudentList({
             year: scholarshipActiveYear,
             yearLabel: scholarshipActiveYear === 'year1' ? 'First Year Scholarship' : scholarshipActiveYear === 'year2' ? 'Second Year Scholarship' : scholarshipActiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship',
             amount: scholarshipActiveYear === 'year1' ? y1Val : scholarshipActiveYear === 'year2' ? y2Val : scholarshipActiveYear === 'year3' ? y3Val : y4Val,
-            remark: feeDeskRemark
+            remark: feeDeskRemark,
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass,
+            paymentMode: feeDeskModePayment || 'Govt Scholarship Grant',
+            refNo: feeDeskRefNo,
+            receivedBy: feeDeskReceivedBy
           })
         });
         const data = await res.json();
@@ -505,6 +515,79 @@ export default function StudentList({
     }
   };
 
+  const handleDeleteCenterFee = async (amount) => {
+    if (!feeDeskStudent) return;
+    const confirmDelete = window.confirm(`Are you sure you want to reset/delete the center fee of ₹${Number(amount || 0).toLocaleString('en-IN')}? Academic fee will be set to ₹0.`);
+    if (!confirmDelete) return;
+
+    setFeeDeskLoading(true);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+
+    try {
+      const studentLookupKey = getStudentKey(feeDeskStudent);
+      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete center fee entry');
+      }
+
+      const updatedStudent = data.student;
+      setFeeDeskStudent(updatedStudent);
+      setFeeDeskAmount('0');
+      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+      setFeeDeskSuccess(`Center fee reset to ₹0 successfully!`);
+      fetchStudents();
+      if (onFeeReceived) onFeeReceived();
+    } catch (err) {
+      setFeeDeskError(err.message || 'Error deleting center fee');
+    } finally {
+      setFeeDeskLoading(false);
+    }
+  };
+
+  const handleDeleteScholarship = async (idOrYear, amount, yearLabel) => {
+    if (!feeDeskStudent || !idOrYear) return;
+    const confirmDelete = window.confirm(`Are you sure you want to delete this scholarship entry of ₹${Number(amount || 0).toLocaleString('en-IN')} (${yearLabel || 'Scholarship'})?`);
+    if (!confirmDelete) return;
+
+    setFeeDeskLoading(true);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+
+    try {
+      const studentLookupKey = getStudentKey(feeDeskStudent);
+      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/scholarships/${encodeURIComponent(idOrYear)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete scholarship entry');
+      }
+
+      const updatedStudent = data.student;
+      setFeeDeskStudent(updatedStudent);
+      const sy1 = Number(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : 0);
+      const sy2 = Number(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : 0);
+      const sy3 = Number(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : 0);
+      const sy4 = Number(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : 0);
+      setScholarshipYear1(String(sy1));
+      setScholarshipYear2(String(sy2));
+      setScholarshipYear3(String(sy3));
+      setScholarshipYear4(String(sy4));
+      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+      setFeeDeskSuccess(`${yearLabel || 'Scholarship'} entry deleted successfully!`);
+      fetchStudents();
+      if (onFeeReceived) onFeeReceived();
+    } catch (err) {
+      setFeeDeskError(err.message || 'Error deleting scholarship entry');
+    } finally {
+      setFeeDeskLoading(false);
+    }
+  };
+
   const handleUpdatePayment = async (e) => {
     e.preventDefault();
     if (!feeDeskStudent || !editingPaymentModal) return;
@@ -514,36 +597,99 @@ export default function StudentList({
 
     try {
       const studentLookupKey = getStudentKey(feeDeskStudent);
-      const paymentId = editingPaymentModal.id || editingPaymentModal.receiptNo;
-      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/payments/${encodeURIComponent(paymentId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: editingPaymentModal.amountPaid,
-          feeDate: editingPaymentModal.feeDate || editingPaymentModal.paymentDate,
-          purpose: editingPaymentModal.purpose,
-          paymentMode: editingPaymentModal.paymentMode,
-          refNo: editingPaymentModal.refNo,
-          receivedBy: editingPaymentModal.receivedBy,
-          remark: editingPaymentModal.remark,
-          currentClass: editingPaymentModal.currentClass
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update payment');
-      }
 
-      const updatedStudent = data.student;
-      setFeeDeskStudent(updatedStudent);
-      setFeeDeskPayments(data.payments || []);
-      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-      setFeeDeskSuccess(`Payment entry updated successfully to ₹${Number(editingPaymentModal.amountPaid || 0).toLocaleString('en-IN')}!`);
-      setEditingPaymentModal(null);
-      fetchStudents();
-      if (onFeeReceived) onFeeReceived();
+      if (editingPaymentModal.isCenterFee) {
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            academicFee: editingPaymentModal.amountPaid,
+            feeDate: editingPaymentModal.feeDate,
+            currentClass: editingPaymentModal.currentClass,
+            paymentMode: editingPaymentModal.paymentMode,
+            refNo: editingPaymentModal.refNo,
+            receivedBy: editingPaymentModal.receivedBy,
+            remark: editingPaymentModal.remark,
+            receiptNo: editingPaymentModal.receiptNo
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update center fee');
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        setFeeDeskAmount(String(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : editingPaymentModal.amountPaid));
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Center Fee updated successfully to ₹${Number(editingPaymentModal.amountPaid || 0).toLocaleString('en-IN')}!`);
+        setEditingPaymentModal(null);
+        fetchStudents();
+        if (onFeeReceived) onFeeReceived();
+      } else if (editingPaymentModal.isScholarship) {
+        const yKey = editingPaymentModal.year || 'year1';
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            year: yKey,
+            yearLabel: editingPaymentModal.yearLabel || editingPaymentModal.purpose,
+            amount: Number(editingPaymentModal.amountPaid) || 0,
+            feeDate: editingPaymentModal.feeDate,
+            currentClass: editingPaymentModal.currentClass,
+            paymentMode: editingPaymentModal.paymentMode,
+            refNo: editingPaymentModal.refNo,
+            receivedBy: editingPaymentModal.receivedBy,
+            remark: editingPaymentModal.remark,
+            receiptNo: editingPaymentModal.receiptNo
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update scholarship');
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        const sy1 = Number(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : 0);
+        const sy2 = Number(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : 0);
+        const sy3 = Number(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : 0);
+        const sy4 = Number(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : 0);
+        setScholarshipYear1(String(sy1));
+        setScholarshipYear2(String(sy2));
+        setScholarshipYear3(String(sy3));
+        setScholarshipYear4(String(sy4));
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Scholarship updated successfully!`);
+        setEditingPaymentModal(null);
+        fetchStudents();
+        if (onFeeReceived) onFeeReceived();
+      } else {
+        const paymentId = editingPaymentModal.id || editingPaymentModal.receiptNo;
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/payments/${encodeURIComponent(paymentId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: editingPaymentModal.amountPaid,
+            feeDate: editingPaymentModal.feeDate || editingPaymentModal.paymentDate,
+            purpose: editingPaymentModal.purpose,
+            paymentMode: editingPaymentModal.paymentMode,
+            refNo: editingPaymentModal.refNo,
+            receivedBy: editingPaymentModal.receivedBy,
+            remark: editingPaymentModal.remark,
+            currentClass: editingPaymentModal.currentClass
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to update payment');
+        }
+
+        const updatedStudent = data.student;
+        setFeeDeskStudent(updatedStudent);
+        setFeeDeskPayments(data.payments || []);
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Payment entry updated successfully to ₹${Number(editingPaymentModal.amountPaid || 0).toLocaleString('en-IN')}!`);
+        setEditingPaymentModal(null);
+        fetchStudents();
+        if (onFeeReceived) onFeeReceived();
+      }
     } catch (err) {
-      setEditPaymentError(err.message || 'Error updating payment');
+      setEditPaymentError(err.message || 'Error updating entry');
     } finally {
       setEditPaymentLoading(false);
     }
@@ -2092,7 +2238,34 @@ export default function StudentList({
                         <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
                       </div>
 
-                      <div className="sm:col-span-2 bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee_Date* :</label>
+                        <input
+                          type="date"
+                          required
+                          value={feeDeskDate}
+                          onChange={(e) => setFeeDeskDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester:</label>
+                        <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer">
+                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
+                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
+                          <option value="SEM-4">SEM-4 (4th Semester)</option>
+                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
+                          <option value="SEM-6">SEM-6 (6th Semester)</option>
+                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
+                          <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          <option value="Year-1">Year-1 (1st Year Annual)</option>
+                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                        </select>
+                      </div>
+
+                      <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] font-bold uppercase text-blue-700">Current Academic / Center Fee</span>
                           <div className="text-base font-black text-blue-950 font-mono">
@@ -2102,20 +2275,25 @@ export default function StudentList({
                         <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold">Active Setting</span>
                       </div>
 
-                      <div className="sm:col-span-2">
+                      <div>
                         <label className="block text-[11px] font-bold text-slate-900 mb-1">
                           Enter Academic / Center Fee Amount (₹)* :
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          required
-                          value={feeDeskAmount}
-                          onChange={(e) => setFeeDeskAmount(e.target.value)}
-                          placeholder="0"
-                          className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-sky-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none font-mono"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            required
+                            value={feeDeskAmount}
+                            onChange={(e) => setFeeDeskAmount(e.target.value)}
+                            placeholder="0"
+                            className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-sky-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none font-mono"
+                          />
+                          <button type="button" onClick={() => setFeeDeskAmount('0')} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" title="Set amount to 0">
+                            Set 0
+                          </button>
+                        </div>
                       </div>
 
                       <div className="col-span-1 sm:col-span-2 lg:col-span-4">
@@ -2162,6 +2340,33 @@ export default function StudentList({
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Course_Name:</label>
                         <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee_Date* :</label>
+                        <input
+                          type="date"
+                          required
+                          value={feeDeskDate}
+                          onChange={(e) => setFeeDeskDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester:</label>
+                        <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
+                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
+                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
+                          <option value="SEM-4">SEM-4 (4th Semester)</option>
+                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
+                          <option value="SEM-6">SEM-6 (6th Semester)</option>
+                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
+                          <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          <option value="Year-1">Year-1 (1st Year Annual)</option>
+                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                        </select>
                       </div>
 
                       {/* Multi-Year Scholarship Inputs */}
@@ -2477,113 +2682,364 @@ export default function StudentList({
                 </>
               )}
 
-              {/* 2. SET FEE MODE: Center Fee Breakdown ONLY */}
+              {/* 2. SET FEE MODE: Center Fee Entry Table with Date, Print, Edit, Delete */}
               {feeDeskMode === 'set_fee' && (() => {
                 const currentAcad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
-                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
-                const total = currentAcad + sch;
-                const paid = Number(feeDeskStudent.totalPaid || 0);
-                const due = Math.max(0, total - paid);
+                const centerFeeEntries = (Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0)
+                  ? feeDeskStudent.academicFeeHistory
+                  : (currentAcad > 0 ? [{
+                      id: 'CF-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '1'),
+                      receiptNo: `CF-${feeDeskStudent.rollNo || '001'}`,
+                      date: feeDeskStudent.academicFeeDate || (feeDeskStudent.createdAt ? feeDeskStudent.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
+                      feeDate: feeDeskStudent.academicFeeDate || (feeDeskStudent.createdAt ? feeDeskStudent.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
+                      currentClass: feeDeskStudent.currentClass || 'SEM-1',
+                      purpose: 'Center Fee (Academic Fee)',
+                      paymentMode: 'Official Record',
+                      refNo: '-',
+                      receivedBy: 'Admin Desk',
+                      amount: currentAcad,
+                      amountPaid: currentAcad,
+                      remark: feeDeskStudent.remark || 'Center Fee'
+                    }] : []);
 
                 return (
-                  <div className="space-y-3 pt-2">
-                    <div className="bg-slate-50 border border-slate-300 rounded-2xl p-4 space-y-3">
-                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-sky-700" />
-                        <span>Center Fee Status & Academic Breakdown</span>
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Center Fee History (सेट की गई सेंटर फीस का रिकॉर्ड)</span>
                       </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                          <div className="text-[10px] text-slate-500 uppercase font-bold">Center / Academic Fee</div>
-                          <div className="text-base font-black text-slate-900 font-mono">₹{currentAcad.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 shadow-2xs">
-                          <div className="text-[10px] text-purple-700 uppercase font-bold">Total Scholarship</div>
-                          <div className="text-base font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 shadow-2xs">
-                          <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Course Fee</div>
-                          <div className="text-base font-black text-indigo-950 font-mono">₹{total.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-3 shadow-2xs">
-                          <div className="text-[10px] text-rose-700 uppercase font-bold">Current Balance Due</div>
-                          <div className="text-base font-black text-rose-800 font-mono">₹{due.toLocaleString('en-IN')}/-</div>
-                        </div>
-                      </div>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        Total Entries: {centerFeeEntries.length}
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
+                      <table className="w-full text-left border-collapse text-[11px] min-w-[700px]">
+                        <thead>
+                          <tr className="bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
+                            <th className="py-2.5 px-2 border-r border-slate-700 text-center w-8">#</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Date</th>
+                            <th className="py-2.5 px-2 border-r border-slate-700 text-center">Class</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Receipt No</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
+                            <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {centerFeeEntries.length === 0 ? (
+                            <tr>
+                              <td colSpan="10" className="py-6 text-center text-slate-400 italic">
+                                No center fee entry set for this student (Center Fee is ₹0).
+                              </td>
+                            </tr>
+                          ) : (
+                            centerFeeEntries.map((c, idx) => {
+                              const cDate = c.feeDate || c.date || '-';
+                              const cAmt = Number(c.amountPaid !== undefined ? c.amountPaid : (c.amount || 0));
+
+                              return (
+                                <tr key={c.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'}>
+                                  <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap font-medium text-slate-800">{cDate}</td>
+                                  <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-700">{c.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono font-bold text-indigo-900">{c.receiptNo || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800">{c.purpose || 'Center Fee (Academic Fee)'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{c.paymentMode || 'Official Record'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono text-slate-600">{c.refNo || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{c.receivedBy || 'Admin Desk'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-black font-mono text-sky-800 whitespace-nowrap">
+                                    {cAmt > 0 ? `${cAmt}/-` : '0/-'}
+                                  </td>
+                                  <td className="py-2 px-2 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrintReceiptData({
+                                            ...c,
+                                            studentName: feeDeskStudent.fullName || feeDeskStudent.studentName,
+                                            rollNo: feeDeskStudent.rollNo,
+                                            collegeName: feeDeskStudent.collegeName,
+                                            universityName: feeDeskStudent.universityName,
+                                            courseName: feeDeskStudent.courseName,
+                                            currentClass: c.currentClass || feeDeskStudent.currentClass,
+                                            receiptNo: c.receiptNo,
+                                            paymentDate: c.date || c.feeDate || new Date().toISOString(),
+                                            paymentMode: c.paymentMode || 'Official Record',
+                                            transactionRef: c.refNo || 'ACADEMIC-CENTER-FEE',
+                                            feeType: 'Center Fee (Academic Fee)',
+                                            paidFor: c.purpose || 'Center Fee',
+                                            amountPaid: cAmt
+                                          });
+                                        }}
+                                        className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Print Official Center Fee Receipt"
+                                      >
+                                        <Printer className="w-3 h-3" />
+                                        <span>Print</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingPaymentModal({
+                                            ...c,
+                                            isCenterFee: true,
+                                            id: c.id || c.receiptNo,
+                                            amountPaid: cAmt,
+                                            feeDate: c.feeDate ? c.feeDate.split('T')[0] : (c.date ? c.date.split('T')[0] : new Date().toISOString().split('T')[0]),
+                                            purpose: c.purpose || 'Center Fee (Academic Fee)',
+                                            paymentMode: c.paymentMode || 'Official Record',
+                                            refNo: c.refNo || '-',
+                                            receivedBy: c.receivedBy || 'Admin Desk',
+                                            remark: c.remark || '',
+                                            currentClass: c.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                          });
+                                          setEditPaymentError(null);
+                                        }}
+                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit this center fee entry"
+                                      >
+                                        <Edit3 className="w-3 h-3 text-indigo-600" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteCenterFee(cAmt)}
+                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete / Reset center fee entry"
+                                      >
+                                        <Trash2 className="w-3 h-3 text-rose-600" />
+                                        <span>Delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 );
               })()}
 
-              {/* 3. SET SCHOLARSHIP MODE: Multi-Year Breakdown & History ONLY */}
+              {/* 3. SET SCHOLARSHIP MODE: Scholarship Entry Table with Date, Print, Edit, Delete */}
               {feeDeskMode === 'set_scholarship' && (() => {
                 const y1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
                 const y2 = Number(feeDeskStudent.scholarshipYear2 || 0);
                 const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
                 const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
-                const totalSch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-                const history = Array.isArray(feeDeskStudent.scholarshipHistory) ? feeDeskStudent.scholarshipHistory : [];
+
+                let scholarshipEntries = [];
+                if (Array.isArray(feeDeskStudent.scholarshipHistory) && feeDeskStudent.scholarshipHistory.length > 0) {
+                  scholarshipEntries = feeDeskStudent.scholarshipHistory;
+                } else {
+                  const defaultDate = feeDeskStudent.scholarshipDate || (feeDeskStudent.createdAt ? feeDeskStudent.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]);
+                  if (y1 > 0) {
+                    scholarshipEntries.push({
+                      id: 'SCH-Y1-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '1'),
+                      receiptNo: `SCH-${feeDeskStudent.rollNo || '001'}-Y1`,
+                      date: defaultDate,
+                      feeDate: defaultDate,
+                      currentClass: feeDeskStudent.currentClass || 'SEM-1',
+                      purpose: 'First Year Scholarship',
+                      year: 'year1',
+                      yearLabel: 'First Year Scholarship',
+                      paymentMode: 'Govt Scholarship Grant',
+                      refNo: '-',
+                      receivedBy: 'Admin Desk',
+                      amount: y1,
+                      amountPaid: y1,
+                      remark: 'First Year Scholarship'
+                    });
+                  }
+                  if (y2 > 0) {
+                    scholarshipEntries.push({
+                      id: 'SCH-Y2-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '2'),
+                      receiptNo: `SCH-${feeDeskStudent.rollNo || '001'}-Y2`,
+                      date: defaultDate,
+                      feeDate: defaultDate,
+                      currentClass: feeDeskStudent.currentClass || 'SEM-3',
+                      purpose: 'Second Year Scholarship',
+                      year: 'year2',
+                      yearLabel: 'Second Year Scholarship',
+                      paymentMode: 'Govt Scholarship Grant',
+                      refNo: '-',
+                      receivedBy: 'Admin Desk',
+                      amount: y2,
+                      amountPaid: y2,
+                      remark: 'Second Year Scholarship'
+                    });
+                  }
+                  if (y3 > 0) {
+                    scholarshipEntries.push({
+                      id: 'SCH-Y3-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '3'),
+                      receiptNo: `SCH-${feeDeskStudent.rollNo || '001'}-Y3`,
+                      date: defaultDate,
+                      feeDate: defaultDate,
+                      currentClass: feeDeskStudent.currentClass || 'SEM-5',
+                      purpose: 'Third Year Scholarship',
+                      year: 'year3',
+                      yearLabel: 'Third Year Scholarship',
+                      paymentMode: 'Govt Scholarship Grant',
+                      refNo: '-',
+                      receivedBy: 'Admin Desk',
+                      amount: y3,
+                      amountPaid: y3,
+                      remark: 'Third Year Scholarship'
+                    });
+                  }
+                  if (y4 > 0) {
+                    scholarshipEntries.push({
+                      id: 'SCH-Y4-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '4'),
+                      receiptNo: `SCH-${feeDeskStudent.rollNo || '001'}-Y4`,
+                      date: defaultDate,
+                      feeDate: defaultDate,
+                      currentClass: feeDeskStudent.currentClass || 'SEM-7',
+                      purpose: 'Fourth Year Scholarship',
+                      year: 'year4',
+                      yearLabel: 'Fourth Year Scholarship',
+                      paymentMode: 'Govt Scholarship Grant',
+                      refNo: '-',
+                      receivedBy: 'Admin Desk',
+                      amount: y4,
+                      amountPaid: y4,
+                      remark: 'Fourth Year Scholarship'
+                    });
+                  }
+                }
 
                 return (
-                  <div className="space-y-3 pt-2">
-                    <div className="border border-purple-200 rounded-2xl overflow-hidden shadow-2xs">
-                      <div className="bg-purple-900 text-white px-4 py-2.5 flex items-center justify-between font-bold text-xs">
-                        <span className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-purple-300" />
-                          <span>Scholarship Year-Wise Breakdown (छात्रवृत्ति विवरण)</span>
-                        </span>
-                        <span className="font-mono text-amber-300">Total: ₹{totalSch.toLocaleString('en-IN')}/-</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-purple-100 bg-purple-50/40 text-center p-3">
-                        <div className="p-2">
-                          <div className="text-[10px] font-bold text-purple-700 uppercase">1st Year</div>
-                          <div className="text-sm font-black text-purple-950 font-mono">₹{y1.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="p-2">
-                          <div className="text-[10px] font-bold text-purple-700 uppercase">2nd Year</div>
-                          <div className="text-sm font-black text-purple-950 font-mono">₹{y2.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="p-2">
-                          <div className="text-[10px] font-bold text-purple-700 uppercase">3rd Year</div>
-                          <div className="text-sm font-black text-purple-950 font-mono">₹{y3.toLocaleString('en-IN')}/-</div>
-                        </div>
-                        <div className="p-2">
-                          <div className="text-[10px] font-bold text-purple-700 uppercase">4th Year</div>
-                          <div className="text-sm font-black text-purple-950 font-mono">₹{y4.toLocaleString('en-IN')}/-</div>
-                        </div>
-                      </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Scholarship History (छात्रवृत्ति रिकॉर्ड)</span>
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        Total Entries: {scholarshipEntries.length}
+                      </span>
                     </div>
 
-                    {history.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                          <span>Scholarship Update Log ({history.length})</span>
-                        </h5>
-                        <div className="border border-purple-200 rounded-xl overflow-x-auto">
-                          <table className="w-full text-left text-[11px] border-collapse">
-                            <thead>
-                              <tr className="bg-purple-100 text-purple-950 font-bold text-[10px] uppercase">
-                                <th className="py-1.5 px-3">Date</th>
-                                <th className="py-1.5 px-3">Year Updated</th>
-                                <th className="py-1.5 px-3 text-right">Total Scholarship</th>
-                                <th className="py-1.5 px-3">Remark</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-purple-100 bg-white">
-                              {history.slice().reverse().map((h, i) => (
-                                <tr key={h.id || i}>
-                                  <td className="py-1.5 px-3 text-slate-700 font-medium">{h.date || '-'}</td>
-                                  <td className="py-1.5 px-3 font-semibold text-purple-900">{h.yearLabel || h.year || 'All Years'}</td>
-                                  <td className="py-1.5 px-3 text-right font-bold font-mono text-purple-950">₹{Number(h.total || 0).toLocaleString('en-IN')}/-</td>
-                                  <td className="py-1.5 px-3 text-slate-600 text-[10px]">{h.remark || '-'}</td>
+                    <div className="border border-purple-200 rounded-xl overflow-x-auto shadow-2xs">
+                      <table className="w-full text-left border-collapse text-[11px] min-w-[700px]">
+                        <thead>
+                          <tr className="bg-purple-900 text-white font-bold text-[10px] uppercase tracking-wider">
+                            <th className="py-2.5 px-2 border-r border-purple-800 text-center w-8">#</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Date</th>
+                            <th className="py-2.5 px-2 border-r border-purple-800 text-center">Class</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Receipt No</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Purpose</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Payment_Mode</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Ref No</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800">Rreceived by</th>
+                            <th className="py-2.5 px-2.5 border-r border-purple-800 text-right">Fee</th>
+                            <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-purple-100">
+                          {scholarshipEntries.length === 0 ? (
+                            <tr>
+                              <td colSpan="10" className="py-6 text-center text-slate-400 italic bg-white">
+                                No scholarship entries recorded yet for this student.
+                              </td>
+                            </tr>
+                          ) : (
+                            scholarshipEntries.map((sEntry, idx) => {
+                              const sDate = sEntry.feeDate || sEntry.date || '-';
+                              const sAmt = Number(sEntry.amountPaid !== undefined ? sEntry.amountPaid : (sEntry.amount || 0));
+
+                              return (
+                                <tr key={sEntry.id || idx} className={idx % 2 === 1 ? 'bg-purple-50/40' : 'bg-white'}>
+                                  <td className="py-2 px-2 border-r border-purple-100 text-center font-bold text-purple-700">{idx + 1}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 whitespace-nowrap font-medium text-slate-800">{sDate}</td>
+                                  <td className="py-2 px-2 border-r border-purple-100 text-center font-bold text-slate-700">{sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 font-mono font-bold text-purple-900">{sEntry.receiptNo || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 font-semibold text-purple-950">{sEntry.purpose || sEntry.yearLabel || 'Scholarship'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 text-slate-700">{sEntry.paymentMode || 'Govt Scholarship Grant'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 font-mono text-slate-600">{sEntry.refNo || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 text-slate-700">{sEntry.receivedBy || 'Admin Desk'}</td>
+                                  <td className="py-2 px-2.5 border-r border-purple-100 text-right font-black font-mono text-purple-900 whitespace-nowrap">
+                                    {sAmt > 0 ? `${sAmt}/-` : '0/-'}
+                                  </td>
+                                  <td className="py-2 px-2 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrintReceiptData({
+                                            ...sEntry,
+                                            studentName: feeDeskStudent.fullName || feeDeskStudent.studentName,
+                                            rollNo: feeDeskStudent.rollNo,
+                                            collegeName: feeDeskStudent.collegeName,
+                                            universityName: feeDeskStudent.universityName,
+                                            courseName: feeDeskStudent.courseName,
+                                            currentClass: sEntry.currentClass || feeDeskStudent.currentClass,
+                                            receiptNo: sEntry.receiptNo,
+                                            paymentDate: sEntry.date || sEntry.feeDate || new Date().toISOString(),
+                                            paymentMode: sEntry.paymentMode || 'Govt Scholarship Grant',
+                                            transactionRef: sEntry.refNo || 'SCHOLARSHIP-GRANT',
+                                            feeType: 'Scholarship Grant',
+                                            paidFor: sEntry.purpose || sEntry.yearLabel || 'Scholarship Grant',
+                                            amountPaid: sAmt
+                                          });
+                                        }}
+                                        className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Print Official Scholarship Receipt"
+                                      >
+                                        <Printer className="w-3 h-3" />
+                                        <span>Print</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingPaymentModal({
+                                            ...sEntry,
+                                            isScholarship: true,
+                                            year: sEntry.year || 'year1',
+                                            yearLabel: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
+                                            id: sEntry.id || sEntry.receiptNo,
+                                            amountPaid: sAmt,
+                                            feeDate: sEntry.feeDate ? sEntry.feeDate.split('T')[0] : (sEntry.date ? sEntry.date.split('T')[0] : new Date().toISOString().split('T')[0]),
+                                            purpose: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
+                                            paymentMode: sEntry.paymentMode || 'Govt Scholarship Grant',
+                                            refNo: sEntry.refNo || '-',
+                                            receivedBy: sEntry.receivedBy || 'Admin Desk',
+                                            remark: sEntry.remark || '',
+                                            currentClass: sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                          });
+                                          setEditPaymentError(null);
+                                        }}
+                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit this scholarship entry"
+                                      >
+                                        <Edit3 className="w-3 h-3 text-indigo-600" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteScholarship(sEntry.year || sEntry.id, sAmt, sEntry.purpose || sEntry.yearLabel)}
+                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete this scholarship entry"
+                                      >
+                                        <Trash2 className="w-3 h-3 text-rose-600" />
+                                        <span>Delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
               })()}
@@ -2650,7 +3106,7 @@ export default function StudentList({
               <div className="flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-indigo-400" />
                 <h3 className="text-sm font-extrabold uppercase tracking-wide">
-                  Edit Payment Entry ({editingPaymentModal.receiptNo || 'Receipt'})
+                  Edit Entry ({editingPaymentModal.receiptNo || 'Receipt'})
                 </h3>
               </div>
               <button
@@ -2672,7 +3128,7 @@ export default function StudentList({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Amount Paid (₹)*
+                    Amount (₹)*
                   </label>
                   <input
                     type="number"
@@ -2684,7 +3140,7 @@ export default function StudentList({
                     className="w-full px-3 py-2 text-base font-extrabold border-2 border-indigo-500 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-300 font-mono"
                   />
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Enter 0 or any corrected amount. Total Paid fee and remaining balance will update automatically.
+                    Enter 0 or any corrected amount. Total fee, paid fee and remaining balance will update automatically.
                   </p>
                 </div>
 

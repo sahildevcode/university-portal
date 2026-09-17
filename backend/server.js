@@ -1953,13 +1953,39 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { academicFee, remark } = req.body;
+  const { academicFee, remark, feeDate, currentClass, paymentMode, refNo, receivedBy, receiptNo } = req.body;
   const acadFee = Number(academicFee) >= 0 ? Number(academicFee) : 0;
   student.academicFee = acadFee;
   student.studentFee = acadFee;
   student.courseFee = acadFee;
   if (remark !== undefined) {
     student.remark = remark;
+  }
+  const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
+  student.academicFeeDate = dateStr;
+
+  if (!Array.isArray(student.academicFeeHistory)) {
+    student.academicFeeHistory = [];
+  }
+
+  const rNo = receiptNo || `CF-${student.rollNo || getNextReceiptNumber(db)}`;
+  if (acadFee > 0) {
+    student.academicFeeHistory = [{
+      id: 'CF-' + Date.now(),
+      receiptNo: rNo,
+      date: dateStr,
+      feeDate: dateStr,
+      currentClass: currentClass || student.currentClass || 'SEM-1',
+      purpose: 'Center Fee (Academic Fee)',
+      paymentMode: paymentMode || 'Official Record',
+      refNo: refNo || '-',
+      receivedBy: receivedBy || 'Admin Desk',
+      amount: acadFee,
+      amountPaid: acadFee,
+      remark: remark || 'Center Fee'
+    }];
+  } else {
+    student.academicFeeHistory = [];
   }
 
   const sch = Number(student.scholarshipAmount) || 0;
@@ -1973,6 +1999,35 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
   res.json({
     success: true,
     message: `Academic fee for ${student.fullName || student.rollNo || 'Student'} set to ₹${acadFee.toLocaleString('en-IN')}`,
+    student
+  });
+});
+
+// Delete / Reset Academic Center Fee
+app.delete('/api/students/:rollNo/set-fee', (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  student.academicFee = 0;
+  student.studentFee = 0;
+  student.courseFee = 0;
+  student.academicFeeHistory = [];
+  const sch = Number(student.scholarshipAmount) || 0;
+  student.totalFee = sch;
+  student.netTotalFee = sch;
+  student.balanceDue = Math.max(0, sch - (Number(student.totalPaid) || 0));
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Academic center fee reset to ₹0 for ${student.fullName || student.rollNo || 'Student'}.`,
     student
   });
 });
@@ -1996,7 +2051,13 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     year, // 'year1' | 'year2' | 'year3' | 'year4'
     yearLabel, // 'First Year Scholarship'
     amount,
-    remark
+    remark,
+    feeDate,
+    currentClass,
+    paymentMode,
+    refNo,
+    receivedBy,
+    receiptNo
   } = req.body;
 
   // If specific year update was sent
@@ -2028,15 +2089,30 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   const totalSch = y1 + y2 + y3 + y4;
   student.scholarshipAmount = totalSch;
 
+  const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
+  student.scholarshipDate = dateStr;
+
   // Maintain audit history of scholarship adjustments
   if (!Array.isArray(student.scholarshipHistory)) {
     student.scholarshipHistory = [];
   }
+  const rNo = receiptNo || `SCH-${student.rollNo || getNextReceiptNumber(db)}`;
+  const entryAmt = (year && amount !== undefined) ? Math.max(0, Number(amount) || 0) : totalSch;
+
   student.scholarshipHistory.push({
     id: 'SCH-' + Date.now(),
-    date: new Date().toISOString().split('T')[0],
+    receiptNo: rNo,
+    date: dateStr,
+    feeDate: dateStr,
+    currentClass: currentClass || student.currentClass || 'SEM-1',
+    purpose: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
     year: year || 'All Years',
     yearLabel: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
+    paymentMode: paymentMode || 'Govt Scholarship Grant',
+    refNo: refNo || '-',
+    receivedBy: receivedBy || 'Admin Desk',
+    amount: entryAmt,
+    amountPaid: entryAmt,
     year1: y1,
     year2: y2,
     year3: y3,
@@ -2057,6 +2133,78 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   res.json({
     success: true,
     message: `Scholarship for ${student.fullName || student.rollNo || 'Student'} updated. Total: ₹${totalSch.toLocaleString('en-IN')}`,
+    student
+  });
+});
+
+// Delete / Reset Scholarship Entry or Year
+app.delete('/api/students/:rollNo/scholarships/:idOrYear', (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const idOrYear = (req.params.idOrYear || '').trim().toLowerCase();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  if (idOrYear === 'year1' || idOrYear === '1') {
+    student.scholarshipYear1 = 0;
+    if (Array.isArray(student.scholarshipHistory)) {
+      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year1' && h.year !== '1');
+    }
+  } else if (idOrYear === 'year2' || idOrYear === '2') {
+    student.scholarshipYear2 = 0;
+    if (Array.isArray(student.scholarshipHistory)) {
+      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year2' && h.year !== '2');
+    }
+  } else if (idOrYear === 'year3' || idOrYear === '3') {
+    student.scholarshipYear3 = 0;
+    if (Array.isArray(student.scholarshipHistory)) {
+      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year3' && h.year !== '3');
+    }
+  } else if (idOrYear === 'year4' || idOrYear === '4') {
+    student.scholarshipYear4 = 0;
+    if (Array.isArray(student.scholarshipHistory)) {
+      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year4' && h.year !== '4');
+    }
+  } else if (idOrYear.startsWith('sch-')) {
+    if (Array.isArray(student.scholarshipHistory)) {
+      const target = student.scholarshipHistory.find(h => String(h.id || '').toLowerCase() === idOrYear || String(h.receiptNo || '').toLowerCase() === idOrYear);
+      if (target && target.year) {
+        if (target.year === 'year1' || target.year === '1') student.scholarshipYear1 = 0;
+        if (target.year === 'year2' || target.year === '2') student.scholarshipYear2 = 0;
+        if (target.year === 'year3' || target.year === '3') student.scholarshipYear3 = 0;
+        if (target.year === 'year4' || target.year === '4') student.scholarshipYear4 = 0;
+      }
+      student.scholarshipHistory = student.scholarshipHistory.filter(h => String(h.id || '').toLowerCase() !== idOrYear && String(h.receiptNo || '').toLowerCase() !== idOrYear);
+    }
+  } else {
+    student.scholarshipYear1 = 0;
+    student.scholarshipYear2 = 0;
+    student.scholarshipYear3 = 0;
+    student.scholarshipYear4 = 0;
+    student.scholarshipHistory = [];
+  }
+
+  const y1 = Number(student.scholarshipYear1) || 0;
+  const y2 = Number(student.scholarshipYear2) || 0;
+  const y3 = Number(student.scholarshipYear3) || 0;
+  const y4 = Number(student.scholarshipYear4) || 0;
+  const totalSch = y1 + y2 + y3 + y4;
+  student.scholarshipAmount = totalSch;
+
+  const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
+  student.totalFee = acadFee + totalSch;
+  student.netTotalFee = student.totalFee;
+  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  res.json({
+    success: true,
+    message: `Scholarship updated successfully.`,
     student
   });
 });
