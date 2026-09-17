@@ -2225,6 +2225,65 @@ app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
   });
 });
 
+// Update / Edit Specific Payment Entry
+app.put('/api/students/:rollNo/payments/:paymentId', (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const paymentId = (req.params.paymentId || '').trim();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+
+  const payment = db.fee_payments.find(p => p.id === paymentId || p.receiptNo === paymentId);
+  if (!payment) {
+    return res.status(404).json({ success: false, message: 'Payment record not found' });
+  }
+
+  const oldAmt = Number(payment.amountPaid || payment.amount || 0);
+  const { amount, paymentMode, purpose, refNo, receivedBy, feeDate, remark, currentClass } = req.body;
+  const newAmt = (amount === '' || amount === null || amount === undefined) ? 0 : Math.max(0, Number(amount) || 0);
+
+  // Update payment object
+  payment.amountPaid = newAmt;
+  if (paymentMode !== undefined) payment.paymentMode = paymentMode;
+  if (purpose !== undefined) {
+    payment.purpose = purpose;
+    payment.feeType = purpose;
+  }
+  if (refNo !== undefined) payment.refNo = refNo;
+  if (receivedBy !== undefined) payment.receivedBy = receivedBy;
+  if (remark !== undefined) payment.remark = remark;
+  if (currentClass !== undefined) payment.currentClass = currentClass;
+  if (feeDate) payment.paymentDate = new Date(feeDate).toISOString();
+
+  // Recalculate student.totalPaid
+  student.totalPaid = Math.max(0, (Number(student.totalPaid) || 0) - oldAmt + newAmt);
+  const totalFee = Number(student.totalFee) || 0;
+  student.balanceDue = Math.max(0, totalFee - student.totalPaid);
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  const sRoll = (student.rollNo || '').toUpperCase();
+  const sId = student.id || '';
+  const studentPayments = db.fee_payments.filter(p => 
+    (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+    (sId && p.studentId && p.studentId === sId)
+  );
+
+  res.json({
+    success: true,
+    message: `Payment entry updated successfully to ₹${newAmt.toLocaleString('en-IN')}.`,
+    student,
+    payment,
+    payments: studentPayments
+  });
+});
+
 app.delete('/api/students/:rollNo', (req, res) => {
   const db = readDB();
   const rawKey = (req.params.rollNo || '').trim();

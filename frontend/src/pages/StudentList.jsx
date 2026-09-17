@@ -89,6 +89,9 @@ export default function StudentList({
   // Fee Receipt & Fee Card Print Modals
   const [printReceiptData, setPrintReceiptData] = useState(null);
   const [printFeeCardStudent, setPrintFeeCardStudent] = useState(null);
+  const [editingPaymentModal, setEditingPaymentModal] = useState(null);
+  const [editPaymentLoading, setEditPaymentLoading] = useState(false);
+  const [editPaymentError, setEditPaymentError] = useState(null);
 
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -499,6 +502,50 @@ export default function StudentList({
       setFeeDeskError(err.message || 'Error deleting payment');
     } finally {
       setFeeDeskLoading(false);
+    }
+  };
+
+  const handleUpdatePayment = async (e) => {
+    e.preventDefault();
+    if (!feeDeskStudent || !editingPaymentModal) return;
+
+    setEditPaymentLoading(true);
+    setEditPaymentError(null);
+
+    try {
+      const studentLookupKey = getStudentKey(feeDeskStudent);
+      const paymentId = editingPaymentModal.id || editingPaymentModal.receiptNo;
+      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: editingPaymentModal.amountPaid,
+          feeDate: editingPaymentModal.feeDate || editingPaymentModal.paymentDate,
+          purpose: editingPaymentModal.purpose,
+          paymentMode: editingPaymentModal.paymentMode,
+          refNo: editingPaymentModal.refNo,
+          receivedBy: editingPaymentModal.receivedBy,
+          remark: editingPaymentModal.remark,
+          currentClass: editingPaymentModal.currentClass
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update payment');
+      }
+
+      const updatedStudent = data.student;
+      setFeeDeskStudent(updatedStudent);
+      setFeeDeskPayments(data.payments || []);
+      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+      setFeeDeskSuccess(`Payment entry updated successfully to ₹${Number(editingPaymentModal.amountPaid || 0).toLocaleString('en-IN')}!`);
+      setEditingPaymentModal(null);
+      fetchStudents();
+      if (onFeeReceived) onFeeReceived();
+    } catch (err) {
+      setEditPaymentError(err.message || 'Error updating payment');
+    } finally {
+      setEditPaymentLoading(false);
     }
   };
 
@@ -2269,7 +2316,7 @@ export default function StudentList({
                               className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
                               title="Set amount to 0"
                             >
-                              0 (Zero)
+                              Set 0
                             </button>
                           </>
                         )}
@@ -2292,11 +2339,11 @@ export default function StudentList({
                       >
                         <Edit3 className="w-4 h-4" />
                         <span>
-                          {feeDeskLoading ? 'Saving...' : (Number(feeDeskAmount) === 0 || feeDeskAmount === '' ? 'एडिट करें (0 सेट करें)' : `एडिट करें (₹${Number(feeDeskAmount || 0).toLocaleString('en-IN')})`)}
+                          {feeDeskLoading ? 'Saving...' : (Number(feeDeskAmount) === 0 || feeDeskAmount === '' ? 'Set Paid Fee (0)' : `Set Paid Fee (₹${Number(feeDeskAmount || 0).toLocaleString('en-IN')})`)}
                         </span>
                       </button>
 
-                      {/* 2. Add Payment / Entry Button - उसी के बगल में एक ऐड करें का ऑप्शन */}
+                      {/* 2. Add Payment / Entry Button */}
                       <button
                         type="submit"
                         disabled={feeDeskLoading}
@@ -2306,7 +2353,7 @@ export default function StudentList({
                       >
                         <PlusCircle className="w-4 h-4" />
                         <span>
-                          {feeDeskLoading ? 'Saving...' : 'ऐड करें (+ PAID FEE)'}
+                          {feeDeskLoading ? 'Saving...' : 'Add Payment'}
                         </span>
                       </button>
                     </>
@@ -2457,8 +2504,31 @@ export default function StudentList({
                                   </button>
                                   <button
                                     type="button"
+                                    onClick={() => {
+                                      setEditingPaymentModal({
+                                        ...p,
+                                        id: p.id || p.receiptNo,
+                                        amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
+                                        feeDate: p.feeDate ? p.feeDate.split('T')[0] : (p.paymentDate ? p.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0]),
+                                        purpose: p.purpose || p.feeType || 'Tuition Fee',
+                                        paymentMode: p.paymentMode || 'Cash',
+                                        refNo: p.refNo || p.transactionRef || '',
+                                        receivedBy: p.receivedBy || 'Admin Desk',
+                                        remark: p.remark || '',
+                                        currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                      });
+                                      setEditPaymentError(null);
+                                    }}
+                                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Edit this payment entry"
+                                  >
+                                    <Edit3 className="w-3 h-3 text-indigo-600" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
                                     title="Delete this payment entry"
                                   >
                                     <Trash2 className="w-3 h-3 text-rose-600" />
@@ -2524,6 +2594,166 @@ export default function StudentList({
           payments={feeDeskPayments}
           onClose={() => setPrintFeeCardStudent(null)}
         />
+      )}
+
+      {/* Edit Payment Entry Modal */}
+      {editingPaymentModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-indigo-400" />
+                <h3 className="text-sm font-extrabold uppercase tracking-wide">
+                  Edit Payment Entry ({editingPaymentModal.receiptNo || 'Receipt'})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPaymentModal(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePayment} className="p-5 space-y-4">
+              {editPaymentError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
+                  {editPaymentError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Amount Paid (₹)*
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                    value={editingPaymentModal.amountPaid}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, amountPaid: e.target.value }))}
+                    className="w-full px-3 py-2 text-base font-extrabold border-2 border-indigo-500 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-300 font-mono"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Enter 0 or any corrected amount. Total Paid fee and remaining balance will update automatically.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Date*
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editingPaymentModal.feeDate}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, feeDate: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Payment Mode*
+                  </label>
+                  <select
+                    value={editingPaymentModal.paymentMode}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, paymentMode: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="Online / UPI">Online / UPI</option>
+                    <option value="Bank Transfer / NEFT">Bank Transfer / NEFT</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="DD">DD</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Purpose*
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPaymentModal.purpose}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, purpose: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Class / Semester
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPaymentModal.currentClass}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, currentClass: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Transaction / Ref No
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPaymentModal.refNo}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, refNo: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Received By
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPaymentModal.receivedBy}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, receivedBy: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Remark
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPaymentModal.remark}
+                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, remark: e.target.value }))}
+                    placeholder="Optional remark or note"
+                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingPaymentModal(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editPaymentLoading}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{editPaymentLoading ? 'Updating...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Full Student Profile & Document Viewer Modal */}
