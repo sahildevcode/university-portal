@@ -40,7 +40,7 @@ const FALLBACK_UNIVERSITIES = [
 
 // Initial Fallback Affiliated Colleges mapped by University
 const FALLBACK_COLLEGES = [
-  // 2 Affiliated Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
+  // 19 Affiliated Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
   {
     id: 'col-ved121',
     universityId: 'univ-mcbu',
@@ -57,6 +57,159 @@ const FALLBACK_COLLEGES = [
     code: 'VED-2097',
     name: 'VED-2097 Sita Ram College of Education run by Giridhar Gopal Shiksha Prasar evam Jan Kalyan Samiti',
     shortName: 'VED-2097 Sita Ram College of Education',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ved2140',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-2140',
+    name: 'VED2140 - J J COLLEGE OF EDUCATION RUN BY R D EDUCATION SOCIETY',
+    shortName: 'J J College of Education',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ved2266',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-2266',
+    name: 'VED2266 - R.D College',
+    shortName: 'R.D College',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ved373',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-373',
+    name: 'VED373 - Shri Krishna College Of Education',
+    shortName: 'Shri Krishna College Of Education',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ved455',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-455',
+    name: 'VED455 - Swami Vivekanand Mahavidyalaya',
+    shortName: 'Swami Vivekanand Mahavidyalaya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ved914',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-914',
+    name: 'VED914 - Shri Krishna Shiksha Mavavidyalaya',
+    shortName: 'Shri Krishna Shiksha Mahavidyalaya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-beled005',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'BELED005',
+    name: 'BELED005 - MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA',
+    shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-beled006',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'BELED006',
+    name: 'BELED006 - MAA SHARDA EDUCATIONAL INSTITUTE CHHATARPUR SAMITI KHASRA',
+    shortName: 'Maa Sharda Educational Institute',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-n462',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'N462',
+    name: 'Khajuraho Institute of Pharmaceutical Sciences Kadari District Chhatarpur(N462)',
+    shortName: 'Khajuraho Institute of Pharmaceutical Sciences',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-msm1079',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'MSM-1079',
+    name: 'Ma Sharda Mahavidyalay, Plot No. 1079 Street No 75 Gatheowara, Po. Gatheowara,',
+    shortName: 'Ma Sharda Mahavidyalay Gatheowara',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-msm-lakshya',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'MSM-LAKSHYA',
+    name: 'Maa Sharda Mahavidhyalaya Run By Lakshya Educational and Social Village Bajrang Nagar, Gatheowara',
+    shortName: 'Maa Sharda Mahavidhyalaya Lakshya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-mcsm',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'MCSM',
+    name: 'MAHARAJA CHHATRASAL SHIKSHA MAHAVIDYALAYA',
+    shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-ramdev',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'RMV1886',
+    name: 'RAMDEV MAHAVIDYALAYA, PLOT NO.: 1886',
+    shortName: 'Ramdev Mahavidyalaya',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-svn',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'SVN01',
+    name: 'S.V.N. COLLEGE, AFTER MARIA MATA SCHOOL, CHOUBEY COLONY',
+    shortName: 'S.V.N. College Choubey Colony',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-sitaram-jankalyan',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'SRC-JANKALYAN',
+    name: 'Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam JankalyanSamiti',
+    shortName: 'Sita Ram College Of Education',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-sitaram-khop',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'SRC-KHOP',
+    name: 'Sita Ram College Of Education Run By Girdhar gopal Shiksha Prashar Evam Jankalyan Samiti, Plot No. 90/3, Mahoba Road, Village Khop, Chhatarpur, P.O.+Th.+ Dist. Chhatarpur 471001, M.P.',
+    shortName: 'Sita Ram College Khop',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-shrikrishna-orchha',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'SKCE-ORCHHA',
+    name: 'Shri Krishna College Of Education near Orchha Road, Thana, Jhansi Road, Chhatarpur-471001 (M.P.)',
+    shortName: 'Shri Krishna College Orchha Road',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-crystal-harpalpur',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'CSPS-HARPALPUR',
+    name: 'CrysTal Shiksha Prasar Samiti, Shri Krishna College, Behind. Old Govt. Degree College, Nowgong Road, Harpalpur, Chhatarpur, M.P.',
+    shortName: 'Crystal Shiksha Prasar Samiti Harpalpur',
     district: 'Chhatarpur'
   },
   // Subharti University Campus
