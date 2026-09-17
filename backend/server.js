@@ -1943,7 +1943,7 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
   });
 });
 
-// Set Student Fee (Academic Fee & Remark)
+// Set Student Fee (Academic Fee & Purpose entries with Multi-entry support)
 app.put('/api/students/:rollNo/set-fee', (req, res) => {
   const db = readDB();
   const rawKey = (req.params.rollNo || '').trim();
@@ -1953,43 +1953,118 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { academicFee, remark, feeDate, currentClass, paymentMode, refNo, receivedBy, receiptNo, purpose } = req.body;
-  const acadFee = Number(academicFee) >= 0 ? Number(academicFee) : 0;
-  student.academicFee = acadFee;
-  student.studentFee = acadFee;
-  student.courseFee = acadFee;
-  if (remark !== undefined) {
-    student.remark = remark;
-  }
-  const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
-  student.academicFeeDate = dateStr;
+  const {
+    academicFee,
+    remark,
+    feeDate,
+    currentClass,
+    paymentMode,
+    refNo,
+    receivedBy,
+    receiptNo,
+    purpose,
+    id,
+    action,
+    entries
+  } = req.body;
 
   if (!Array.isArray(student.academicFeeHistory)) {
     student.academicFeeHistory = [];
+    if (Number(student.academicFee) > 0) {
+      student.academicFeeHistory.push({
+        id: 'CF-' + (student.id || student.rollNo || '1'),
+        receiptNo: `CF-${student.rollNo || '001'}`,
+        date: student.academicFeeDate || new Date().toISOString().split('T')[0],
+        feeDate: student.academicFeeDate || new Date().toISOString().split('T')[0],
+        currentClass: student.currentClass || 'SEM-1',
+        purpose: 'Center Fee',
+        paymentMode: 'Official Record',
+        refNo: '-',
+        receivedBy: 'Admin Desk',
+        amount: Number(student.academicFee),
+        amountPaid: Number(student.academicFee),
+        remark: student.remark || 'Center Fee'
+      });
+    }
   }
 
-  const rNo = receiptNo || `CF-${student.rollNo || getNextReceiptNumber(db)}`;
-  if (acadFee > 0) {
-    student.academicFeeHistory = [{
-      id: 'CF-' + Date.now(),
-      receiptNo: rNo,
-      date: dateStr,
-      feeDate: dateStr,
-      currentClass: currentClass || student.currentClass || 'SEM-1',
-      purpose: purpose || 'Center Fee (Academic Fee)',
-      paymentMode: paymentMode || 'Official Record',
-      refNo: refNo || '-',
-      receivedBy: receivedBy || 'Admin Desk',
-      amount: acadFee,
-      amountPaid: acadFee,
-      remark: remark || 'Center Fee'
-    }];
+  const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
+  student.academicFeeDate = dateStr;
+
+  if (Array.isArray(entries) && entries.length > 0) {
+    // Multiple entries passed together!
+    entries.forEach((entry, idx) => {
+      const amt = Number(entry.amount || entry.academicFee || entry.amountPaid) || 0;
+      if (amt > 0) {
+        const eDate = entry.feeDate || dateStr;
+        student.academicFeeHistory.push({
+          id: 'CF-' + Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
+          receiptNo: entry.receiptNo || `CF-${student.rollNo || getNextReceiptNumber(db)}-${Date.now().toString().slice(-4)}${idx > 0 ? ('-' + (idx + 1)) : ''}`,
+          date: eDate,
+          feeDate: eDate,
+          currentClass: entry.currentClass || currentClass || student.currentClass || 'SEM-1',
+          purpose: entry.purpose || 'Center Fee',
+          paymentMode: entry.paymentMode || 'Official Record',
+          refNo: entry.refNo || '-',
+          receivedBy: entry.receivedBy || 'Admin Desk',
+          amount: amt,
+          amountPaid: amt,
+          remark: entry.remark || ''
+        });
+      }
+    });
+  } else if (action === 'update' || (id && student.academicFeeHistory.some(e => e.id === id || e.receiptNo === id))) {
+    // Update existing entry
+    const targetIdx = student.academicFeeHistory.findIndex(e => e.id === id || e.receiptNo === id);
+    const amt = Number(academicFee) >= 0 ? Number(academicFee) : 0;
+    if (targetIdx !== -1) {
+      student.academicFeeHistory[targetIdx] = {
+        ...student.academicFeeHistory[targetIdx],
+        amount: amt,
+        amountPaid: amt,
+        purpose: purpose || student.academicFeeHistory[targetIdx].purpose || 'Center Fee',
+        feeDate: dateStr,
+        date: dateStr,
+        currentClass: currentClass || student.academicFeeHistory[targetIdx].currentClass || 'SEM-1',
+        remark: remark !== undefined ? remark : (student.academicFeeHistory[targetIdx].remark || '')
+      };
+    }
   } else {
-    student.academicFeeHistory = [];
+    // Append single entry
+    const amt = Number(academicFee) >= 0 ? Number(academicFee) : 0;
+    if (amt > 0) {
+      student.academicFeeHistory.push({
+        id: 'CF-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        receiptNo: receiptNo || `CF-${student.rollNo || getNextReceiptNumber(db)}-${Date.now().toString().slice(-4)}`,
+        date: dateStr,
+        feeDate: dateStr,
+        currentClass: currentClass || student.currentClass || 'SEM-1',
+        purpose: purpose || 'Center Fee',
+        paymentMode: paymentMode || 'Official Record',
+        refNo: refNo || '-',
+        receivedBy: receivedBy || 'Admin Desk',
+        amount: amt,
+        amountPaid: amt,
+        remark: remark || ''
+      });
+    }
+  }
+
+  // Recalculate total academic fee as the sum of all entries
+  const totalAcad = student.academicFeeHistory.reduce((sum, e) => {
+    const val = Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0));
+    return sum + (val > 0 ? val : 0);
+  }, 0);
+
+  student.academicFee = totalAcad;
+  student.studentFee = totalAcad;
+  student.courseFee = totalAcad;
+  if (remark !== undefined) {
+    student.remark = remark;
   }
 
   const sch = Number(student.scholarshipAmount) || 0;
-  student.totalFee = acadFee + sch;
+  student.totalFee = totalAcad + sch;
   student.netTotalFee = student.totalFee;
   student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
   student.updatedAt = new Date().toISOString();
@@ -1998,36 +2073,51 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
 
   res.json({
     success: true,
-    message: `Academic fee for ${student.fullName || student.rollNo || 'Student'} set to ₹${acadFee.toLocaleString('en-IN')}`,
+    message: `Academic fee for ${student.fullName || student.rollNo || 'Student'} updated. Total Set Fee: ₹${totalAcad.toLocaleString('en-IN')}`,
     student
   });
 });
 
-// Delete / Reset Academic Center Fee
-app.delete('/api/students/:rollNo/set-fee', (req, res) => {
+// Delete / Reset Academic Center Fee entry or all entries
+app.delete(['/api/students/:rollNo/set-fee', '/api/students/:rollNo/set-fee/:entryId'], (req, res) => {
   const db = readDB();
   const rawKey = (req.params.rollNo || '').trim();
+  const entryId = req.params.entryId || req.query.entryId || (req.body && req.body.entryId);
   const student = findStudent(db.students, rawKey);
 
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  student.academicFee = 0;
-  student.studentFee = 0;
-  student.courseFee = 0;
-  student.academicFeeHistory = [];
+  if (!Array.isArray(student.academicFeeHistory)) {
+    student.academicFeeHistory = [];
+  }
+
+  if (entryId && entryId !== 'all') {
+    student.academicFeeHistory = student.academicFeeHistory.filter(e => e.id !== entryId && e.receiptNo !== entryId);
+  } else {
+    student.academicFeeHistory = [];
+  }
+
+  const totalAcad = student.academicFeeHistory.reduce((sum, e) => {
+    const val = Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0));
+    return sum + (val > 0 ? val : 0);
+  }, 0);
+
+  student.academicFee = totalAcad;
+  student.studentFee = totalAcad;
+  student.courseFee = totalAcad;
   const sch = Number(student.scholarshipAmount) || 0;
-  student.totalFee = sch;
-  student.netTotalFee = sch;
-  student.balanceDue = Math.max(0, sch - (Number(student.totalPaid) || 0));
+  student.totalFee = totalAcad + sch;
+  student.netTotalFee = student.totalFee;
+  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
   student.updatedAt = new Date().toISOString();
 
   writeDB(db);
 
   res.json({
     success: true,
-    message: `Academic center fee reset to ₹0 for ${student.fullName || student.rollNo || 'Student'}.`,
+    message: entryId && entryId !== 'all' ? `Fee entry deleted. Remaining Academic Fee: ₹${totalAcad.toLocaleString('en-IN')}` : `Academic center fee reset to ₹0.`,
     student
   });
 });

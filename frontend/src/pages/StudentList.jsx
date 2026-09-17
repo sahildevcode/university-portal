@@ -75,6 +75,7 @@ export default function StudentList({
   const [feeDeskReceivedBy, setFeeDeskReceivedBy] = useState('Admin Desk');
   const [feeDeskAmount, setFeeDeskAmount] = useState('');
   const [feeDeskRemark, setFeeDeskRemark] = useState('');
+  const [extraFeeRows, setExtraFeeRows] = useState([]);
   const [feeDeskLoading, setFeeDeskLoading] = useState(false);
   const [feeDeskError, setFeeDeskError] = useState(null);
   const [feeDeskSuccess, setFeeDeskSuccess] = useState(null);
@@ -269,7 +270,8 @@ export default function StudentList({
       setFeeDeskAmount(rem > 0 ? String(rem) : '');
     } else if (initialMode === 'set_fee') {
       setFeeDeskPurpose('Center Fee');
-      setFeeDeskAmount(String(acadFee || 0));
+      setFeeDeskAmount('');
+      setExtraFeeRows([]);
     } else if (initialMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
       setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
@@ -291,9 +293,8 @@ export default function StudentList({
           setScholarshipYear2(String(sy2 || 0));
           setScholarshipYear3(String(sy3 || 0));
           setScholarshipYear4(String(sy4 || 0));
-          const fetchedAcad = Number(data.student.academicFee !== undefined && data.student.academicFee !== null ? data.student.academicFee : (data.student.studentFee !== undefined && data.student.studentFee !== null ? data.student.studentFee : 0));
           if (initialMode === 'set_fee') {
-            setFeeDeskAmount(String(fetchedAcad || 0));
+            setFeeDeskAmount('');
           }
         } else {
           setFeeDeskPayments(student.payments || []);
@@ -327,7 +328,8 @@ export default function StudentList({
       setFeeDeskAmount(rem > 0 ? String(rem) : '');
     } else if (newMode === 'set_fee') {
       setFeeDeskPurpose('Center Fee');
-      setFeeDeskAmount(String(acadFee || 0));
+      setFeeDeskAmount('');
+      setExtraFeeRows([]);
     } else if (newMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
       setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
@@ -403,19 +405,50 @@ export default function StudentList({
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_fee') {
         const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
-        if (isNaN(amt) || amt < 0) {
-          throw new Error('Please enter a valid center fee amount (0 or more).');
+        const validExtraRows = extraFeeRows.filter(r => (Number(r.amount) || 0) > 0);
+
+        if (amt <= 0 && validExtraRows.length === 0) {
+          throw new Error('Please enter a valid fee amount (greater than 0).');
+        }
+
+        let bodyPayload = {};
+        if (validExtraRows.length > 0) {
+          const allEntries = [];
+          if (amt > 0) {
+            allEntries.push({
+              amount: amt,
+              purpose: feeDeskPurpose || 'Center Fee',
+              feeDate: feeDeskDate,
+              currentClass: feeDeskClass
+            });
+          }
+          validExtraRows.forEach(r => {
+            allEntries.push({
+              amount: Number(r.amount),
+              purpose: r.purpose || 'Academic Fee',
+              feeDate: feeDeskDate,
+              currentClass: feeDeskClass
+            });
+          });
+          bodyPayload = {
+            entries: allEntries,
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass
+          };
+        } else {
+          bodyPayload = {
+            academicFee: amt,
+            purpose: feeDeskPurpose || 'Center Fee',
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass,
+            action: 'add'
+          };
         }
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            academicFee: amt,
-            purpose: feeDeskPurpose || 'Center Fee',
-            feeDate: feeDeskDate,
-            currentClass: feeDeskClass
-          })
+          body: JSON.stringify(bodyPayload)
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -425,8 +458,10 @@ export default function StudentList({
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-        setFeeDeskAmount(String(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : amt));
-        setFeeDeskSuccess(`Academic Center Fee set to ₹${amt.toLocaleString('en-IN')} successfully!`);
+        setFeeDeskAmount('');
+        setExtraFeeRows([]);
+        const addedCount = validExtraRows.length > 0 ? (validExtraRows.length + (amt > 0 ? 1 : 0)) : 1;
+        setFeeDeskSuccess(`${addedCount > 1 ? `${addedCount} fee entries` : `Fee entry of ₹${amt.toLocaleString('en-IN')} (${feeDeskPurpose})`} added successfully! Total Set Fee: ₹${Number(updatedStudent.academicFee || 0).toLocaleString('en-IN')}`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
@@ -509,9 +544,9 @@ export default function StudentList({
     }
   };
 
-  const handleDeleteCenterFee = async (amount) => {
+  const handleDeleteCenterFee = async (id, amount, purpose) => {
     if (!feeDeskStudent) return;
-    const confirmDelete = window.confirm(`Are you sure you want to reset/delete the center fee of ₹${Number(amount || 0).toLocaleString('en-IN')}? Academic fee will be set to ₹0.`);
+    const confirmDelete = window.confirm(`Are you sure you want to delete this ${purpose || 'fee'} entry of ₹${Number(amount || 0).toLocaleString('en-IN')}?`);
     if (!confirmDelete) return;
 
     setFeeDeskLoading(true);
@@ -520,23 +555,26 @@ export default function StudentList({
 
     try {
       const studentLookupKey = getStudentKey(feeDeskStudent);
-      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
+      const deleteUrl = id 
+        ? `/api/students/${encodeURIComponent(studentLookupKey)}/set-fee/${encodeURIComponent(id)}`
+        : `/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`;
+      const res = await fetch(deleteUrl, {
         method: 'DELETE'
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to delete center fee entry');
+        throw new Error(data.message || 'Failed to delete fee entry');
       }
 
       const updatedStudent = data.student;
       setFeeDeskStudent(updatedStudent);
-      setFeeDeskAmount('0');
+      setFeeDeskAmount('');
       setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-      setFeeDeskSuccess(`Center fee reset to ₹0 successfully!`);
+      setFeeDeskSuccess(`Fee entry deleted successfully! Remaining fee: ₹${Number(updatedStudent.academicFee || 0).toLocaleString('en-IN')}`);
       fetchStudents();
       if (onFeeReceived) onFeeReceived();
     } catch (err) {
-      setFeeDeskError(err.message || 'Error deleting center fee');
+      setFeeDeskError(err.message || 'Error deleting fee entry');
     } finally {
       setFeeDeskLoading(false);
     }
@@ -597,6 +635,8 @@ export default function StudentList({
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            id: editingPaymentModal.id || editingPaymentModal.receiptNo,
+            action: 'update',
             academicFee: editingPaymentModal.amountPaid,
             feeDate: editingPaymentModal.feeDate,
             currentClass: editingPaymentModal.currentClass,
@@ -608,9 +648,9 @@ export default function StudentList({
         if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update center fee');
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
-        setFeeDeskAmount(String(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : editingPaymentModal.amountPaid));
+        setFeeDeskAmount('');
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-        setFeeDeskSuccess(`Center Fee updated successfully to ₹${Number(editingPaymentModal.amountPaid || 0).toLocaleString('en-IN')}!`);
+        setFeeDeskSuccess(`Fee entry updated successfully! Total Set Fee: ₹${Number(updatedStudent.academicFee || 0).toLocaleString('en-IN')}`);
         setEditingPaymentModal(null);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
@@ -2271,26 +2311,35 @@ export default function StudentList({
                         </select>
                       </div>
 
-                      <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                      <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div>
-                          <span className="text-[10px] font-bold uppercase text-blue-700">Current Academic / Center Fee</span>
+                          <span className="text-[10px] font-bold uppercase text-blue-700">Total Academic / Center Fee</span>
                           <div className="text-base font-black text-blue-950 font-mono">
                             ₹{Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)).toLocaleString('en-IN')}/-
                           </div>
                         </div>
-                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold">Active Setting</span>
+                        {Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+                            {feeDeskStudent.academicFeeHistory.map((h, i) => (
+                              <span key={h.id || i} className="px-2.5 py-1 bg-white border border-blue-300 shadow-2xs rounded-lg text-[11px] font-bold text-blue-950 flex items-center gap-1">
+                                <span className="text-blue-700 font-semibold">{h.purpose || 'Center Fee'}:</span>
+                                <span className="font-mono font-extrabold text-blue-900">₹{Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0)).toLocaleString('en-IN')}/-</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold shrink-0">Active Setting</span>
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-900 mb-1">
-                          Enter Academic / Center Fee Amount (₹)* :
+                          Enter Fee Amount (₹)* :
                         </label>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min="0"
                             step="1"
-                            required
                             value={feeDeskAmount}
                             onChange={(e) => setFeeDeskAmount(e.target.value)}
                             placeholder="0"
@@ -2301,16 +2350,88 @@ export default function StudentList({
                           </button>
                         </div>
                       </div>
+
+                      {/* Dynamic Extra Fee Entries (Multiple entries at the same time) */}
+                      {extraFeeRows.map((row, rIdx) => (
+                        <div key={row.id || rIdx} className="col-span-1 sm:col-span-2 lg:col-span-4 bg-sky-50/80 border-2 border-sky-200 p-3 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          <span className="px-2.5 py-1 bg-sky-700 text-white rounded-md text-[10px] font-bold shrink-0">
+                            Entry #{rIdx + 2}
+                          </span>
+                          <div className="flex-1 w-full sm:w-auto">
+                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Purpose* :</label>
+                            <select
+                              value={row.purpose}
+                              onChange={(e) => {
+                                const newRows = [...extraFeeRows];
+                                newRows[rIdx].purpose = e.target.value;
+                                setExtraFeeRows(newRows);
+                              }}
+                              className="w-full px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                            >
+                              <option value="Center Fee">Center Fee</option>
+                              <option value="Academic Fee">Academic Fee</option>
+                              <option value="Tuition Fee">Tuition Fee</option>
+                              <option value="Annual Course Fee">Annual Course Fee</option>
+                              <option value="Admission Fee">Admission Fee</option>
+                              <option value="Registration Fee">Registration Fee</option>
+                              <option value="Examination Fee">Examination Fee</option>
+                              <option value="Other Fee">Other Fee</option>
+                            </select>
+                          </div>
+                          <div className="w-full sm:w-56">
+                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Fee Amount (₹)* :</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={row.amount}
+                              onChange={(e) => {
+                                const newRows = [...extraFeeRows];
+                                newRows[rIdx].amount = e.target.value;
+                                setExtraFeeRows(newRows);
+                              }}
+                              placeholder="0"
+                              className="w-full px-3 py-1.5 text-xs font-extrabold border-2 border-sky-500 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 font-mono"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setExtraFeeRows(prev => prev.filter((_, idx) => idx !== rIdx))}
+                            className="text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer self-end sm:self-center mt-1 sm:mt-3"
+                            title="Remove this entry"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 pt-1">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (extraFeeRows.length < 5) {
+                            setExtraFeeRows(prev => [
+                              ...prev,
+                              { id: Date.now(), purpose: 'Academic Fee', amount: '' }
+                            ]);
+                          }
+                        }}
+                        className="text-sky-800 hover:text-sky-950 bg-sky-100 hover:bg-sky-200 border border-sky-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                        title="Add another fee purpose and amount to save together"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5 text-sky-700" />
+                        <span>+ Add Another Purpose (साथ में दूसरी एंट्री जोड़ें)</span>
+                      </button>
+
                       <button
                         type="submit"
                         disabled={feeDeskLoading}
-                        className="bg-sky-700 hover:bg-sky-800 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                        className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-7 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                        title="Add fee entry"
                       >
-                        <CreditCard className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Saving...' : 'Set Center Fee'}</span>
+                        <PlusCircle className="w-4 h-4" />
+                        <span>{feeDeskLoading ? 'Adding...' : 'Add'}</span>
                       </button>
                     </div>
                   </>
@@ -2802,9 +2923,9 @@ export default function StudentList({
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleDeleteCenterFee(cAmt)}
+                                        onClick={() => handleDeleteCenterFee(c.id || c.receiptNo, cAmt, c.purpose)}
                                         className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete / Reset center fee entry"
+                                        title="Delete fee entry"
                                       >
                                         <Trash2 className="w-3 h-3 text-rose-600" />
                                         <span>Delete</span>
@@ -2816,6 +2937,21 @@ export default function StudentList({
                             })
                           )}
                         </tbody>
+                        {centerFeeEntries.length > 0 && (
+                          <tfoot>
+                            <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                              <td colSpan="4" className="py-2.5 px-3 text-right text-slate-700 text-xs uppercase tracking-wide">
+                                Total Academic / Center Fee:
+                              </td>
+                              <td className="py-2.5 px-2.5 border-r border-slate-200 text-right font-black font-mono text-sky-900 text-xs">
+                                ₹{currentAcad.toLocaleString('en-IN')}/-
+                              </td>
+                              <td className="py-2.5 px-2 text-center text-slate-500 text-[10px]">
+                                {centerFeeEntries.length} {centerFeeEntries.length === 1 ? 'Entry' : 'Entries'}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        )}
                       </table>
                     </div>
                   </div>
