@@ -335,8 +335,8 @@ export default function StudentList({
   const handleOpenSetScholarshipModal = (student) => handleOpenFeeDesk(student, 'set_scholarship');
   const handleOpenReceiveFeeModal = (student) => handleOpenFeeDesk(student, 'receive');
 
-  const handleFeeDeskSubmit = async (e) => {
-    e.preventDefault();
+  const handleFeeDeskSubmit = async (e, actionOverride = null) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!feeDeskStudent) return;
 
     const studentLookupKey = getStudentKey(feeDeskStudent);
@@ -351,16 +351,19 @@ export default function StudentList({
 
     try {
       if (feeDeskMode === 'receive') {
-        const amt = Number(feeDeskAmount);
-        if (isNaN(amt) || amt <= 0) {
-          throw new Error('Please enter a valid payment amount greater than 0.');
+        const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
+        if (isNaN(amt) || amt < 0) {
+          throw new Error('Please enter a valid amount (0 or more).');
         }
+
+        const isSetPaid = actionOverride === 'set_paid' || amt === 0;
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/receive-fee`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: amt,
+            action: isSetPaid ? 'set_paid' : 'add',
             paymentMode: feeDeskModePayment,
             feeDate: feeDeskDate,
             purpose: feeDeskPurpose,
@@ -384,10 +387,14 @@ export default function StudentList({
         }
 
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-        setFeeDeskSuccess(`₹${amt.toLocaleString('en-IN')} fee payment recorded successfully! Receipt: ${data.receipt?.receiptNo || 'Generated'}`);
+        if (isSetPaid) {
+          setFeeDeskSuccess(`Paid fee updated to ₹${amt.toLocaleString('en-IN')} successfully!`);
+        } else {
+          setFeeDeskSuccess(`₹${amt.toLocaleString('en-IN')} fee payment recorded successfully! Receipt: ${data.receipt?.receiptNo || 'Generated'}`);
+        }
 
         const newRem = Math.max(0, (Number(updatedStudent.totalFee) || 0) - (Number(updatedStudent.totalPaid) || 0));
-        setFeeDeskAmount(newRem > 0 ? String(newRem) : '');
+        setFeeDeskAmount(newRem > 0 ? String(newRem) : '0');
         setFeeDeskRefNo('');
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
@@ -457,6 +464,39 @@ export default function StudentList({
       }
     } catch (err) {
       setFeeDeskError(err.message || 'Error processing request');
+    } finally {
+      setFeeDeskLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId, amountPaid) => {
+    if (!feeDeskStudent || !paymentId) return;
+    const confirmDelete = window.confirm(`Are you sure you want to delete this payment entry of ₹${Number(amountPaid || 0).toLocaleString('en-IN')}? Total paid fee will be adjusted.`);
+    if (!confirmDelete) return;
+
+    setFeeDeskLoading(true);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+
+    try {
+      const studentLookupKey = getStudentKey(feeDeskStudent);
+      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete payment entry');
+      }
+
+      const updatedStudent = data.student;
+      setFeeDeskStudent(updatedStudent);
+      setFeeDeskPayments(data.payments || []);
+      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+      setFeeDeskSuccess(`Payment entry of ₹${Number(amountPaid || 0).toLocaleString('en-IN')} deleted successfully!`);
+      fetchStudents();
+      if (onFeeReceived) onFeeReceived();
+    } catch (err) {
+      setFeeDeskError(err.message || 'Error deleting payment');
     } finally {
       setFeeDeskLoading(false);
     }
@@ -2201,28 +2241,37 @@ export default function StudentList({
                           type="number"
                           min="0"
                           step="1"
-                          required={feeDeskMode === 'receive'}
                           value={feeDeskAmount}
                           onChange={(e) => setFeeDeskAmount(e.target.value)}
                           placeholder="0"
                           className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
                         />
                         {feeDeskMode === 'receive' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-                              const sch = Number(feeDeskStudent.scholarshipAmount || 0);
-                              const tot = acad + sch;
-                              const paid = Number(feeDeskStudent.totalPaid || 0);
-                              const rem = Math.max(0, tot - paid);
-                              setFeeDeskAmount(String(rem));
-                            }}
-                            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
-                            title="Auto fill full balance remaining"
-                          >
-                            Full Due
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+                                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                                const tot = acad + sch;
+                                const paid = Number(feeDeskStudent.totalPaid || 0);
+                                const rem = Math.max(0, tot - paid);
+                                setFeeDeskAmount(String(rem));
+                              }}
+                              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
+                              title="Auto fill full balance remaining"
+                            >
+                              Full Due
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFeeDeskAmount('0')}
+                              className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
+                              title="Set amount to 0"
+                            >
+                              0 (Zero)
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -2230,23 +2279,53 @@ export default function StudentList({
                 </div>
 
                 {/* Submit Row matching reference button */}
-                <div className="flex items-center justify-end gap-3 pt-1">
-                  <button
-                    type="submit"
-                    disabled={feeDeskLoading}
-                    className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>
-                      {feeDeskLoading
-                        ? 'Saving...'
-                        : feeDeskMode === 'receive'
-                        ? 'Paid Fee'
-                        : feeDeskMode === 'set_fee'
-                        ? 'Set Center Fee'
-                        : 'Set Scholarship (Save Years)'}
-                    </span>
-                  </button>
+                <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+                  {feeDeskMode === 'receive' ? (
+                    <>
+                      {/* 1. Edit / Reset Paid Fee Button */}
+                      <button
+                        type="button"
+                        disabled={feeDeskLoading}
+                        onClick={(e) => handleFeeDeskSubmit(e, 'set_paid')}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                        title="Set or reset total paid fee directly (e.g. 0 to fix wrong entry)"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>
+                          {feeDeskLoading ? 'Saving...' : (Number(feeDeskAmount) === 0 || feeDeskAmount === '' ? 'एडिट करें (0 सेट करें)' : `एडिट करें (₹${Number(feeDeskAmount || 0).toLocaleString('en-IN')})`)}
+                        </span>
+                      </button>
+
+                      {/* 2. Add Payment / Entry Button - उसी के बगल में एक ऐड करें का ऑप्शन */}
+                      <button
+                        type="submit"
+                        disabled={feeDeskLoading}
+                        onClick={(e) => handleFeeDeskSubmit(e, 'add')}
+                        className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                        title="Add new fee installment entry"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        <span>
+                          {feeDeskLoading ? 'Saving...' : 'ऐड करें (+ PAID FEE)'}
+                        </span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={feeDeskLoading}
+                      className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>
+                        {feeDeskLoading
+                          ? 'Saving...'
+                          : feeDeskMode === 'set_fee'
+                          ? 'Set Center Fee'
+                          : 'Set Scholarship (Save Years)'}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </form>
 
@@ -2326,7 +2405,7 @@ export default function StudentList({
                         <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
-                        <th className="py-2.5 px-2 text-center">Fee Recipt</th>
+                        <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
@@ -2355,25 +2434,37 @@ export default function StudentList({
                                 {pAmt > 0 ? `${pAmt}/-` : '0/-'}
                               </td>
                               <td className="py-2 px-2 text-center whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setPrintReceiptData({
-                                      ...p,
-                                      studentName: p.studentName || feeDeskStudent.fullName || feeDeskStudent.studentName,
-                                      rollNo: p.rollNo || feeDeskStudent.rollNo,
-                                      collegeName: p.collegeName || feeDeskStudent.collegeName,
-                                      universityName: p.universityName || feeDeskStudent.universityName,
-                                      courseName: p.courseName || feeDeskStudent.courseName,
-                                      currentClass: p.currentClass || feeDeskStudent.currentClass,
-                                      transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
-                                    });
-                                  }}
-                                  className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-3 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer"
-                                  title="Print Official Fee Receipt"
-                                >
-                                  Print
-                                </button>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPrintReceiptData({
+                                        ...p,
+                                        studentName: p.studentName || feeDeskStudent.fullName || feeDeskStudent.studentName,
+                                        rollNo: p.rollNo || feeDeskStudent.rollNo,
+                                        collegeName: p.collegeName || feeDeskStudent.collegeName,
+                                        universityName: p.universityName || feeDeskStudent.universityName,
+                                        courseName: p.courseName || feeDeskStudent.courseName,
+                                        currentClass: p.currentClass || feeDeskStudent.currentClass,
+                                        transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
+                                      });
+                                    }}
+                                    className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Print Official Fee Receipt"
+                                  >
+                                    <Printer className="w-3 h-3" />
+                                    <span>Print</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
+                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                    title="Delete this payment entry"
+                                  >
+                                    <Trash2 className="w-3 h-3 text-rose-600" />
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );

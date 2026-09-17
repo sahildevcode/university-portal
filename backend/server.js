@@ -2061,7 +2061,7 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   });
 });
 
-// Receive Student Fee
+// Receive Student Fee / Set Paid Fee
 app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   const db = readDB();
   const rawKey = (req.params.rollNo || '').trim();
@@ -2071,13 +2071,52 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo } = req.body;
-  const payAmt = Number(amount);
+  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo, action } = req.body;
+  const payAmt = (amount === '' || amount === null || amount === undefined) ? 0 : Number(amount);
 
-  if (!payAmt || payAmt <= 0) {
-    return res.status(400).json({ success: false, message: 'Please provide a valid fee payment amount.' });
+  if (isNaN(payAmt) || payAmt < 0) {
+    return res.status(400).json({ success: false, message: 'Please provide a valid fee payment amount (0 or more).' });
   }
 
+  const sRoll = (student.rollNo || '').toUpperCase();
+  const sId = student.id || '';
+
+  // If action is set_paid or amount is 0: Edit/Set totalPaid directly (allows setting back to 0)
+  if (action === 'set_paid' || payAmt === 0) {
+    student.totalPaid = payAmt;
+    const totalFee = Number(student.totalFee) || 0;
+    student.balanceDue = Math.max(0, totalFee - payAmt);
+    if (currentClass) student.currentClass = currentClass;
+    if (remark !== undefined) student.remark = remark;
+    student.updatedAt = new Date().toISOString();
+
+    // If set to 0, clear erroneous fee_payments for this student
+    if (payAmt === 0) {
+      if (Array.isArray(db.fee_payments)) {
+        db.fee_payments = db.fee_payments.filter(p => {
+          const match = (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+                        (sId && p.studentId && p.studentId === sId);
+          return !match;
+        });
+      }
+    }
+
+    writeDB(db);
+
+    const studentPayments = (db.fee_payments || []).filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+
+    return res.json({
+      success: true,
+      message: `Total Paid Fee for ${student.fullName || student.rollNo || 'Student'} updated to ₹${payAmt.toLocaleString('en-IN')}`,
+      student,
+      payments: studentPayments
+    });
+  }
+
+  // Otherwise: Add new payment entry to ledger
   const newTotalPaid = (Number(student.totalPaid) || 0) + payAmt;
   const totalFee = Number(student.totalFee) || 0;
   const newBalance = Math.max(0, totalFee - newTotalPaid);
@@ -2128,8 +2167,6 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   writeDB(db);
 
   // Return all payments for this student so frontend can update immediately
-  const sRoll = (student.rollNo || '').toUpperCase();
-  const sId = student.id || '';
   const studentPayments = db.fee_payments.filter(p => 
     (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
     (sId && p.studentId && p.studentId === sId)
@@ -2140,6 +2177,50 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     message: `Payment of ₹${payAmt.toLocaleString('en-IN')} received successfully!`,
     student,
     receipt,
+    payments: studentPayments
+  });
+});
+
+// Delete Payment Entry
+app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const paymentId = (req.params.paymentId || '').trim();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+
+  const pIdx = db.fee_payments.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
+  if (pIdx === -1) {
+    return res.status(404).json({ success: false, message: 'Payment record not found' });
+  }
+
+  const removed = db.fee_payments.splice(pIdx, 1)[0];
+  const removedAmt = Number(removed.amountPaid || removed.amount || 0);
+
+  // Deduct from student.totalPaid
+  student.totalPaid = Math.max(0, (Number(student.totalPaid) || 0) - removedAmt);
+  const totalFee = Number(student.totalFee) || 0;
+  student.balanceDue = Math.max(0, totalFee - student.totalPaid);
+  student.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+
+  const sRoll = (student.rollNo || '').toUpperCase();
+  const sId = student.id || '';
+  const studentPayments = db.fee_payments.filter(p => 
+    (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+    (sId && p.studentId && p.studentId === sId)
+  );
+
+  res.json({
+    success: true,
+    message: `Payment entry of ₹${removedAmt.toLocaleString('en-IN')} deleted successfully.`,
+    student,
     payments: studentPayments
   });
 });
