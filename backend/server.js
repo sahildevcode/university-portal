@@ -3981,9 +3981,20 @@ app.get('/api/colleges', (req, res) => {
     let colleges = db.colleges || [];
 
     if (universityId && universityId !== 'ALL') {
-      colleges = colleges.filter(c => c.universityId === universityId);
+      colleges = colleges.filter(c => 
+        c.universityId === universityId || 
+        (universityId === 'univ-mcbu' && (c.universityId === 'univ-1789571739471-591' || (c.universityName || '').toLowerCase().includes('mcbu') || (c.universityName || '').toLowerCase().includes('chhatrasal')))
+      );
     } else if (universityName && universityName !== 'ALL') {
-      colleges = colleges.filter(c => (c.universityName || '').toLowerCase() === universityName.toLowerCase());
+      const uq = universityName.toLowerCase().trim();
+      colleges = colleges.filter(c => {
+        const cu = (c.universityName || '').toLowerCase();
+        return cu === uq ||
+               (uq.includes('mcbu') && (cu.includes('mcbu') || cu.includes('chhatrasal'))) ||
+               (uq.includes('chhatrasal') && (cu.includes('chhatrasal') || cu.includes('mcbu'))) ||
+               (uq.includes('subharti') && cu.includes('subharti')) ||
+               (uq.includes('ies') && cu.includes('ies'));
+      });
     }
 
     if (search && search.trim()) {

@@ -4586,14 +4586,20 @@ export default function StudentList({
                       >
                         <option value="">-- Select College --</option>
                         {collegesList
-                          .filter(c => !newCourseData.universityName || !c.universityName || c.universityName.toLowerCase().includes(newCourseData.universityName.toLowerCase().split(' ')[0]))
+                          .filter(c => {
+                            if (!newCourseData.universityName) return true;
+                            const tu = newCourseData.universityName.toLowerCase();
+                            const cu = (c.universityName || '').toLowerCase();
+                            if (cu === tu) return true;
+                            if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
+                            if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
+                            if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
+                            return cu.includes(tu.split(' ')[0]);
+                          })
                           .map(c => (
                             <option key={c.id} value={c.name}>{c.code ? `${c.code} - ` : ''}{c.name}</option>
                           ))
                         }
-                        <option value="PKC Education Learning Institute & Consultancy">PKC Education Learning Institute & Consultancy</option>
-                        <option value="Govt PG College Chhatarpur">Govt PG College Chhatarpur</option>
-                        <option value="Maharaja Chhatrasal College Chhatarpur">Maharaja Chhatrasal College Chhatarpur</option>
                       </select>
                     </div>
 

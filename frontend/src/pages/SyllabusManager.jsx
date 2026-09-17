@@ -32,57 +32,92 @@ import {
 // Default initial universities
 const INITIAL_UNIVERSITIES = [
   {
-    id: 'univ-mpu',
-    name: 'Madhyanchal Professional University Bhopal',
-    shortName: 'MPU Bhopal',
-    code: 'MPU01',
-    city: 'Bhopal',
-    state: 'Madhya Pradesh',
-    website: 'https://mpu.ac.in',
-    establishedYear: 2018,
-    status: 'Active',
-    description: 'Premier university offering multidisciplinary engineering (B.Tech) and management (MBA) programs.'
-  },
-  {
     id: 'univ-mcbu',
-    name: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)',
-    shortName: 'MCU Chhatarpur',
-    code: 'MCU01',
+    name: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    shortName: 'MCBU',
+    code: 'MCBU',
     city: 'Chhatarpur',
     state: 'Madhya Pradesh',
-    status: 'Active'
+    website: 'https://mcbu.ac.in',
+    establishedYear: 2015,
+    status: 'Active',
+    description: 'State university in Chhatarpur district overseeing government and affiliated higher education colleges.'
+  },
+  {
+    id: 'univ-subharti',
+    name: 'Subharti University Meerut',
+    shortName: 'Subharti / I.S.U. Bharti',
+    code: 'SUBHARTI',
+    city: 'Meerut',
+    state: 'Uttar Pradesh',
+    website: 'https://subharti.org',
+    establishedYear: 2008,
+    status: 'Active',
+    description: 'UGC & NAAC A Grade recognized university offering multidisciplinary programs.'
+  },
+  {
+    id: 'univ-ies',
+    name: 'IES University, Bhopal (M.P)',
+    shortName: 'IES University',
+    code: 'IES',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    website: 'https://iesuniversity.ac.in',
+    establishedYear: 2019,
+    status: 'Active',
+    description: 'UGC & AICTE recognized university offering engineering, pharmacy, and management education.'
   }
 ];
 
-// Default 18 colleges accurately affiliated
+// Default colleges accurately affiliated
 const INITIAL_COLLEGES = [
-  // Core Colleges under Madhyanchal Professional University Bhopal (univ-mpu)
-  { id: 'col-soet-mpu', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'SOET-MPU', name: 'School of Engineering & Technology (MPU Bhopal)', shortName: 'School of Engineering & Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-soms-mpu', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'SOMS-MPU', name: 'School of Management Studies (MPU Bhopal)', shortName: 'School of Management Studies', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-pcst-bhopal', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'PCST-01', name: 'Patel College of Science & Technology (PCST Bhopal)', shortName: 'Patel College of Science & Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-pit-bhopal', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'PIT-01', name: 'Patel Institute of Technology (PIT Bhopal)', shortName: 'Patel Institute of Tech', district: 'Bhopal', state: 'Madhya Pradesh', status: 'Active' },
-
-  // Affiliated Education Colleges under Madhyanchal Professional University Bhopal
-  { id: 'col-bed121', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED121', name: 'BED121 - JEEVAN JYOTI SHIKSHA MAHAVIDYALAYA', shortName: 'Jeevan Jyoti Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2097', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2097', name: 'BED2097 - Sita Ram College Of Education', shortName: 'Sita Ram College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2140', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2140', name: 'BED2140 - J J COLLEGE OF EDUCATION', shortName: 'J J College of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2266', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2266', name: 'BED2266 - R.D College', shortName: 'R.D College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2303', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2303', name: 'BED2303 - Bapu Mahavidyalaya Nowgong', shortName: 'Bapu Mahavidyalaya Nowgong', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2385', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2385', name: 'BED2385 - SIDDHARTH SHIKSHA MAHAVIDYALAYA', shortName: 'Siddharth Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2387', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2387', name: 'BED2387 - SHIV SHAKTI COLLEGE OF EDUCATION', shortName: 'Shiv Shakti College Of Education', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2474', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2474', name: 'BED2474 - CHHATRASAL MAHAVIDHYALAY', shortName: 'Chhatrasal Mahavidhyalay', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2501', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2501', name: 'BED2501 - SHRI RAJENDRA PRASAD SMARAK SHIKSHA MAHAVIDYALAYA', shortName: 'Shri Rajendra Prasad Smarak Shiksha', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2526', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2526', name: 'BED2526 - SWAMI VIVEKANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Swami Vivekanand Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2555', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2555', name: 'BED2555 - ANAND SHIKSHA MAHAVIDYALAYA', shortName: 'Anand Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-bed2568', universityId: 'univ-mpu', universityName: 'Madhyanchal Professional University Bhopal', code: 'BED2568', name: 'BED2568 - S.V.N SHIKSHA MAHAVIDYALAYA', shortName: 'S.V.N Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-
-  // Affiliated Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
-  { id: 'col-beled005', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'BELED005', name: 'BELED005 - GOVERNMENT POST GRADUATE COLLEGE CHHATARPUR', shortName: 'Govt PG College Chhatarpur', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-n462', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'N462', name: 'N462 - Govt Maharaja Post Graduate College, Chhatarpur', shortName: 'Govt Maharaja PG College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-mcsm', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'MCSM', name: 'MCSM - Maharaja Chhatrasal Shiksha Mahavidyalaya', shortName: 'Maharaja Chhatrasal Shiksha Mahavidyalaya', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-svn01', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SVN01', name: 'SVN01 - SVN Post Graduate College, Chhatarpur', shortName: 'SVN Post Graduate College', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-src-khop', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SRC-KHOP', name: 'SRC-KHOP - Shri Ram College of Higher Education, Khop', shortName: 'Shri Ram College Khop', district: 'Chhatarpur', state: 'Madhya Pradesh', status: 'Active' },
-  { id: 'col-skce-orchha', universityId: 'univ-mcbu', universityName: 'MAHARAJA CHHATRASAL BUNDELKHAND UNIVERSITY (MCU)', code: 'SKCE-ORCHHA', name: 'SKCE-ORCHHA - Shri Krishna College of Education, Orchha', shortName: 'Shri Krishna College Orchha', district: 'Niwari', state: 'Madhya Pradesh', status: 'Active' }
+  // 2 Affiliated Colleges under Maharaja Chhatrasal Bundelkhand University (univ-mcbu)
+  {
+    id: 'col-ved121',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-121',
+    name: 'VED-121 Jeevan Jyoti Shiksha Mahavidyalaya run by Jeevan Jyoti Shiksha Prasar and Jan Kalyan Samiti',
+    shortName: 'VED-121 Jeevan Jyoti Shiksha Mahavidyalaya',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-ved2097',
+    universityId: 'univ-mcbu',
+    universityName: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    code: 'VED-2097',
+    name: 'VED-2097 Sita Ram College of Education run by Giridhar Gopal Shiksha Prasar evam Jan Kalyan Samiti',
+    shortName: 'VED-2097 Sita Ram College of Education',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  // Subharti University Campus
+  {
+    id: 'col-subharti-campus',
+    universityId: 'univ-subharti',
+    universityName: 'Subharti University Meerut',
+    code: 'SUBHARTI',
+    name: 'Subharti University Meerut (Campus)',
+    shortName: 'Subharti University Campus',
+    district: 'Meerut',
+    state: 'Uttar Pradesh',
+    status: 'Active'
+  },
+  // IES University Campus
+  {
+    id: 'col-ies-campus',
+    universityId: 'univ-ies',
+    universityName: 'IES University, Bhopal (M.P)',
+    code: 'IES',
+    name: 'IES University, Bhopal (Campus)',
+    shortName: 'IES University Campus',
+    district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  }
 ];
 
 // Standard Academic Programs & Branches Catalog
