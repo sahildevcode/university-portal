@@ -1375,8 +1375,14 @@ app.put('/api/students/:rollNo', (req, res) => {
     const existing = db.students[index];
     const body = req.body;
 
-    // Handle potential Roll Number change
-    let newRoll = (body.rollNo || body.Roll_No || existing.rollNo || '').trim().toUpperCase();
+    // Handle potential Roll Number change (Optional / Empty allowed)
+    let newRoll = existing.rollNo || '';
+    if (body.rollNo !== undefined) {
+      newRoll = String(body.rollNo || '').trim().toUpperCase();
+    } else if (body.Roll_No !== undefined) {
+      newRoll = String(body.Roll_No || '').trim().toUpperCase();
+    }
+
     if (newRoll && newRoll !== (existing.rollNo || '').toUpperCase() && db.students.some((s, idx) => idx !== index && s.rollNo && s.rollNo.toUpperCase() === newRoll)) {
       return res.status(400).json({ success: false, message: `Roll Number ${newRoll} is already in use by another student!` });
     }

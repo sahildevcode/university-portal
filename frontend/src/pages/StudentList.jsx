@@ -585,9 +585,12 @@ export default function StudentList({
     try {
       const payload = {
         ...editFormData,
+        rollNo: (editFormData.rollNo || '').trim(),
+        fullName: (editFormData.fullName && editFormData.fullName.trim()) || editingStudent.fullName || editingStudent.studentName,
+        fatherName: (editFormData.fatherName && editFormData.fatherName.trim()) || editingStudent.fatherName || '',
         ...(showAddCourse && (newCourseData.courseName || newCourseData.branch) ? { additionalCourse: newCourseData } : {})
       };
-      const lookupId = editingStudent.rollNo || editingStudent.enrollmentNo || editingStudent.id;
+      const lookupId = getStudentKey(editingStudent);
       const res = await fetch(`/api/students/${encodeURIComponent(lookupId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -602,7 +605,7 @@ export default function StudentList({
       // Reload students directory immediately to reflect new course and linked dual sub-row
       await fetchStudents();
 
-      if (selectedStudent?.rollNo === editingStudent.rollNo || selectedStudent?.id === editingStudent.id) {
+      if (selectedStudent && (getStudentKey(selectedStudent) === lookupId || selectedStudent.id === editingStudent.id)) {
         setSelectedStudent(prev => ({ ...prev, ...data.student }));
       }
       setTimeout(() => {
@@ -2963,7 +2966,7 @@ export default function StudentList({
             )}
 
             {/* Edit Form */}
-            <form onSubmit={handleSaveEdit} className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSaveEdit} noValidate className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
               {/* Section: Personal Information */}
               {/* Section 1: Basic & Demographic Details */}
               <div className="space-y-3">
@@ -3065,23 +3068,23 @@ export default function StudentList({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Student Full Name *</label>
+                    <label className="block font-bold text-slate-700 mb-1">Student Full Name</label>
                     <input
                       type="text"
                       value={editFormData.fullName || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                      placeholder="Student full name"
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold uppercase focus:bg-white"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Father's Name *</label>
+                    <label className="block font-bold text-slate-700 mb-1">Father's Name</label>
                     <input
                       type="text"
                       value={editFormData.fatherName || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, fatherName: e.target.value })}
+                      placeholder="Father's name"
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium uppercase focus:bg-white"
-                      required
                     />
                   </div>
                   <div>
@@ -3301,13 +3304,16 @@ export default function StudentList({
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Roll Number / Enrollment *</label>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span>Roll Number / Enrollment</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Optional (ऐच्छिक)</span>
+                    </label>
                     <input
                       type="text"
                       value={editFormData.rollNo || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, rollNo: e.target.value })}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white uppercase"
-                      required
+                      placeholder="Leave blank if not assigned"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white uppercase text-slate-900"
                     />
                   </div>
                   <div>
@@ -3582,7 +3588,7 @@ export default function StudentList({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     {/* University Name */}
                     <div>
-                      <label className="block font-bold text-slate-800 mb-1">University Name (विश्वविद्यालय) *</label>
+                      <label className="block font-bold text-slate-800 mb-1">University Name (विश्वविद्यालय)</label>
                       <select
                         value={newCourseData.universityName}
                         onChange={(e) => {
@@ -3594,7 +3600,6 @@ export default function StudentList({
                           });
                         }}
                         className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        required
                       >
                         <option value="">-- Select University --</option>
                         {universitiesList.map(u => (
@@ -3608,12 +3613,11 @@ export default function StudentList({
 
                     {/* College Name */}
                     <div>
-                      <label className="block font-bold text-slate-800 mb-1">College Name (महाविद्यालय) *</label>
+                      <label className="block font-bold text-slate-800 mb-1">College Name (महाविद्यालय)</label>
                       <select
                         value={newCourseData.collegeName}
                         onChange={(e) => setNewCourseData({ ...newCourseData, collegeName: e.target.value })}
                         className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        required
                       >
                         <option value="">-- Select College --</option>
                         {collegesList
@@ -3630,7 +3634,7 @@ export default function StudentList({
 
                     {/* Course Name */}
                     <div>
-                      <label className="block font-bold text-slate-800 mb-1">Course / Degree Name *</label>
+                      <label className="block font-bold text-slate-800 mb-1">Course / Degree Name</label>
                       <select
                         value={newCourseData.courseName}
                         onChange={(e) => {
@@ -3647,7 +3651,6 @@ export default function StudentList({
                           });
                         }}
                         className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        required
                       >
                         <option value="">-- Select Course --</option>
                         {allCoursesList.map(c => (
@@ -3716,7 +3719,7 @@ export default function StudentList({
                     {/* Admission Date - Editable for admissions taken later */}
                     <div>
                       <label className="block font-bold text-indigo-950 mb-1 flex items-center justify-between">
-                        <span>Admission Date (प्रवेश तिथि) *</span>
+                        <span>Admission Date (प्रवेश तिथि)</span>
                         <span className="text-[10px] text-indigo-600 font-bold">Editable Date</span>
                       </label>
                       <input
@@ -3732,7 +3735,6 @@ export default function StudentList({
                           });
                         }}
                         className="w-full p-2.5 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required
                       />
                       <p className="text-[9px] text-slate-500 mt-1">1 saal baad admission lene par date yahan se badal sakte hain</p>
                     </div>
@@ -3750,14 +3752,13 @@ export default function StudentList({
 
                     {/* Total Fee for 2nd Course */}
                     <div>
-                      <label className="block font-bold text-slate-800 mb-1">2nd Course Total Fee (₹) *</label>
+                      <label className="block font-bold text-slate-800 mb-1">2nd Course Total Fee (₹)</label>
                       <input
                         type="number"
                         min="0"
                         value={newCourseData.totalFee}
                         onChange={(e) => setNewCourseData({ ...newCourseData, totalFee: Number(e.target.value) || 0 })}
                         className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        required
                       />
                     </div>
 
