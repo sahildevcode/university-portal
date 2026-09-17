@@ -4092,7 +4092,48 @@ app.post('/api/colleges', (req, res) => {
   }
 });
 
-// 9.7 Delete College
+// 9.7 Update College
+app.put('/api/colleges/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, shortName, code, universityId, universityName, district, state, address, status } = req.body;
+    const db = readDB();
+    if (!db.colleges) db.colleges = [];
+
+    const index = db.colleges.findIndex(c => c.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'College not found.' });
+    }
+
+    const existing = db.colleges[index];
+    const updatedCol = {
+      ...existing,
+      ...(name !== undefined && { name: name.trim() }),
+      ...(shortName !== undefined && { shortName: shortName.trim() }),
+      ...(code !== undefined && { code: code.trim().toUpperCase() }),
+      ...(universityId !== undefined && { universityId }),
+      ...(universityName !== undefined && { universityName: universityName.trim() }),
+      ...(district !== undefined && { district: district.trim() }),
+      ...(state !== undefined && { state: state.trim() }),
+      ...(address !== undefined && { address: address.trim() }),
+      ...(status !== undefined && { status }),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.colleges[index] = updatedCol;
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `College "${updatedCol.shortName || updatedCol.name}" updated successfully!`,
+      college: updatedCol
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.8 Delete College
 app.delete('/api/colleges/:id', (req, res) => {
   try {
     const { id } = req.params;

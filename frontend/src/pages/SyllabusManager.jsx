@@ -896,6 +896,20 @@ export default function SyllabusManager() {
     setShowCollegeModal(true);
   };
 
+  const handleOpenEditCollege = (college) => {
+    setEditingCollege(college);
+    setCollegeFormData({
+      name: college.name || '',
+      shortName: college.shortName || college.name || '',
+      code: college.code || '',
+      universityId: college.universityId || universities[0]?.id || '',
+      universityName: college.universityName || universities[0]?.name || '',
+      district: college.district || 'Chhatarpur',
+      state: college.state || 'Madhya Pradesh'
+    });
+    setShowCollegeModal(true);
+  };
+
   const handleSaveCollege = async (e) => {
     e.preventDefault();
     try {
@@ -905,17 +919,21 @@ export default function SyllabusManager() {
         universityName: matchedUniv ? matchedUniv.name : collegeFormData.universityName
       };
 
-      const res = await fetch('/api/colleges', {
-        method: 'POST',
+      const url = editingCollege ? `/api/colleges/${editingCollege.id}` : '/api/colleges';
+      const method = editingCollege ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {
         setShowCollegeModal(false);
+        setEditingCollege(null);
         fetchColleges();
       } else {
-        alert(data.message || 'Failed to register college.');
+        alert(data.message || 'Failed to save college.');
       }
     } catch (err) {
       alert('Error saving college: ' + err.message);
@@ -1274,9 +1292,18 @@ export default function SyllabusManager() {
                       <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">
                         {c.code || 'COL'}
                       </span>
-                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        {c.district || 'MP'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          {c.district || 'MP'}
+                        </span>
+                        <button
+                          onClick={() => handleOpenEditCollege(c)}
+                          className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit college"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <h4 className="font-extrabold text-sm text-slate-900 leading-snug">
@@ -1306,8 +1333,15 @@ export default function SyllabusManager() {
                         <span>Upload Syllabus →</span>
                       </button>
                       <button
+                        onClick={() => handleOpenEditCollege(c)}
+                        className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                        title="Edit college details"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteCollege(c.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
                         title="Delete college"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1858,11 +1892,12 @@ export default function SyllabusManager() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-extrabold text-base text-slate-900">
-                Register Affiliated College
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-indigo-600" />
+                <span>{editingCollege ? 'Edit Affiliated College' : 'Register Affiliated College'}</span>
               </h3>
               <button 
-                onClick={() => setShowCollegeModal(false)}
+                onClick={() => { setShowCollegeModal(false); setEditingCollege(null); }}
                 className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1933,7 +1968,7 @@ export default function SyllabusManager() {
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCollegeModal(false)}
+                  onClick={() => { setShowCollegeModal(false); setEditingCollege(null); }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
@@ -1942,7 +1977,7 @@ export default function SyllabusManager() {
                   type="submit"
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
                 >
-                  Register College
+                  {editingCollege ? 'Update College Details' : 'Register College'}
                 </button>
               </div>
             </form>
