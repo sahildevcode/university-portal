@@ -49,6 +49,19 @@ export default function StudentList({
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Student lookup key helper by RollNo, ID, or EnrollmentNo
+  const getStudentKey = (s) => {
+    if (!s) return '';
+    if (s.rollNo && String(s.rollNo).trim()) return String(s.rollNo).trim();
+    if (s.id && String(s.id).trim()) return String(s.id).trim();
+    if (s.enrollmentNo && String(s.enrollmentNo).trim()) return String(s.enrollmentNo).trim();
+    if (s.registrationNo && String(s.registrationNo).trim()) return String(s.registrationNo).trim();
+    return '';
+  };
+
+  // Table Column Display Mode: 'all' (39+ fields horizontal scroll) or 'compact'
+  const [tableColumnMode, setTableColumnMode] = useState('all');
+
   // Unified "Paid Student Fee" & Fee Desk Modal State (Matching User Ref Images)
   const [feeDeskStudent, setFeeDeskStudent] = useState(null);
   const [feeDeskMode, setFeeDeskMode] = useState('receive'); // 'receive' | 'set_fee' | 'set_scholarship'
@@ -64,6 +77,13 @@ export default function StudentList({
   const [feeDeskLoading, setFeeDeskLoading] = useState(false);
   const [feeDeskError, setFeeDeskError] = useState(null);
   const [feeDeskSuccess, setFeeDeskSuccess] = useState(null);
+
+  // Multi-Year Scholarship State for Fee Desk (1st, 2nd, 3rd, 4th Year)
+  const [scholarshipYear1, setScholarshipYear1] = useState('');
+  const [scholarshipYear2, setScholarshipYear2] = useState('');
+  const [scholarshipYear3, setScholarshipYear3] = useState('');
+  const [scholarshipYear4, setScholarshipYear4] = useState('');
+  const [scholarshipActiveYear, setScholarshipActiveYear] = useState('year1'); // 'year1' | 'year2' | 'year3' | 'year4'
 
   // Fee Receipt & Fee Card Print Modals
   const [printReceiptData, setPrintReceiptData] = useState(null);
@@ -224,8 +244,18 @@ export default function StudentList({
     setFeeDeskReceivedBy('Admin Desk');
     setFeeDeskRemark(student.remark || '');
 
+    const y1 = Number(student.scholarshipYear1 !== undefined && student.scholarshipYear1 !== null ? student.scholarshipYear1 : (!student.scholarshipYear2 ? (student.scholarshipAmount || 0) : 0));
+    const y2 = Number(student.scholarshipYear2 || 0);
+    const y3 = Number(student.scholarshipYear3 || 0);
+    const y4 = Number(student.scholarshipYear4 || 0);
+    setScholarshipYear1(y1 > 0 ? String(y1) : '');
+    setScholarshipYear2(y2 > 0 ? String(y2) : '');
+    setScholarshipYear3(y3 > 0 ? String(y3) : '');
+    setScholarshipYear4(y4 > 0 ? String(y4) : '');
+    setScholarshipActiveYear('year1');
+
     const acadFee = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : 0));
-    const sch = Number(student.scholarshipAmount || 0);
+    const sch = Number(student.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
     const tot = acadFee + sch;
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
@@ -238,15 +268,28 @@ export default function StudentList({
       setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
     } else if (initialMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
-      setFeeDeskAmount(sch > 0 ? String(sch) : '');
+      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : ''));
     }
 
     try {
-      const res = await fetch(`/api/students/${encodeURIComponent(student.rollNo)}`);
-      const data = await res.json();
-      if (data.success && data.student) {
-        setFeeDeskPayments(data.student.payments || []);
-        setFeeDeskStudent(data.student);
+      const studentLookupKey = getStudentKey(student);
+      if (studentLookupKey) {
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}`);
+        const data = await res.json();
+        if (data.success && data.student) {
+          setFeeDeskPayments(data.student.payments || []);
+          setFeeDeskStudent(data.student);
+          const sy1 = Number(data.student.scholarshipYear1 !== undefined ? data.student.scholarshipYear1 : (!data.student.scholarshipYear2 ? (data.student.scholarshipAmount || 0) : 0));
+          const sy2 = Number(data.student.scholarshipYear2 || 0);
+          const sy3 = Number(data.student.scholarshipYear3 || 0);
+          const sy4 = Number(data.student.scholarshipYear4 || 0);
+          setScholarshipYear1(sy1 > 0 ? String(sy1) : '');
+          setScholarshipYear2(sy2 > 0 ? String(sy2) : '');
+          setScholarshipYear3(sy3 > 0 ? String(sy3) : '');
+          setScholarshipYear4(sy4 > 0 ? String(sy4) : '');
+        } else {
+          setFeeDeskPayments(student.payments || []);
+        }
       } else {
         setFeeDeskPayments(student.payments || []);
       }
@@ -262,7 +305,11 @@ export default function StudentList({
     setFeeDeskSuccess(null);
 
     const acadFee = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-    const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+    const y1 = Number(scholarshipYear1) || 0;
+    const y2 = Number(scholarshipYear2) || 0;
+    const y3 = Number(scholarshipYear3) || 0;
+    const y4 = Number(scholarshipYear4) || 0;
+    const sch = y1 + y2 + y3 + y4 > 0 ? (y1 + y2 + y3 + y4) : Number(feeDeskStudent.scholarshipAmount || 0);
     const tot = acadFee + sch;
     const paid = Number(feeDeskStudent.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
@@ -275,7 +322,7 @@ export default function StudentList({
       setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
     } else if (newMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
-      setFeeDeskAmount(sch > 0 ? String(sch) : '');
+      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : ''));
     }
   };
 
@@ -287,9 +334,9 @@ export default function StudentList({
     e.preventDefault();
     if (!feeDeskStudent) return;
 
-    const amt = Number(feeDeskAmount);
-    if (isNaN(amt) || amt < 0 || (feeDeskMode === 'receive' && amt <= 0)) {
-      setFeeDeskError('Please enter a valid amount.');
+    const studentLookupKey = getStudentKey(feeDeskStudent);
+    if (!studentLookupKey) {
+      setFeeDeskError('Unable to identify student record. Missing roll number or ID.');
       return;
     }
 
@@ -299,7 +346,12 @@ export default function StudentList({
 
     try {
       if (feeDeskMode === 'receive') {
-        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/receive-fee`, {
+        const amt = Number(feeDeskAmount);
+        if (isNaN(amt) || amt <= 0) {
+          throw new Error('Please enter a valid payment amount.');
+        }
+
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/receive-fee`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -326,7 +378,7 @@ export default function StudentList({
           setFeeDeskPayments(prev => [data.receipt, ...prev]);
         }
 
-        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
         setFeeDeskSuccess(`₹${amt.toLocaleString('en-IN')} fee payment recorded successfully! Receipt: ${data.receipt?.receiptNo || 'Generated'}`);
 
         const newRem = Math.max(0, (Number(updatedStudent.totalFee) || 0) - (Number(updatedStudent.totalPaid) || 0));
@@ -335,7 +387,12 @@ export default function StudentList({
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_fee') {
-        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-fee`, {
+        const amt = Number(feeDeskAmount);
+        if (isNaN(amt) || amt < 0) {
+          throw new Error('Please enter a valid center fee amount.');
+        }
+
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -350,16 +407,30 @@ export default function StudentList({
 
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
-        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
         setFeeDeskSuccess(`Academic Center Fee set to ₹${amt.toLocaleString('en-IN')} successfully!`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
-        const res = await fetch(`/api/students/${encodeURIComponent(feeDeskStudent.rollNo)}/set-scholarship`, {
+        const y1Val = Number(scholarshipYear1) || 0;
+        const y2Val = Number(scholarshipYear2) || 0;
+        const y3Val = Number(scholarshipYear3) || 0;
+        const y4Val = Number(scholarshipYear4) || 0;
+        const totalSch = y1Val + y2Val + y3Val + y4Val;
+
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            scholarshipAmount: amt
+            scholarshipYear1: y1Val,
+            scholarshipYear2: y2Val,
+            scholarshipYear3: y3Val,
+            scholarshipYear4: y4Val,
+            scholarshipAmount: totalSch,
+            year: scholarshipActiveYear,
+            yearLabel: scholarshipActiveYear === 'year1' ? 'First Year Scholarship' : scholarshipActiveYear === 'year2' ? 'Second Year Scholarship' : scholarshipActiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship',
+            amount: scholarshipActiveYear === 'year1' ? y1Val : scholarshipActiveYear === 'year2' ? y2Val : scholarshipActiveYear === 'year3' ? y3Val : y4Val,
+            remark: feeDeskRemark
           })
         });
         const data = await res.json();
@@ -369,8 +440,8 @@ export default function StudentList({
 
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
-        setStudents(prev => prev.map(s => s.rollNo === feeDeskStudent.rollNo ? { ...s, ...updatedStudent } : s));
-        setFeeDeskSuccess(`Scholarship set to ₹${amt.toLocaleString('en-IN')} successfully!`);
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskSuccess(`Scholarship updated successfully! Total: ₹${totalSch.toLocaleString('en-IN')} (1st: ₹${y1Val.toLocaleString('en-IN')}, 2nd: ₹${y2Val.toLocaleString('en-IN')}, 3rd: ₹${y3Val.toLocaleString('en-IN')}, 4th: ₹${y4Val.toLocaleString('en-IN')})`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       }
@@ -1043,6 +1114,34 @@ export default function StudentList({
               {students.filter(s => s.isDualEnrolled).length}
             </span>
           </button>
+
+          {/* Table View Mode Switcher */}
+          <div className="ml-3 inline-flex items-center bg-slate-200/90 p-0.5 rounded-lg border border-slate-300">
+            <button
+              type="button"
+              onClick={() => setTableColumnMode('all')}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                tableColumnMode === 'all'
+                  ? 'bg-[#0b1f33] text-amber-300 shadow-xs'
+                  : 'text-slate-700 hover:text-slate-950'
+              }`}
+              title="Show all student registration form fields directly in table columns"
+            >
+              <span>📋 All Form Fields (Horizontal Scroll)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTableColumnMode('compact')}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                tableColumnMode === 'compact'
+                  ? 'bg-[#0b1f33] text-amber-300 shadow-xs'
+                  : 'text-slate-700 hover:text-slate-950'
+              }`}
+              title="Switch to compact table view"
+            >
+              <span>📑 Compact View</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1091,36 +1190,89 @@ export default function StudentList({
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
                 <thead className="bg-[#0b1f33] text-white uppercase text-[10.5px] font-extrabold tracking-wider select-none">
-                  <tr>
-                    <th className="py-2.5 px-2 text-center border-r border-slate-700 w-10">#</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Name</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Father_Name</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Contact</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">College_Name</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Course_Names</th>
-                    <th className="py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Type</th>
-                    <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
-                    <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Semester</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Scholarship</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
-                    <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
-                    <th className="py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
-                  </tr>
+                  {tableColumnMode === 'all' ? (
+                    <tr>
+                      <th className="sticky left-0 z-30 bg-[#0b1f33] py-2.5 px-2 text-center border-r border-slate-700 min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.15)]">#</th>
+                      <th className="sticky left-[44px] z-30 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.2)]">Student_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Father_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Mother_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Contact</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Email</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">DOB</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Gender</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Category</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Aadhaar_No</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Samagra_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Enrollment_No</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Roll_No</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">ABC_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">MPTASS_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">MPTASS_Password</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">OTR_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">DEB_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Scholar_ID</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">User_ID</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Medium</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">College_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">University_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Course_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Branch</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Type</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Mode</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Session</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Satra</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Semester/Class</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Admission_Date</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[180px]">Address</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Reference</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">1st_Yr_Schol</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">2nd_Yr_Schol</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">3rd_Yr_Schol</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">4th_Yr_Schol</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-300">Total_Scholarship</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
+                      <th className="py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className="py-2.5 px-2 text-center border-r border-slate-700 w-10">#</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Father_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Contact</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">College_Name</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Course_Names</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Type</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
+                      <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Semester</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Scholarship</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
+                      <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
+                      <th className="py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan="19" className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
+                      <td colSpan={tableColumnMode === 'all' ? 48 : 19} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
                     </tr>
                   ) : paginatedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan="19" className="p-10 text-center bg-slate-50">
+                      <td colSpan={tableColumnMode === 'all' ? 48 : 19} className="p-10 text-center bg-slate-50">
                         <div className="max-w-md mx-auto space-y-3">
                           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
                             <Search className="w-6 h-6" />
@@ -1156,18 +1308,25 @@ export default function StudentList({
                       }
 
                       const acadFee = Number(std.academicFee !== undefined && std.academicFee !== null ? std.academicFee : (std.studentFee !== undefined && std.studentFee !== null ? std.studentFee : 0));
-                      const sch = Number(std.scholarshipAmount || 0);
+                      const y1 = Number(std.scholarshipYear1 !== undefined && std.scholarshipYear1 !== null ? std.scholarshipYear1 : (!std.scholarshipYear2 ? (std.scholarshipAmount || 0) : 0));
+                      const y2 = Number(std.scholarshipYear2 || 0);
+                      const y3 = Number(std.scholarshipYear3 || 0);
+                      const y4 = Number(std.scholarshipYear4 || 0);
+                      const sch = Number(std.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
                       const tot = acadFee + sch;
                       const paid = Number(std.totalPaid || 0);
                       const rem = Math.max(0, tot - paid);
 
                       return (
                         <React.Fragment key={std.id}>
-                          <tr className="hover:bg-[#eaf3fa] transition-colors border-b border-slate-200 text-xs">
-                            <td className="py-2.5 px-2 text-center font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                          <tr className="group hover:bg-[#eaf3fa] transition-colors border-b border-slate-200 text-xs">
+                            {/* Sticky # */}
+                            <td className="sticky left-0 z-20 bg-white group-hover:bg-[#eaf3fa] py-2.5 px-2 text-center font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
                               {startIndex + idx + 1}
                             </td>
-                            <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap">
+
+                            {/* Sticky Student Name + Photo */}
+                            <td className="sticky left-[44px] z-20 bg-white group-hover:bg-[#eaf3fa] py-2 px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
                               <div className="flex items-center gap-2.5">
                                 <div
                                   onClick={() => handleOpenProfile(std)}
@@ -1192,26 +1351,133 @@ export default function StudentList({
                                     {std.fullName || std.studentName}
                                   </div>
                                   <div className="text-[10px] text-slate-400 font-mono">
-                                    {std.rollNo || std.enrollmentNo || ''}
+                                    {std.rollNo || std.enrollmentNo || std.id || ''}
                                   </div>
                                 </div>
                               </div>
                             </td>
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-medium">
                               {std.fatherName || std.Father_Name || '-'}
                             </td>
-                            <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
-                              {std.contact || std.phone || '-'}
-                            </td>
+
+                            {tableColumnMode === 'all' && (
+                              <>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-medium">
+                                  {std.motherName || std.Mother_Name || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.contact || std.phone || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono text-[11px]">
+                                  {std.email || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700">
+                                  {std.dob || '-'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-700">
+                                  {std.gender || '-'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                    {std.category || std.socialCategory || '-'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.aadhaarNo || std.aadhaar || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.samagraId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-800 font-mono font-semibold">
+                                  {std.enrollmentNo || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-800 font-mono font-bold">
+                                  {std.rollNo || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.abcId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.mptassId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">
+                                  {std.mptassPassword || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.otrId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.debId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.scholarId || std.scholerId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.userId || '-'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-700">
+                                  {std.medium || 'Hindi'}
+                                </td>
+                              </>
+                            )}
+
+                            {tableColumnMode === 'compact' && (
+                              <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                {std.contact || std.phone || '-'}
+                              </td>
+                            )}
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 max-w-[200px] truncate" title={std.collegeName || std.universityName || ''}>
                               {std.collegeName || std.universityName || '-'}
                             </td>
+
+                            {tableColumnMode === 'all' && (
+                              <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 max-w-[200px] truncate" title={std.universityName || ''}>
+                                {std.universityName || '-'}
+                              </td>
+                            )}
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-800 font-semibold whitespace-nowrap">
                               {std.courseName || '-'}
                             </td>
+
+                            {tableColumnMode === 'all' && (
+                              <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 whitespace-nowrap">
+                                {std.branch || '-'}
+                              </td>
+                            )}
+
                             <td className="py-2.5 px-2 border-r border-slate-200 text-slate-700 whitespace-nowrap">
                               {std.courseType || 'Semester'}
                             </td>
+
+                            {tableColumnMode === 'all' && (
+                              <>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-slate-700 whitespace-nowrap">
+                                  {std.courseMode || 'Regular'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-700 font-medium">
+                                  {std.admissionSession || std.currentSession || '-'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-700 font-medium">
+                                  {std.admissionSatra || std.currentSatra || '-'}
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
+                                  {std.currentClass || (std.currentSemester ? `SEM-${std.currentSemester}` : 'SEM-1')}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700 font-mono">
+                                  {std.admissionDate ? (typeof std.admissionDate === 'string' && std.admissionDate.includes('T') ? std.admissionDate.split('T')[0] : std.admissionDate) : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 min-w-[180px] max-w-[280px] truncate" title={std.address || ''}>
+                                  {std.address || '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-700">
+                                  {std.reference || '-'}
+                                </td>
+                              </>
+                            )}
+
                             <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 {std.status || 'Active'}
@@ -1220,12 +1486,34 @@ export default function StudentList({
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 font-medium min-w-[170px] max-w-[280px] break-words whitespace-normal leading-snug" title={std.remark || ''}>
                               {std.remark || '-'}
                             </td>
-                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
-                              {std.currentClass || (std.currentSemester ? `SEM-${std.currentSemester}` : 'SEM-1')}
-                            </td>
+
+                            {tableColumnMode === 'compact' && (
+                              <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
+                                {std.currentClass || (std.currentSemester ? `SEM-${std.currentSemester}` : 'SEM-1')}
+                              </td>
+                            )}
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">
                               {acadFee > 0 ? `${acadFee}/-` : '0/-'}
                             </td>
+
+                            {tableColumnMode === 'all' && (
+                              <>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
+                                  {y1 > 0 ? `${y1}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
+                                  {y2 > 0 ? `${y2}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
+                                  {y3 > 0 ? `${y3}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
+                                  {y4 > 0 ? `${y4}/-` : '-'}
+                                </td>
+                              </>
+                            )}
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">
                               {sch > 0 ? `${sch}/-` : '0/-'}
                             </td>
@@ -1309,30 +1597,102 @@ export default function StudentList({
                           {/* Connected Dual Program Secondary Row */}
                           {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
                             const lAcadFee = Number(linked.academicFee !== undefined && linked.academicFee !== null ? linked.academicFee : (linked.studentFee !== undefined && linked.studentFee !== null ? linked.studentFee : 0));
-                            const lSch = Number(linked.scholarshipAmount || 0);
+                            const ly1 = Number(linked.scholarshipYear1 !== undefined && linked.scholarshipYear1 !== null ? linked.scholarshipYear1 : (!linked.scholarshipYear2 ? (linked.scholarshipAmount || 0) : 0));
+                            const ly2 = Number(linked.scholarshipYear2 || 0);
+                            const ly3 = Number(linked.scholarshipYear3 || 0);
+                            const ly4 = Number(linked.scholarshipYear4 || 0);
+                            const lSch = Number(linked.scholarshipAmount || (ly1 + ly2 + ly3 + ly4) || 0);
                             const lTot = lAcadFee + lSch;
                             const lPaid = Number(linked.totalPaid || 0);
                             const lRem = Math.max(0, lTot - lPaid);
                             return (
-                              <tr key={linked.id || `linked-${lIdx}`} className="bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
-                                <td className="py-2.5 px-2 text-center font-bold text-amber-700 border-r border-slate-200">↳</td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap">
+                              <tr key={linked.id || `linked-${lIdx}`} className="group bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
+                                <td className="sticky left-0 z-20 bg-amber-50 group-hover:bg-amber-100 py-2.5 px-2 text-center font-bold text-amber-700 border-r border-slate-200 whitespace-nowrap min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">↳</td>
+                                <td className="sticky left-[44px] z-20 bg-amber-50 group-hover:bg-amber-100 py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
                                   <div className="font-bold text-slate-800 uppercase tracking-tight">{std.fullName || std.studentName}</div>
-                                  <div className="text-[10px] text-amber-700 font-mono font-bold">Dual: {linked.rollNo}</div>
+                                  <div className="text-[10px] text-amber-700 font-mono font-bold">Dual: {linked.rollNo || linked.enrollmentNo || linked.id}</div>
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600">{std.fatherName || '-'}</td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.contact || std.phone || '-'}</td>
+
+                                {tableColumnMode === 'all' && (
+                                  <>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600">{std.motherName || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.contact || std.phone || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono text-[11px]">{std.email || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600">{std.dob || '-'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-600">{std.gender || '-'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100/80 text-amber-900 border border-amber-200">
+                                        {std.category || std.socialCategory || '-'}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.aadhaarNo || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.samagraId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-amber-900 font-mono font-bold">{linked.enrollmentNo || std.enrollmentNo || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-amber-900 font-mono font-bold">{linked.rollNo || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.abcId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.mptassId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.mptassPassword || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.otrId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.debId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.scholarId || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.userId || '-'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-600">{linked.medium || std.medium || 'Hindi'}</td>
+                                  </>
+                                )}
+
+                                {tableColumnMode === 'compact' && (
+                                  <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{std.contact || std.phone || '-'}</td>
+                                )}
+
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 truncate max-w-[180px]">{linked.collegeName || linked.universityName || std.collegeName || '-'}</td>
+
+                                {tableColumnMode === 'all' && (
+                                  <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 truncate max-w-[180px]">{linked.universityName || std.universityName || '-'}</td>
+                                )}
+
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-amber-900 font-semibold whitespace-nowrap">{linked.courseName || '-'}</td>
+
+                                {tableColumnMode === 'all' && (
+                                  <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-600 whitespace-nowrap">{linked.branch || '-'}</td>
+                                )}
+
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-slate-600 whitespace-nowrap">{linked.courseType || 'Diploma'}</td>
+
+                                {tableColumnMode === 'all' && (
+                                  <>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-slate-600 whitespace-nowrap">{linked.courseMode || 'Regular'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-600">{linked.admissionSession || std.admissionSession || '-'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap text-slate-600">{linked.admissionSatra || std.admissionSatra || '-'}</td>
+                                    <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600 font-mono">{linked.admissionDate ? (typeof linked.admissionDate === 'string' && linked.admissionDate.includes('T') ? linked.admissionDate.split('T')[0] : linked.admissionDate) : '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-600 min-w-[180px] max-w-[280px] truncate" title={std.address || ''}>{std.address || '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap text-slate-600">{std.reference || '-'}</td>
+                                  </>
+                                )}
+
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                                     {linked.status || 'Active'}
                                   </span>
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 font-medium min-w-[170px] max-w-[280px] break-words whitespace-normal leading-snug" title={linked.remark || ''}>{linked.remark || '-'}</td>
-                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
+
+                                {tableColumnMode === 'compact' && (
+                                  <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
+                                )}
+
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">{lAcadFee > 0 ? `${lAcadFee}/-` : '0/-'}</td>
+
+                                {tableColumnMode === 'all' && (
+                                  <>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly1 > 0 ? `${ly1}/-` : '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly2 > 0 ? `${ly2}/-` : '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly3 > 0 ? `${ly3}/-` : '-'}</td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly4 > 0 ? `${ly4}/-` : '-'}</td>
+                                  </>
+                                )}
+
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">{lSch > 0 ? `${lSch}/-` : '0/-'}</td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">{lTot > 0 ? `${lTot}/-` : '0/-'}</td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">{lPaid > 0 ? `${lPaid}/-` : '0/-'}</td>
@@ -1690,43 +2050,167 @@ export default function StudentList({
                     />
                   </div>
 
-                  {/* 11. Enter Fee Amount */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-900 mb-1">
-                      {feeDeskMode === 'receive' && 'Enter_Fee_Amount* :'}
-                      {feeDeskMode === 'set_fee' && 'Enter Academic / Center Fee Amount (₹)* :'}
-                      {feeDeskMode === 'set_scholarship' && 'Enter Scholarship Amount (₹)* :'}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={feeDeskAmount}
-                        onChange={(e) => setFeeDeskAmount(e.target.value)}
-                        placeholder="Enter amount (e.g. 5000)"
-                        className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
-                      />
-                      {feeDeskMode === 'receive' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-                            const sch = Number(feeDeskStudent.scholarshipAmount || 0);
-                            const tot = acad + sch;
-                            const paid = Number(feeDeskStudent.totalPaid || 0);
-                            const rem = Math.max(0, tot - paid);
-                            setFeeDeskAmount(String(rem));
-                          }}
-                          className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
-                          title="Auto fill full balance remaining"
-                        >
-                          Full Due
-                        </button>
-                      )}
+                  {/* 11. Enter Fee Amount or Multi-Year Scholarship */}
+                  {feeDeskMode === 'set_scholarship' ? (
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-br from-purple-50/90 to-indigo-50/50 border-2 border-purple-300 rounded-2xl p-4 space-y-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-200/80 pb-3">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </span>
+                            <h4 className="text-sm font-black text-purple-950 uppercase tracking-tight">
+                              Multi-Year Scholarship Desk (सालाना छात्रवृत्ति प्रबंधन)
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-purple-700 font-medium">
+                            Set scholarship year-by-year (First Year, Second Year, Third Year, Fourth Year). Total is auto-calculated.
+                          </p>
+                        </div>
+                        <div className="bg-purple-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-2.5 shadow-sm shrink-0">
+                          <span className="text-purple-200">Total Scholarship:</span>
+                          <span className="text-amber-300 font-mono text-base font-extrabold">
+                            ₹{((Number(scholarshipYear1) || 0) + (Number(scholarshipYear2) || 0) + (Number(scholarshipYear3) || 0) + (Number(scholarshipYear4) || 0)).toLocaleString('en-IN')}/-
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4 Years Inputs Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* 1st Year */}
+                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year1' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">1</span>
+                              First Year Scholarship
+                            </label>
+                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">1st Year</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={scholarshipYear1}
+                              onFocus={() => setScholarshipActiveYear('year1')}
+                              onChange={(e) => setScholarshipYear1(e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 2nd Year */}
+                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year2' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">2</span>
+                              Second Year Scholarship
+                            </label>
+                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">2nd Year</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={scholarshipYear2}
+                              onFocus={() => setScholarshipActiveYear('year2')}
+                              onChange={(e) => setScholarshipYear2(e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 3rd Year */}
+                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year3' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">3</span>
+                              Third Year Scholarship
+                            </label>
+                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">3rd Year</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={scholarshipYear3}
+                              onFocus={() => setScholarshipActiveYear('year3')}
+                              onChange={(e) => setScholarshipYear3(e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 4th Year */}
+                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year4' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">4</span>
+                              Fourth Year Scholarship
+                            </label>
+                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">4th Year</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={scholarshipYear4}
+                              onFocus={() => setScholarshipActiveYear('year4')}
+                              onChange={(e) => setScholarshipYear4(e.target.value)}
+                              placeholder="0"
+                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-900 mb-1">
+                        {feeDeskMode === 'receive' && 'Enter_Fee_Amount* :'}
+                        {feeDeskMode === 'set_fee' && 'Enter Academic / Center Fee Amount (₹)* :'}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={feeDeskAmount}
+                          onChange={(e) => setFeeDeskAmount(e.target.value)}
+                          placeholder="Enter amount (e.g. 5000)"
+                          className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
+                        />
+                        {feeDeskMode === 'receive' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+                              const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                              const tot = acad + sch;
+                              const paid = Number(feeDeskStudent.totalPaid || 0);
+                              const rem = Math.max(0, tot - paid);
+                              setFeeDeskAmount(String(rem));
+                            }}
+                            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
+                            title="Auto fill full balance remaining"
+                          >
+                            Full Due
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Row matching reference button */}
@@ -1744,7 +2228,7 @@ export default function StudentList({
                         ? 'Paid Fee'
                         : feeDeskMode === 'set_fee'
                         ? 'Set Center Fee'
-                        : 'Set Scholarship'}
+                        : 'Set Scholarship (Save Years)'}
                     </span>
                   </button>
                 </div>
@@ -1753,33 +2237,50 @@ export default function StudentList({
               {/* Fee Summary Strip matching media_1789491211561.jpg */}
               {(() => {
                 const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                const y1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
+                const y2 = Number(feeDeskStudent.scholarshipYear2 || 0);
+                const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
+                const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
+                const sch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
                 const tot = acad + sch;
                 const paid = Number(feeDeskStudent.totalPaid || 0);
                 const rem = Math.max(0, tot - paid);
 
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center pt-2">
-                    <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
-                      <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
-                      <div className="text-sm font-black text-slate-900 font-mono">₹{acad.toLocaleString('en-IN')}/-</div>
+                  <div className="space-y-2 pt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
+                      <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
+                        <div className="text-sm font-black text-slate-900 font-mono">₹{acad.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 shadow-2xs">
+                        <div className="text-[10px] text-purple-700 uppercase font-bold">Total Scholarship</div>
+                        <div className="text-sm font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-2.5 shadow-2xs">
+                        <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Fee</div>
+                        <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
+                        <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
+                        <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
+                      </div>
+                      <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
+                        <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
+                        <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
+                      </div>
                     </div>
-                    <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 shadow-2xs">
-                      <div className="text-[10px] text-purple-700 uppercase font-bold">Scholarship</div>
-                      <div className="text-sm font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
-                    </div>
-                    <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-2.5 shadow-2xs">
-                      <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Fee</div>
-                      <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
-                    </div>
-                    <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
-                      <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
-                      <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
-                    </div>
-                    <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
-                      <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
-                      <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
-                    </div>
+
+                    {/* Year-wise Scholarship Mini Pills */}
+                    {(y1 > 0 || y2 > 0 || y3 > 0 || y4 > 0) && (
+                      <div className="flex flex-wrap items-center gap-2 p-2 bg-purple-50/40 border border-purple-200 rounded-xl text-[11px] font-bold text-purple-900">
+                        <span className="text-[10px] uppercase tracking-wider text-purple-600">Yearly Breakdown:</span>
+                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">1st Year: ₹{y1.toLocaleString('en-IN')}</span>
+                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">2nd Year: ₹{y2.toLocaleString('en-IN')}</span>
+                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">3rd Year: ₹{y3.toLocaleString('en-IN')}</span>
+                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">4th Year: ₹{y4.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
                   </div>
                 );
               })()}

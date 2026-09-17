@@ -260,11 +260,12 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
     setPayLoading(true);
     try {
+      const studentIdKey = (payModalStudent.rollNo && payModalStudent.rollNo.trim()) || payModalStudent.id || payModalStudent.enrollmentNo || '';
       const res = await fetch('/api/university/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rollNo: payModalStudent.rollNo,
+          rollNo: studentIdKey,
           amountPaidToUniversity: Number(payAmount),
           paidSemester,
           paymentDate: payDate,
@@ -287,11 +288,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
           setVoucherToPrint(data.voucher);
         }
       } else {
-        showFeedback(data.message || 'भुगतान दर्ज करने में त्रुटि हुई', 'error');
+        showFeedback(data.message || 'भुगतान दर्ज करने में विफल', 'error');
       }
     } catch (err) {
-      console.error('Error paying university fee:', err);
-      showFeedback('नेटवर्क त्रुटि! कृपया पुनः प्रयास करें।', 'error');
+      showFeedback('सर्वर त्रुटि: ' + err.message, 'error');
     } finally {
       setPayLoading(false);
     }
@@ -305,8 +305,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setNewCollegeName(student.collegeName || 'Govt PG College Chhatarpur');
   };
 
-  // Submit Set Univ Fee
-  const handleEditFeeSubmit = async (e) => {
+  // Update Student Official University Fee & Affiliation Handler
+  const handleSaveStudentFee = async (e) => {
     e.preventDefault();
     if (!editFeeStudent || newUnivFee === '') {
       showFeedback('कृपया मान्य यूनिवर्सिटी फीस दर्ज करें।', 'error');
@@ -315,7 +315,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
     setEditFeeLoading(true);
     try {
-      const res = await fetch(`/api/university/student/${encodeURIComponent(editFeeStudent.rollNo)}/fee`, {
+      const studentIdKey = (editFeeStudent.rollNo && editFeeStudent.rollNo.trim()) || editFeeStudent.id || editFeeStudent.enrollmentNo || '';
+      const res = await fetch(`/api/university/student/${encodeURIComponent(studentIdKey)}/fee`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

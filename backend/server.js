@@ -960,25 +960,47 @@ app.get('/api/students', (req, res) => {
   }
 });
 
+// Universal Student Lookup Helper by ID, RollNo, EnrollmentNo, RegistrationNo, PrimaryRollNo
+function findStudentIndex(students, key) {
+  if (!key) return -1;
+  const raw = String(key).trim();
+  const upper = raw.toUpperCase();
+  return (students || []).findIndex(s => {
+    if (!s) return false;
+    if (s.id && String(s.id).trim() === raw) return true;
+    if (s.rollNo && String(s.rollNo).trim().toUpperCase() === upper) return true;
+    if (s.enrollmentNo && String(s.enrollmentNo).trim().toUpperCase() === upper) return true;
+    if (s.registrationNo && String(s.registrationNo).trim().toUpperCase() === upper) return true;
+    if (s.primaryRollNo && String(s.primaryRollNo).trim().toUpperCase() === upper) return true;
+    return false;
+  });
+}
+
+function findStudent(students, key) {
+  const idx = findStudentIndex(students, key);
+  return idx !== -1 ? students[idx] : null;
+}
+
 app.get('/api/students/:rollNo', (req, res) => {
   try {
     const db = readDB();
     const rawKey = (req.params.rollNo || '').trim();
-    const roll = rawKey.toUpperCase();
-    const student = db.students.find(s => 
-      (s.id && s.id === rawKey) ||
-      (s.rollNo && s.rollNo.toUpperCase() === roll) || 
-      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
-      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
-    );
+    const student = findStudent(db.students, rawKey);
     
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found with this Roll / Reg No.' });
     }
 
     const sRoll = student.rollNo ? student.rollNo.toUpperCase() : '';
-    const payments = sRoll ? (db.fee_payments || []).filter(p => p.rollNo && p.rollNo.toUpperCase() === sRoll) : [];
-    const results = sRoll ? (db.results || []).filter(r => r.rollNo && r.rollNo.toUpperCase() === sRoll) : [];
+    const sId = student.id || '';
+    const payments = (db.fee_payments || []).filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+    const results = (db.results || []).filter(r => 
+      (sRoll && r.rollNo && r.rollNo.toUpperCase() === sRoll) ||
+      (sId && r.studentId && r.studentId === sId)
+    );
 
     res.json({
       success: true,
@@ -1344,13 +1366,7 @@ app.put('/api/students/:rollNo', (req, res) => {
   try {
     const db = readDB();
     const rawKey = (req.params.rollNo || '').trim();
-    const roll = rawKey.toUpperCase();
-    const index = db.students.findIndex(s => 
-      (s.id && s.id === rawKey) ||
-      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
-      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
-      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
-    );
+    const index = findStudentIndex(db.students, rawKey);
 
     if (index === -1) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -1645,13 +1661,7 @@ app.post('/api/students/:rollNo/cancel-admission', (req, res) => {
   try {
     const db = readDB();
     const rawKey = (req.params.rollNo || '').trim();
-    const roll = rawKey.toUpperCase();
-    const student = db.students.find(s => 
-      (s.id && s.id === rawKey) ||
-      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
-      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
-      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
-    );
+    const student = findStudent(db.students, rawKey);
 
     if (!student) {
       return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
@@ -1704,13 +1714,7 @@ app.post('/api/students/:rollNo/restore-admission', (req, res) => {
   try {
     const db = readDB();
     const rawKey = (req.params.rollNo || '').trim();
-    const roll = rawKey.toUpperCase();
-    const student = db.students.find(s => 
-      (s.id && s.id === rawKey) ||
-      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
-      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
-      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
-    );
+    const student = findStudent(db.students, rawKey);
 
     if (!student) {
       return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
@@ -1740,13 +1744,7 @@ app.post('/api/students/:rollNo/record-refund', (req, res) => {
   try {
     const db = readDB();
     const rawKey = (req.params.rollNo || '').trim();
-    const roll = rawKey.toUpperCase();
-    const student = db.students.find(s => 
-      (s.id && s.id === rawKey) ||
-      (s.rollNo && s.rollNo.toUpperCase() === roll) ||
-      (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll) ||
-      (s.registrationNo && s.registrationNo.toUpperCase() === roll)
-    );
+    const student = findStudent(db.students, rawKey);
 
     if (!student) {
       return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
@@ -1792,8 +1790,8 @@ app.post('/api/students/:rollNo/record-refund', (req, res) => {
 // Dedicated endpoint to attach an additional / dual course to an existing student
 app.post('/api/students/:rollNo/add-course', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const existing = db.students.find(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const existing = findStudent(db.students, rawKey);
 
   if (!existing) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -1805,7 +1803,7 @@ app.post('/api/students/:rollNo/add-course', (req, res) => {
     return res.status(400).json({ success: false, message: 'Course name is required' });
   }
 
-  const baseRoll = (existing.primaryRollNo || existing.rollNo).trim().toUpperCase();
+  const baseRoll = (existing.primaryRollNo || existing.rollNo || existing.id).trim().toUpperCase();
   const secUnivName = (sec.universityName || sec.University_Name || existing.universityName || 'University').trim();
   const secCollegeName = (sec.collegeName || sec.College_Name || existing.collegeName || 'College').trim();
   const secCourseType = sec.courseType || sec.Course_Type || 'Diploma';
@@ -1814,7 +1812,7 @@ app.post('/api/students/:rollNo/add-course', (req, res) => {
 
   let secCandidateRoll = `${baseRoll}-${secCode}`;
   let counter = 2;
-  while (db.students.some(s => s.rollNo.toUpperCase() === secCandidateRoll.toUpperCase())) {
+  while (db.students.some(s => (s.rollNo || '').toUpperCase() === secCandidateRoll.toUpperCase())) {
     secCandidateRoll = `${baseRoll}-${secCode}${counter++}`;
   }
 
@@ -1830,74 +1828,56 @@ app.post('/api/students/:rollNo/add-course', (req, res) => {
   const admissionYear = Number(sec.admissionYear) || new Date(admissionDate).getFullYear() || 2026;
 
   const addedSecondaryStudent = {
-    ...existing,
-    id: 'std-' + (Date.now() + 1),
+    id: `std-dual-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+    isSecondaryCourse: true,
+    primaryRollNo: existing.rollNo || existing.id,
+    primaryStudentId: existing.id,
     rollNo: secCandidateRoll,
-    registrationNo: `${secUnivName.slice(0, 3).toUpperCase()}-${admissionYear}-${Math.floor(1000 + Math.random() * 9000)}`,
-    universityName: secUnivName,
-    collegeName: secCollegeName,
+    registrationNo: `REG-DUAL-${Date.now().toString().slice(-6)}`,
+    enrollmentNo: sec.enrollmentNo || existing.enrollmentNo || '',
+    fullName: existing.fullName,
+    studentName: existing.studentName || existing.fullName,
+    fatherName: existing.fatherName,
+    motherName: existing.motherName,
+    contact: existing.contact,
+    phone: existing.phone,
+    email: existing.email,
+    category: existing.category,
+    dob: existing.dob,
+    gender: existing.gender,
+    address: existing.address,
+    aadhaarNo: existing.aadhaarNo,
+    samagraId: existing.samagraId,
+    abcId: existing.abcId,
+    mptassId: existing.mptassId,
+    status: 'Active',
     courseName: secCourseName,
     branch: secBranch,
     courseType: secCourseType,
-    courseMode: sec.courseMode || 'Regular',
-    currentClass: sec.currentClass || `SEM-${sec.currentSemester || 1}`,
-    currentSemester: Number(sec.currentSemester) || 1,
-    studentFee: secCourseFee,
+    universityName: secUnivName,
+    collegeName: secCollegeName,
     courseFee: secCourseFee,
+    studentFee: secCourseFee,
+    academicFee: secCourseFee,
     admissionFee: secAdmissionFee,
     totalFee: secGrandTotal,
-    scholarshipAmount: secScholarship,
     netTotalFee: secNetTotal,
+    scholarshipAmount: secScholarship,
     totalPaid: secPaid,
     balanceDue: secBalanceDue,
-    admissionDate: admissionDate,
-    admissionYear: admissionYear,
-    admissionTimestamp: new Date(admissionDate).toISOString(),
-    isDualEnrollment: true,
-    isSecondaryCourse: true,
-    primaryRollNo: baseRoll,
-    primaryStudentId: existing.primaryStudentId || existing.id,
-    dualProgramType: `${secCourseType} / 2nd Program`,
-    status: 'Active',
-    remark: sec.remark || '',
+    currentSemester: 1,
+    currentClass: 'SEM-1',
+    admissionDate,
+    admissionYear,
+    admissionSession: sec.admissionSession || existing.admissionSession || '2025-2026',
+    admissionSatra: sec.admissionSatra || existing.admissionSatra || 'July',
+    remark: sec.remark || `Dual enrollment attached to primary roll ${existing.rollNo || existing.id}`,
+    documents: existing.documents || {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
-  existing.isDualEnrollment = true;
-  if (existing.primaryRollNo) {
-    const baseStd = db.students.find(s => s.rollNo.toUpperCase() === existing.primaryRollNo.toUpperCase());
-    if (baseStd) baseStd.isDualEnrollment = true;
-  }
-
   db.students.push(addedSecondaryStudent);
-
-  if (secPaid > 0) {
-    const secReceiptNo = String(getNextReceiptNumber(db));
-    const receipt = {
-      id: 'RCP-' + Date.now(),
-      receiptNo: secReceiptNo,
-      studentId: addedSecondaryStudent.id,
-      rollNo: addedSecondaryStudent.rollNo,
-      studentName: addedSecondaryStudent.fullName,
-      courseName: addedSecondaryStudent.courseName,
-      universityName: addedSecondaryStudent.universityName,
-      collegeName: addedSecondaryStudent.collegeName,
-      amountPaid: secPaid,
-      amount: secPaid,
-      paymentMode: sec.paymentMode || 'Cash',
-      referenceNo: sec.transactionId || `PAY-${Date.now().toString().slice(-6)}`,
-      paymentType: 'Additional Course Admission Fee',
-      paymentDate: new Date().toISOString(),
-      totalFee: secGrandTotal,
-      totalPaidToDate: secPaid,
-      balanceRemaining: secBalanceDue,
-      receivedBy: sec.operatorName || 'Admin'
-    };
-    if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
-    db.fee_payments.unshift(receipt);
-  }
-
   writeDB(db);
 
   res.json({
@@ -1910,8 +1890,8 @@ app.post('/api/students/:rollNo/add-course', (req, res) => {
 // Manual Semester / Year Promotion Endpoint
 app.put('/api/students/:rollNo/promote', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
 
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -1956,8 +1936,8 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
 // Set Student Fee (Academic Fee & Remark)
 app.put('/api/students/:rollNo/set-fee', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
 
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -1982,27 +1962,82 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
 
   res.json({
     success: true,
-    message: `Academic fee for ${student.fullName || student.rollNo} set to ₹${acadFee.toLocaleString('en-IN')}`,
+    message: `Academic fee for ${student.fullName || student.rollNo || 'Student'} set to ₹${acadFee.toLocaleString('en-IN')}`,
     student
   });
 });
 
-// Set Student Scholarship
+// Set Student Scholarship (Multi-Year Support: 1st Year, 2nd Year, 3rd Year, 4th Year)
 app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
 
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { scholarshipAmount } = req.body;
-  const sch = Math.max(0, Number(scholarshipAmount) || 0);
-  student.scholarshipAmount = sch;
+  const { 
+    scholarshipAmount, 
+    scholarshipYear1, 
+    scholarshipYear2, 
+    scholarshipYear3, 
+    scholarshipYear4,
+    year, // 'year1' | 'year2' | 'year3' | 'year4'
+    yearLabel, // 'First Year Scholarship'
+    amount,
+    remark
+  } = req.body;
+
+  // If specific year update was sent
+  if (year && amount !== undefined) {
+    const amt = Math.max(0, Number(amount) || 0);
+    if (year === 'year1' || year === '1') student.scholarshipYear1 = amt;
+    else if (year === 'year2' || year === '2') student.scholarshipYear2 = amt;
+    else if (year === 'year3' || year === '3') student.scholarshipYear3 = amt;
+    else if (year === 'year4' || year === '4') student.scholarshipYear4 = amt;
+  } else {
+    // If multi-year individual values were sent
+    if (scholarshipYear1 !== undefined) student.scholarshipYear1 = Math.max(0, Number(scholarshipYear1) || 0);
+    if (scholarshipYear2 !== undefined) student.scholarshipYear2 = Math.max(0, Number(scholarshipYear2) || 0);
+    if (scholarshipYear3 !== undefined) student.scholarshipYear3 = Math.max(0, Number(scholarshipYear3) || 0);
+    if (scholarshipYear4 !== undefined) student.scholarshipYear4 = Math.max(0, Number(scholarshipYear4) || 0);
+
+    // If only generic scholarshipAmount was passed and no year fields exist yet
+    if (scholarshipAmount !== undefined && scholarshipYear1 === undefined && scholarshipYear2 === undefined) {
+      const schAmt = Math.max(0, Number(scholarshipAmount) || 0);
+      student.scholarshipYear1 = schAmt;
+    }
+  }
+
+  // Auto calculate total scholarship from all years
+  const y1 = Number(student.scholarshipYear1) || 0;
+  const y2 = Number(student.scholarshipYear2) || 0;
+  const y3 = Number(student.scholarshipYear3) || 0;
+  const y4 = Number(student.scholarshipYear4) || 0;
+  const totalSch = y1 + y2 + y3 + y4;
+  student.scholarshipAmount = totalSch;
+
+  // Maintain audit history of scholarship adjustments
+  if (!Array.isArray(student.scholarshipHistory)) {
+    student.scholarshipHistory = [];
+  }
+  student.scholarshipHistory.push({
+    id: 'SCH-' + Date.now(),
+    date: new Date().toISOString().split('T')[0],
+    year: year || 'All Years',
+    yearLabel: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
+    year1: y1,
+    year2: y2,
+    year3: y3,
+    year4: y4,
+    total: totalSch,
+    remark: remark || 'Scholarship updated by admin',
+    updatedAt: new Date().toISOString()
+  });
 
   const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
-  student.totalFee = acadFee + sch;
+  student.totalFee = acadFee + totalSch;
   student.netTotalFee = student.totalFee;
   student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
   student.updatedAt = new Date().toISOString();
@@ -2011,7 +2046,7 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
 
   res.json({
     success: true,
-    message: `Scholarship for ${student.fullName || student.rollNo} set to ₹${sch.toLocaleString('en-IN')}`,
+    message: `Scholarship for ${student.fullName || student.rollNo || 'Student'} updated. Total: ₹${totalSch.toLocaleString('en-IN')}`,
     student
   });
 });
@@ -2019,8 +2054,8 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
 // Receive Student Fee
 app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   const db = readDB();
-  const roll = req.params.rollNo.toUpperCase();
-  const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
 
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -2057,7 +2092,7 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     id: `pay-${Date.now()}`,
     receiptNo: rNo,
     studentId: student.id,
-    rollNo: student.rollNo,
+    rollNo: student.rollNo || student.enrollmentNo || student.id,
     studentName: student.fullName || student.studentName,
     fatherName: student.fatherName || '',
     collegeName: student.collegeName || '',
@@ -2070,13 +2105,8 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     paymentMode: paymentMode || 'Cash',
     feeType: purpose || 'Tuition / Academic Fee Payment',
     purpose: purpose || 'Tuition Fee',
-    paymentDate: pDate,
-    feeDate: feeDate || pDate.split('T')[0],
-    transactionRef: refNo || '',
     refNo: refNo || '',
-    totalFee: totalFee,
-    totalPaidToDate: newTotalPaid,
-    balanceRemaining: newBalance,
+    paymentDate: pDate,
     remainingDues: newBalance,
     remark: remark || '',
     receivedBy: receivedBy || 'Admin Desk'
@@ -2088,7 +2118,12 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   writeDB(db);
 
   // Return all payments for this student so frontend can update immediately
-  const studentPayments = db.fee_payments.filter(p => p.rollNo.toUpperCase() === student.rollNo.toUpperCase());
+  const sRoll = (student.rollNo || '').toUpperCase();
+  const sId = student.id || '';
+  const studentPayments = db.fee_payments.filter(p => 
+    (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+    (sId && p.studentId && p.studentId === sId)
+  );
 
   res.status(201).json({
     success: true,
@@ -2102,12 +2137,7 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 app.delete('/api/students/:rollNo', (req, res) => {
   const db = readDB();
   const rawKey = (req.params.rollNo || '').trim();
-  const roll = rawKey.toUpperCase();
-  const index = db.students.findIndex(s => 
-    (s.id && s.id === rawKey) ||
-    (s.rollNo && s.rollNo.toUpperCase() === roll) ||
-    (s.enrollmentNo && s.enrollmentNo.toUpperCase() === roll)
-  );
+  const index = findStudentIndex(db.students, rawKey);
 
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'Student not found' });
@@ -2601,10 +2631,10 @@ app.put('/api/fees/student/:rollNo/adjust', (req, res) => {
     const { totalFee, totalPaid, scholarshipAmount, adjustmentReason, adminUser } = req.body;
     const db = readDB();
 
-    const roll = rollNo.trim().toUpperCase();
-    const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+    const rawKey = (rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student with Roll Number "${roll}" not found.` });
+      return res.status(404).json({ success: false, message: `Student "${rawKey}" not found.` });
     }
 
     const oldTotalFee = Number(student.totalFee) || 0;
@@ -2671,11 +2701,11 @@ app.put('/api/students/:rollNo/documents', upload.fields([
 ]), (req, res) => {
   try {
     const db = readDB();
-    const roll = req.params.rollNo.trim().toUpperCase();
-    const student = db.students.find(s => s.rollNo.toUpperCase() === roll);
+    const rawKey = (req.params.rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
 
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student with Roll Number ${roll} not found.` });
+      return res.status(404).json({ success: false, message: `Student "${rawKey}" not found.` });
     }
 
     const { docName, mode, status, remarks, verifiedBy, documentsStatus } = req.body;
@@ -3268,9 +3298,9 @@ app.post('/api/university/pay', (req, res) => {
     }
 
     const db = readDB();
-    const student = (db.students || []).find(s => s.rollNo.toUpperCase() === rollNo.trim().toUpperCase());
+    const student = findStudent(db.students, rollNo);
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student with roll number ${rollNo} not found.` });
+      return res.status(404).json({ success: false, message: `Student with identifier "${rollNo}" not found.` });
     }
 
     const amountNum = Number(amountPaidToUniversity);
@@ -3284,7 +3314,8 @@ app.post('/api/university/pay', (req, res) => {
       id: `univ-pay-${Date.now()}`,
       voucherNo,
       paymentDate: new Date().toISOString(),
-      rollNo: student.rollNo,
+      rollNo: student.rollNo || student.enrollmentNo || student.id,
+      studentId: student.id,
       studentName: student.fullName || student.studentName,
       fatherName: student.fatherName || '',
       courseName: student.courseName,
@@ -3322,9 +3353,9 @@ app.put('/api/university/student/:rollNo/fee', (req, res) => {
     const { universityFee, universityName, collegeName } = req.body;
 
     const db = readDB();
-    const student = (db.students || []).find(s => s.rollNo.toUpperCase() === rollNo.trim().toUpperCase());
+    const student = findStudent(db.students, rollNo);
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student with roll number ${rollNo} not found.` });
+      return res.status(404).json({ success: false, message: `Student with identifier "${rollNo}" not found.` });
     }
 
     if (universityFee !== undefined) {

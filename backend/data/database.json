@@ -324,17 +324,17 @@
       "currentSatra": "July",
       "currentClass": "SEM-1",
       "currentSemester": 1,
-      "studentFee": 0,
-      "courseFee": 0,
+      "studentFee": 30000,
+      "courseFee": 30000,
       "admissionFee": 0,
-      "totalFee": 0,
-      "scholarshipAmount": 0,
-      "netTotalFee": 0,
+      "totalFee": 57000,
+      "scholarshipAmount": 27000,
+      "netTotalFee": 57000,
       "courseFeePaid": 0,
       "admissionFeePaid": 0,
       "initialPayment": 0,
       "totalPaid": 0,
-      "balanceDue": 0,
+      "balanceDue": 57000,
       "universityFee": 0,
       "universityPaid": 0,
       "universityDue": 0,
@@ -351,7 +351,26 @@
       "documents": {
         "student_image": "",
         "photo": ""
-      }
+      },
+      "academicFee": 30000,
+      "updatedAt": "2026-09-17T06:41:23.830Z",
+      "scholarshipYear1": 12000,
+      "scholarshipYear2": 15000,
+      "scholarshipHistory": [
+        {
+          "id": "SCH-1789627283830",
+          "date": "2026-09-17",
+          "year": "All Years",
+          "yearLabel": "Annual Scholarship Breakdown",
+          "year1": 12000,
+          "year2": 15000,
+          "year3": 0,
+          "year4": 0,
+          "total": 27000,
+          "remark": "Scholarship updated by admin",
+          "updatedAt": "2026-09-17T06:41:23.830Z"
+        }
+      ]
     },
     {
       "id": "std-leg-1789560000001",
