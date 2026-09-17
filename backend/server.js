@@ -3981,21 +3981,60 @@ app.get('/api/colleges', (req, res) => {
     let colleges = db.colleges || [];
 
     if (universityId && universityId !== 'ALL') {
-      colleges = colleges.filter(c => 
-        c.universityId === universityId || 
-        (universityId === 'univ-mcbu' && (c.universityId === 'univ-1789571739471-591' || (c.universityName || '').toLowerCase().includes('mcbu') || (c.universityName || '').toLowerCase().includes('chhatrasal')))
-      );
+      const uId = universityId.toLowerCase();
+      colleges = colleges.filter(c => {
+        if (c.universityId === universityId) return true;
+        const cUnivId = (c.universityId || '').toLowerCase();
+        const cu = (c.universityName || '').toLowerCase();
+        if (uId === 'univ-mcbu' || uId.includes('mcbu') || uId.includes('chhatrasal')) {
+          return cUnivId.includes('mcbu') || cu.includes('mcbu') || cu.includes('chhatrasal');
+        }
+        if (uId.includes('subharti') || uId.includes('bharti')) {
+          return cUnivId.includes('subharti') || cu.includes('subharti') || cu.includes('bharti');
+        }
+        if (uId.includes('ies')) {
+          return cUnivId.includes('ies') || cu.includes('ies');
+        }
+        if (uId.includes('mcrpv') || uId.includes('makhanlal')) {
+          return cUnivId.includes('mcrpv') || cu.includes('mcrpv') || cu.includes('makhanlal');
+        }
+        if (uId.includes('bhabha')) {
+          return cUnivId.includes('bhabha') || cu.includes('bhabha');
+        }
+        if (uId.includes('gyanveer')) {
+          return cUnivId.includes('gyanveer') || cu.includes('gyanveer');
+        }
+        if (uId.includes('mmyvv') || uId.includes('maharishi') || uId.includes('vedic')) {
+          return cUnivId.includes('mmyvv') || cu.includes('mmyvv') || cu.includes('maharishi') || cu.includes('vedic');
+        }
+        if (uId.includes('mpu') || uId.includes('madhyanchal')) {
+          return cUnivId.includes('mpu') || cu.includes('mpu') || cu.includes('madhyanchal');
+        }
+        if (uId.includes('sku') || uId.includes('krishna')) {
+          return cUnivId.includes('sku') || cu.includes('sku') || cu.includes('krishna');
+        }
+        if (uId.includes('mgcgv') || uId.includes('chitrakoot') || uId.includes('gramodaya')) {
+          return cUnivId.includes('mgcgv') || cu.includes('chitrakoot') || cu.includes('gramodaya');
+        }
+        return false;
+      });
     } else if (universityName && universityName !== 'ALL') {
       const uq = universityName.toLowerCase().trim();
       colleges = colleges.filter(c => {
         const cu = (c.universityName || '').toLowerCase();
         return cu === uq ||
-               (uq.includes('mcbu') && (cu.includes('mcbu') || cu.includes('chhatrasal'))) ||
-               (uq.includes('chhatrasal') && (cu.includes('chhatrasal') || cu.includes('mcbu'))) ||
-               (uq.includes('subharti') && cu.includes('subharti')) ||
+               cu.includes(uq) ||
+               uq.includes(cu) ||
+               ((uq.includes('mcbu') || uq.includes('chhatrasal')) && (cu.includes('mcbu') || cu.includes('chhatrasal'))) ||
+               ((uq.includes('subharti') || uq.includes('bharti')) && (cu.includes('subharti') || cu.includes('bharti'))) ||
                (uq.includes('ies') && cu.includes('ies')) ||
-               (uq.includes('mcrpv') && (cu.includes('mcrpv') || cu.includes('makhanlal'))) ||
-               (uq.includes('makhanlal') && (cu.includes('makhanlal') || cu.includes('mcrpv')));
+               ((uq.includes('mcrpv') || uq.includes('makhanlal')) && (cu.includes('mcrpv') || cu.includes('makhanlal'))) ||
+               (uq.includes('bhabha') && cu.includes('bhabha')) ||
+               (uq.includes('gyanveer') && cu.includes('gyanveer')) ||
+               ((uq.includes('mmyvv') || uq.includes('maharishi') || uq.includes('vedic')) && (cu.includes('mmyvv') || cu.includes('maharishi') || cu.includes('vedic'))) ||
+               ((uq.includes('mpu') || uq.includes('madhyanchal')) && (cu.includes('mpu') || cu.includes('madhyanchal'))) ||
+               ((uq.includes('sku') || uq.includes('shri krishna')) && (cu.includes('sku') || cu.includes('krishna'))) ||
+               ((uq.includes('chitrakoot') || uq.includes('gramodaya') || uq.includes('mgcgv')) && (cu.includes('chitrakoot') || cu.includes('gramodaya') || cu.includes('mgcgv')));
       });
     }
 

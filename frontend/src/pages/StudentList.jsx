@@ -1149,7 +1149,21 @@ export default function StudentList({
 
     if (appliedUniversity !== 'all') {
       const univ = (s.universityName || s.collegeName || '').toLowerCase();
-      if (univ && !univ.includes(appliedUniversity.toLowerCase())) return false;
+      const target = appliedUniversity.toLowerCase();
+      const isMcbu = (target.includes('mcbu') || target.includes('chhatrasal')) && (univ.includes('mcbu') || univ.includes('chhatrasal'));
+      const isSubharti = (target.includes('subharti') || target.includes('bharti')) && (univ.includes('subharti') || univ.includes('bharti'));
+      const isIes = target.includes('ies') && univ.includes('ies');
+      const isMcrpv = (target.includes('mcrpv') || target.includes('makhanlal')) && (univ.includes('mcrpv') || univ.includes('makhanlal'));
+      const isBhabha = target.includes('bhabha') && univ.includes('bhabha');
+      const isGyanveer = target.includes('gyanveer') && univ.includes('gyanveer');
+      const isMmyvv = (target.includes('mmyvv') || target.includes('maharishi') || target.includes('vedic')) && (univ.includes('mmyvv') || univ.includes('maharishi') || univ.includes('vedic'));
+      const isMpu = (target.includes('mpu') || target.includes('madhyanchal')) && (univ.includes('mpu') || univ.includes('madhyanchal'));
+      const isSku = (target.includes('sku') || target.includes('krishna')) && (univ.includes('sku') || univ.includes('krishna'));
+      const isChitrakoot = (target.includes('chitrakoot') || target.includes('gramodaya') || target.includes('mgcgv')) && (univ.includes('chitrakoot') || univ.includes('gramodaya') || univ.includes('mgcgv'));
+
+      if (!univ.includes(target) && !target.includes(univ) && !isMcbu && !isSubharti && !isIes && !isMcrpv && !isBhabha && !isGyanveer && !isMmyvv && !isMpu && !isSku && !isChitrakoot) {
+        return false;
+      }
     }
 
     if (!q) return true;
@@ -4570,9 +4584,6 @@ export default function StudentList({
                         {universitiesList.map(u => (
                           <option key={u.id} value={u.name}>{u.name} {u.shortName ? `(${u.shortName})` : ''}</option>
                         ))}
-                        <option value="Maharaja Chhatrasal Bundelkhand University (MCBU Chhatarpur)">MCBU Chhatarpur</option>
-                        <option value="Makhanlal Chaturvedi National University (MCU Bhopal)">MCU Bhopal</option>
-                        <option value="Barkatullah University (BU Bhopal)">BU Bhopal</option>
                       </select>
                     </div>
 
@@ -4591,11 +4602,18 @@ export default function StudentList({
                             const tu = newCourseData.universityName.toLowerCase();
                             const cu = (c.universityName || '').toLowerCase();
                             if (cu === tu) return true;
+                            if (cu && tu && (cu.includes(tu) || tu.includes(cu))) return true;
                             if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
-                            if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
+                            if (tu.includes('subharti') || tu.includes('bharti')) return cu.includes('subharti') || cu.includes('bharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
                             if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
                             if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
-                            return cu.includes(tu.split(' ')[0]);
+                            if (tu.includes('bhabha')) return cu.includes('bhabha');
+                            if (tu.includes('gyanveer')) return cu.includes('gyanveer');
+                            if (tu.includes('mmyvv') || tu.includes('maharishi') || tu.includes('vedic')) return cu.includes('mmyvv') || cu.includes('maharishi') || cu.includes('vedic');
+                            if (tu.includes('mpu') || tu.includes('madhyanchal')) return cu.includes('mpu') || cu.includes('madhyanchal');
+                            if (tu.includes('sku') || tu.includes('krishna')) return cu.includes('sku') || cu.includes('krishna');
+                            if (tu.includes('chitrakoot') || tu.includes('gramodaya') || tu.includes('mgcgv')) return cu.includes('chitrakoot') || cu.includes('gramodaya') || cu.includes('mgcgv');
+                            return false;
                           })
                           .map(c => (
                             <option key={c.id} value={c.name}>{c.code ? `${c.code} - ` : ''}{c.name}</option>

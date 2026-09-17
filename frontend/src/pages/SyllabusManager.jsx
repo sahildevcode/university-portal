@@ -32,8 +32,38 @@ import {
 // Default initial universities
 const INITIAL_UNIVERSITIES = [
   {
+    id: 'univ-1789571739471-463',
+    name: 'Bhabha University, Bhopal (M.P)',
+    code: 'BHABHA',
+    shortName: 'Bhabha University',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-197',
+    name: 'Gyanveer University, Sagar (M.P)',
+    code: 'GYANVEER',
+    shortName: 'Gyanveer University',
+    city: 'Sagar',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-940',
+    name: 'IES University, Bhopal (M.P)',
+    code: 'IES',
+    shortName: 'IES University',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    website: 'https://iesuniversity.ac.in',
+    establishedYear: 2019,
+    status: 'Active',
+    description: 'UGC & AICTE recognized university offering engineering, pharmacy, and management education.'
+  },
+  {
     id: 'univ-mcbu',
-    name: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    name: 'MCBU - Maharaja Chhatrasal Bundelkhand University Chhatarpur (M.P.)',
     shortName: 'MCBU',
     code: 'MCBU',
     city: 'Chhatarpur',
@@ -42,30 +72,6 @@ const INITIAL_UNIVERSITIES = [
     establishedYear: 2015,
     status: 'Active',
     description: 'State university in Chhatarpur district overseeing government and affiliated higher education colleges.'
-  },
-  {
-    id: 'univ-subharti',
-    name: 'Subharti University Meerut',
-    shortName: 'Subharti / I.S.U. Bharti',
-    code: 'SUBHARTI',
-    city: 'Meerut',
-    state: 'Uttar Pradesh',
-    website: 'https://subharti.org',
-    establishedYear: 2008,
-    status: 'Active',
-    description: 'UGC & NAAC A Grade recognized university offering multidisciplinary programs.'
-  },
-  {
-    id: 'univ-ies',
-    name: 'IES University, Bhopal (M.P)',
-    shortName: 'IES University',
-    code: 'IES',
-    city: 'Bhopal',
-    state: 'Madhya Pradesh',
-    website: 'https://iesuniversity.ac.in',
-    establishedYear: 2019,
-    status: 'Active',
-    description: 'UGC & AICTE recognized university offering engineering, pharmacy, and management education.'
   },
   {
     id: 'univ-1789571739470-506',
@@ -78,6 +84,60 @@ const INITIAL_UNIVERSITIES = [
     establishedYear: 1990,
     status: 'Active',
     description: 'National university for journalism, media, computer science, and mass communications.'
+  },
+  {
+    id: 'univ-1789571739471-295',
+    name: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    code: 'MMYVV',
+    shortName: 'MMYVV Jabalpur',
+    city: 'Jabalpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-mpu',
+    name: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    code: 'MPU01',
+    shortName: 'MPU Bhopal',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    website: 'https://mpu.ac.in',
+    establishedYear: 2018,
+    status: 'Active',
+    description: 'Premier private university offering multidisciplinary engineering, management, education and pharmacy programs.'
+  },
+  {
+    id: 'univ-1789571739471-663',
+    name: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    code: 'SKU',
+    shortName: 'Shri Krishna University',
+    city: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-15',
+    name: 'Subharti University Meerut',
+    code: 'SUBHARTI',
+    shortName: 'Subharti University',
+    city: 'Meerut',
+    state: 'Uttar Pradesh',
+    website: 'https://subharti.org',
+    establishedYear: 2008,
+    status: 'Active',
+    description: 'UGC & NAAC A Grade recognized university offering multidisciplinary programs.'
+  },
+  {
+    id: 'univ-mgcgv',
+    name: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    code: 'MGCGV',
+    shortName: 'Gramodaya Vishwavidyalaya Chitrakoot',
+    city: 'Chitrakoot',
+    state: 'Madhya Pradesh',
+    website: 'https://mgcgvchitrakoot.com',
+    establishedYear: 1991,
+    status: 'Active',
+    description: 'First rural university in India established by Bharat Ratna Nanaji Deshmukh in Chitrakoot.'
   }
 ];
 
@@ -293,27 +353,92 @@ const INITIAL_COLLEGES = [
     state: 'Madhya Pradesh',
     status: 'Active'
   },
-  // Subharti University Campus
+  // 8 Partner Universities Autonomous / Campus Colleges
   {
-    id: 'col-subharti-campus',
-    universityId: 'univ-subharti',
+    id: 'col-bhabha',
+    universityId: 'univ-1789571739471-463',
+    universityName: 'Bhabha University, Bhopal (M.P)',
+    name: 'Bhabha University, Bhopal (M.P)',
+    code: 'BHABHA',
+    shortName: 'Bhabha University',
+    district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-gyanveer',
+    universityId: 'univ-1789571739470-197',
+    universityName: 'Gyanveer University, Sagar (M.P)',
+    name: 'Gyanveer University, Sagar (M.P)',
+    code: 'GYANVEER',
+    shortName: 'Gyanveer University',
+    district: 'Sagar',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-ies',
+    universityId: 'univ-1789571739470-940',
+    universityName: 'IES University, Bhopal (M.P)',
+    name: 'IES University, Bhopal (M.P)',
+    code: 'IES',
+    shortName: 'IES University',
+    district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-mmyvv',
+    universityId: 'univ-1789571739471-295',
+    universityName: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    name: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    code: 'MMYVV',
+    shortName: 'MMYVV Jabalpur',
+    district: 'Jabalpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-mpu',
+    universityId: 'univ-mpu',
+    universityName: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    name: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    code: 'MPU',
+    shortName: 'MPU Bhopal',
+    district: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-sku',
+    universityId: 'univ-1789571739471-663',
+    universityName: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    name: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    code: 'SKU',
+    shortName: 'Shri Krishna University',
+    district: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'col-subharti',
+    universityId: 'univ-1789571739470-15',
     universityName: 'Subharti University Meerut',
+    name: 'Subharti University Meerut',
     code: 'SUBHARTI',
-    name: 'Subharti University Meerut (Campus)',
-    shortName: 'Subharti University Campus',
+    shortName: 'Subharti University',
     district: 'Meerut',
     state: 'Uttar Pradesh',
     status: 'Active'
   },
-  // IES University Campus
   {
-    id: 'col-ies-campus',
-    universityId: 'univ-ies',
-    universityName: 'IES University, Bhopal (M.P)',
-    code: 'IES',
-    name: 'IES University, Bhopal (Campus)',
-    shortName: 'IES University Campus',
-    district: 'Bhopal',
+    id: 'col-mgcgv',
+    universityId: 'univ-mgcgv',
+    universityName: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    name: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    code: 'MGCGV',
+    shortName: 'Gramodaya Vishwavidyalaya Chitrakoot',
+    district: 'Satna / Chitrakoot',
     state: 'Madhya Pradesh',
     status: 'Active'
   },

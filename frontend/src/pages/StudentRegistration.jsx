@@ -10,8 +10,35 @@ import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 // Initial Fallback Partner Universities
 const FALLBACK_UNIVERSITIES = [
   {
+    id: 'univ-1789571739471-463',
+    name: 'Bhabha University, Bhopal (M.P)',
+    code: 'BHABHA',
+    shortName: 'Bhabha University',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-197',
+    name: 'Gyanveer University, Sagar (M.P)',
+    code: 'GYANVEER',
+    shortName: 'Gyanveer University',
+    city: 'Sagar',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-940',
+    name: 'IES University, Bhopal (M.P)',
+    code: 'IES',
+    shortName: 'IES University',
+    city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
     id: 'univ-mcbu',
-    name: 'Maharaja Chhatrasal Bundelkhand University, Chhatarpur (MCBU)',
+    name: 'MCBU - Maharaja Chhatrasal Bundelkhand University Chhatarpur (M.P.)',
     shortName: 'MCBU',
     code: 'MCBU',
     city: 'Chhatarpur',
@@ -19,29 +46,56 @@ const FALLBACK_UNIVERSITIES = [
     status: 'Active'
   },
   {
-    id: 'univ-subharti',
-    name: 'Subharti University Meerut',
-    shortName: 'Subharti / I.S.U. Bharti',
-    code: 'SUBHARTI',
-    city: 'Meerut',
-    state: 'Uttar Pradesh',
-    status: 'Active'
-  },
-  {
-    id: 'univ-ies',
-    name: 'IES University, Bhopal (M.P)',
-    shortName: 'IES University',
-    code: 'IES',
+    id: 'univ-1789571739470-506',
+    name: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
+    code: 'MCRPV',
+    shortName: 'MCRPV Bhopal',
     city: 'Bhopal',
     state: 'Madhya Pradesh',
     status: 'Active'
   },
   {
-    id: 'univ-1789571739470-506',
-    name: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya',
-    shortName: 'MCRPV Bhopal',
-    code: 'MCRPV',
+    id: 'univ-1789571739471-295',
+    name: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    code: 'MMYVV',
+    shortName: 'MMYVV Jabalpur',
+    city: 'Jabalpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-mpu',
+    name: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    code: 'MPU01',
+    shortName: 'MPU Bhopal',
     city: 'Bhopal',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739471-663',
+    name: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    code: 'SKU',
+    shortName: 'Shri Krishna University',
+    city: 'Chhatarpur',
+    state: 'Madhya Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-1789571739470-15',
+    name: 'Subharti University Meerut',
+    code: 'SUBHARTI',
+    shortName: 'Subharti University',
+    city: 'Meerut',
+    state: 'Uttar Pradesh',
+    status: 'Active'
+  },
+  {
+    id: 'univ-mgcgv',
+    name: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    code: 'MGCGV',
+    shortName: 'Gramodaya Vishwavidyalaya Chitrakoot',
+    city: 'Chitrakoot',
     state: 'Madhya Pradesh',
     status: 'Active'
   }
@@ -221,25 +275,78 @@ const FALLBACK_COLLEGES = [
     shortName: 'Crystal Shiksha Prasar Samiti Harpalpur',
     district: 'Chhatarpur'
   },
-  // Subharti University Campus
+  // 8 Partner Universities Autonomous / Campus Colleges
   {
-    id: 'col-subharti-campus',
-    universityId: 'univ-subharti',
+    id: 'col-bhabha',
+    universityId: 'univ-1789571739471-463',
+    universityName: 'Bhabha University, Bhopal (M.P)',
+    name: 'Bhabha University, Bhopal (M.P)',
+    code: 'BHABHA',
+    shortName: 'Bhabha University',
+    district: 'Bhopal'
+  },
+  {
+    id: 'col-gyanveer',
+    universityId: 'univ-1789571739470-197',
+    universityName: 'Gyanveer University, Sagar (M.P)',
+    name: 'Gyanveer University, Sagar (M.P)',
+    code: 'GYANVEER',
+    shortName: 'Gyanveer University',
+    district: 'Sagar'
+  },
+  {
+    id: 'col-ies',
+    universityId: 'univ-1789571739470-940',
+    universityName: 'IES University, Bhopal (M.P)',
+    name: 'IES University, Bhopal (M.P)',
+    code: 'IES',
+    shortName: 'IES University',
+    district: 'Bhopal'
+  },
+  {
+    id: 'col-mmyvv',
+    universityId: 'univ-1789571739471-295',
+    universityName: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    name: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)',
+    code: 'MMYVV',
+    shortName: 'MMYVV Jabalpur',
+    district: 'Jabalpur'
+  },
+  {
+    id: 'col-mpu',
+    universityId: 'univ-mpu',
+    universityName: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    name: 'MPU - Madhyanchal Professional University, Bhopal (M.P)',
+    code: 'MPU',
+    shortName: 'MPU Bhopal',
+    district: 'Bhopal'
+  },
+  {
+    id: 'col-sku',
+    universityId: 'univ-1789571739471-663',
+    universityName: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    name: 'SKU - Shri Krishna University Chhatarpur (M.P.)',
+    code: 'SKU',
+    shortName: 'Shri Krishna University',
+    district: 'Chhatarpur'
+  },
+  {
+    id: 'col-subharti',
+    universityId: 'univ-1789571739470-15',
     universityName: 'Subharti University Meerut',
+    name: 'Subharti University Meerut',
     code: 'SUBHARTI',
-    name: 'Subharti University Meerut (Campus)',
-    shortName: 'Subharti University Campus',
+    shortName: 'Subharti University',
     district: 'Meerut'
   },
-  // IES University Campus
   {
-    id: 'col-ies-campus',
-    universityId: 'univ-ies',
-    universityName: 'IES University, Bhopal (M.P)',
-    code: 'IES',
-    name: 'IES University, Bhopal (Campus)',
-    shortName: 'IES University Campus',
-    district: 'Bhopal'
+    id: 'col-mgcgv',
+    universityId: 'univ-mgcgv',
+    universityName: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    name: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya',
+    code: 'MGCGV',
+    shortName: 'Gramodaya Vishwavidyalaya Chitrakoot',
+    district: 'Satna / Chitrakoot'
   },
   // 3 MCRPV Affiliated Colleges
   {
@@ -706,6 +813,49 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     }
   }, [staffUser, adminUser]);
 
+  // Helper to accurately filter colleges for any selected university
+  const getAffiliatedCollegesForUniv = (univObj, univNameInput) => {
+    const sId = univObj?.id ? String(univObj.id).toLowerCase() : '';
+    const sName = (univNameInput || univObj?.name || '').toLowerCase();
+
+    const matches = collegesList.filter(c => {
+      if (sId && c.universityId && String(c.universityId).toLowerCase() === sId) return true;
+      const cu = (c.universityName || '').toLowerCase();
+      if (cu === sName) return true;
+      if (cu && sName && (cu.includes(sName) || sName.includes(cu))) return true;
+
+      if (sId.includes('mcbu') || sName.includes('mcbu') || sName.includes('chhatrasal')) {
+        return (c.universityId && String(c.universityId).toLowerCase().includes('mcbu')) || cu.includes('mcbu') || cu.includes('chhatrasal');
+      }
+      if (sId.includes('subharti') || sName.includes('subharti') || sName.includes('bharti')) {
+        return (c.universityId && String(c.universityId).toLowerCase().includes('subharti')) || cu.includes('subharti') || cu.includes('bharti');
+      }
+      if (sId.includes('ies') || sName.includes('ies')) {
+        return (c.universityId && String(c.universityId).toLowerCase().includes('ies')) || cu.includes('ies');
+      }
+      if (sId.includes('mcrpv') || sName.includes('mcrpv') || sName.includes('makhanlal')) {
+        return (c.universityId && String(c.universityId).toLowerCase().includes('mcrpv')) || cu.includes('mcrpv') || cu.includes('makhanlal');
+      }
+      if (sName.includes('bhabha')) return cu.includes('bhabha');
+      if (sName.includes('gyanveer')) return cu.includes('gyanveer');
+      if (sName.includes('mmyvv') || sName.includes('maharishi') || sName.includes('vedic')) {
+        return cu.includes('mmyvv') || cu.includes('maharishi') || cu.includes('vedic');
+      }
+      if (sName.includes('mpu') || sName.includes('madhyanchal')) {
+        return cu.includes('mpu') || cu.includes('madhyanchal');
+      }
+      if (sName.includes('sku') || sName.includes('krishna')) {
+        return cu.includes('sku') || cu.includes('krishna');
+      }
+      if (sName.includes('chitrakoot') || sName.includes('gramodaya') || sName.includes('mgcgv')) {
+        return cu.includes('chitrakoot') || cu.includes('gramodaya') || cu.includes('mgcgv');
+      }
+      return false;
+    });
+
+    return matches;
+  };
+
   // Derive affiliated colleges for current selected university
   const selectedUnivObj = universitiesList.find(u => 
     u.name === formData.University_Name ||
@@ -718,27 +868,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     ))
   ) || universitiesList[0];
 
-  const affiliatedColleges = collegesList.filter(c => {
-    if (!selectedUnivObj) return true;
-    const sId = selectedUnivObj.id;
-    const sName = (selectedUnivObj.name || '').toLowerCase();
-    const cUnivName = (c.universityName || '').toLowerCase();
-    
-    if (c.universityId === sId || cUnivName === sName) return true;
-    if (sId === 'univ-mcbu' || sName.includes('mcbu') || sName.includes('chhatrasal')) {
-      return c.universityId === 'univ-mcbu' || cUnivName.includes('mcbu') || cUnivName.includes('chhatrasal');
-    }
-    if (sId === 'univ-subharti' || sId === 'univ-1789571739470-15' || sName.includes('subharti')) {
-      return c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15' || cUnivName.includes('subharti');
-    }
-    if (sId === 'univ-ies' || sId === 'univ-1789571739470-940' || sName.includes('ies')) {
-      return c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940' || cUnivName.includes('ies');
-    }
-    if (sId === 'univ-1789571739470-506' || sName.includes('mcrpv') || sName.includes('makhanlal')) {
-      return c.universityId === 'univ-1789571739470-506' || cUnivName.includes('mcrpv') || cUnivName.includes('makhanlal');
-    }
-    return false;
-  });
+  const affiliatedColleges = getAffiliatedCollegesForUniv(selectedUnivObj, formData.University_Name);
 
   // Current program metadata (branches under selected degree)
   const currentProgram = ACADEMIC_PROGRAMS.find(p => p.degree === selectedDegree) || ACADEMIC_PROGRAMS[0];
@@ -767,22 +897,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   // Handle University Change -> filters colleges and defaults to first affiliated college
   const handleUniversityChange = (e) => {
     const newUnivName = e.target.value;
-    const targetUniv = universitiesList.find(u => u.name === newUnivName);
-    const targetId = targetUniv?.id;
-
-    const newAffiliated = collegesList.filter(c => {
-      if (targetId && c.universityId === targetId) return true;
-      const cu = (c.universityName || '').toLowerCase();
-      const tu = (newUnivName || '').toLowerCase();
-      if (cu === tu) return true;
-      if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
-      if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
-      if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
-      if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
-      return false;
-    });
-
-    const firstCollegeName = newAffiliated[0]?.name || (targetUniv ? `${targetUniv.name} Campus` : '');
+    const targetUniv = universitiesList.find(u => u.name === newUnivName) || { name: newUnivName };
+    const newAffiliated = getAffiliatedCollegesForUniv(targetUniv, newUnivName);
+    const firstCollegeName = newAffiliated[0]?.name || targetUniv?.name || newUnivName;
 
     setFormData(prev => ({
       ...prev,
@@ -838,27 +955,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     ))
   ) || universitiesList[0];
 
-  const secAffiliatedColleges = collegesList.filter(c => {
-    if (!secSelectedUnivObj) return true;
-    const sId = secSelectedUnivObj.id;
-    const sName = (secSelectedUnivObj.name || '').toLowerCase();
-    const cUnivName = (c.universityName || '').toLowerCase();
-    
-    if (c.universityId === sId || cUnivName === sName) return true;
-    if (sId === 'univ-mcbu' || sName.includes('mcbu') || sName.includes('chhatrasal')) {
-      return c.universityId === 'univ-mcbu' || cUnivName.includes('mcbu') || cUnivName.includes('chhatrasal');
-    }
-    if (sId === 'univ-subharti' || sId === 'univ-1789571739470-15' || sName.includes('subharti')) {
-      return c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15' || cUnivName.includes('subharti');
-    }
-    if (sId === 'univ-ies' || sId === 'univ-1789571739470-940' || sName.includes('ies')) {
-      return c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940' || cUnivName.includes('ies');
-    }
-    if (sId === 'univ-1789571739470-506' || sName.includes('mcrpv') || sName.includes('makhanlal')) {
-      return c.universityId === 'univ-1789571739470-506' || cUnivName.includes('mcrpv') || cUnivName.includes('makhanlal');
-    }
-    return false;
-  });
+  const secAffiliatedColleges = getAffiliatedCollegesForUniv(secSelectedUnivObj, secFormData.University_Name);
 
   const secCurrentProgram = ACADEMIC_PROGRAMS.find(p => p.degree === secSelectedDegree) || ACADEMIC_PROGRAMS[0];
 
@@ -884,22 +981,9 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
 
   const handleSecUniversityChange = (e) => {
     const newUnivName = e.target.value;
-    const targetUniv = universitiesList.find(u => u.name === newUnivName);
-    const targetId = targetUniv?.id;
-
-    const newAffiliated = collegesList.filter(c => {
-      if (targetId && c.universityId === targetId) return true;
-      const cu = (c.universityName || '').toLowerCase();
-      const tu = (newUnivName || '').toLowerCase();
-      if (cu === tu) return true;
-      if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
-      if (tu.includes('subharti')) return cu.includes('subharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
-      if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
-      if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
-      return false;
-    });
-
-    const firstCollegeName = newAffiliated[0]?.name || (targetUniv ? `${targetUniv.name} Campus` : '');
+    const targetUniv = universitiesList.find(u => u.name === newUnivName) || { name: newUnivName };
+    const newAffiliated = getAffiliatedCollegesForUniv(targetUniv, newUnivName);
+    const firstCollegeName = newAffiliated[0]?.name || targetUniv?.name || newUnivName;
 
     setSecFormData(prev => ({
       ...prev,
