@@ -1953,7 +1953,7 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { academicFee, remark, feeDate, currentClass, paymentMode, refNo, receivedBy, receiptNo } = req.body;
+  const { academicFee, remark, feeDate, currentClass, paymentMode, refNo, receivedBy, receiptNo, purpose } = req.body;
   const acadFee = Number(academicFee) >= 0 ? Number(academicFee) : 0;
   student.academicFee = acadFee;
   student.studentFee = acadFee;
@@ -1976,7 +1976,7 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
       date: dateStr,
       feeDate: dateStr,
       currentClass: currentClass || student.currentClass || 'SEM-1',
-      purpose: 'Center Fee (Academic Fee)',
+      purpose: purpose || 'Center Fee (Academic Fee)',
       paymentMode: paymentMode || 'Official Record',
       refNo: refNo || '-',
       receivedBy: receivedBy || 'Admin Desk',
@@ -2057,7 +2057,8 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     paymentMode,
     refNo,
     receivedBy,
-    receiptNo
+    receiptNo,
+    purpose
   } = req.body;
 
   // If specific year update was sent
@@ -2105,7 +2106,7 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     date: dateStr,
     feeDate: dateStr,
     currentClass: currentClass || student.currentClass || 'SEM-1',
-    purpose: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
+    purpose: purpose || yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
     year: year || 'All Years',
     yearLabel: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
     paymentMode: paymentMode || 'Govt Scholarship Grant',

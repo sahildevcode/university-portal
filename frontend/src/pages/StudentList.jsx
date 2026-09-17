@@ -412,12 +412,9 @@ export default function StudentList({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             academicFee: amt,
-            remark: feeDeskRemark,
+            purpose: feeDeskPurpose || 'Center Fee',
             feeDate: feeDeskDate,
-            currentClass: feeDeskClass,
-            paymentMode: feeDeskModePayment || 'Official Record',
-            refNo: feeDeskRefNo,
-            receivedBy: feeDeskReceivedBy
+            currentClass: feeDeskClass
           })
         });
         const data = await res.json();
@@ -448,15 +445,12 @@ export default function StudentList({
             scholarshipYear3: y3Val,
             scholarshipYear4: y4Val,
             scholarshipAmount: totalSch,
+            purpose: feeDeskPurpose || 'Scholarship',
             year: scholarshipActiveYear,
-            yearLabel: scholarshipActiveYear === 'year1' ? 'First Year Scholarship' : scholarshipActiveYear === 'year2' ? 'Second Year Scholarship' : scholarshipActiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship',
+            yearLabel: feeDeskPurpose || (scholarshipActiveYear === 'year1' ? 'First Year Scholarship' : scholarshipActiveYear === 'year2' ? 'Second Year Scholarship' : scholarshipActiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship'),
             amount: scholarshipActiveYear === 'year1' ? y1Val : scholarshipActiveYear === 'year2' ? y2Val : scholarshipActiveYear === 'year3' ? y3Val : y4Val,
-            remark: feeDeskRemark,
             feeDate: feeDeskDate,
-            currentClass: feeDeskClass,
-            paymentMode: feeDeskModePayment || 'Govt Scholarship Grant',
-            refNo: feeDeskRefNo,
-            receivedBy: feeDeskReceivedBy
+            currentClass: feeDeskClass
           })
         });
         const data = await res.json();
@@ -606,10 +600,7 @@ export default function StudentList({
             academicFee: editingPaymentModal.amountPaid,
             feeDate: editingPaymentModal.feeDate,
             currentClass: editingPaymentModal.currentClass,
-            paymentMode: editingPaymentModal.paymentMode,
-            refNo: editingPaymentModal.refNo,
-            receivedBy: editingPaymentModal.receivedBy,
-            remark: editingPaymentModal.remark,
+            purpose: editingPaymentModal.purpose,
             receiptNo: editingPaymentModal.receiptNo
           })
         });
@@ -630,14 +621,11 @@ export default function StudentList({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             year: yKey,
-            yearLabel: editingPaymentModal.yearLabel || editingPaymentModal.purpose,
+            yearLabel: editingPaymentModal.purpose || editingPaymentModal.yearLabel,
+            purpose: editingPaymentModal.purpose,
             amount: Number(editingPaymentModal.amountPaid) || 0,
             feeDate: editingPaymentModal.feeDate,
             currentClass: editingPaymentModal.currentClass,
-            paymentMode: editingPaymentModal.paymentMode,
-            refNo: editingPaymentModal.refNo,
-            receivedBy: editingPaymentModal.receivedBy,
-            remark: editingPaymentModal.remark,
             receiptNo: editingPaymentModal.receiptNo
           })
         });
@@ -2265,6 +2253,24 @@ export default function StudentList({
                         </select>
                       </div>
 
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose* :</label>
+                        <select
+                          value={feeDeskPurpose}
+                          onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="Center Fee">Center Fee</option>
+                          <option value="Academic Fee">Academic Fee</option>
+                          <option value="Tuition Fee">Tuition Fee</option>
+                          <option value="Annual Course Fee">Annual Course Fee</option>
+                          <option value="Admission Fee">Admission Fee</option>
+                          <option value="Registration Fee">Registration Fee</option>
+                          <option value="Examination Fee">Examination Fee</option>
+                          <option value="Other Fee">Other Fee</option>
+                        </select>
+                      </div>
+
                       <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] font-bold uppercase text-blue-700">Current Academic / Center Fee</span>
@@ -2294,17 +2300,6 @@ export default function StudentList({
                             Set 0
                           </button>
                         </div>
-                      </div>
-
-                      <div className="col-span-1 sm:col-span-2 lg:col-span-4">
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Remark / Reason (Optional):</label>
-                        <input
-                          type="text"
-                          value={feeDeskRemark}
-                          onChange={(e) => setFeeDeskRemark(e.target.value)}
-                          placeholder="e.g. Center fee updated as per academic session"
-                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                        />
                       </div>
                     </div>
 
@@ -2366,6 +2361,23 @@ export default function StudentList({
                           <option value="Year-1">Year-1 (1st Year Annual)</option>
                           <option value="Year-2">Year-2 (2nd Year Annual)</option>
                           <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose* :</label>
+                        <select
+                          value={feeDeskPurpose}
+                          onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="Scholarship">Scholarship</option>
+                          <option value="Government Scholarship">Government Scholarship</option>
+                          <option value="Post-Matric Scholarship">Post-Matric Scholarship</option>
+                          <option value="Merit Scholarship">Merit Scholarship</option>
+                          <option value="Special Category Scholarship">Special Category Scholarship</option>
+                          <option value="Institute Concession">Institute Concession</option>
+                          <option value="Annual Scholarship">Annual Scholarship</option>
                         </select>
                       </div>
 
@@ -2491,17 +2503,6 @@ export default function StudentList({
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="col-span-1 sm:col-span-2 lg:col-span-4">
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Remark / Reason (Optional):</label>
-                        <input
-                          type="text"
-                          value={feeDeskRemark}
-                          onChange={(e) => setFeeDeskRemark(e.target.value)}
-                          placeholder="e.g. Approved scholarship for 4 academic years"
-                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-                        />
                       </div>
                     </div>
 
@@ -2721,11 +2722,7 @@ export default function StudentList({
                             <th className="py-2.5 px-2 border-r border-slate-700 text-center w-8">#</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700">Date</th>
                             <th className="py-2.5 px-2 border-r border-slate-700 text-center">Class</th>
-                            <th className="py-2.5 px-2.5 border-r border-slate-700">Receipt No</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
-                            <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
-                            <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
-                            <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
                             <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
                           </tr>
@@ -2733,7 +2730,7 @@ export default function StudentList({
                         <tbody className="divide-y divide-slate-200">
                           {centerFeeEntries.length === 0 ? (
                             <tr>
-                              <td colSpan="10" className="py-6 text-center text-slate-400 italic">
+                              <td colSpan="6" className="py-6 text-center text-slate-400 italic">
                                 No center fee entry set for this student (Center Fee is ₹0).
                               </td>
                             </tr>
@@ -2747,11 +2744,7 @@ export default function StudentList({
                                   <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
                                   <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap font-medium text-slate-800">{cDate}</td>
                                   <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-700">{c.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
-                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono font-bold text-indigo-900">{c.receiptNo || '-'}</td>
-                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800">{c.purpose || 'Center Fee (Academic Fee)'}</td>
-                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{c.paymentMode || 'Official Record'}</td>
-                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono text-slate-600">{c.refNo || '-'}</td>
-                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{c.receivedBy || 'Admin Desk'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800 font-semibold">{c.purpose || 'Center Fee'}</td>
                                   <td className="py-2 px-2.5 border-r border-slate-200 text-right font-black font-mono text-sky-800 whitespace-nowrap">
                                     {cAmt > 0 ? `${cAmt}/-` : '0/-'}
                                   </td>
@@ -2934,11 +2927,7 @@ export default function StudentList({
                             <th className="py-2.5 px-2 border-r border-purple-800 text-center w-8">#</th>
                             <th className="py-2.5 px-2.5 border-r border-purple-800">Date</th>
                             <th className="py-2.5 px-2 border-r border-purple-800 text-center">Class</th>
-                            <th className="py-2.5 px-2.5 border-r border-purple-800">Receipt No</th>
                             <th className="py-2.5 px-2.5 border-r border-purple-800">Purpose</th>
-                            <th className="py-2.5 px-2.5 border-r border-purple-800">Payment_Mode</th>
-                            <th className="py-2.5 px-2.5 border-r border-purple-800">Ref No</th>
-                            <th className="py-2.5 px-2.5 border-r border-purple-800">Rreceived by</th>
                             <th className="py-2.5 px-2.5 border-r border-purple-800 text-right">Fee</th>
                             <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
                           </tr>
@@ -2946,7 +2935,7 @@ export default function StudentList({
                         <tbody className="divide-y divide-purple-100">
                           {scholarshipEntries.length === 0 ? (
                             <tr>
-                              <td colSpan="10" className="py-6 text-center text-slate-400 italic bg-white">
+                              <td colSpan="6" className="py-6 text-center text-slate-400 italic bg-white">
                                 No scholarship entries recorded yet for this student.
                               </td>
                             </tr>
@@ -2960,11 +2949,7 @@ export default function StudentList({
                                   <td className="py-2 px-2 border-r border-purple-100 text-center font-bold text-purple-700">{idx + 1}</td>
                                   <td className="py-2 px-2.5 border-r border-purple-100 whitespace-nowrap font-medium text-slate-800">{sDate}</td>
                                   <td className="py-2 px-2 border-r border-purple-100 text-center font-bold text-slate-700">{sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
-                                  <td className="py-2 px-2.5 border-r border-purple-100 font-mono font-bold text-purple-900">{sEntry.receiptNo || '-'}</td>
                                   <td className="py-2 px-2.5 border-r border-purple-100 font-semibold text-purple-950">{sEntry.purpose || sEntry.yearLabel || 'Scholarship'}</td>
-                                  <td className="py-2 px-2.5 border-r border-purple-100 text-slate-700">{sEntry.paymentMode || 'Govt Scholarship Grant'}</td>
-                                  <td className="py-2 px-2.5 border-r border-purple-100 font-mono text-slate-600">{sEntry.refNo || '-'}</td>
-                                  <td className="py-2 px-2.5 border-r border-purple-100 text-slate-700">{sEntry.receivedBy || 'Admin Desk'}</td>
                                   <td className="py-2 px-2.5 border-r border-purple-100 text-right font-black font-mono text-purple-900 whitespace-nowrap">
                                     {sAmt > 0 ? `${sAmt}/-` : '0/-'}
                                   </td>
@@ -3157,22 +3142,24 @@ export default function StudentList({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Payment Mode*
-                  </label>
-                  <select
-                    value={editingPaymentModal.paymentMode}
-                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, paymentMode: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Online / UPI">Online / UPI</option>
-                    <option value="Bank Transfer / NEFT">Bank Transfer / NEFT</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="DD">DD</option>
-                  </select>
-                </div>
+                {!(editingPaymentModal.isCenterFee || editingPaymentModal.isScholarship) && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Payment Mode*
+                    </label>
+                    <select
+                      value={editingPaymentModal.paymentMode}
+                      onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, paymentMode: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                    >
+                      <option value="Cash">Cash</option>
+                      <option value="Online / UPI">Online / UPI</option>
+                      <option value="Bank Transfer / NEFT">Bank Transfer / NEFT</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="DD">DD</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
@@ -3198,42 +3185,46 @@ export default function StudentList({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Transaction / Ref No
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPaymentModal.refNo}
-                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, refNo: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300 font-mono"
-                  />
-                </div>
+                {!(editingPaymentModal.isCenterFee || editingPaymentModal.isScholarship) && (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Transaction / Ref No
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPaymentModal.refNo}
+                        onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, refNo: e.target.value }))}
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300 font-mono"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Received By
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPaymentModal.receivedBy}
-                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, receivedBy: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Received By
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPaymentModal.receivedBy}
+                        onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, receivedBy: e.target.value }))}
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                      />
+                    </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Remark
-                  </label>
-                  <input
-                    type="text"
-                    value={editingPaymentModal.remark}
-                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, remark: e.target.value }))}
-                    placeholder="Optional remark or note"
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
-                  />
-                </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Remark
+                      </label>
+                      <input
+                        type="text"
+                        value={editingPaymentModal.remark}
+                        onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, remark: e.target.value }))}
+                        placeholder="Optional remark or note"
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
