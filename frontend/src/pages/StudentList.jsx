@@ -2328,35 +2328,18 @@ export default function StudentList({
                 {/* Submit Row matching reference button */}
                 <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                   {feeDeskMode === 'receive' ? (
-                    <>
-                      {/* 1. Edit / Reset Paid Fee Button */}
-                      <button
-                        type="button"
-                        disabled={feeDeskLoading}
-                        onClick={(e) => handleFeeDeskSubmit(e, 'set_paid')}
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                        title="Set or reset total paid fee directly (e.g. 0 to fix wrong entry)"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        <span>
-                          {feeDeskLoading ? 'Saving...' : (Number(feeDeskAmount) === 0 || feeDeskAmount === '' ? 'Set Paid Fee (0)' : `Set Paid Fee (₹${Number(feeDeskAmount || 0).toLocaleString('en-IN')})`)}
-                        </span>
-                      </button>
-
-                      {/* 2. Add Payment / Entry Button */}
-                      <button
-                        type="submit"
-                        disabled={feeDeskLoading}
-                        onClick={(e) => handleFeeDeskSubmit(e, 'add')}
-                        className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                        title="Add new fee installment entry"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>
-                          {feeDeskLoading ? 'Saving...' : 'Add Payment'}
-                        </span>
-                      </button>
-                    </>
+                    <button
+                      type="submit"
+                      disabled={feeDeskLoading}
+                      onClick={(e) => handleFeeDeskSubmit(e, 'add')}
+                      className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                      title="Add new fee installment entry"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>
+                        {feeDeskLoading ? 'Saving...' : 'Add Payment'}
+                      </span>
+                    </button>
                   ) : (
                     <button
                       type="submit"
