@@ -42,9 +42,11 @@ export default function StudentList({
   const [filterSession, setFilterSession] = useState('all');
   const [filterSatra, setFilterSatra] = useState('all');
   const [filterUniversity, setFilterUniversity] = useState('all');
+  const [filterCollege, setFilterCollege] = useState('all');
   const [appliedSession, setAppliedSession] = useState('all');
   const [appliedSatra, setAppliedSatra] = useState('all');
   const [appliedUniversity, setAppliedUniversity] = useState('all');
+  const [appliedCollege, setAppliedCollege] = useState('all');
 
   // Entries / Pagination state
   const [pageSize, setPageSize] = useState(10);
@@ -119,8 +121,22 @@ export default function StudentList({
   const [cancelPaymentMode, setCancelPaymentMode] = useState('Cash');
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // Default Fallback Partner Universities list (immediately available before API completes)
+  const DEFAULT_UNIVERSITIES = [
+    { id: 'univ-1789571739471-463', name: 'Bhabha University, Bhopal (M.P)', shortName: 'Bhabha University' },
+    { id: 'univ-1789571739470-197', name: 'Gyanveer University, Sagar (M.P)', shortName: 'Gyanveer University' },
+    { id: 'univ-1789571739470-940', name: 'IES University, Bhopal (M.P)', shortName: 'IES University' },
+    { id: 'univ-mcbu', name: 'MCBU - Maharaja Chhatrasal Bundelkhand University Chhatarpur (M.P.)', shortName: 'MCBU' },
+    { id: 'univ-1789571739470-506', name: 'MCRPV - Makhanlal Chaturvedi Rashtriya Patrakarita Evam Sanchar Vishwavidyalaya', shortName: 'MCRPV Bhopal' },
+    { id: 'univ-1789571739471-295', name: 'MMYVV - Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur (M.P)', shortName: 'MMYVV' },
+    { id: 'univ-mpu', name: 'MPU - Madhyanchal Professional University, Bhopal (M.P)', shortName: 'MPU Bhopal' },
+    { id: 'univ-1789571739471-663', name: 'SKU - Shri Krishna University Chhatarpur (M.P.)', shortName: 'Shri Krishna University' },
+    { id: 'univ-1789571739470-15', name: 'Subharti University Meerut', shortName: 'Subharti University' },
+    { id: 'univ-mgcgv', name: 'Mahatma Gandhi Chitrakoot Gramodaya Vishwavidyalaya', shortName: 'Gramodaya Vishwavidyalaya Chitrakoot' }
+  ];
+
   // Institution catalogs & additional course form state
-  const [universitiesList, setUniversitiesList] = useState([]);
+  const [universitiesList, setUniversitiesList] = useState(DEFAULT_UNIVERSITIES);
   const [collegesList, setCollegesList] = useState([]);
   const [allCoursesList, setAllCoursesList] = useState([]);
   const [showAddCourse, setShowAddCourse] = useState(false);
@@ -145,25 +161,80 @@ export default function StudentList({
   useEffect(() => {
     const loadInstitutions = async () => {
       try {
-        const [uRes, cRes, crsRes] = await Promise.all([
-          fetch('/api/universities'),
-          fetch('/api/colleges'),
-          fetch('/api/courses')
-        ]);
-        const [uData, cData, crsData] = await Promise.all([
-          uRes.json(),
-          cRes.json(),
-          crsRes.json()
-        ]);
-        if (uData.success) setUniversitiesList(uData.universities || []);
-        if (cData.success) setCollegesList(cData.colleges || []);
-        if (crsData.success) setAllCoursesList(crsData.courses || []);
+        const uRes = await fetch('/api/universities');
+        const uData = await uRes.json();
+        if (uData.success && Array.isArray(uData.universities) && uData.universities.length > 0) {
+          setUniversitiesList(uData.universities);
+        }
       } catch (e) {
-        console.warn('Could not load institution catalogs for student edit:', e);
+        console.warn('Could not load universities catalog:', e);
+      }
+
+      try {
+        const cRes = await fetch('/api/colleges');
+        const cData = await cRes.json();
+        if (cData.success && Array.isArray(cData.colleges) && cData.colleges.length > 0) {
+          setCollegesList(cData.colleges);
+        }
+      } catch (e) {
+        console.warn('Could not load colleges catalog:', e);
+      }
+
+      try {
+        const crsRes = await fetch('/api/courses');
+        const crsData = await crsRes.json();
+        if (crsData.success && Array.isArray(crsData.courses) && crsData.courses.length > 0) {
+          setAllCoursesList(crsData.courses);
+        }
+      } catch (e) {
+        console.warn('Could not load courses catalog:', e);
       }
     };
     loadInstitutions();
   }, []);
+
+  // Dynamic list of all universities from API / DB plus any added in future or on student records
+  const allAvailableUniversities = Array.from(new Set([
+    ...universitiesList.map(u => u.name),
+    ...students.map(s => s.universityName).filter(Boolean)
+  ])).filter(Boolean);
+
+  // Available colleges cascading dynamically from selected filterUniversity
+  const availableFilterColleges = (() => {
+    if (filterUniversity === 'all') {
+      return collegesList;
+    }
+    const targetUniv = universitiesList.find(u => u.name === filterUniversity);
+    const targetId = targetUniv?.id;
+    const tu = filterUniversity.toLowerCase();
+
+    const matched = collegesList.filter(c => {
+      if (targetId && c.universityId === targetId) return true;
+      const cu = (c.universityName || '').toLowerCase();
+      if (cu === tu) return true;
+      if (cu && tu && (cu.includes(tu) || tu.includes(cu))) return true;
+
+      if (tu.includes('mcbu') || tu.includes('chhatrasal')) return cu.includes('mcbu') || cu.includes('chhatrasal') || c.universityId === 'univ-mcbu';
+      if (tu.includes('subharti') || tu.includes('bharti')) return cu.includes('subharti') || cu.includes('bharti') || c.universityId === 'univ-subharti' || c.universityId === 'univ-1789571739470-15';
+      if (tu.includes('ies')) return cu.includes('ies') || c.universityId === 'univ-ies' || c.universityId === 'univ-1789571739470-940';
+      if (tu.includes('mcrpv') || tu.includes('makhanlal')) return cu.includes('mcrpv') || cu.includes('makhanlal') || c.universityId === 'univ-1789571739470-506';
+      if (tu.includes('bhabha')) return cu.includes('bhabha');
+      if (tu.includes('gyanveer')) return cu.includes('gyanveer');
+      if (tu.includes('mmyvv') || tu.includes('maharishi') || tu.includes('vedic')) return cu.includes('mmyvv') || cu.includes('maharishi') || cu.includes('vedic');
+      if (tu.includes('mpu') || tu.includes('madhyanchal')) return cu.includes('mpu') || cu.includes('madhyanchal');
+      if (tu.includes('sku') || tu.includes('krishna')) return cu.includes('sku') || cu.includes('krishna');
+      if (tu.includes('chitrakoot') || tu.includes('gramodaya') || tu.includes('mgcgv')) return cu.includes('chitrakoot') || cu.includes('gramodaya') || cu.includes('mgcgv');
+      return false;
+    });
+
+    if (matched.length > 0) return matched;
+    return [{ id: `col-${filterUniversity}`, name: filterUniversity, shortName: filterUniversity, code: '' }];
+  })();
+
+  const handleFilterUniversityChange = (newUniv) => {
+    setFilterUniversity(newUniv);
+    setFilterCollege('all');
+  };
 
   const fetchStudents = async (customSearch = null, customCourse = null, customSem = null, customTimeframe = null) => {
     setLoading(true);
@@ -219,6 +290,7 @@ export default function StudentList({
     setAppliedSession(filterSession);
     setAppliedSatra(filterSatra);
     setAppliedUniversity(filterUniversity);
+    setAppliedCollege(filterCollege);
     setCurrentPage(1);
   };
 
@@ -226,9 +298,11 @@ export default function StudentList({
     setFilterSession('all');
     setFilterSatra('all');
     setFilterUniversity('all');
+    setFilterCollege('all');
     setAppliedSession('all');
     setAppliedSatra('all');
     setAppliedUniversity('all');
+    setAppliedCollege('all');
     setSearch('');
     setSelectedCourse('all');
     setSelectedSemester('all');
@@ -1166,6 +1240,26 @@ export default function StudentList({
       }
     }
 
+    if (appliedCollege !== 'all') {
+      const targetCol = appliedCollege.toLowerCase();
+      const sc = (s.collegeName || s.universityName || '').toLowerCase();
+      const cleanSc = sc.replace(/[\s-]/g, '');
+      const colObj = collegesList.find(c => c.name === appliedCollege || c.code === appliedCollege);
+
+      let isMatch = (sc === targetCol) || sc.includes(targetCol) || targetCol.includes(sc);
+      if (!isMatch && colObj) {
+        const code = (colObj.code || '').toLowerCase().replace(/[\s-]/g, '');
+        if (code && cleanSc.includes(code)) isMatch = true;
+
+        const shortName = (colObj.shortName || '').toLowerCase();
+        if (shortName && (sc.includes(shortName) || shortName.includes(sc))) isMatch = true;
+
+        const numOnly = (colObj.code || colObj.name).replace(/\D/g, '');
+        if (numOnly.length >= 3 && cleanSc.includes(numOnly)) isMatch = true;
+      }
+      if (!isMatch) return false;
+    }
+
     if (!q) return true;
 
     const nameMatch = s.fullName?.toLowerCase().includes(q) || s.studentName?.toLowerCase().includes(q);
@@ -1235,17 +1329,17 @@ export default function StudentList({
         </div>
       )}
 
-      {/* Top University, Session & Satra Filter Form (Matching User Screenshots) */}
-      <div className="bg-[#f0f7f9] p-4 rounded-xl border border-[#bce0ee] shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Top University, College, Session & Satra Filter Form (5 Sections Compact Layout) */}
+      <div className="bg-[#f0f7f9] p-3.5 rounded-xl border border-[#bce0ee] shadow-sm space-y-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 items-end">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
               Select Session:
             </label>
             <select
               value={filterSession}
               onChange={(e) => setFilterSession(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">All Sessions</option>
               {Array.from(new Set([
@@ -1259,13 +1353,13 @@ export default function StudentList({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
               Select Satra(July/Jan):
             </label>
             <select
               value={filterSatra}
               onChange={(e) => setFilterSatra(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">All Satras</option>
               <option value="July">July</option>
@@ -1274,24 +1368,47 @@ export default function StudentList({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
               Select University:
             </label>
             <select
               value={filterUniversity}
-              onChange={(e) => setFilterUniversity(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+              onChange={(e) => handleFilterUniversityChange(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">Select University (All)</option>
-              {universitiesList.map((u, i) => (
-                <option key={u.id || i} value={u.name}>{u.name}</option>
+              {allAvailableUniversities.map((uName, i) => (
+                <option key={i} value={uName}>{uName}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 truncate flex items-center justify-between">
+              <span>Select College:</span>
+              {availableFilterColleges.length > 0 && filterUniversity !== 'all' && (
+                <span className="text-[10px] text-emerald-700 font-bold">
+                  ({availableFilterColleges.length})
+                </span>
+              )}
+            </label>
+            <select
+              value={filterCollege}
+              onChange={(e) => setFilterCollege(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
+            >
+              <option value="all">Select College (All)</option>
+              {availableFilterColleges.map((c, i) => (
+                <option key={c.id || i} value={c.name}>
+                  {c.code ? `[${c.code}] ` : ''}{c.shortName || c.name}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-              <span>Search Particular Student:</span>
+              <span className="truncate">Search Student:</span>
               {search && (
                 <button
                   type="button"
@@ -1307,54 +1424,60 @@ export default function StudentList({
                 type="text"
                 value={search}
                 onChange={handleSearchChange}
-                placeholder="Name, Roll No, Mobile, Aadhaar..."
-                className="w-full pl-8 pr-7 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium"
+                placeholder="Name, Roll, Mobile, Aadhaar..."
+                className="w-full pl-7 pr-6 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium shadow-xs"
               />
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
               {search && (
                 <button
                   type="button"
                   onClick={handleResetSearch}
-                  className="absolute right-2 top-2 p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  className="absolute right-1.5 top-1.5 p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        <div>
+        <div className="pt-0.5">
           <button
             type="button"
             onClick={handleApplyFilters}
-            className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-md shadow-sm transition-colors text-sm cursor-pointer"
+            className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            Show Students
+            <span>Show Students Record</span>
           </button>
         </div>
       </div>
 
-      {/* Dark Active Filter Status Strip (Image 1 & 2) */}
-      <div className="bg-[#0b1f33] text-white py-2.5 px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs font-bold items-center">
-        <div className="flex items-center gap-2">
+      {/* Dark Active Filter Status Strip */}
+      <div className="bg-[#0b1f33] text-white py-2 px-3 sm:px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs font-bold items-center">
+        <div className="flex items-center gap-1.5">
           <span className="text-slate-400 font-normal">Session:</span>
-          <span className="text-emerald-400 font-mono tracking-wide">{appliedSession === 'all' ? 'All Sessions' : appliedSession}</span>
+          <span className="text-emerald-400 font-mono tracking-wide truncate">{appliedSession === 'all' ? 'All Sessions' : appliedSession}</span>
         </div>
-        <div className="flex items-center gap-2 sm:justify-center">
-          <span className="text-slate-400 font-normal">Current Satra:</span>
-          <span className="text-cyan-300 tracking-wide">{appliedSatra === 'all' ? 'All Satras' : appliedSatra}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400 font-normal">Satra:</span>
+          <span className="text-cyan-300 tracking-wide truncate">{appliedSatra === 'all' ? 'All Satras' : appliedSatra}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 font-normal">University_Name:</span>
-          <span className="text-amber-300 truncate max-w-[280px]" title={appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400 font-normal">University:</span>
+          <span className="text-amber-300 truncate max-w-[170px]" title={appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}>
             {appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}
           </span>
         </div>
-        <div className="flex items-center gap-2 lg:justify-end">
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400 font-normal">College:</span>
+          <span className="text-pink-300 truncate max-w-[170px]" title={appliedCollege === 'all' ? 'All Colleges' : appliedCollege}>
+            {appliedCollege === 'all' ? 'All Colleges' : appliedCollege}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 lg:justify-end">
           <span className="text-slate-400 font-normal">Search:</span>
           {search ? (
-            <span className="text-emerald-300 truncate max-w-[200px] flex items-center gap-1 font-mono" title={search}>
+            <span className="text-emerald-300 truncate max-w-[130px] flex items-center gap-1 font-mono" title={search}>
               <span>"{search}"</span>
               <button
                 type="button"
