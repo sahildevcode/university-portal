@@ -3,7 +3,8 @@ import {
   Users, Search, Filter, Eye, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
   ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
-  PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle
+  PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
@@ -248,10 +249,10 @@ export default function StudentList({
     const y2 = Number(student.scholarshipYear2 || 0);
     const y3 = Number(student.scholarshipYear3 || 0);
     const y4 = Number(student.scholarshipYear4 || 0);
-    setScholarshipYear1(y1 > 0 ? String(y1) : '');
-    setScholarshipYear2(y2 > 0 ? String(y2) : '');
-    setScholarshipYear3(y3 > 0 ? String(y3) : '');
-    setScholarshipYear4(y4 > 0 ? String(y4) : '');
+    setScholarshipYear1(String(y1 || 0));
+    setScholarshipYear2(String(y2 || 0));
+    setScholarshipYear3(String(y3 || 0));
+    setScholarshipYear4(String(y4 || 0));
     setScholarshipActiveYear('year1');
 
     const acadFee = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : 0));
@@ -265,10 +266,10 @@ export default function StudentList({
       setFeeDeskAmount(rem > 0 ? String(rem) : '');
     } else if (initialMode === 'set_fee') {
       setFeeDeskPurpose('Center Fee');
-      setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
+      setFeeDeskAmount(String(acadFee || 0));
     } else if (initialMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
-      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : ''));
+      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
     }
 
     try {
@@ -283,10 +284,14 @@ export default function StudentList({
           const sy2 = Number(data.student.scholarshipYear2 || 0);
           const sy3 = Number(data.student.scholarshipYear3 || 0);
           const sy4 = Number(data.student.scholarshipYear4 || 0);
-          setScholarshipYear1(sy1 > 0 ? String(sy1) : '');
-          setScholarshipYear2(sy2 > 0 ? String(sy2) : '');
-          setScholarshipYear3(sy3 > 0 ? String(sy3) : '');
-          setScholarshipYear4(sy4 > 0 ? String(sy4) : '');
+          setScholarshipYear1(String(sy1 || 0));
+          setScholarshipYear2(String(sy2 || 0));
+          setScholarshipYear3(String(sy3 || 0));
+          setScholarshipYear4(String(sy4 || 0));
+          const fetchedAcad = Number(data.student.academicFee !== undefined && data.student.academicFee !== null ? data.student.academicFee : (data.student.studentFee !== undefined && data.student.studentFee !== null ? data.student.studentFee : 0));
+          if (initialMode === 'set_fee') {
+            setFeeDeskAmount(String(fetchedAcad || 0));
+          }
         } else {
           setFeeDeskPayments(student.payments || []);
         }
@@ -309,7 +314,7 @@ export default function StudentList({
     const y2 = Number(scholarshipYear2) || 0;
     const y3 = Number(scholarshipYear3) || 0;
     const y4 = Number(scholarshipYear4) || 0;
-    const sch = y1 + y2 + y3 + y4 > 0 ? (y1 + y2 + y3 + y4) : Number(feeDeskStudent.scholarshipAmount || 0);
+    const sch = (y1 + y2 + y3 + y4 > 0) ? (y1 + y2 + y3 + y4) : Number(feeDeskStudent.scholarshipAmount || 0);
     const tot = acadFee + sch;
     const paid = Number(feeDeskStudent.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
@@ -319,10 +324,10 @@ export default function StudentList({
       setFeeDeskAmount(rem > 0 ? String(rem) : '');
     } else if (newMode === 'set_fee') {
       setFeeDeskPurpose('Center Fee');
-      setFeeDeskAmount(acadFee > 0 ? String(acadFee) : '');
+      setFeeDeskAmount(String(acadFee || 0));
     } else if (newMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
-      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : ''));
+      setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
     }
   };
 
@@ -348,7 +353,7 @@ export default function StudentList({
       if (feeDeskMode === 'receive') {
         const amt = Number(feeDeskAmount);
         if (isNaN(amt) || amt <= 0) {
-          throw new Error('Please enter a valid payment amount.');
+          throw new Error('Please enter a valid payment amount greater than 0.');
         }
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/receive-fee`, {
@@ -387,9 +392,9 @@ export default function StudentList({
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_fee') {
-        const amt = Number(feeDeskAmount);
+        const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
         if (isNaN(amt) || amt < 0) {
-          throw new Error('Please enter a valid center fee amount.');
+          throw new Error('Please enter a valid center fee amount (0 or more).');
         }
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-fee`, {
@@ -408,14 +413,15 @@ export default function StudentList({
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskAmount(String(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : amt));
         setFeeDeskSuccess(`Academic Center Fee set to ₹${amt.toLocaleString('en-IN')} successfully!`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
-        const y1Val = Number(scholarshipYear1) || 0;
-        const y2Val = Number(scholarshipYear2) || 0;
-        const y3Val = Number(scholarshipYear3) || 0;
-        const y4Val = Number(scholarshipYear4) || 0;
+        const y1Val = (scholarshipYear1 === '' || scholarshipYear1 === null || scholarshipYear1 === undefined) ? 0 : Math.max(0, Number(scholarshipYear1) || 0);
+        const y2Val = (scholarshipYear2 === '' || scholarshipYear2 === null || scholarshipYear2 === undefined) ? 0 : Math.max(0, Number(scholarshipYear2) || 0);
+        const y3Val = (scholarshipYear3 === '' || scholarshipYear3 === null || scholarshipYear3 === undefined) ? 0 : Math.max(0, Number(scholarshipYear3) || 0);
+        const y4Val = (scholarshipYear4 === '' || scholarshipYear4 === null || scholarshipYear4 === undefined) ? 0 : Math.max(0, Number(scholarshipYear4) || 0);
         const totalSch = y1Val + y2Val + y3Val + y4Val;
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
@@ -441,6 +447,10 @@ export default function StudentList({
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setScholarshipYear1(String(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : y1Val));
+        setScholarshipYear2(String(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : y2Val));
+        setScholarshipYear3(String(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : y3Val));
+        setScholarshipYear4(String(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : y4Val));
         setFeeDeskSuccess(`Scholarship updated successfully! Total: ₹${totalSch.toLocaleString('en-IN')} (1st: ₹${y1Val.toLocaleString('en-IN')}, 2nd: ₹${y2Val.toLocaleString('en-IN')}, 3rd: ₹${y3Val.toLocaleString('en-IN')}, 4th: ₹${y4Val.toLocaleString('en-IN')})`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
@@ -566,8 +576,8 @@ export default function StudentList({
       studentImage: std.studentImage || '',
       currentSemester: std.currentSemester || 1,
       currentClass: std.currentClass || `SEM-${std.currentSemester || 1}`,
-      totalFee: std.totalFee || std.studentFee || 0,
-      scholarshipAmount: std.scholarshipAmount !== undefined ? std.scholarshipAmount : 0,
+      totalFee: std.totalFee !== undefined && std.totalFee !== null ? std.totalFee : (std.academicFee !== undefined && std.academicFee !== null ? std.academicFee : (std.studentFee !== undefined && std.studentFee !== null ? std.studentFee : 0)),
+      scholarshipAmount: std.scholarshipAmount !== undefined && std.scholarshipAmount !== null ? std.scholarshipAmount : 0,
       admissionYear: std.admissionYear || 2026,
       remark: std.remark || '',
       cancel: std.cancel || '',
@@ -586,6 +596,9 @@ export default function StudentList({
       const payload = {
         ...editFormData,
         rollNo: (editFormData.rollNo || '').trim(),
+        totalFee: (editFormData.totalFee !== '' && editFormData.totalFee !== null && editFormData.totalFee !== undefined) ? Number(editFormData.totalFee) : 0,
+        academicFee: (editFormData.academicFee !== '' && editFormData.academicFee !== null && editFormData.academicFee !== undefined) ? Number(editFormData.academicFee) : ((editFormData.totalFee !== '' && editFormData.totalFee !== null && editFormData.totalFee !== undefined) ? Number(editFormData.totalFee) : 0),
+        scholarshipAmount: (editFormData.scholarshipAmount !== '' && editFormData.scholarshipAmount !== null && editFormData.scholarshipAmount !== undefined) ? Number(editFormData.scholarshipAmount) : 0,
         fullName: (editFormData.fullName && editFormData.fullName.trim()) || editingStudent.fullName || editingStudent.studentName,
         fatherName: (editFormData.fatherName && editFormData.fatherName.trim()) || editingStudent.fatherName || '',
         ...(showAddCourse && (newCourseData.courseName || newCourseData.branch) ? { additionalCourse: newCourseData } : {})
@@ -2188,10 +2201,10 @@ export default function StudentList({
                           type="number"
                           min="0"
                           step="1"
-                          required
+                          required={feeDeskMode === 'receive'}
                           value={feeDeskAmount}
                           onChange={(e) => setFeeDeskAmount(e.target.value)}
-                          placeholder="Enter amount (e.g. 5000)"
+                          placeholder="0"
                           className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
                         />
                         {feeDeskMode === 'receive' && (
@@ -3446,8 +3459,10 @@ export default function StudentList({
                     <label className="block font-bold text-slate-700 mb-1">Total Course Fee (₹)</label>
                     <input
                       type="number"
-                      value={editFormData.totalFee || 0}
-                      onChange={(e) => setEditFormData({ ...editFormData, totalFee: Number(e.target.value) })}
+                      min="0"
+                      value={editFormData.totalFee !== undefined && editFormData.totalFee !== null ? editFormData.totalFee : ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, totalFee: e.target.value })}
+                      placeholder="0"
                       className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white"
                     />
                   </div>
@@ -3459,8 +3474,8 @@ export default function StudentList({
                     <input
                       type="number"
                       min="0"
-                      value={editFormData.scholarshipAmount !== undefined ? editFormData.scholarshipAmount : 0}
-                      onChange={(e) => setEditFormData({ ...editFormData, scholarshipAmount: Number(e.target.value) || 0 })}
+                      value={editFormData.scholarshipAmount !== undefined && editFormData.scholarshipAmount !== null ? editFormData.scholarshipAmount : ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, scholarshipAmount: e.target.value })}
                       className="w-full p-2.5 bg-indigo-50/60 border border-indigo-300 rounded-xl font-mono font-bold text-indigo-950 focus:bg-white focus:border-indigo-600"
                       placeholder="0"
                     />

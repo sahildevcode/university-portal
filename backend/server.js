@@ -1428,9 +1428,11 @@ app.put('/api/students/:rollNo', (req, res) => {
       currentClass: body.currentClass || body.Current_class || existing.currentClass,
       currentSemester: Number(body.currentSemester) || existing.currentSemester,
       manualSemester: body.manualSemester !== undefined ? Number(body.manualSemester) : existing.manualSemester,
-      totalFee: body.totalFee !== undefined ? Number(body.totalFee) : existing.totalFee,
-      studentFee: body.totalFee !== undefined ? Number(body.totalFee) : (existing.studentFee || existing.totalFee),
-      scholarshipAmount: body.scholarshipAmount !== undefined ? Math.max(0, Number(body.scholarshipAmount)) : (existing.scholarshipAmount || 0),
+      totalFee: (body.totalFee !== undefined && body.totalFee !== '') ? Math.max(0, Number(body.totalFee) || 0) : ((body.academicFee !== undefined && body.academicFee !== '') ? Math.max(0, Number(body.academicFee) || 0) : (existing.totalFee !== undefined ? Number(existing.totalFee) : 0)),
+      studentFee: (body.totalFee !== undefined && body.totalFee !== '') ? Math.max(0, Number(body.totalFee) || 0) : ((body.academicFee !== undefined && body.academicFee !== '') ? Math.max(0, Number(body.academicFee) || 0) : (existing.studentFee !== undefined ? Number(existing.studentFee) : (existing.totalFee || 0))),
+      courseFee: (body.academicFee !== undefined && body.academicFee !== '') ? Math.max(0, Number(body.academicFee) || 0) : ((body.totalFee !== undefined && body.totalFee !== '') ? Math.max(0, Number(body.totalFee) || 0) : (existing.courseFee !== undefined ? Number(existing.courseFee) : (existing.studentFee || 0))),
+      academicFee: (body.academicFee !== undefined && body.academicFee !== '') ? Math.max(0, Number(body.academicFee) || 0) : ((body.totalFee !== undefined && body.totalFee !== '') ? Math.max(0, Number(body.totalFee) || 0) : (existing.academicFee !== undefined ? Number(existing.academicFee) : (existing.studentFee || 0))),
+      scholarshipAmount: (body.scholarshipAmount !== undefined && body.scholarshipAmount !== '') ? Math.max(0, Number(body.scholarshipAmount) || 0) : (existing.scholarshipAmount || 0),
       admissionYear: Number(body.admissionYear) || existing.admissionYear,
       remark: body.remark !== undefined ? body.remark : (body.Remark !== undefined ? body.Remark : existing.remark),
       status: body.status || existing.status || 'Active',
@@ -1445,8 +1447,10 @@ app.put('/api/students/:rollNo', (req, res) => {
 
     // Re-calculate net fee and balance due considering scholarship
     const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
-    updatedStudent.netTotalFee = Math.max(0, (updatedStudent.totalFee || 0) - schAmt);
-    updatedStudent.balanceDue = Math.max(0, updatedStudent.netTotalFee - (updatedStudent.totalPaid || 0));
+    const acadFee = Number(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : (updatedStudent.totalFee || 0));
+    updatedStudent.totalFee = acadFee + schAmt;
+    updatedStudent.netTotalFee = updatedStudent.totalFee;
+    updatedStudent.balanceDue = Math.max(0, updatedStudent.totalFee - (Number(updatedStudent.totalPaid) || 0));
 
     // If roll number changed, update linked fee_payments and dual references
     if (newRoll && newRoll !== (existing.rollNo || '').toUpperCase()) {
