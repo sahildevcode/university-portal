@@ -1906,11 +1906,17 @@ export default function StudentList({
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
             
-            {/* Modal Header */}
-            <div className="bg-[#1e7e34] text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-sm">
+            {/* Modal Header: Distinct color and title for each separated section */}
+            <div className={`text-white px-5 py-3.5 flex items-center justify-between gap-3 shrink-0 shadow-sm ${
+              feeDeskMode === 'set_scholarship'
+                ? 'bg-gradient-to-r from-purple-800 to-indigo-900'
+                : feeDeskMode === 'set_fee'
+                ? 'bg-gradient-to-r from-sky-700 to-blue-800'
+                : 'bg-gradient-to-r from-emerald-800 to-green-800'
+            }`}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-black text-white text-base">
-                  ₹
+                  {feeDeskMode === 'set_scholarship' ? <Award className="w-5 h-5" /> : feeDeskMode === 'set_fee' ? <BookOpen className="w-5 h-5" /> : '₹'}
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
@@ -1919,59 +1925,24 @@ export default function StudentList({
                     {feeDeskMode === 'set_scholarship' && 'Set Student Scholarship (छात्रवृत्ति निर्धारण)'}
                   </h3>
                   <div className="text-xs text-emerald-100 flex items-center gap-2">
-                    <span className="font-bold uppercase">{feeDeskStudent.fullName || feeDeskStudent.studentName}</span>
-                    <span>•</span>
-                    <span className="font-mono">Roll: {feeDeskStudent.rollNo}</span>
-                    <span>•</span>
-                    <span>{feeDeskStudent.courseName}</span>
+                    <span className="font-bold uppercase text-white">{feeDeskStudent.fullName || feeDeskStudent.studentName}</span>
+                    <span className="text-white/70">•</span>
+                    <span className="font-mono text-amber-200">Roll: {feeDeskStudent.rollNo}</span>
+                    <span className="text-white/70">•</span>
+                    <span className="text-white/90">{feeDeskStudent.courseName}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Mode Switcher Tabs */}
-              <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => switchFeeDeskMode('receive')}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    feeDeskMode === 'receive'
-                      ? 'bg-white text-emerald-900 shadow-xs'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  Paid_Fee
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchFeeDeskMode('set_fee')}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    feeDeskMode === 'set_fee'
-                      ? 'bg-white text-emerald-900 shadow-xs'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  Set_Fee
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchFeeDeskMode('set_scholarship')}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    feeDeskMode === 'set_scholarship'
-                      ? 'bg-white text-emerald-900 shadow-xs'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  Set_Scholarship
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeeDeskStudent(null)}
-                  className="p-1 hover:bg-white/20 rounded-lg text-white ml-2 transition-colors cursor-pointer"
-                  title="Close (ESC)"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              {/* Clean Close Button Only - No cross-tabs */}
+              <button
+                type="button"
+                onClick={() => setFeeDeskStudent(null)}
+                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors cursor-pointer"
+                title="Close (ESC)"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Scrollable Content Body */}
@@ -1991,560 +1962,652 @@ export default function StudentList({
                 </div>
               )}
 
-              {/* Form matching media_1789491211570.jpg */}
+              {/* Form: Divided strictly by single active section */}
               <form onSubmit={handleFeeDeskSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  
-                  {/* 1. Student Name */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Student_Name:
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''}
-                      className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none"
-                    />
-                  </div>
-
-                  {/* 2. Father Name */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Father_Name:
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={feeDeskStudent.fatherName || '-'}
-                      className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none"
-                    />
-                  </div>
-
-                  {/* 3. University Name */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      University_Name:
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={feeDeskStudent.universityName || 'PKC University / Board'}
-                      className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate"
-                    />
-                  </div>
-
-                  {/* 4. Course Name */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Course_Name:
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={feeDeskStudent.courseName || '-'}
-                      className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate"
-                    />
-                  </div>
-
-                  {/* 5. Class */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Class:
-                    </label>
-                    <select
-                      value={feeDeskClass}
-                      onChange={(e) => setFeeDeskClass(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
-                      <option value="SEM-2">SEM-2 (2nd Semester)</option>
-                      <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
-                      <option value="SEM-4">SEM-4 (4th Semester)</option>
-                      <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
-                      <option value="SEM-6">SEM-6 (6th Semester)</option>
-                      <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
-                      <option value="SEM-8">SEM-8 (8th Semester)</option>
-                      <option value="Year-1">Year-1 (1st Year Annual)</option>
-                      <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                      <option value="Year-3">Year-3 (3rd Year Annual)</option>
-                    </select>
-                  </div>
-
-                  {/* 6. Fee Date */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Fee_Date* :
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={feeDeskDate}
-                      onChange={(e) => setFeeDeskDate(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* 7. Purpose */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Purpose* :
-                    </label>
-                    <select
-                      value={feeDeskPurpose}
-                      onChange={(e) => setFeeDeskPurpose(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="Tuition Fee">Tuition Fee</option>
-                      <option value="Admission Fee">Admission Fee</option>
-                      <option value="Center Fee">Center Fee (Academic Fee)</option>
-                      <option value="Examination Fee">Examination Fee</option>
-                      <option value="Scholarship">Scholarship Adjustment</option>
-                      <option value="Registration Fee">Registration Fee</option>
-                      <option value="Caution Money">Caution Money Deposit</option>
-                      <option value="Library Fee">Library / Lab Fee</option>
-                      <option value="Other Fee">Other Academic Dues</option>
-                    </select>
-                  </div>
-
-                  {/* 8. Payment Mode */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Payment_Mode* :
-                    </label>
-                    <select
-                      value={feeDeskModePayment}
-                      onChange={(e) => setFeeDeskModePayment(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online / UPI">Online / UPI QR</option>
-                      <option value="Bank Transfer">Bank Transfer (IMPS / NEFT)</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Card / POS">Card Swipe / POS</option>
-                    </select>
-                  </div>
-
-                  {/* 9. Ref No */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Ref_No:
-                    </label>
-                    <input
-                      type="text"
-                      value={feeDeskRefNo}
-                      onChange={(e) => setFeeDeskRefNo(e.target.value)}
-                      placeholder="UTR / Cheque No / Txn ID"
-                      className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* 10. Received By */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Received_By:
-                    </label>
-                    <input
-                      type="text"
-                      value={feeDeskReceivedBy}
-                      onChange={(e) => setFeeDeskReceivedBy(e.target.value)}
-                      placeholder="Admin Desk"
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* 11. Enter Fee Amount or Multi-Year Scholarship */}
-                  {feeDeskMode === 'set_scholarship' ? (
-                    <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-br from-purple-50/90 to-indigo-50/50 border-2 border-purple-300 rounded-2xl p-4 space-y-4 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-200/80 pb-3">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
-                              <Sparkles className="w-3.5 h-3.5" />
-                            </span>
-                            <h4 className="text-sm font-black text-purple-950 uppercase tracking-tight">
-                              Multi-Year Scholarship Desk (सालाना छात्रवृत्ति प्रबंधन)
-                            </h4>
-                          </div>
-                          <p className="text-[11px] text-purple-700 font-medium">
-                            Set scholarship year-by-year (First Year, Second Year, Third Year, Fourth Year). Total is auto-calculated.
-                          </p>
-                        </div>
-                        <div className="bg-purple-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-2.5 shadow-sm shrink-0">
-                          <span className="text-purple-200">Total Scholarship:</span>
-                          <span className="text-amber-300 font-mono text-base font-extrabold">
-                            ₹{((Number(scholarshipYear1) || 0) + (Number(scholarshipYear2) || 0) + (Number(scholarshipYear3) || 0) + (Number(scholarshipYear4) || 0)).toLocaleString('en-IN')}/-
-                          </span>
-                        </div>
+                {/* 1. RECEIVE / PAID FEE FORM */}
+                {feeDeskMode === 'receive' && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Student_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Father_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fatherName || '-'} className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">University_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.universityName || 'PKC University / Board'} className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Course_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
                       </div>
 
-                      {/* 4 Years Inputs Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {/* 1st Year */}
-                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year1' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
-                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">1</span>
-                              First Year Scholarship
-                            </label>
-                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">1st Year</span>
-                          </div>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={scholarshipYear1}
-                              onFocus={() => setScholarshipActiveYear('year1')}
-                              onChange={(e) => setScholarshipYear1(e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class:</label>
+                        <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
+                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
+                          <option value="SEM-4">SEM-4 (4th Semester)</option>
+                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
+                          <option value="SEM-6">SEM-6 (6th Semester)</option>
+                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
+                          <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          <option value="Year-1">Year-1 (1st Year Annual)</option>
+                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                        </select>
+                      </div>
 
-                        {/* 2nd Year */}
-                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year2' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
-                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">2</span>
-                              Second Year Scholarship
-                            </label>
-                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">2nd Year</span>
-                          </div>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={scholarshipYear2}
-                              onFocus={() => setScholarshipActiveYear('year2')}
-                              onChange={(e) => setScholarshipYear2(e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee_Date* :</label>
+                        <input type="date" required value={feeDeskDate} onChange={(e) => setFeeDeskDate(e.target.value)} className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                      </div>
 
-                        {/* 3rd Year */}
-                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year3' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
-                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">3</span>
-                              Third Year Scholarship
-                            </label>
-                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">3rd Year</span>
-                          </div>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={scholarshipYear3}
-                              onFocus={() => setScholarshipActiveYear('year3')}
-                              onChange={(e) => setScholarshipYear3(e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose* :</label>
+                        <select value={feeDeskPurpose} onChange={(e) => setFeeDeskPurpose(e.target.value)} className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+                          <option value="Tuition Fee">Tuition Fee</option>
+                          <option value="Admission Fee">Admission Fee</option>
+                          <option value="Examination Fee">Examination Fee</option>
+                          <option value="Registration Fee">Registration Fee</option>
+                          <option value="Caution Money">Caution Money Deposit</option>
+                          <option value="Library Fee">Library / Lab Fee</option>
+                          <option value="Other Fee">Other Academic Dues</option>
+                        </select>
+                      </div>
 
-                        {/* 4th Year */}
-                        <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year4' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
-                              <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">4</span>
-                              Fourth Year Scholarship
-                            </label>
-                            <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">4th Year</span>
-                          </div>
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={scholarshipYear4}
-                              onFocus={() => setScholarshipActiveYear('year4')}
-                              onChange={(e) => setScholarshipYear4(e.target.value)}
-                              placeholder="0"
-                              className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
-                            />
-                          </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment_Mode* :</label>
+                        <select value={feeDeskModePayment} onChange={(e) => setFeeDeskModePayment(e.target.value)} className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+                          <option value="Cash">Cash (नकद)</option>
+                          <option value="Online / UPI">Online / UPI QR</option>
+                          <option value="Bank Transfer">Bank Transfer (IMPS / NEFT)</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="Card / POS">Card Swipe / POS</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Ref_No:</label>
+                        <input type="text" value={feeDeskRefNo} onChange={(e) => setFeeDeskRefNo(e.target.value)} placeholder="UTR / Cheque No / Txn ID" className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Received_By:</label>
+                        <input type="text" value={feeDeskReceivedBy} onChange={(e) => setFeeDeskReceivedBy(e.target.value)} placeholder="Admin Desk" className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-900 mb-1">Enter_Fee_Amount* :</label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min="0" step="1" value={feeDeskAmount} onChange={(e) => setFeeDeskAmount(e.target.value)} placeholder="0" className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" />
+                          <button type="button" onClick={() => {
+                            const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+                            const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                            const tot = acad + sch;
+                            const paid = Number(feeDeskStudent.totalPaid || 0);
+                            const rem = Math.max(0, tot - paid);
+                            setFeeDeskAmount(String(rem));
+                          }} className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" title="Auto fill full balance remaining">
+                            Full Due
+                          </button>
+                          <button type="button" onClick={() => setFeeDeskAmount('0')} className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" title="Set amount to 0">
+                            Set 0
+                          </button>
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-900 mb-1">
-                        {feeDeskMode === 'receive' && 'Enter_Fee_Amount* :'}
-                        {feeDeskMode === 'set_fee' && 'Enter Academic / Center Fee Amount (₹)* :'}
-                      </label>
-                      <div className="flex items-center gap-2">
+
+                    <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+                      <button type="submit" disabled={feeDeskLoading} onClick={(e) => handleFeeDeskSubmit(e, 'add')} className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" title="Add new fee installment entry">
+                        <PlusCircle className="w-4 h-4" />
+                        <span>{feeDeskLoading ? 'Saving...' : 'Add Payment'}</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 2. SET CENTER FEE FORM */}
+                {feeDeskMode === 'set_fee' && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Student_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Father_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fatherName || '-'} className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">University_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.universityName || 'PKC University / Board'} className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Course_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
+                      </div>
+
+                      <div className="sm:col-span-2 bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-blue-700">Current Academic / Center Fee</span>
+                          <div className="text-base font-black text-blue-950 font-mono">
+                            ₹{Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)).toLocaleString('en-IN')}/-
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold">Active Setting</span>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-900 mb-1">
+                          Enter Academic / Center Fee Amount (₹)* :
+                        </label>
                         <input
                           type="number"
                           min="0"
                           step="1"
+                          required
                           value={feeDeskAmount}
                           onChange={(e) => setFeeDeskAmount(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono"
+                          className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-sky-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none font-mono"
                         />
-                        {feeDeskMode === 'receive' && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-                                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
-                                const tot = acad + sch;
-                                const paid = Number(feeDeskStudent.totalPaid || 0);
-                                const rem = Math.max(0, tot - paid);
-                                setFeeDeskAmount(String(rem));
-                              }}
-                              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
-                              title="Auto fill full balance remaining"
-                            >
-                              Full Due
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFeeDeskAmount('0')}
-                              className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors"
-                              title="Set amount to 0"
-                            >
-                              Set 0
-                            </button>
-                          </>
-                        )}
+                      </div>
+
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Remark / Reason (Optional):</label>
+                        <input
+                          type="text"
+                          value={feeDeskRemark}
+                          onChange={(e) => setFeeDeskRemark(e.target.value)}
+                          placeholder="e.g. Center fee updated as per academic session"
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Submit Row matching reference button */}
-                <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-                  {feeDeskMode === 'receive' ? (
-                    <button
-                      type="submit"
-                      disabled={feeDeskLoading}
-                      onClick={(e) => handleFeeDeskSubmit(e, 'add')}
-                      className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                      title="Add new fee installment entry"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      <span>
-                        {feeDeskLoading ? 'Saving...' : 'Add Payment'}
-                      </span>
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={feeDeskLoading}
-                      className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span>
-                        {feeDeskLoading
-                          ? 'Saving...'
-                          : feeDeskMode === 'set_fee'
-                          ? 'Set Center Fee'
-                          : 'Set Scholarship (Save Years)'}
-                      </span>
-                    </button>
-                  )}
-                </div>
+                    <div className="flex items-center justify-end gap-3 pt-1">
+                      <button
+                        type="submit"
+                        disabled={feeDeskLoading}
+                        className="bg-sky-700 hover:bg-sky-800 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>{feeDeskLoading ? 'Saving...' : 'Set Center Fee'}</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* 3. SET SCHOLARSHIP FORM */}
+                {feeDeskMode === 'set_scholarship' && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Student_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Father_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fatherName || '-'} className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">University_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.universityName || 'PKC University / Board'} className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Course_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
+                      </div>
+
+                      {/* Multi-Year Scholarship Inputs */}
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-br from-purple-50/90 to-indigo-50/50 border-2 border-purple-300 rounded-2xl p-4 space-y-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-200/80 pb-3">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                                <Sparkles className="w-3.5 h-3.5" />
+                              </span>
+                              <h4 className="text-sm font-black text-purple-950 uppercase tracking-tight">
+                                Multi-Year Scholarship Desk (सालाना छात्रवृत्ति प्रबंधन)
+                              </h4>
+                            </div>
+                            <p className="text-[11px] text-purple-700 font-medium">
+                              Set scholarship year-by-year (First Year, Second Year, Third Year, Fourth Year). Total is auto-calculated.
+                            </p>
+                          </div>
+                          <div className="bg-purple-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-2.5 shadow-sm shrink-0">
+                            <span className="text-purple-200">Total Scholarship:</span>
+                            <span className="text-amber-300 font-mono text-base font-extrabold">
+                              ₹{((Number(scholarshipYear1) || 0) + (Number(scholarshipYear2) || 0) + (Number(scholarshipYear3) || 0) + (Number(scholarshipYear4) || 0)).toLocaleString('en-IN')}/-
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 4 Years Inputs Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {/* 1st Year */}
+                          <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year1' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">1</span>
+                                First Year Scholarship
+                              </label>
+                              <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">1st Year</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={scholarshipYear1}
+                                onFocus={() => setScholarshipActiveYear('year1')}
+                                onChange={(e) => setScholarshipYear1(e.target.value)}
+                                placeholder="0"
+                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 2nd Year */}
+                          <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year2' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">2</span>
+                                Second Year Scholarship
+                              </label>
+                              <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">2nd Year</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={scholarshipYear2}
+                                onFocus={() => setScholarshipActiveYear('year2')}
+                                onChange={(e) => setScholarshipYear2(e.target.value)}
+                                placeholder="0"
+                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 3rd Year */}
+                          <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year3' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">3</span>
+                                Third Year Scholarship
+                              </label>
+                              <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">3rd Year</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={scholarshipYear3}
+                                onFocus={() => setScholarshipActiveYear('year3')}
+                                onChange={(e) => setScholarshipYear3(e.target.value)}
+                                placeholder="0"
+                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 4th Year */}
+                          <div className={`p-3 rounded-xl border-2 transition-all ${scholarshipActiveYear === 'year4' ? 'bg-white border-purple-600 shadow-md ring-2 ring-purple-300' : 'bg-white/90 border-purple-200 hover:border-purple-300'}`}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-[11px] font-black text-purple-950 flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">4</span>
+                                Fourth Year Scholarship
+                              </label>
+                              <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">4th Year</span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-2 text-xs font-bold text-purple-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={scholarshipYear4}
+                                onFocus={() => setScholarshipActiveYear('year4')}
+                                onChange={(e) => setScholarshipYear4(e.target.value)}
+                                placeholder="0"
+                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-purple-200 rounded-lg text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/20"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Remark / Reason (Optional):</label>
+                        <input
+                          type="text"
+                          value={feeDeskRemark}
+                          onChange={(e) => setFeeDeskRemark(e.target.value)}
+                          placeholder="e.g. Approved scholarship for 4 academic years"
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-1">
+                      <button
+                        type="submit"
+                        disabled={feeDeskLoading}
+                        className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>{feeDeskLoading ? 'Saving...' : 'Set Scholarship (Save Years)'}</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </form>
 
-              {/* Fee Summary Strip matching media_1789491211561.jpg */}
-              {(() => {
-                const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+              {/* DETAILS BELOW FORM: Strictly separated by mode! */}
+              {/* 1. RECEIVE MODE: Fee Summary Strip + Payment History Ledger Table */}
+              {feeDeskMode === 'receive' && (
+                <>
+                  {(() => {
+                    const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+                    const y1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
+                    const y2 = Number(feeDeskStudent.scholarshipYear2 || 0);
+                    const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
+                    const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
+                    const sch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
+                    const tot = acad + sch;
+                    const paid = Number(feeDeskStudent.totalPaid || 0);
+                    const rem = Math.max(0, tot - paid);
+
+                    return (
+                      <div className="space-y-2 pt-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
+                          <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
+                            <div className="text-sm font-black text-slate-900 font-mono">₹{acad.toLocaleString('en-IN')}/-</div>
+                          </div>
+                          <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 shadow-2xs">
+                            <div className="text-[10px] text-purple-700 uppercase font-bold">Total Scholarship</div>
+                            <div className="text-sm font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
+                          </div>
+                          <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-2.5 shadow-2xs">
+                            <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Fee</div>
+                            <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
+                          </div>
+                          <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
+                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
+                            <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
+                          </div>
+                          <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
+                            <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
+                            <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Payment History Ledger Table - ONLY rendered for Paid Fee desk */}
+                  <div className="space-y-2 pt-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Payment History (कब-कब फीस दी है, किस-किस डेट को)</span>
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        Total Transactions: {feeDeskPayments.length}
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
+                      <table className="w-full text-left border-collapse text-[11px] min-w-[700px]">
+                        <thead>
+                          <tr className="bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
+                            <th className="py-2.5 px-2 border-r border-slate-700 text-center w-8">#</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Date</th>
+                            <th className="py-2.5 px-2 border-r border-slate-700 text-center">Class</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Receipt No</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
+                            <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {feeDeskPayments.length === 0 ? (
+                            <tr>
+                              <td colSpan="10" className="py-6 text-center text-slate-400 italic">
+                                No payment installments recorded yet for this student.
+                              </td>
+                            </tr>
+                          ) : (
+                            feeDeskPayments.map((p, idx) => {
+                              const pDate = p.feeDate || (p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('en-IN') : '-');
+                              const pAmt = Number(p.amountPaid || p.amount || 0);
+
+                              return (
+                                <tr key={p.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'}>
+                                  <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap font-medium text-slate-800">{pDate}</td>
+                                  <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-700">{p.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono font-bold text-indigo-900">{p.receiptNo || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800">{p.purpose || p.feeType || 'Tuition Fee'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.paymentMode || 'Cash'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 font-mono text-slate-600">{p.refNo || p.transactionRef || '-'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.receivedBy || 'Admin Desk'}</td>
+                                  <td className="py-2 px-2.5 border-r border-slate-200 text-right font-black font-mono text-emerald-800 whitespace-nowrap">
+                                    {pAmt > 0 ? `${pAmt}/-` : '0/-'}
+                                  </td>
+                                  <td className="py-2 px-2 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPrintReceiptData({
+                                            ...p,
+                                            studentName: p.studentName || feeDeskStudent.fullName || feeDeskStudent.studentName,
+                                            rollNo: p.rollNo || feeDeskStudent.rollNo,
+                                            collegeName: p.collegeName || feeDeskStudent.collegeName,
+                                            universityName: p.universityName || feeDeskStudent.universityName,
+                                            courseName: p.courseName || feeDeskStudent.courseName,
+                                            currentClass: p.currentClass || feeDeskStudent.currentClass,
+                                            transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
+                                          });
+                                        }}
+                                        className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Print Official Fee Receipt"
+                                      >
+                                        <Printer className="w-3 h-3" />
+                                        <span>Print</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingPaymentModal({
+                                            ...p,
+                                            id: p.id || p.receiptNo,
+                                            amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
+                                            feeDate: p.feeDate ? p.feeDate.split('T')[0] : (p.paymentDate ? p.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0]),
+                                            purpose: p.purpose || p.feeType || 'Tuition Fee',
+                                            paymentMode: p.paymentMode || 'Cash',
+                                            refNo: p.refNo || p.transactionRef || '',
+                                            receivedBy: p.receivedBy || 'Admin Desk',
+                                            remark: p.remark || '',
+                                            currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                          });
+                                          setEditPaymentError(null);
+                                        }}
+                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit this payment entry"
+                                      >
+                                        <Edit3 className="w-3 h-3 text-indigo-600" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
+                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete this payment entry"
+                                      >
+                                        <Trash2 className="w-3 h-3 text-rose-600" />
+                                        <span>Delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* 2. SET FEE MODE: Center Fee Breakdown ONLY */}
+              {feeDeskMode === 'set_fee' && (() => {
+                const currentAcad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
+                const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                const total = currentAcad + sch;
+                const paid = Number(feeDeskStudent.totalPaid || 0);
+                const due = Math.max(0, total - paid);
+
+                return (
+                  <div className="space-y-3 pt-2">
+                    <div className="bg-slate-50 border border-slate-300 rounded-2xl p-4 space-y-3">
+                      <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-sky-700" />
+                        <span>Center Fee Status & Academic Breakdown</span>
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                          <div className="text-[10px] text-slate-500 uppercase font-bold">Center / Academic Fee</div>
+                          <div className="text-base font-black text-slate-900 font-mono">₹{currentAcad.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 shadow-2xs">
+                          <div className="text-[10px] text-purple-700 uppercase font-bold">Total Scholarship</div>
+                          <div className="text-base font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 shadow-2xs">
+                          <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Course Fee</div>
+                          <div className="text-base font-black text-indigo-950 font-mono">₹{total.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-3 shadow-2xs">
+                          <div className="text-[10px] text-rose-700 uppercase font-bold">Current Balance Due</div>
+                          <div className="text-base font-black text-rose-800 font-mono">₹{due.toLocaleString('en-IN')}/-</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. SET SCHOLARSHIP MODE: Multi-Year Breakdown & History ONLY */}
+              {feeDeskMode === 'set_scholarship' && (() => {
                 const y1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
                 const y2 = Number(feeDeskStudent.scholarshipYear2 || 0);
                 const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
                 const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
-                const sch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-                const tot = acad + sch;
-                const paid = Number(feeDeskStudent.totalPaid || 0);
-                const rem = Math.max(0, tot - paid);
+                const totalSch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
+                const history = Array.isArray(feeDeskStudent.scholarshipHistory) ? feeDeskStudent.scholarshipHistory : [];
 
                 return (
-                  <div className="space-y-2 pt-2">
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
-                      <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
-                        <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
-                        <div className="text-sm font-black text-slate-900 font-mono">₹{acad.toLocaleString('en-IN')}/-</div>
+                  <div className="space-y-3 pt-2">
+                    <div className="border border-purple-200 rounded-2xl overflow-hidden shadow-2xs">
+                      <div className="bg-purple-900 text-white px-4 py-2.5 flex items-center justify-between font-bold text-xs">
+                        <span className="flex items-center gap-2">
+                          <Award className="w-4 h-4 text-purple-300" />
+                          <span>Scholarship Year-Wise Breakdown (छात्रवृत्ति विवरण)</span>
+                        </span>
+                        <span className="font-mono text-amber-300">Total: ₹{totalSch.toLocaleString('en-IN')}/-</span>
                       </div>
-                      <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 shadow-2xs">
-                        <div className="text-[10px] text-purple-700 uppercase font-bold">Total Scholarship</div>
-                        <div className="text-sm font-black text-purple-900 font-mono">₹{sch.toLocaleString('en-IN')}/-</div>
-                      </div>
-                      <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-2.5 shadow-2xs">
-                        <div className="text-[10px] text-indigo-700 uppercase font-bold">Total Fee</div>
-                        <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
-                      </div>
-                      <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
-                        <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
-                        <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
-                      </div>
-                      <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
-                        <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
-                        <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-purple-100 bg-purple-50/40 text-center p-3">
+                        <div className="p-2">
+                          <div className="text-[10px] font-bold text-purple-700 uppercase">1st Year</div>
+                          <div className="text-sm font-black text-purple-950 font-mono">₹{y1.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="p-2">
+                          <div className="text-[10px] font-bold text-purple-700 uppercase">2nd Year</div>
+                          <div className="text-sm font-black text-purple-950 font-mono">₹{y2.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="p-2">
+                          <div className="text-[10px] font-bold text-purple-700 uppercase">3rd Year</div>
+                          <div className="text-sm font-black text-purple-950 font-mono">₹{y3.toLocaleString('en-IN')}/-</div>
+                        </div>
+                        <div className="p-2">
+                          <div className="text-[10px] font-bold text-purple-700 uppercase">4th Year</div>
+                          <div className="text-sm font-black text-purple-950 font-mono">₹{y4.toLocaleString('en-IN')}/-</div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Year-wise Scholarship Mini Pills */}
-                    {(y1 > 0 || y2 > 0 || y3 > 0 || y4 > 0) && (
-                      <div className="flex flex-wrap items-center gap-2 p-2 bg-purple-50/40 border border-purple-200 rounded-xl text-[11px] font-bold text-purple-900">
-                        <span className="text-[10px] uppercase tracking-wider text-purple-600">Yearly Breakdown:</span>
-                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">1st Year: ₹{y1.toLocaleString('en-IN')}</span>
-                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">2nd Year: ₹{y2.toLocaleString('en-IN')}</span>
-                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">3rd Year: ₹{y3.toLocaleString('en-IN')}</span>
-                        <span className="bg-white px-2 py-0.5 rounded border border-purple-200">4th Year: ₹{y4.toLocaleString('en-IN')}</span>
+                    {history.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                          <span>Scholarship Update Log ({history.length})</span>
+                        </h5>
+                        <div className="border border-purple-200 rounded-xl overflow-x-auto">
+                          <table className="w-full text-left text-[11px] border-collapse">
+                            <thead>
+                              <tr className="bg-purple-100 text-purple-950 font-bold text-[10px] uppercase">
+                                <th className="py-1.5 px-3">Date</th>
+                                <th className="py-1.5 px-3">Year Updated</th>
+                                <th className="py-1.5 px-3 text-right">Total Scholarship</th>
+                                <th className="py-1.5 px-3">Remark</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-purple-100 bg-white">
+                              {history.slice().reverse().map((h, i) => (
+                                <tr key={h.id || i}>
+                                  <td className="py-1.5 px-3 text-slate-700 font-medium">{h.date || '-'}</td>
+                                  <td className="py-1.5 px-3 font-semibold text-purple-900">{h.yearLabel || h.year || 'All Years'}</td>
+                                  <td className="py-1.5 px-3 text-right font-bold font-mono text-purple-950">₹{Number(h.total || 0).toLocaleString('en-IN')}/-</td>
+                                  <td className="py-1.5 px-3 text-slate-600 text-[10px]">{h.remark || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
                 );
               })()}
-
-              {/* Payment History Ledger Table matching media_1789491211561.jpg */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Payment History (कब-कब फीस दी है, किस-किस डेट को)</span>
-                  </h4>
-                  <span className="text-[10px] font-bold text-slate-500">
-                    Total Transactions: {feeDeskPayments.length}
-                  </span>
-                </div>
-
-                <div className="border border-slate-300 rounded-xl overflow-x-auto shadow-2xs">
-                  <table className="w-full text-left border-collapse text-[11px] min-w-[700px]">
-                    <thead>
-                      <tr className="bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
-                        <th className="py-2.5 px-2 border-r border-slate-700 text-center w-8">#</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Date</th>
-                        <th className="py-2.5 px-2 border-r border-slate-700 text-center">Class</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Receipt No</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
-                        <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {feeDeskPayments.length === 0 ? (
-                        <tr>
-                          <td colSpan="10" className="py-6 text-center text-slate-400 italic">
-                            No payment installments recorded yet for this student.
-                          </td>
-                        </tr>
-                      ) : (
-                        feeDeskPayments.map((p, idx) => {
-                          const pDate = p.feeDate || (p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('en-IN') : '-');
-                          const pAmt = Number(p.amountPaid || p.amount || 0);
-
-                          return (
-                            <tr key={p.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/70' : 'bg-white'}>
-                              <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 whitespace-nowrap font-medium text-slate-800">{pDate}</td>
-                              <td className="py-2 px-2 border-r border-slate-200 text-center font-bold text-slate-700">{p.currentClass || feeDeskStudent.currentClass || 'SEM-1'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 font-mono font-bold text-indigo-900">{p.receiptNo || '-'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-800">{p.purpose || p.feeType || 'Tuition Fee'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.paymentMode || 'Cash'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 font-mono text-slate-600">{p.refNo || p.transactionRef || '-'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 text-slate-700">{p.receivedBy || 'Admin Desk'}</td>
-                              <td className="py-2 px-2.5 border-r border-slate-200 text-right font-black font-mono text-emerald-800 whitespace-nowrap">
-                                {pAmt > 0 ? `${pAmt}/-` : '0/-'}
-                              </td>
-                              <td className="py-2 px-2 text-center whitespace-nowrap">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPrintReceiptData({
-                                        ...p,
-                                        studentName: p.studentName || feeDeskStudent.fullName || feeDeskStudent.studentName,
-                                        rollNo: p.rollNo || feeDeskStudent.rollNo,
-                                        collegeName: p.collegeName || feeDeskStudent.collegeName,
-                                        universityName: p.universityName || feeDeskStudent.universityName,
-                                        courseName: p.courseName || feeDeskStudent.courseName,
-                                        currentClass: p.currentClass || feeDeskStudent.currentClass,
-                                        transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
-                                      });
-                                    }}
-                                    className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                    title="Print Official Fee Receipt"
-                                  >
-                                    <Printer className="w-3 h-3" />
-                                    <span>Print</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingPaymentModal({
-                                        ...p,
-                                        id: p.id || p.receiptNo,
-                                        amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
-                                        feeDate: p.feeDate ? p.feeDate.split('T')[0] : (p.paymentDate ? p.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0]),
-                                        purpose: p.purpose || p.feeType || 'Tuition Fee',
-                                        paymentMode: p.paymentMode || 'Cash',
-                                        refNo: p.refNo || p.transactionRef || '',
-                                        receivedBy: p.receivedBy || 'Admin Desk',
-                                        remark: p.remark || '',
-                                        currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                      });
-                                      setEditPaymentError(null);
-                                    }}
-                                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                    title="Edit this payment entry"
-                                  >
-                                    <Edit3 className="w-3 h-3 text-indigo-600" />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                    title="Delete this payment entry"
-                                  >
-                                    <Trash2 className="w-3 h-3 text-rose-600" />
-                                    <span>Delete</span>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
             </div>
 
-            {/* Bottom Action Buttons matching media_1789491211561.jpg & media_1789491211564.jpg */}
+            {/* Bottom Action Buttons */}
             <div className="bg-slate-100 px-5 py-3 border-t border-slate-300 flex items-center justify-between shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setPrintFeeCardStudent({
-                    ...feeDeskStudent,
-                    payments: feeDeskPayments
-                  });
-                }}
-                className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:scale-102 transition-all cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print Fee Card</span>
-              </button>
+              {feeDeskMode === 'receive' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPrintFeeCardStudent({
+                      ...feeDeskStudent,
+                      payments: feeDeskPayments
+                    });
+                  }}
+                  className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:scale-102 transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Fee Card</span>
+                </button>
+              ) : (
+                <div />
+              )}
 
               <button
                 type="button"
