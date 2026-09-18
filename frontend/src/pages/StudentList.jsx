@@ -1350,6 +1350,8 @@ export default function StudentList({
     return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || courseMatch || univMatch || collegeMatch || branchMatch || categoryMatch || linkedMatch;
   });
 
+  const filteredStudents = displayedStudents;
+
   return (
     <div className="w-full px-2 sm:px-4 lg:px-6 py-4 space-y-6">
       
@@ -1363,7 +1365,7 @@ export default function StudentList({
                 <span>{isRecordsDesk ? 'Master Student Records Directory' : 'Student Records Directorate'}</span>
               </span>
               <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-300">
-                {filteredStudents.length} of {students.length} Students
+                {displayedStudents.length} of {students.length} Students
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
@@ -1518,7 +1520,7 @@ export default function StudentList({
             onClick={handleApplyFilters}
             className="flex-1 w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            <span>Show Students Record ({filteredStudents.length} Students Matching)</span>
+            <span>Show Students Record ({displayedStudents.length} Students Matching)</span>
           </button>
           {(appliedUniversity !== 'all' || appliedCollege !== 'all' || appliedSession !== 'all' || appliedSatra !== 'all' || search) && (
             <button
