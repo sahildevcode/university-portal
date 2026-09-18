@@ -57909,7 +57909,97 @@
       "shortName": "Bhabha University",
       "district": "Bhopal",
       "state": "Madhya Pradesh",
-      "status": "Active"
+      "status": "Active",
+      "courses": [
+        {
+          "id": "crs-bh-1",
+          "sNo": "1",
+          "courseName": "B.Tech (Computer Science & Engineering)",
+          "degree": "B.Tech",
+          "branch": "Computer Science & Engineering (CSE)",
+          "duration": "4 Years"
+        },
+        {
+          "id": "crs-bh-2",
+          "sNo": "2",
+          "courseName": "B.Tech (Artificial Intelligence & Machine Learning)",
+          "degree": "B.Tech",
+          "branch": "Artificial Intelligence & Machine Learning (AI-ML)",
+          "duration": "4 Years"
+        },
+        {
+          "id": "crs-bh-3",
+          "sNo": "3",
+          "courseName": "B.Tech (Mechanical Engineering)",
+          "degree": "B.Tech",
+          "branch": "Mechanical Engineering (ME)",
+          "duration": "4 Years"
+        },
+        {
+          "id": "crs-bh-4",
+          "sNo": "4",
+          "courseName": "B.Tech (Civil Engineering)",
+          "degree": "B.Tech",
+          "branch": "Civil Engineering (CE)",
+          "duration": "4 Years"
+        },
+        {
+          "id": "crs-bh-5",
+          "sNo": "5",
+          "courseName": "B.Tech (Electrical & Electronics Engineering)",
+          "degree": "B.Tech",
+          "branch": "Electrical & Electronics (EEE)",
+          "duration": "4 Years"
+        },
+        {
+          "id": "crs-bh-6",
+          "sNo": "6",
+          "courseName": "MBA (Finance Management)",
+          "degree": "MBA",
+          "branch": "Finance Management",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-bh-7",
+          "sNo": "7",
+          "courseName": "MBA (Marketing Management)",
+          "degree": "MBA",
+          "branch": "Marketing Management",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-bh-8",
+          "sNo": "8",
+          "courseName": "MBA (Human Resource Management)",
+          "degree": "MBA",
+          "branch": "Human Resource Management (HR)",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-bh-9",
+          "sNo": "9",
+          "courseName": "BA (General Arts)",
+          "degree": "BA",
+          "branch": "General Arts",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-bh-10",
+          "sNo": "10",
+          "courseName": "B.Sc. (Computer Science)",
+          "degree": "B.Sc",
+          "branch": "Computer Science",
+          "duration": "3 Years"
+        }
+      ],
+      "courseListFile": {
+        "filename": "Bhabha_University_Courses.xlsx",
+        "originalName": "Bhabha University Courses.xlsx",
+        "url": "/api/colleges/courses/template",
+        "fileType": "XLSX",
+        "size": 12500,
+        "uploadedAt": "2026-09-18T10:54:08.867Z"
+      }
     },
     {
       "id": "col-gyanveer",
@@ -57920,7 +58010,225 @@
       "shortName": "Gyanveer University",
       "district": "Sagar",
       "state": "Madhya Pradesh",
-      "status": "Active"
+      "status": "Active",
+      "courses": [
+        {
+          "id": "crs-gv-1",
+          "sNo": "1",
+          "courseName": "BA",
+          "degree": "BA",
+          "branch": "General",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-gv-2",
+          "sNo": "2",
+          "courseName": "MA (Education)",
+          "degree": "MA",
+          "branch": "Education",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-3",
+          "sNo": "3",
+          "courseName": "MA (History)",
+          "degree": "MA",
+          "branch": "History",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-4",
+          "sNo": "4",
+          "courseName": "MA (English)",
+          "degree": "MA",
+          "branch": "English",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-5",
+          "sNo": "5",
+          "courseName": "MA (Sociology)",
+          "degree": "MA",
+          "branch": "Sociology",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-6",
+          "sNo": "6",
+          "courseName": "MA (Economics)",
+          "degree": "MA",
+          "branch": "Economics",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-7",
+          "sNo": "7",
+          "courseName": "MA (Political Science)",
+          "degree": "MA",
+          "branch": "Political Science",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-8",
+          "sNo": "8",
+          "courseName": "MA (Hindi)",
+          "degree": "MA",
+          "branch": "Hindi",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-9",
+          "sNo": "9",
+          "courseName": "MA (Yoga)",
+          "degree": "MA",
+          "branch": "Yoga",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-10",
+          "sNo": "10",
+          "courseName": "BSW",
+          "degree": "BSW",
+          "branch": "Social Work",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-gv-11",
+          "sNo": "11",
+          "courseName": "MSW",
+          "degree": "MSW",
+          "branch": "Social Work",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-12",
+          "sNo": "12",
+          "courseName": "B.Com.",
+          "degree": "B.Com",
+          "branch": "Commerce & Accounts",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-gv-13",
+          "sNo": "13",
+          "courseName": "M.Com.",
+          "degree": "M.Com",
+          "branch": "Commerce & Finance",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-14",
+          "sNo": "14",
+          "courseName": "B.Sc.",
+          "degree": "B.Sc",
+          "branch": "General Science",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-gv-15",
+          "sNo": "15",
+          "courseName": "M.Sc.(Physics)",
+          "degree": "M.Sc",
+          "branch": "Physics",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-16",
+          "sNo": "16",
+          "courseName": "M.Sc.(Chemistry)",
+          "degree": "M.Sc",
+          "branch": "Chemistry",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-17",
+          "sNo": "17",
+          "courseName": "M.Sc.(Mathematics)",
+          "degree": "M.Sc",
+          "branch": "Mathematics",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-18",
+          "sNo": "18",
+          "courseName": "M.Sc.(Zoology)",
+          "degree": "M.Sc",
+          "branch": "Zoology",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-19",
+          "sNo": "19",
+          "courseName": "M.Sc.(Botany)",
+          "degree": "M.Sc",
+          "branch": "Botany",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-20",
+          "sNo": "20",
+          "courseName": "M.Sc.(Yogic Science)",
+          "degree": "M.Sc",
+          "branch": "Yogic Science",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-21",
+          "sNo": "21",
+          "courseName": "M.Sc.(Forensic Science)",
+          "degree": "M.Sc",
+          "branch": "Forensic Science",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-22",
+          "sNo": "22",
+          "courseName": "M.Sc.(Micro Biology)",
+          "degree": "M.Sc",
+          "branch": "Micro Biology",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-23",
+          "sNo": "23",
+          "courseName": "M.Sc.(Computer Science)",
+          "degree": "M.Sc",
+          "branch": "Computer Science",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-24",
+          "sNo": "24",
+          "courseName": "B.B.A.",
+          "degree": "BBA",
+          "branch": "Business Administration",
+          "duration": "3 Years"
+        },
+        {
+          "id": "crs-gv-25",
+          "sNo": "25",
+          "courseName": "M.B.A.",
+          "degree": "MBA",
+          "branch": "Management & Marketing",
+          "duration": "2 Years"
+        },
+        {
+          "id": "crs-gv-26",
+          "sNo": "26",
+          "courseName": "B.Lib",
+          "degree": "B.Lib",
+          "branch": "Library Science",
+          "duration": "1 Year"
+        }
+      ],
+      "courseListFile": {
+        "filename": "Gyanveer_University_Courses.xlsx",
+        "originalName": "Gyanveer University Sagar Courses.xlsx",
+        "url": "/api/colleges/courses/template",
+        "fileType": "XLSX",
+        "size": 14200,
+        "uploadedAt": "2026-09-18T10:54:08.849Z"
+      }
     },
     {
       "id": "col-ies",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Building2, 
   Landmark, 
@@ -558,14 +558,13 @@ export default function SyllabusManager() {
   const [syllabiFilterSem, setSyllabiFilterSem] = useState('ALL');
   const [syllabiSearch, setSyllabiSearch] = useState('');
 
-  // Tab 3 Upload Form State (Cascading: University ➔ College ➔ Branch ➔ Semester ➔ File)
-  const [uploadUnivId, setUploadUnivId] = useState('univ-mpu');
-  const [uploadCollegeId, setUploadCollegeId] = useState('');
-  const [uploadBranchCode, setUploadBranchCode] = useState('BTECH-AIML');
-  const [uploadSemester, setUploadSemester] = useState('1');
+  // Tab 3 Upload Form State (3 Fields: University ➔ College ➔ File)
+  const [uploadUnivId, setUploadUnivId] = useState('univ-1789571739470-197'); // Default to Gyanveer
+  const [uploadCollegeId, setUploadCollegeId] = useState('col-gyanveer');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null); // { success: bool, message: string }
+  const [activeExpandedDegree, setActiveExpandedDegree] = useState('M.Sc'); // Pre-expand M.Sc for demonstration
 
   // Load Universities, Colleges and Syllabi on Mount
   useEffect(() => {
@@ -617,12 +616,13 @@ export default function SyllabusManager() {
   useEffect(() => {
     const matchingColleges = colleges.filter(c => c.universityId === uploadUnivId);
     if (matchingColleges.length > 0) {
-      // If current uploadCollegeId isn't in matching, select first
       if (!matchingColleges.some(c => c.id === uploadCollegeId)) {
         setUploadCollegeId(matchingColleges[0].id);
+        setActiveExpandedDegree(null);
       }
     } else {
       setUploadCollegeId('');
+      setActiveExpandedDegree(null);
     }
   }, [uploadUnivId, colleges]);
 
@@ -630,19 +630,25 @@ export default function SyllabusManager() {
   const currentUploadUniv = universities.find(u => u.id === uploadUnivId) || universities[0];
   const uploadAffiliatedColleges = colleges.filter(c => c.universityId === uploadUnivId);
   const currentUploadCollege = colleges.find(c => c.id === uploadCollegeId) || uploadAffiliatedColleges[0];
-  const currentUploadBranch = ACADEMIC_BRANCHES.find(b => b.code === uploadBranchCode) || ACADEMIC_BRANCHES[0];
+  const currentCollegeCourses = currentUploadCollege?.courses || [];
 
-  // Maximum semesters for selected branch (e.g. 8 for B.Tech, 4 for MBA)
-  const maxSemesters = currentUploadBranch?.semesters || 8;
-  const semesterOptions = Array.from({ length: maxSemesters }, (_, i) => String(i + 1));
-
-  // Check if a syllabus already exists for currently selected combination
-  const currentExistingSyllabus = syllabiList.find(s => 
-    s.universityId === uploadUnivId &&
-    s.collegeId === uploadCollegeId &&
-    (s.courseId === currentUploadBranch?.code || s.branch === currentUploadBranch?.name) &&
-    String(s.semester) === String(uploadSemester)
-  );
+  // Group college courses by Degree / Program (B.Tech, MBA, M.Sc, MA, BA, B.Sc, B.Com, M.Com, BBA, BSW, MSW, B.Lib, etc.)
+  const courseDegreeGroups = useMemo(() => {
+    if (!currentCollegeCourses || currentCollegeCourses.length === 0) return [];
+    const groups = {};
+    currentCollegeCourses.forEach(c => {
+      const deg = c.degree || (c.courseName ? c.courseName.split(/[\s(]/)[0].toUpperCase() : 'Other');
+      if (!groups[deg]) {
+        groups[deg] = {
+          degree: deg,
+          duration: c.duration || '3 Years',
+          branches: []
+        };
+      }
+      groups[deg].branches.push(c);
+    });
+    return Object.values(groups);
+  }, [currentCollegeCourses]);
 
   // Dynamic College Count for Top Banner
   const displayedCollegesCount = selectedUnivFilter === 'ALL'
@@ -686,6 +692,72 @@ export default function SyllabusManager() {
     }
     setActiveSubTab('upload_syllabus');
     setUploadStatus(null);
+  };
+
+  // College Courses Upload Handler (Excel / PDF)
+  const handleUploadCourseFile = async (e) => {
+    e?.preventDefault();
+    if (!uploadUnivId) {
+      setUploadStatus({ success: false, message: 'Please select a University first.' });
+      return;
+    }
+    if (!uploadCollegeId) {
+      setUploadStatus({ success: false, message: 'Please select an Affiliated College first.' });
+      return;
+    }
+    if (!selectedFile) {
+      setUploadStatus({ success: false, message: 'Please choose an Excel (.xlsx, .xls) or PDF file to upload.' });
+      return;
+    }
+
+    setUploading(true);
+    setUploadStatus(null);
+
+    try {
+      const data = new FormData();
+      data.append('file', selectedFile);
+
+      const res = await fetch(`/api/colleges/${uploadCollegeId}/courses/upload`, {
+        method: 'POST',
+        body: data
+      });
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || 'Failed to upload and parse courses.');
+      }
+
+      setUploadStatus({
+        success: true,
+        message: result.message || `Successfully processed ${result.courses?.length || 0} courses!`
+      });
+      setSelectedFile(null);
+      const fileInp = document.getElementById('college_course_file_input');
+      if (fileInp) fileInp.value = '';
+
+      // Refetch colleges so courses and files are live in state
+      await fetchColleges();
+    } catch (err) {
+      setUploadStatus({ success: false, message: err.message || 'Server error processing course file.' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Clear Courses for College
+  const handleClearCourses = async (collegeId) => {
+    if (!collegeId) return;
+    if (!window.confirm('Are you sure you want to clear all courses for this college?')) return;
+    try {
+      const res = await fetch(`/api/colleges/${collegeId}/courses`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setActiveExpandedDegree(null);
+        await fetchColleges();
+      }
+    } catch (err) {
+      alert('Error clearing courses: ' + err.message);
+    }
   };
 
   // Syllabus Upload Handler
@@ -1324,13 +1396,24 @@ export default function SyllabusManager() {
                       <span className="font-bold text-emerald-700">{collegeSyllabiCount} files</span>
                     </div>
 
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Offered Courses:</span>
+                      </span>
+                      <span className="font-bold text-indigo-700">
+                        {c.courses && c.courses.length > 0 ? `${c.courses.length} courses` : '0 courses'}
+                      </span>
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleNavigateToUpload(c.universityId, c.id)}
-                        className="flex-1 flex items-center justify-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer"
+                        title="Upload Excel or PDF course list"
                       >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Syllabus →</span>
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{c.courses && c.courses.length > 0 ? `View Courses (${c.courses.length}) →` : 'Upload Courses (Excel) →'}</span>
                       </button>
                       <button
                         onClick={() => handleOpenEditCollege(c)}
@@ -1360,29 +1443,38 @@ export default function SyllabusManager() {
       {/* ========================================================================= */}
       {activeSubTab === 'upload_syllabus' && (
         <div className="space-y-8">
-          {/* Main Uploader Form Card */}
+          {/* Main Course & Branch Explorer Card */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs">
+                  <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-black text-xs">
                     3
                   </span>
                   <h2 className="font-black text-lg text-slate-900">
-                    Upload Semester Syllabus (PDF &amp; Excel)
+                    College Courses &amp; Branch Directory (Excel / PDF Upload)
                   </h2>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Follow the step-by-step hierarchy: Select University ➔ Affiliated College ➔ Course Branch ➔ Semester ➔ Choose File.
+                  Select University ➔ College ➔ Upload Excel or PDF. All courses (B.Tech, MBA, M.Sc, MA, etc.) and branches will appear below as interactive cards!
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold bg-purple-50 text-purple-700 px-3 py-1 rounded-full border border-purple-200">
-                  📄 PDF Supported
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/api/colleges/courses/template"
+                  download="College_Course_List_Template.xlsx"
+                  className="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-200 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Download Sample Format Excel Template"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Sample Excel Template</span>
+                </a>
                 <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
                   📊 Excel Supported
+                </span>
+                <span className="text-xs font-bold bg-purple-50 text-purple-700 px-3 py-1 rounded-full border border-purple-200">
+                  📄 PDF Supported
                 </span>
               </div>
             </div>
@@ -1403,13 +1495,12 @@ export default function SyllabusManager() {
               </div>
             )}
 
-            {/* Cascading 4-Step Selection Grid */}
-            <form onSubmit={handleUploadSyllabus} className="space-y-4">
-              {/* 5-Field Side-by-Side Control Bar: University -> College -> Branch -> Semester -> Upload File */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 items-end bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
+            {/* 3-Field Top Control Bar: 1. University -> 2. College -> 3. Upload File */}
+            <form onSubmit={handleUploadCourseFile} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200">
                 
                 {/* 1. SELECT UNIVERSITY */}
-                <div>
+                <div className="md:col-span-4">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
                     <span>University *</span>
@@ -1419,6 +1510,7 @@ export default function SyllabusManager() {
                     onChange={(e) => {
                       const newUnivId = e.target.value;
                       setUploadUnivId(newUnivId);
+                      setActiveExpandedDegree(null);
                     }}
                     className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-xs text-indigo-950 shadow-2xs cursor-pointer truncate"
                     required
@@ -1432,14 +1524,17 @@ export default function SyllabusManager() {
                 </div>
 
                 {/* 2. SELECT AFFILIATED COLLEGE */}
-                <div>
+                <div className="md:col-span-4">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">2</span>
                     <span>College *</span>
                   </label>
                   <select
                     value={uploadCollegeId}
-                    onChange={(e) => setUploadCollegeId(e.target.value)}
+                    onChange={(e) => {
+                      setUploadCollegeId(e.target.value);
+                      setActiveExpandedDegree(null);
+                    }}
                     className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold text-xs text-emerald-950 shadow-2xs cursor-pointer truncate"
                     required
                   >
@@ -1455,81 +1550,23 @@ export default function SyllabusManager() {
                   </select>
                 </div>
 
-                {/* 3. SELECT PROGRAM / BRANCH */}
-                <div>
+                {/* 3. UPLOAD COURSE FILE (Excel / PDF) */}
+                <div className="md:col-span-4">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-[10px] font-black">3</span>
-                    <span>Branch / Program *</span>
+                    <span>Upload Course List (Excel / PDF) *</span>
                   </label>
-                  <select
-                    value={uploadBranchCode}
-                    onChange={(e) => {
-                      setUploadBranchCode(e.target.value);
-                      setUploadSemester('1');
-                    }}
-                    className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-xs text-purple-950 shadow-2xs cursor-pointer truncate"
-                    required
-                  >
-                    <optgroup label="B.Tech Engineering Branches (13)">
-                      {ACADEMIC_BRANCHES.filter(b => b.degree === 'B.Tech').map(b => (
-                        <option key={b.code} value={b.code}>
-                          {b.name} [{b.code}]
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="MBA Management Streams (8)">
-                      {ACADEMIC_BRANCHES.filter(b => b.degree === 'MBA').map(b => (
-                        <option key={b.code} value={b.code}>
-                          {b.name} [{b.code}]
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Education & Other Programs">
-                      {ACADEMIC_BRANCHES.filter(b => b.degree !== 'B.Tech' && b.degree !== 'MBA').map(b => (
-                        <option key={b.code} value={b.code}>
-                          {b.degree} - {b.name} [{b.code}]
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
 
-                {/* 4. SELECT SEMESTER (USKE BAGAL MEIN) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-black">4</span>
-                    <span>Semester *</span>
-                  </label>
-                  <select
-                    value={uploadSemester}
-                    onChange={(e) => setUploadSemester(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-black text-xs text-blue-950 shadow-2xs cursor-pointer"
-                    required
-                  >
-                    {semesterOptions.map(sem => (
-                      <option key={sem} value={sem}>
-                        Semester {sem}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 5. UPLOAD SYLLABUS (USKE BAGAL MEIN) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">5</span>
-                    <span>Upload Syllabus *</span>
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <label className="flex-1 cursor-pointer bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 rounded-xl px-2.5 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all truncate shadow-2xs min-h-[38px]">
-                      <Upload className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 cursor-pointer bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-900 border border-slate-200 hover:border-purple-300 rounded-xl px-3 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all truncate shadow-2xs min-h-[38px]">
+                      <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
                       <span className="truncate">
-                        {selectedFile ? selectedFile.name : 'Choose File'}
+                        {selectedFile ? selectedFile.name : 'Choose Excel / PDF'}
                       </span>
                       <input
                         type="file"
-                        id="syllabus_file_input"
-                        accept=".pdf,.xls,.xlsx,.doc,.docx"
+                        id="college_course_file_input"
+                        accept=".xlsx,.xls,.csv,.pdf"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             setSelectedFile(e.target.files[0]);
@@ -1545,7 +1582,7 @@ export default function SyllabusManager() {
                         type="button"
                         onClick={() => {
                           setSelectedFile(null);
-                          const fileInp = document.getElementById('syllabus_file_input');
+                          const fileInp = document.getElementById('college_course_file_input');
                           if (fileInp) fileInp.value = '';
                         }}
                         className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
@@ -1567,77 +1604,198 @@ export default function SyllabusManager() {
                 </div>
 
               </div>
-
-              {/* Selected File Details Banner */}
-              {selectedFile && (
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl text-xs text-emerald-900">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>File Selected: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                  </div>
-                  <span className="text-[11px] font-bold text-emerald-700 uppercase">
-                    Ready to Upload for Sem-{uploadSemester}
-                  </span>
-                </div>
-              )}
-
-              {/* Status for currently selected combination */}
-              <div className="pt-1">
-                {currentExistingSyllabus ? (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/90 border border-emerald-200 p-3.5 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                        {currentExistingSyllabus.fileType === 'Excel' ? (
-                          <FileSpreadsheet className="w-4 h-4" />
-                        ) : (
-                          <FileText className="w-4 h-4" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">
-                            {currentExistingSyllabus.fileType} Available
-                          </span>
-                          <span className="text-xs font-bold text-emerald-950">
-                            Semester {currentExistingSyllabus.semester} Syllabus Available
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-0.5 truncate max-w-lg">
-                          📎 <strong>{currentExistingSyllabus.fileName}</strong> ({(currentExistingSyllabus.fileSize / 1024).toFixed(1)} KB)
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a
-                        href={currentExistingSyllabus.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-lg text-xs transition-colors shadow-2xs"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>View / Download</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSyllabus(currentExistingSyllabus.id)}
-                        className="p-1 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
-                        title="Delete syllabus file"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-slate-500 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs">
-                    <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>
-                      No syllabus uploaded yet for <strong>{currentUploadBranch?.name}</strong> (Semester {uploadSemester}) at <strong>{currentUploadCollege?.shortName || currentUploadCollege?.name}</strong>. Choose a file above and click <strong>Upload</strong>.
-                    </span>
-                  </div>
-                )}
-              </div>
             </form>
+
+            {/* Selected College Summary Banner */}
+            {currentUploadCollege && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-indigo-50/40 p-4 rounded-2xl border border-slate-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded uppercase">
+                        {currentUploadCollege.code || 'COLLEGE'}
+                      </span>
+                      <h4 className="font-black text-sm text-slate-900">
+                        {currentUploadCollege.name}
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Affiliated with <strong>{currentUploadUniv?.name}</strong> • {currentCollegeCourses.length} Courses on Record
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                  {currentUploadCollege.courseListFile && (
+                    <a
+                      href={currentUploadCollege.courseListFile.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+                      title="Download uploaded course list file"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Download File ({currentUploadCollege.courseListFile.originalName})</span>
+                    </a>
+                  )}
+
+                  {currentCollegeCourses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleClearCourses(currentUploadCollege.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                      title="Clear courses for this college"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Clear Courses</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Course Cards Grid */}
+            {courseDegreeGroups.length > 0 ? (
+              <div className="space-y-6 pt-2">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-indigo-600" />
+                      <span>Offered Degree Programs ({courseDegreeGroups.length} Programs • {currentCollegeCourses.length} Branches)</span>
+                    </h3>
+                    <span className="text-xs text-slate-500">Click any card to explore branches</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {courseDegreeGroups.map(group => {
+                      const isExpanded = activeExpandedDegree === group.degree;
+                      return (
+                        <div
+                          key={group.degree}
+                          onClick={() => setActiveExpandedDegree(isExpanded ? null : group.degree)}
+                          className={`group rounded-2xl p-5 border-2 transition-all cursor-pointer shadow-xs hover:shadow-md flex flex-col justify-between ${
+                            isExpanded
+                              ? 'bg-indigo-50 border-indigo-600 shadow-md ring-2 ring-indigo-500/20'
+                              : 'bg-white border-slate-200 hover:border-indigo-400 hover:-translate-y-0.5'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <span className="text-xs font-black uppercase px-2.5 py-1 rounded-xl bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {group.degree}
+                              </span>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {group.branches.length} {group.branches.length === 1 ? 'Branch' : 'Branches'}
+                              </span>
+                            </div>
+
+                            <h4 className="font-black text-lg text-slate-900 leading-tight">
+                              {group.degree}
+                            </h4>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              Duration: <strong className="text-slate-700">{group.duration}</strong>
+                            </p>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:text-indigo-800">
+                            <span>{isExpanded ? 'Hide Branches' : 'View Branches'}</span>
+                            <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Branch Details Section (When a Card is Clicked) */}
+                {activeExpandedDegree && (() => {
+                  const activeGroup = courseDegreeGroups.find(g => g.degree === activeExpandedDegree);
+                  if (!activeGroup) return null;
+                  return (
+                    <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-indigo-200 shadow-lg space-y-4 animate-fadeIn">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-xs">
+                            {activeGroup.degree.slice(0, 3)}
+                          </div>
+                          <div>
+                            <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                              <span>{activeGroup.degree} - All Available Branches ({activeGroup.branches.length})</span>
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              College: <strong>{currentUploadCollege?.name}</strong> • Duration: <strong>{activeGroup.duration}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setActiveExpandedDegree(null)}
+                          className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer self-start sm:self-auto flex items-center gap-1.5"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>Close Branches</span>
+                        </button>
+                      </div>
+
+                      {/* Branches Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+                        {activeGroup.branches.map((b, bIdx) => (
+                          <div
+                            key={b.id || bIdx}
+                            className="bg-slate-50 hover:bg-indigo-50/40 p-4 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-all flex items-start gap-3 shadow-2xs"
+                          >
+                            <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">
+                              {b.sNo || bIdx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-bold text-xs text-slate-900 leading-snug">
+                                {b.courseName}
+                              </h5>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px]">
+                                <span className="bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-semibold">
+                                  Branch: {b.branch || 'General'}
+                                </span>
+                                <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded-md font-bold">
+                                  {b.duration || activeGroup.duration}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              /* Empty State when no courses have been uploaded for selected college */
+              <div className="text-center py-12 px-4 bg-slate-50/70 border-2 border-dashed border-slate-200 rounded-3xl space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto shadow-xs">
+                  <FileSpreadsheet className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-base text-slate-800">
+                  No Course List Uploaded Yet for {currentUploadCollege?.shortName || currentUploadCollege?.name || 'this College'}
+                </h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Upload your Excel sheet (.xlsx, .xls) or PDF of college courses above.
+                  All courses (B.Tech, MBA, M.Sc, MA, etc.) and their branches will automatically generate here as clickable cards!
+                </p>
+                <div className="pt-2">
+                  <a
+                    href="/api/colleges/courses/template"
+                    download="College_Course_List_Template.xlsx"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-bold text-indigo-700 transition shadow-2xs cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download Sample Excel Template</span>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Master Table of All Uploaded Syllabi */}

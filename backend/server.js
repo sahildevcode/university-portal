@@ -132,6 +132,28 @@ const galleryUpload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }
 });
 
+const collegeCoursesUploadDir = path.join(__dirname, 'uploads', 'college_courses');
+if (!fs.existsSync(collegeCoursesUploadDir)) {
+  fs.mkdirSync(collegeCoursesUploadDir, { recursive: true });
+}
+
+const collegeCoursesStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, collegeCoursesUploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '.xlsx';
+    const collegeId = (req.params.id || 'college').replace(/[^a-zA-Z0-9-]/g, '_');
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+    cb(null, `course_list-${collegeId}-${unique}${ext}`);
+  }
+});
+
+const collegeCoursesUpload = multer({
+  storage: collegeCoursesStorage,
+  limits: { fileSize: 30 * 1024 * 1024 }
+});
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -4275,6 +4297,292 @@ app.delete('/api/colleges/:id', (req, res) => {
     writeDB(db);
 
     res.json({ success: true, message: `College "${college.shortName || college.name}" deleted.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Helper: Extract course and branch rows from Excel buffer
+function extractCoursesFromExcelBuffer(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  if (!worksheet) return [];
+
+  const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+  if (!rawRows || rawRows.length === 0) return [];
+
+  // Detect header if any row within the first 5 rows contains keywords
+  let headerIndex = -1;
+  for (let r = 0; r < Math.min(rawRows.length, 5); r++) {
+    const rowStr = rawRows[r].join(' ').toLowerCase();
+    if (rowStr.includes('course') || rowStr.includes('program') || rowStr.includes('degree') || (rowStr.includes('name') && rowStr.includes('duration'))) {
+      headerIndex = r;
+      break;
+    }
+  }
+
+  let colMap = { course: -1, branch: -1, duration: -1, sNo: -1 };
+  if (headerIndex !== -1) {
+    const hRow = rawRows[headerIndex];
+    hRow.forEach((h, colIdx) => {
+      const colName = String(h).toLowerCase().trim();
+      if (colName.includes('course') || colName.includes('program') || colName.includes('degree')) colMap.course = colIdx;
+      else if (colName.includes('branch') || colName.includes('special') || colName.includes('stream') || colName.includes('subject')) colMap.branch = colIdx;
+      else if (colName.includes('duration') || colName.includes('year') || colName.includes('sem')) colMap.duration = colIdx;
+      else if (colName.includes('s.no') || colName.includes('sr') || colName === 'no' || colName === '#') colMap.sNo = colIdx;
+    });
+  }
+
+  const startRow = headerIndex !== -1 ? headerIndex + 1 : 0;
+  const courses = [];
+
+  for (let r = startRow; r < rawRows.length; r++) {
+    const row = rawRows[r];
+    if (!Array.isArray(row) || row.length === 0) continue;
+    const cleanCells = row.map(c => (c !== null && c !== undefined ? String(c).trim() : ''));
+    if (cleanCells.every(c => !c)) continue;
+
+    let courseName = '';
+    let duration = '';
+    let branch = '';
+    let sNo = '';
+
+    if (colMap.course !== -1 && cleanCells[colMap.course]) {
+      courseName = cleanCells[colMap.course];
+      if (colMap.branch !== -1 && cleanCells[colMap.branch]) branch = cleanCells[colMap.branch];
+      if (colMap.duration !== -1 && cleanCells[colMap.duration]) duration = cleanCells[colMap.duration];
+      if (colMap.sNo !== -1 && cleanCells[colMap.sNo]) sNo = cleanCells[colMap.sNo];
+    } else {
+      let startCol = 0;
+      if (/^\d+$/.test(cleanCells[0])) {
+        sNo = cleanCells[0];
+        startCol = 1;
+      }
+
+      for (let i = startCol; i < cleanCells.length; i++) {
+        const val = cleanCells[i];
+        if (/(\d+)\s*(year|yr|month|sem|saal)/i.test(val) || /^[1-5]\s*Y/i.test(val)) {
+          duration = val;
+        } else if (!courseName && val && !/^(s\.?no|no\.?|sr|sr\.no)$/i.test(val) && !/university/i.test(val)) {
+          courseName = val;
+        } else if (courseName && !duration && val) {
+          if (/^[1-5]$/.test(val)) {
+            duration = val + ' Years';
+          } else if (!branch) {
+            branch = val;
+          }
+        }
+      }
+    }
+
+    if (!courseName) continue;
+
+    // Filter out university title rows if matched as courseName
+    if (/university|vishwavidyalaya|college|total/i.test(courseName) && !/b\.?sc|m\.?sc|b\.?a|m\.?a|mba|bba|b\.?ed|b\.?tech/i.test(courseName)) {
+      continue;
+    }
+
+    // Extract branch from parentheses if not specified separately
+    if (!branch || branch === 'General') {
+      const parenMatch = courseName.match(/\((.*?)\)/);
+      if (parenMatch && parenMatch[1]) {
+        branch = parenMatch[1].trim();
+      }
+    }
+
+    // Default duration
+    if (!duration) {
+      if (/m\.?sc|m\.?a|mba|m\.?com|msw|m\.?ed|m\.?tech/i.test(courseName)) duration = '2 Years';
+      else if (/b\.?lib|m\.?lib|pgdca|dca/i.test(courseName)) duration = '1 Year';
+      else if (/b\.?tech|engineering/i.test(courseName)) duration = '4 Years';
+      else duration = '3 Years';
+    }
+
+    // Detect degree / category
+    let degree = 'Other';
+    const cUpper = courseName.toUpperCase();
+    if (/\bB\.?\s*TECH\b|\bBACHELOR OF TECHNOLOGY\b/i.test(cUpper)) degree = 'B.Tech';
+    else if (/\bM\.?\s*TECH\b|\bMASTER OF TECHNOLOGY\b/i.test(cUpper)) degree = 'M.Tech';
+    else if (/\bM\.?B\.?A\b|\bMASTER OF BUSINESS\b/i.test(cUpper)) degree = 'MBA';
+    else if (/\bB\.?B\.?A\b|\bBACHELOR OF BUSINESS\b/i.test(cUpper)) degree = 'BBA';
+    else if (/\bM\.?\s*SC\b|\bMSC\b|\bMASTER OF SCIENCE\b/i.test(cUpper)) degree = 'M.Sc';
+    else if (/\bB\.?\s*SC\b|\bBSC\b|\bBACHELOR OF SCIENCE\b/i.test(cUpper)) degree = 'B.Sc';
+    else if (/\bM\.?\s*COM\b|\bMCOM\b|\bMASTER OF COMMERCE\b/i.test(cUpper)) degree = 'M.Com';
+    else if (/\bB\.?\s*COM\b|\bBCOM\b|\bBACHELOR OF COMMERCE\b/i.test(cUpper)) degree = 'B.Com';
+    else if (/\bM\.?A\b|\bMASTER OF ARTS\b/i.test(cUpper)) degree = 'MA';
+    else if (/\bB\.?A\b|\bBACHELOR OF ARTS\b/i.test(cUpper)) degree = 'BA';
+    else if (/\bBCA\b/i.test(cUpper)) degree = 'BCA';
+    else if (/\bMCA\b/i.test(cUpper)) degree = 'MCA';
+    else if (/\bB\.?ED\b/i.test(cUpper)) degree = 'B.Ed';
+    else if (/\bM\.?ED\b/i.test(cUpper)) degree = 'M.Ed';
+    else if (/\bBSW\b/i.test(cUpper)) degree = 'BSW';
+    else if (/\bMSW\b/i.test(cUpper)) degree = 'MSW';
+    else if (/\bB\.?LIB\b/i.test(cUpper)) degree = 'B.Lib';
+    else if (/\bM\.?LIB\b/i.test(cUpper)) degree = 'M.Lib';
+    else degree = courseName.split(/[\s(]/)[0].toUpperCase();
+
+    courses.push({
+      id: `crs-${courses.length + 1}-${Date.now().toString().slice(-4)}`,
+      sNo: sNo || String(courses.length + 1),
+      courseName,
+      degree,
+      branch: branch || 'General',
+      duration
+    });
+  }
+
+  return courses;
+}
+
+// 9.9 Download College Course List Sample Excel Template
+app.get('/api/colleges/courses/template', (req, res) => {
+  try {
+    const sampleData = [
+      { 'S.No': 1, 'Course Name': 'BA', 'Duration': '3 Years', 'Branch / Specialization': 'General' },
+      { 'S.No': 2, 'Course Name': 'MA (Education)', 'Duration': '2 Years', 'Branch / Specialization': 'Education' },
+      { 'S.No': 3, 'Course Name': 'MA (History)', 'Duration': '2 Years', 'Branch / Specialization': 'History' },
+      { 'S.No': 4, 'Course Name': 'B.Sc.', 'Duration': '3 Years', 'Branch / Specialization': 'General' },
+      { 'S.No': 5, 'Course Name': 'M.Sc.(Physics)', 'Duration': '2 Years', 'Branch / Specialization': 'Physics' },
+      { 'S.No': 6, 'Course Name': 'M.Sc.(Chemistry)', 'Duration': '2 Years', 'Branch / Specialization': 'Chemistry' },
+      { 'S.No': 7, 'Course Name': 'M.Sc.(Computer Science)', 'Duration': '2 Years', 'Branch / Specialization': 'Computer Science' },
+      { 'S.No': 8, 'Course Name': 'B.B.A.', 'Duration': '3 Years', 'Branch / Specialization': 'General' },
+      { 'S.No': 9, 'Course Name': 'M.B.A.', 'Duration': '2 Years', 'Branch / Specialization': 'Finance / Marketing / HR' },
+      { 'S.No': 10, 'Course Name': 'B.Tech (Computer Science)', 'Duration': '4 Years', 'Branch / Specialization': 'Computer Science' },
+      { 'S.No': 11, 'Course Name': 'B.Lib', 'Duration': '1 Year', 'Branch / Specialization': 'Library Science' }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Course_List');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', 'attachment; filename="College_Course_List_Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.10 Upload College Course List (Excel or PDF)
+app.post('/api/colleges/:id/courses/upload', collegeCoursesUpload.single('file'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.colleges) db.colleges = [];
+
+    const college = db.colleges.find(c => c.id === id || c.code === id);
+    if (!college) {
+      return res.status(404).json({ success: false, message: 'College not found.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an Excel (.xlsx, .xls, .csv) or PDF file.' });
+    }
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let courses = [];
+
+    if (['.xlsx', '.xls', '.csv'].includes(ext)) {
+      const fileBuffer = fs.readFileSync(req.file.path);
+      courses = extractCoursesFromExcelBuffer(fileBuffer);
+    } else if (ext === '.pdf') {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const parser = new PDFParse({ data: fileBuffer });
+        await parser.load();
+        const textResult = await parser.getText();
+        const text = textResult?.text || '';
+
+        // Extract lines matching common degree courses
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        lines.forEach((line, idx) => {
+          if (/(\bBA\b|\bMA\b|\bB\.?SC\b|\bM\.?SC\b|\bB\.?COM\b|\bM\.?COM\b|\bMBA\b|\bBBA\b|\bB\.?TECH\b|\bB\.?LIB\b|\bBSW\b|\bMSW\b)/i.test(line)) {
+            const parenMatch = line.match(/\((.*?)\)/);
+            const branch = parenMatch && parenMatch[1] ? parenMatch[1].trim() : 'General';
+            const durMatch = line.match(/(\d+)\s*(year|yr|month|sem|saal)/i);
+            const duration = durMatch ? durMatch[0] : (line.includes('Tech') ? '4 Years' : line.includes('M') ? '2 Years' : '3 Years');
+
+            courses.push({
+              id: `crs-${courses.length + 1}-${Date.now().toString().slice(-4)}`,
+              sNo: String(courses.length + 1),
+              courseName: line.replace(/\s+/g, ' '),
+              degree: line.split(/[\s(]/)[0].toUpperCase(),
+              branch,
+              duration
+            });
+          }
+        });
+      } catch (pdfErr) {
+        console.warn('PDF text parse note:', pdfErr.message);
+      }
+    }
+
+    // Attach courses and uploaded file info to the college record
+    college.courses = courses;
+    college.courseListFile = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      url: `/uploads/college_courses/${req.file.filename}`,
+      size: req.file.size,
+      fileType: ext.replace('.', '').toUpperCase(),
+      uploadedAt: new Date().toISOString()
+    };
+    college.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Successfully uploaded ${req.file.originalname}! Extracted ${courses.length} courses for ${college.shortName || college.name}.`,
+      courses,
+      college,
+      courseListFile: college.courseListFile
+    });
+  } catch (err) {
+    console.error('Course upload error:', err);
+    res.status(500).json({ success: false, message: 'Failed to process course file: ' + err.message });
+  }
+});
+
+// 9.11 Get College Courses
+app.get('/api/colleges/:id/courses', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const college = (db.colleges || []).find(c => c.id === id || c.code === id);
+    if (!college) {
+      return res.status(404).json({ success: false, message: 'College not found.' });
+    }
+
+    res.json({
+      success: true,
+      collegeName: college.name,
+      courses: college.courses || [],
+      courseListFile: college.courseListFile || null
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9.12 Clear College Courses
+app.delete('/api/colleges/:id/courses', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    const college = (db.colleges || []).find(c => c.id === id || c.code === id);
+    if (!college) {
+      return res.status(404).json({ success: false, message: 'College not found.' });
+    }
+
+    college.courses = [];
+    college.courseListFile = null;
+    college.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.json({ success: true, message: `Courses cleared for ${college.shortName || college.name}.` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
