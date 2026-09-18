@@ -1666,9 +1666,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                   <select
                     value={paymentPurpose}
                     onChange={(e) => setPaymentPurpose(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 focus:outline-none cursor-pointer"
                   >
                     <option value="Official University Fee Settlement">Official University Fee Settlement</option>
+                    <option value="Registration Fees">Registration Fees</option>
                     <option value="Tuition Fee Deposit">Tuition Fee Deposit</option>
                     <option value="Examination Fee">Examination Fee</option>
                     <option value="Enrollment & Registration Fee">Enrollment &amp; Registration Fee</option>
@@ -2277,12 +2278,22 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
               <div className="space-y-1">
                 <label className="block text-slate-700 font-bold">Purpose</label>
-                <input
-                  type="text"
+                <select
                   value={editPaymentForm.purpose}
                   onChange={(e) => setEditPaymentForm({ ...editPaymentForm, purpose: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none"
-                />
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-600 focus:outline-none cursor-pointer"
+                >
+                  <option value="Official University Fee Settlement">Official University Fee Settlement</option>
+                  <option value="Registration Fees">Registration Fees</option>
+                  <option value="Tuition Fee Deposit">Tuition Fee Deposit</option>
+                  <option value="Examination Fee">Examination Fee</option>
+                  <option value="Enrollment & Registration Fee">Enrollment &amp; Registration Fee</option>
+                  <option value="Migration & Degree Fee">Migration &amp; Degree Fee</option>
+                  {editPaymentForm.purpose && 
+                   !['Official University Fee Settlement', 'Registration Fees', 'Tuition Fee Deposit', 'Examination Fee', 'Enrollment & Registration Fee', 'Migration & Degree Fee'].includes(editPaymentForm.purpose) && (
+                    <option value={editPaymentForm.purpose}>{editPaymentForm.purpose}</option>
+                  )}
+                </select>
               </div>
 
               <div className="space-y-1">

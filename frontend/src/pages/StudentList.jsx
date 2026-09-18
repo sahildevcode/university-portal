@@ -2346,6 +2346,7 @@ export default function StudentList({
                           <option value="Admission Fee">Admission Fee</option>
                           <option value="Examination Fee">Examination Fee</option>
                           <option value="Registration Fee">Registration Fee</option>
+                          <option value="Registration Fees">Registration Fees</option>
                           <option value="Caution Money">Caution Money Deposit</option>
                           <option value="Library Fee">Library / Lab Fee</option>
                           <option value="Scholarship">Scholarship</option>
@@ -2465,6 +2466,7 @@ export default function StudentList({
                           <option value="Annual Course Fee">Annual Course Fee</option>
                           <option value="Admission Fee">Admission Fee</option>
                           <option value="Registration Fee">Registration Fee</option>
+                          <option value="Registration Fees">Registration Fees</option>
                           <option value="Examination Fee">Examination Fee</option>
                           <option value="Other Fee">Other Fee</option>
                         </select>
@@ -2533,6 +2535,7 @@ export default function StudentList({
                               <option value="Annual Course Fee">Annual Course Fee</option>
                               <option value="Admission Fee">Admission Fee</option>
                               <option value="Registration Fee">Registration Fee</option>
+                              <option value="Registration Fees">Registration Fees</option>
                               <option value="Examination Fee">Examination Fee</option>
                               <option value="Other Fee">Other Fee</option>
                             </select>
