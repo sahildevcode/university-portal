@@ -133,11 +133,13 @@ export default function AdminPortal({
     eligibility: '10+2 with minimum 50% aggregate marks', description: ''
   });
 
-  // Add Staff Modal
+  // Add / Edit Staff Modal
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const [editingStaffId, setEditingStaffId] = useState(null);
   const [staffForm, setStaffForm] = useState({
     name: '', username: '', password: '',
-    role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions'
+    role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
+    status: 'Active'
   });
   const [showStaffPasswords, setShowStaffPasswords] = useState({});
 
@@ -240,21 +242,48 @@ export default function AdminPortal({
   };
 
   // Staff Handlers
+  const handleOpenAddStaff = () => {
+    setEditingStaffId(null);
+    setStaffForm({
+      name: '', username: '', password: '',
+      role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
+      status: 'Active'
+    });
+    setShowStaffModal(true);
+  };
+
+  const handleOpenEditStaff = (stf) => {
+    setEditingStaffId(stf.id);
+    setStaffForm({
+      name: stf.name || '',
+      username: stf.username || '',
+      password: stf.password || '',
+      role: stf.role || 'Cash Counter & Admission Desk',
+      department: stf.department || 'Accounts & Admissions',
+      status: stf.status || 'Active'
+    });
+    setShowStaffModal(true);
+  };
+
   const handleSaveStaff = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/staff', {
-        method: 'POST',
+      const url = editingStaffId ? `/api/staff/${editingStaffId}` : '/api/staff';
+      const method = editingStaffId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(staffForm)
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to create staff account');
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save staff account');
 
       setShowStaffModal(false);
+      setEditingStaffId(null);
       setStaffForm({
         name: '', username: '', password: '',
-        role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions'
+        role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
+        status: 'Active'
       });
       setSuccessMsg(data.message);
       fetchStaffData();
@@ -757,7 +786,7 @@ export default function AdminPortal({
               </p>
             </div>
             <button
-              onClick={() => setShowStaffModal(true)}
+              onClick={handleOpenAddStaff}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -798,18 +827,31 @@ export default function AdminPortal({
                       <td className="p-3 font-semibold text-slate-700">{stf.role}</td>
                       <td className="p-3 text-slate-500">{stf.department}</td>
                       <td className="p-3">
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                        <span className={`border px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          stf.status === 'Inactive' 
+                            ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
                           {stf.status || 'Active'}
                         </span>
                       </td>
                       <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDeleteStaff(stf.id, stf.name)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Staff"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditStaff(stf)}
+                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Staff Credentials"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStaff(stf.id, stf.name)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Staff"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -948,10 +990,10 @@ export default function AdminPortal({
             <div className="border-b border-slate-100 pb-3">
               <h3 className="font-extrabold text-lg text-slate-900 flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-emerald-600" />
-                <span>Create Staff Member Credentials</span>
+                <span>{editingStaffId ? 'Edit Staff Member Credentials' : 'Create Staff Member Credentials'}</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Admin-issued credentials for cash counter and admission operators.
+                {editingStaffId ? 'Update operator details, password, or department assignment.' : 'Admin-issued credentials for cash counter and admission operators.'}
               </p>
             </div>
 
@@ -1017,6 +1059,18 @@ export default function AdminPortal({
                 </div>
               </div>
 
+              <div>
+                <label className="font-bold block mb-1 text-slate-700">Account Status</label>
+                <select
+                  value={staffForm.status || 'Active'}
+                  onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none"
+                >
+                  <option value="Active">Active (चालू)</option>
+                  <option value="Inactive">Inactive (अस्थाई बंद)</option>
+                </select>
+              </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -1029,7 +1083,7 @@ export default function AdminPortal({
                   type="submit"
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md transition-all cursor-pointer"
                 >
-                  Create Staff Account
+                  {editingStaffId ? 'Update Staff Account' : 'Create Staff Account'}
                 </button>
               </div>
             </form>

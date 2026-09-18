@@ -11,6 +11,7 @@ import PrintMarksheet from '../components/PrintMarksheet';
 import PrintFeeReceipt from '../components/PrintFeeReceipt';
 import PrintFeeCard from '../components/PrintFeeCard';
 import BulkImportModal from '../components/BulkImportModal';
+import ImageCropperModal from '../components/ImageCropperModal';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function StudentList({ 
@@ -111,6 +112,8 @@ export default function StudentList({
   const [editSuccess, setEditSuccess] = useState(null);
   const [promotingRoll, setPromotingRoll] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [croppingImageSrc, setCroppingImageSrc] = useState(null);
+  const [croppingStudent, setCroppingStudent] = useState(null);
   const editPhotoInputRef = useRef(null);
   const profilePhotoInputRef = useRef(null);
 
@@ -1023,6 +1026,24 @@ export default function StudentList({
     } finally {
       setPhotoUploading(false);
     }
+  };
+
+  const handleInitiatePhotoCrop = (targetStudent, file) => {
+    if (!file || !targetStudent) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setCroppingImageSrc(e.target.result);
+      setCroppingStudent(targetStudent);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedFile) => {
+    if (croppingStudent && croppedFile) {
+      await handleUploadPhotoForStudent(croppingStudent, croppedFile);
+    }
+    setCroppingImageSrc(null);
+    setCroppingStudent(null);
   };
 
   const handleRemovePhotoForStudent = async (targetStudent) => {
@@ -2327,6 +2348,7 @@ export default function StudentList({
                           <option value="Registration Fee">Registration Fee</option>
                           <option value="Caution Money">Caution Money Deposit</option>
                           <option value="Library Fee">Library / Lab Fee</option>
+                          <option value="Scholarship">Scholarship</option>
                           <option value="Other Fee">Other Academic Dues</option>
                         </select>
                       </div>
@@ -3642,7 +3664,7 @@ export default function StudentList({
                       accept="image/*" 
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleUploadPhotoForStudent(selectedStudent, file);
+                        if (file) handleInitiatePhotoCrop(selectedStudent, file);
                         e.target.value = '';
                       }} 
                       className="hidden" 
@@ -4132,7 +4154,7 @@ export default function StudentList({
                       accept="image/*" 
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleUploadPhotoForStudent(editingStudent, file);
+                        if (file) handleInitiatePhotoCrop(editingStudent, file);
                         e.target.value = '';
                       }} 
                       className="hidden" 
@@ -5133,6 +5155,19 @@ export default function StudentList({
           fetchStudents();
         }}
       />
+
+      {/* Image Cropper Modal */}
+      {croppingImageSrc && (
+        <ImageCropperModal
+          imageSrc={croppingImageSrc}
+          onClose={() => {
+            setCroppingImageSrc(null);
+            setCroppingStudent(null);
+          }}
+          onCropComplete={handleCropComplete}
+          title={`Crop Photo: ${croppingStudent?.fullName || croppingStudent?.studentName || 'Student'}`}
+        />
+      )}
 
     </div>
   );

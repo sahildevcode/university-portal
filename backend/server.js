@@ -303,6 +303,40 @@ app.delete('/api/staff/:id', (req, res) => {
   res.json({ success: true, message: 'Staff account removed successfully.' });
 });
 
+// Admin: Update staff account
+app.put('/api/staff/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const { id } = req.params;
+    const { name, username, password, role, department, status } = req.body;
+
+    if (!db.staff_users) db.staff_users = [];
+    const staff = db.staff_users.find(s => s.id === id || s.username === id);
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'Staff member not found.' });
+    }
+
+    if (username && username.trim().toLowerCase() !== (staff.username || '').trim().toLowerCase()) {
+      const exists = db.staff_users.some(s => s.id !== staff.id && (s.username || '').trim().toLowerCase() === username.trim().toLowerCase());
+      if (exists) {
+        return res.status(400).json({ success: false, message: `Staff login ID "${username}" is already taken.` });
+      }
+      staff.username = username.trim().toLowerCase();
+    }
+
+    if (name) staff.name = name.trim();
+    if (password) staff.password = password.trim();
+    if (role) staff.role = role.trim();
+    if (department !== undefined) staff.department = department.trim();
+    if (status) staff.status = status.trim();
+
+    writeDB(db);
+    res.json({ success: true, message: 'Staff credentials updated successfully.', staff });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Student Self Sign-Up
 app.post('/api/auth/student-register', (req, res) => {
   const db = readDB();
@@ -3801,6 +3835,98 @@ app.get('/api/university/payments', (req, res) => {
       success: true,
       count: list.length,
       payments: list
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 8.6.1 Update University Payment Voucher
+app.put('/api/university/payments/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      amountPaidToUniversity,
+      paymentDate,
+      paidSemester,
+      paymentMode,
+      transactionRef,
+      purpose,
+      remark,
+      recordedBy
+    } = req.body;
+
+    const db = readDB();
+    if (!db.university_payments) db.university_payments = [];
+
+    const paymentIndex = db.university_payments.findIndex(p => p.id === id || p.voucherNo === id);
+    if (paymentIndex === -1) {
+      return res.status(404).json({ success: false, message: 'University payment record not found.' });
+    }
+
+    const existingPayment = db.university_payments[paymentIndex];
+    const oldAmount = Number(existingPayment.amountPaidToUniversity) || 0;
+    const newAmount = amountPaidToUniversity !== undefined && amountPaidToUniversity !== '' ? Number(amountPaidToUniversity) : oldAmount;
+
+    // Update payment record fields
+    if (amountPaidToUniversity !== undefined && amountPaidToUniversity !== '') existingPayment.amountPaidToUniversity = newAmount;
+    if (paymentDate) existingPayment.paymentDate = new Date(paymentDate).toISOString();
+    if (paidSemester) existingPayment.paidSemester = paidSemester.trim();
+    if (paymentMode) existingPayment.paymentMode = paymentMode.trim();
+    if (transactionRef !== undefined) existingPayment.transactionRef = transactionRef.trim();
+    if (purpose) existingPayment.purpose = purpose.trim();
+    if (remark !== undefined) existingPayment.remark = remark.trim();
+    if (recordedBy) existingPayment.recordedBy = recordedBy.trim();
+
+    // Recalculate student's universityPaid & universityDue
+    const student = findStudent(db.students, existingPayment.rollNo);
+    if (student) {
+      const currentPaid = Number(student.universityPaid) || 0;
+      student.universityPaid = Math.max(0, currentPaid - oldAmount + newAmount);
+      student.universityDue = Math.max(0, (Number(student.universityFee) || 0) - student.universityPaid);
+    }
+
+    writeDB(db);
+    res.json({
+      success: true,
+      message: 'University payment voucher updated successfully.',
+      payment: existingPayment,
+      student
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 8.6.2 Delete University Payment Voucher
+app.delete('/api/university/payments/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (!db.university_payments) db.university_payments = [];
+
+    const paymentIndex = db.university_payments.findIndex(p => p.id === id || p.voucherNo === id);
+    if (paymentIndex === -1) {
+      return res.status(404).json({ success: false, message: 'University payment record not found.' });
+    }
+
+    const [deletedPayment] = db.university_payments.splice(paymentIndex, 1);
+    const amountToDeduct = Number(deletedPayment.amountPaidToUniversity) || 0;
+
+    // Deduct from student's universityPaid
+    const student = findStudent(db.students, deletedPayment.rollNo);
+    if (student) {
+      const currentPaid = Number(student.universityPaid) || 0;
+      student.universityPaid = Math.max(0, currentPaid - amountToDeduct);
+      student.universityDue = Math.max(0, (Number(student.universityFee) || 0) - student.universityPaid);
+    }
+
+    writeDB(db);
+    res.json({
+      success: true,
+      message: `Payment voucher "${deletedPayment.voucherNo || id}" deleted successfully.`,
+      deletedPayment,
+      student
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

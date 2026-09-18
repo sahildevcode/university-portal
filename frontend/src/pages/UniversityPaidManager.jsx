@@ -18,6 +18,7 @@ import {
   FileText, 
   X, 
   Edit3, 
+  Trash2,
   RefreshCw, 
   ShieldCheck, 
   Calendar, 
@@ -99,6 +100,19 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   });
   const [rateLoading, setRateLoading] = useState(false);
 
+  // Modals State - Edit University Payment Voucher
+  const [editingUnivPayment, setEditingUnivPayment] = useState(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({
+    amountPaidToUniversity: '',
+    paymentDate: '',
+    paidSemester: 'SEM-1',
+    paymentMode: 'Bank NEFT / RTGS',
+    transactionRef: '',
+    purpose: 'Official University Fee Settlement',
+    remark: ''
+  });
+  const [editPaymentLoading, setEditPaymentLoading] = useState(false);
+
   // Voucher Print Modal State
   const [voucherToPrint, setVoucherToPrint] = useState(null);
 
@@ -115,7 +129,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
   // Lock body scroll and listen for Escape key when any modal is active
   useEffect(() => {
-    const isAnyModalOpen = Boolean(payModalStudent || editFeeStudent || showRateModal || voucherToPrint || profileStudent);
+    const isAnyModalOpen = Boolean(payModalStudent || editFeeStudent || showRateModal || voucherToPrint || profileStudent || editingUnivPayment);
     if (isAnyModalOpen) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
@@ -127,6 +141,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
           setShowRateModal(false);
           setVoucherToPrint(null);
           setProfileStudent(null);
+          setEditingUnivPayment(null);
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -136,7 +151,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [payModalStudent, editFeeStudent, showRateModal, voucherToPrint, profileStudent]);
+  }, [payModalStudent, editFeeStudent, showRateModal, voucherToPrint, profileStudent, editingUnivPayment]);
 
   // Fetch Summary Statistics
   const fetchStats = async () => {
@@ -280,13 +295,37 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       const data = await res.json();
       if (data.success) {
         showFeedback(data.message, 'success');
-        setPayModalStudent(null);
+        
+        // Immediately add to payments history so it shows down below in the modal
+        if (data.voucher) {
+          setPayments(prev => [data.voucher, ...prev]);
+        }
+
+        // Live update active student in pay modal
+        if (data.student) {
+          setPayModalStudent(prev => ({ ...prev, ...data.student }));
+        } else {
+          setPayModalStudent(prev => {
+            const added = Number(payAmount) || 0;
+            const newPaid = (Number(prev.universityPaid) || 0) + added;
+            const newDue = Math.max(0, (Number(prev.universityFee) || 0) - newPaid);
+            return { ...prev, universityPaid: newPaid, universityDue: newDue };
+          });
+        }
+
+        // Live update in ledger list
+        if (data.student) {
+          setStudents(prev => prev.map(s => ((s.rollNo && s.rollNo === data.student.rollNo) || (s.id && s.id === data.student.id)) ? { ...s, ...data.student } : s));
+        }
+
+        // Reset amount inputs for subsequent payment
+        setPayAmount('');
+        setTransactionRef('');
+        setPaymentRemark('');
+
         fetchStats();
         fetchLedger();
         fetchPayments();
-        if (data.voucher) {
-          setVoucherToPrint(data.voucher);
-        }
       } else {
         showFeedback(data.message || 'भुगतान दर्ज करने में विफल', 'error');
       }
@@ -294,6 +333,108 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       showFeedback('सर्वर त्रुटि: ' + err.message, 'error');
     } finally {
       setPayLoading(false);
+    }
+  };
+
+  // Open Edit Payment Voucher Modal
+  const handleOpenEditPayment = (payment) => {
+    setEditingUnivPayment(payment);
+    setEditPaymentForm({
+      amountPaidToUniversity: String(payment.amountPaidToUniversity || payment.amountPaid || ''),
+      paymentDate: (payment.paymentDate || '').split('T')[0] || new Date().toISOString().split('T')[0],
+      paidSemester: payment.paidSemester || 'SEM-1',
+      paymentMode: payment.paymentMode || 'Bank NEFT / RTGS',
+      transactionRef: payment.transactionRef || '',
+      purpose: payment.purpose || 'Official University Fee Settlement',
+      remark: payment.remark || ''
+    });
+  };
+
+  // Submit Update Payment Voucher
+  const handleUpdatePayment = async (e) => {
+    e.preventDefault();
+    if (!editingUnivPayment || !editPaymentForm.amountPaidToUniversity || Number(editPaymentForm.amountPaidToUniversity) <= 0) {
+      showFeedback('कृपया वैध भुगतान राशि दर्ज करें।', 'error');
+      return;
+    }
+
+    setEditPaymentLoading(true);
+    try {
+      const res = await fetch(`/api/university/payments/${editingUnivPayment.id || editingUnivPayment.voucherNo}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editPaymentForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback(data.message, 'success');
+        setEditingUnivPayment(null);
+
+        // Update in payments state
+        if (data.payment) {
+          setPayments(prev => prev.map(p => (p.id === data.payment.id || p.voucherNo === data.payment.voucherNo) ? data.payment : p));
+        }
+
+        // Update student in pay modal if active
+        if (data.student && payModalStudent && ((payModalStudent.rollNo && payModalStudent.rollNo === data.student.rollNo) || (payModalStudent.id && payModalStudent.id === data.student.id))) {
+          setPayModalStudent(prev => ({ ...prev, ...data.student }));
+        }
+
+        // Update students in ledger list
+        if (data.student) {
+          setStudents(prev => prev.map(s => ((s.rollNo && s.rollNo === data.student.rollNo) || (s.id && s.id === data.student.id)) ? { ...s, ...data.student } : s));
+        }
+
+        fetchStats();
+        fetchLedger();
+        fetchPayments();
+      } else {
+        showFeedback(data.message || 'वाउचर अपडेट करने में विफल', 'error');
+      }
+    } catch (err) {
+      showFeedback('त्रुटि: ' + err.message, 'error');
+    } finally {
+      setEditPaymentLoading(false);
+    }
+  };
+
+  // Delete Payment Voucher
+  const handleDeletePayment = async (payment) => {
+    const vNo = payment.voucherNo || payment.id;
+    const vAmt = Number(payment.amountPaidToUniversity || payment.amountPaid || 0);
+    if (!window.confirm(`क्या आप निश्चित रूप से विश्वविद्यालय वाउचर "${vNo}" (₹${vAmt.toLocaleString('en-IN')}) को हटाना चाहते हैं? यह राशि छात्र के खाते में वापस जुड़ जाएगी।`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/university/payments/${payment.id || payment.voucherNo}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback(data.message, 'success');
+
+        // Remove from payments state
+        setPayments(prev => prev.filter(p => p.id !== payment.id && p.voucherNo !== payment.voucherNo));
+
+        // Update student in pay modal if active
+        if (data.student && payModalStudent && ((payModalStudent.rollNo && payModalStudent.rollNo === data.student.rollNo) || (payModalStudent.id && payModalStudent.id === data.student.id))) {
+          setPayModalStudent(prev => ({ ...prev, ...data.student }));
+        }
+
+        // Update students in ledger list
+        if (data.student) {
+          setStudents(prev => prev.map(s => ((s.rollNo && s.rollNo === data.student.rollNo) || (s.id && s.id === data.student.id)) ? { ...s, ...data.student } : s));
+        }
+
+        fetchStats();
+        fetchLedger();
+        fetchPayments();
+      } else {
+        showFeedback(data.message || 'वाउचर हटाने में विफल', 'error');
+      }
+    } catch (err) {
+      showFeedback('त्रुटि: ' + err.message, 'error');
     }
   };
 
@@ -1301,14 +1442,33 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setVoucherToPrint(p)}
-                          className="inline-flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-amber-300 cursor-pointer shadow-sm"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Print</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setVoucherToPrint(p)}
+                            className="inline-flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border border-amber-300 cursor-pointer shadow-xs"
+                            title="Print Voucher"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Print</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditPayment(p)}
+                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Payment"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePayment(p)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Payment"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1601,51 +1761,86 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
               {/* Student's Past University Payment Ledger Table */}
               {(() => {
-                const pastPayments = payments.filter(p => p.rollNo?.toUpperCase() === payModalStudent.rollNo?.toUpperCase());
-                if (pastPayments.length > 0) {
-                  return (
-                    <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                const pastPayments = payments.filter(p => 
+                  p.rollNo?.toUpperCase() === payModalStudent.rollNo?.toUpperCase() ||
+                  (p.studentId && payModalStudent.id && p.studentId === payModalStudent.id)
+                );
+                return (
+                  <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-slate-700 block">
                         Past University Payment History ({pastPayments.length} Vouchers)
                       </span>
-                      <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl">
+                      {pastPayments.length > 0 && (
+                        <span className="text-[10px] font-mono font-bold text-emerald-700">
+                          Total: ₹{pastPayments.reduce((acc, curr) => acc + Number(curr.amountPaidToUniversity || curr.amountPaid || 0), 0).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+
+                    {pastPayments.length > 0 ? (
+                      <div className="max-h-44 overflow-y-auto border border-slate-200 rounded-xl">
                         <table className="w-full text-left text-[11px]">
-                          <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                          <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
                             <tr>
                               <th className="p-2">Date</th>
                               <th className="p-2">Class</th>
                               <th className="p-2">Voucher No</th>
                               <th className="p-2">Mode</th>
                               <th className="p-2 text-right">Amount</th>
-                              <th className="p-2 text-center">Print</th>
+                              <th className="p-2 text-center">Action</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
                             {pastPayments.map((pp, pIdx) => (
                               <tr key={pp.id || pIdx} className="hover:bg-slate-50 font-medium">
-                                <td className="p-2">{new Date(pp.paymentDate).toLocaleDateString('en-IN')}</td>
-                                <td className="p-2">{pp.paidSemester || 'SEM-1'}</td>
-                                <td className="p-2 font-mono text-slate-700">{pp.voucherNo}</td>
-                                <td className="p-2">{pp.paymentMode}</td>
-                                <td className="p-2 text-right font-mono font-bold text-emerald-700">₹{Number(pp.amountPaidToUniversity || pp.amountPaid || 0).toLocaleString('en-IN')}</td>
-                                <td className="p-2 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => setVoucherToPrint(pp)}
-                                    className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-amber-200 cursor-pointer"
-                                  >
-                                    Print
-                                  </button>
+                                <td className="p-2 whitespace-nowrap">{new Date(pp.paymentDate).toLocaleDateString('en-IN')}</td>
+                                <td className="p-2 whitespace-nowrap">{pp.paidSemester || 'SEM-1'}</td>
+                                <td className="p-2 font-mono text-slate-700 whitespace-nowrap">{pp.voucherNo}</td>
+                                <td className="p-2 whitespace-nowrap">{pp.paymentMode}</td>
+                                <td className="p-2 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">₹{Number(pp.amountPaidToUniversity || pp.amountPaid || 0).toLocaleString('en-IN')}</td>
+                                <td className="p-2 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setVoucherToPrint(pp)}
+                                      className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold hover:bg-amber-200 cursor-pointer"
+                                      title="Print Voucher"
+                                    >
+                                      Print
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditPayment(pp)}
+                                      className="p-1 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded cursor-pointer"
+                                      title="Edit Payment"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeletePayment(pp)}
+                                      className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded cursor-pointer"
+                                      title="Delete Payment"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
+                    ) : (
+                      <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                        <span className="text-[11px] text-slate-500">
+                          No university payments recorded yet for this student.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
               })()}
 
               {/* Action Buttons */}
@@ -1710,7 +1905,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               </button>
             </div>
 
-            <form onSubmit={handleEditFeeSubmit} className="space-y-3.5 text-xs text-slate-900 font-medium">
+            <form onSubmit={handleSaveStudentFee} className="space-y-3.5 text-xs text-slate-900 font-medium">
               <div className="space-y-1">
                 <label className="block text-slate-700 font-bold">
                   Target University Name*
@@ -1971,6 +2166,152 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                 Close Preview
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT UNIVERSITY PAYMENT VOUCHER */}
+      {/* ========================================================================= */}
+      {editingUnivPayment && createPortal(
+        <div 
+          className="fixed inset-0 z-[10000] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          onClick={() => setEditingUnivPayment(null)}
+        >
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Edit University Payment Voucher
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {editingUnivPayment.voucherNo} • {editingUnivPayment.studentName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingUnivPayment(null)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePayment} className="space-y-3 text-xs font-medium">
+              <div className="space-y-1">
+                <label className="block text-slate-700 font-bold">Fee Amount to University (INR)*</label>
+                <input
+                  type="number"
+                  required
+                  value={editPaymentForm.amountPaidToUniversity}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amountPaidToUniversity: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold">Payment Date*</label>
+                  <input
+                    type="date"
+                    required
+                    value={editPaymentForm.paymentDate}
+                    onChange={(e) => setEditPaymentForm({ ...editPaymentForm, paymentDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold">Class / Semester*</label>
+                  <select
+                    value={editPaymentForm.paidSemester}
+                    onChange={(e) => setEditPaymentForm({ ...editPaymentForm, paidSemester: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                  >
+                    <option value="SEM-1">SEM-1 (1st Semester)</option>
+                    <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                    <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                    <option value="SEM-4">SEM-4 (4th Semester)</option>
+                    <option value="SEM-5">SEM-5 (5th Semester)</option>
+                    <option value="SEM-6">SEM-6 (6th Semester)</option>
+                    <option value="SEM-7">SEM-7 (7th Semester)</option>
+                    <option value="SEM-8">SEM-8 (8th Semester)</option>
+                    <option value="Year-1">Year-1 (1st Year Annual)</option>
+                    <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                    <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold">Payment Mode*</label>
+                  <select
+                    value={editPaymentForm.paymentMode}
+                    onChange={(e) => setEditPaymentForm({ ...editPaymentForm, paymentMode: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                  >
+                    <option value="Bank NEFT / RTGS">Bank NEFT / RTGS</option>
+                    <option value="Online / UPI">Online / UPI QR</option>
+                    <option value="Net Banking">Net Banking Portal</option>
+                    <option value="Demand Draft (DD)">Demand Draft (DD)</option>
+                    <option value="Cash Voucher">Cash Voucher</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-slate-700 font-bold">Bank UTR / Ref Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. UTR-2026-MCBU-9812"
+                    value={editPaymentForm.transactionRef}
+                    onChange={(e) => setEditPaymentForm({ ...editPaymentForm, transactionRef: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-slate-700 font-bold">Purpose</label>
+                <input
+                  type="text"
+                  value={editPaymentForm.purpose}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, purpose: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-slate-700 font-bold">Remark / Reference Note</label>
+                <input
+                  type="text"
+                  value={editPaymentForm.remark}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, remark: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingUnivPayment(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editPaymentLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold cursor-pointer disabled:opacity-50 shadow-md"
+                >
+                  {editPaymentLoading ? 'Saving...' : 'Update Payment Voucher'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
