@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { School, Printer, X, CheckCircle2, ArrowLeft, CreditCard } from 'lucide-react';
+import StudentTermsAndConditions from './StudentTermsAndConditions';
 
 export default function PrintFeeCard({ student, payments = [], onClose }) {
   if (!student) return null;
@@ -227,28 +228,12 @@ export default function PrintFeeCard({ student, payments = [], onClose }) {
             </div>
           </div>
 
-          {/* Verification & Signatures Block */}
-          <div className="pt-6 border-t border-slate-300 grid grid-cols-3 gap-6 text-center text-[10px] text-slate-600 mt-6">
-            <div>
-              <div className="h-10 border-b border-dashed border-slate-400 mb-1"></div>
-              <p className="font-bold text-slate-800 uppercase">Student / Guardian</p>
-              <p className="text-[9px] text-slate-400">Signature</p>
-            </div>
-            <div>
-              <div className="h-10 border-b border-dashed border-slate-400 mb-1"></div>
-              <p className="font-bold text-slate-800 uppercase">Accounts Assistant / Cashier</p>
-              <p className="text-[9px] text-slate-400">Verified &amp; Entered</p>
-            </div>
-            <div>
-              <div className="h-10 border-b border-dashed border-slate-400 mb-1 flex items-center justify-center">
-                <span className="inline-block px-3 py-0.5 border border-indigo-300 rounded text-[9px] font-bold text-indigo-800 bg-indigo-50/50 uppercase">
-                  PKC Official Seal
-                </span>
-              </div>
-              <p className="font-bold text-slate-900 uppercase">Director / Principal</p>
-              <p className="text-[9px] text-slate-400">PKC Education Chhatarpur</p>
-            </div>
-          </div>
+          {/* Official Terms & Conditions (नियम एवं शर्तें) & Signatures */}
+          <StudentTermsAndConditions
+            compact={true}
+            showSignatures={true}
+            studentSignatureImage={student.documents?.signature}
+          />
 
           <div className="mt-4 pt-2 border-t border-slate-100 text-[9px] text-slate-400 text-center">
             System generated Fee Statement issued on {new Date().toLocaleString('en-IN')}. For any discrepancies, contact Central Accounts Desk.

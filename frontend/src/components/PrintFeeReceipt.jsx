@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { School, Printer, X, CheckCircle2, ArrowLeft } from 'lucide-react';
+import StudentTermsAndConditions from './StudentTermsAndConditions';
 
 export default function PrintFeeReceipt({ receipt, onClose }) {
   if (!receipt) return null;
@@ -198,20 +199,11 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="pt-4 border-t border-slate-300 grid grid-cols-2 gap-6 text-xs text-center">
-            <div>
-              <p className="text-[10px] text-slate-400 mb-6 italic">Computer Generated Electronic Fee Receipt</p>
-              <p className="font-semibold text-slate-700 text-[11px]">Depositor Signature</p>
-            </div>
-            <div>
-              <div className="h-6 mb-1 flex items-center justify-center">
-                <span className="font-mono text-xs font-bold text-indigo-950 uppercase">{receipt.receivedBy || 'Finance Dept'}</span>
-              </div>
-              <p className="font-semibold text-slate-700 text-[11px]">Authorized Cashier / Accounts Officer</p>
-              <p className="text-[10px] text-slate-400">PKC Education Finance Seal</p>
-            </div>
-          </div>
+          {/* Official Terms & Conditions (नियम एवं शर्तें) & Signatures */}
+          <StudentTermsAndConditions
+            compact={true}
+            showSignatures={true}
+          />
 
         </div>
 

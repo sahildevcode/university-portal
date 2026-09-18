@@ -10,6 +10,7 @@ import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
 import PrintFeeReceipt from '../components/PrintFeeReceipt';
 import PrintFeeCard from '../components/PrintFeeCard';
+import StudentTermsAndConditions from '../components/StudentTermsAndConditions';
 import BulkImportModal from '../components/BulkImportModal';
 import ImageCropperModal from '../components/ImageCropperModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -3326,6 +3327,24 @@ export default function StudentList({
                   </div>
                 );
               })()}
+
+              {/* नियम एवं शर्तें (Terms & Conditions Undertaking) */}
+              <div className="mt-4 pt-2 border-t border-slate-200">
+                <details className="bg-amber-50/70 border border-amber-300 rounded-xl p-3 text-xs group cursor-pointer">
+                  <summary className="font-bold text-amber-950 flex items-center justify-between select-none">
+                    <span className="flex items-center gap-2">
+                      <span>📜</span>
+                      <span>छात्र शुल्क नियम एवं शर्तें (Student Fee Terms &amp; Conditions)</span>
+                    </span>
+                    <span className="text-[10px] bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full font-bold">
+                      View Rules (8) ▼
+                    </span>
+                  </summary>
+                  <div className="mt-3 pt-2.5 border-t border-amber-200">
+                    <StudentTermsAndConditions compact={true} showSignatures={false} title="" />
+                  </div>
+                </details>
+              </div>
             </div>
 
             {/* Bottom Action Buttons */}

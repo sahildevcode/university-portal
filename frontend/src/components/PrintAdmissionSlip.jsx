@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { School, Printer, X, CheckCircle2, ShieldCheck, User, ArrowLeft } from 'lucide-react';
+import StudentTermsAndConditions from './StudentTermsAndConditions';
 
 export default function PrintAdmissionSlip({ student, receipt, onClose }) {
   if (!student) return null;
@@ -226,23 +227,12 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="pt-4 border-t border-slate-300 grid grid-cols-2 gap-6 text-[10px] text-center">
-            <div>
-              <div className="h-7 border-b border-slate-400 w-36 mx-auto mb-1 flex items-end justify-center">
-                {student.documents?.signature && (
-                  <img src={student.documents.signature} alt="Sign" className="h-6 object-contain" />
-                )}
-              </div>
-              <p className="font-semibold text-slate-700">Candidate Signature</p>
-            </div>
-            <div>
-              <div className="h-7 border-b border-slate-400 w-36 mx-auto mb-1 flex items-end justify-center">
-                <span className="font-serif-univ font-bold text-indigo-950 text-[10px]">REGISTRAR</span>
-              </div>
-              <p className="font-semibold text-slate-700">PKC Education Admission Seal</p>
-            </div>
-          </div>
+          {/* Official Terms & Conditions (नियम एवं शर्तें) & Signatures */}
+          <StudentTermsAndConditions
+            studentSignatureImage={student.documents?.signature}
+            compact={true}
+            showSignatures={true}
+          />
 
         </div>
 

@@ -6,6 +6,7 @@ import {
   Trash2, X, RefreshCw, Search, Sparkles, GraduationCap, PlusCircle, RotateCcw
 } from 'lucide-react';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
+import StudentTermsAndConditions from '../components/StudentTermsAndConditions';
 
 // Initial Fallback Partner Universities
 const FALLBACK_UNIVERSITIES = [
@@ -2632,6 +2633,27 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
             <p className="text-[11px] text-slate-500 mt-1">
               Yeh remark Student Directory table ke Remark column me directly display hoga.
             </p>
+          </div>
+        </div>
+
+        {/* नियम एवं शर्तें (Terms & Conditions Undertaking) */}
+        <div className="bg-amber-50/70 border-2 border-amber-300 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+          <StudentTermsAndConditions
+            compact={false}
+            showSignatures={false}
+            title="विद्यार्थी प्रवेश नियम एवं शर्तें (Student Admission Terms & Conditions)"
+          />
+          <div className="flex items-start gap-2.5 pt-3 border-t border-amber-200">
+            <input
+              type="checkbox"
+              id="enrollment_terms_agreed"
+              defaultChecked={true}
+              required
+              className="w-4 h-4 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 border-amber-400 cursor-pointer shrink-0"
+            />
+            <label htmlFor="enrollment_terms_agreed" className="text-xs font-bold text-slate-800 cursor-pointer">
+              मैं प्रमाणित करता/करती हूँ कि मैंने उपरोक्त सभी नियम एवं शर्तें ध्यानपूर्वक पढ़ व समझ ली हैं और मैं इनका पूर्णतः पालन करने के लिए सहमत हूँ। (I agree to all the terms and conditions stated above).
+            </label>
           </div>
         </div>
 
