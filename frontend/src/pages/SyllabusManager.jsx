@@ -1039,14 +1039,14 @@ export default function SyllabusManager() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-500/30 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Academic Registry &amp; Syllabus Portal
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Academic Registry &amp; Course Portal
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              University, College &amp; Syllabus Management
+              University, College &amp; Course Management
             </h1>
             <p className="text-xs sm:text-sm text-indigo-200/80 max-w-2xl leading-relaxed">
-              Maintain partner universities, manage affiliated institutes, and upload semester-wise syllabus files in PDF or Excel formats with automatic college-branch linkage.
+              Maintain partner universities, manage affiliated institutes, and explore course lists with automatic branch and duration linkage.
             </p>
           </div>
 
@@ -1068,11 +1068,13 @@ export default function SyllabusManager() {
               </span>
             </div>
 
-            {/* Stat 3: Syllabi on Record */}
-            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[110px]">
-              <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider block">Syllabi</span>
-              <span className="text-xl sm:text-2xl font-black text-emerald-400 block mt-0.5">{syllabiList.length}</span>
-              <span className="text-[10px] text-slate-300 font-semibold block">PDF / Excel Files</span>
+            {/* Stat 3: Total Courses */}
+            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/10 text-center min-w-[120px]">
+              <span className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider block">Course Directory</span>
+              <span className="text-xl sm:text-2xl font-black text-emerald-400 block mt-0.5">
+                {colleges.reduce((acc, c) => acc + (c.courses?.length || 0), 0)}
+              </span>
+              <span className="text-[10px] text-slate-300 font-semibold block">Active Branches</span>
             </div>
           </div>
         </div>
@@ -1115,7 +1117,7 @@ export default function SyllabusManager() {
             </span>
           </button>
 
-          {/* Tab 3: Upload Syllabus (Direct hierarchy uploader) */}
+          {/* Tab 3: College Courses & Branches */}
           <button
             onClick={() => setActiveSubTab('upload_syllabus')}
             className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
@@ -1124,10 +1126,10 @@ export default function SyllabusManager() {
                 : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 hover:text-white border border-emerald-500/30'
             }`}
           >
-            <Upload className="w-4 h-4" />
-            <span>3. Upload Syllabus</span>
+            <GraduationCap className="w-4 h-4" />
+            <span>3. College Courses &amp; Branches</span>
             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">
-              PDF &amp; Excel
+              Excel / PDF
             </span>
           </button>
         </div>
@@ -1248,31 +1250,18 @@ export default function SyllabusManager() {
 
                     {/* Stats & Actions */}
                     <div className="pt-4 border-t border-slate-100 space-y-3">
-                      <div className="grid grid-cols-2 gap-2 text-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold block">Affiliated Colleges</span>
-                          <span className="text-sm font-black text-slate-900">{affiliatedCount} Institutes</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 uppercase font-bold block">Syllabus Files</span>
-                          <span className="text-sm font-black text-emerald-700">{uploadedCount} Uploaded</span>
-                        </div>
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between px-4">
+                        <span className="text-xs text-slate-500 font-bold">Affiliated Colleges</span>
+                        <span className="text-sm font-black text-slate-900">{affiliatedCount} Institutes</span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleViewAffiliatedColleges(u.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer"
+                          className="w-full flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 px-3 rounded-xl text-xs transition-colors cursor-pointer"
                         >
                           <Building2 className="w-3.5 h-3.5" />
                           <span>View Colleges ({affiliatedCount}) →</span>
-                        </button>
-                        <button
-                          onClick={() => handleNavigateToUpload(u.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Syllabus →</span>
                         </button>
                       </div>
                     </div>
@@ -1391,10 +1380,6 @@ export default function SyllabusManager() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>Uploaded Syllabi:</span>
-                      <span className="font-bold text-emerald-700">{collegeSyllabiCount} files</span>
-                    </div>
 
                     <div className="flex items-center justify-between text-xs text-slate-500">
                       <span className="flex items-center gap-1">
@@ -1798,141 +1783,7 @@ export default function SyllabusManager() {
             )}
           </div>
 
-          {/* Master Table of All Uploaded Syllabi */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-600" />
-                  <span>All Uploaded Syllabus Files ({filteredSyllabi.length})</span>
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Search, view, download or manage curriculum syllabus files uploaded across colleges.
-                </p>
-              </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={syllabiSearch}
-                    onChange={(e) => setSyllabiSearch(e.target.value)}
-                    placeholder="Search file, branch, college..."
-                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-                <select
-                  value={syllabiFilterUniv}
-                  onChange={(e) => setSyllabiFilterUniv(e.target.value)}
-                  className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
-                >
-                  <option value="ALL">All Universities</option>
-                  {universities.map(u => (
-                    <option key={u.id} value={u.id}>{u.shortName || u.name}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={syllabiFilterSem}
-                  onChange={(e) => setSyllabiFilterSem(e.target.value)}
-                  className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
-                >
-                  <option value="ALL">All Semesters</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                    <option key={s} value={String(s)}>Semester {s}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Syllabi Table */}
-            {filteredSyllabi.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold tracking-wider bg-slate-50">
-                      <th className="py-3 px-4 rounded-l-xl">University &amp; College</th>
-                      <th className="py-3 px-4">Program &amp; Branch</th>
-                      <th className="py-3 px-4 text-center">Semester</th>
-                      <th className="py-3 px-4">File Name &amp; Format</th>
-                      <th className="py-3 px-4">Uploaded Date</th>
-                      <th className="py-3 px-4 text-right rounded-r-xl">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {filteredSyllabi.map(s => (
-                      <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3 px-4">
-                          <strong className="text-slate-900 block">{s.universityName}</strong>
-                          <span className="text-[11px] text-slate-500">{s.collegeName || 'Affiliated Campus'}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <strong className="text-indigo-900 block">{s.branch}</strong>
-                          <span className="text-[10px] text-slate-400">{s.courseName}</span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="font-extrabold px-2 py-0.5 rounded-full text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            Sem-{s.semester}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            {s.fileType === 'Excel' ? (
-                              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
-                            ) : (
-                              <FileText className="w-4 h-4 text-purple-600 shrink-0" />
-                            )}
-                            <div className="truncate max-w-[200px]">
-                              <span className="font-bold text-slate-800 block truncate">{s.fileName}</span>
-                              <span className="text-[10px] text-slate-400">
-                                {(s.fileSize / 1024).toFixed(1)} KB ({s.fileType})
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-[11px] text-slate-500">
-                          {new Date(s.uploadedAt).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <a
-                              href={s.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition-colors"
-                            >
-                              <Download className="w-3 h-3" />
-                              <span>Download</span>
-                            </a>
-                            <button
-                              onClick={() => handleDeleteSyllabus(s.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Delete file"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-10 text-slate-400 space-y-2">
-                <FileText className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="text-xs font-semibold">No syllabus files uploaded yet for this filter.</p>
-                <p className="text-[11px] text-slate-400">Use the form above to upload your first syllabus file.</p>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
