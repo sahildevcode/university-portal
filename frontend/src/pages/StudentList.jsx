@@ -24,7 +24,8 @@ export default function StudentList({
   toggleLang: propToggleLang,
   hideHeader = false,
   dueFilter = 'all',
-  onFeeReceived
+  onFeeReceived,
+  isRecordsDesk = false
 }) {
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
@@ -237,7 +238,28 @@ export default function StudentList({
 
   const handleFilterUniversityChange = (newUniv) => {
     setFilterUniversity(newUniv);
+    setAppliedUniversity(newUniv);
     setFilterCollege('all');
+    setAppliedCollege('all');
+    setCurrentPage(1);
+  };
+
+  const handleFilterCollegeChange = (newCol) => {
+    setFilterCollege(newCol);
+    setAppliedCollege(newCol);
+    setCurrentPage(1);
+  };
+
+  const handleFilterSessionChange = (newSess) => {
+    setFilterSession(newSess);
+    setAppliedSession(newSess);
+    setCurrentPage(1);
+  };
+
+  const handleFilterSatraChange = (newSatra) => {
+    setFilterSatra(newSatra);
+    setAppliedSatra(newSatra);
+    setCurrentPage(1);
   };
 
   const fetchStudents = async (customSearch = null, customCourse = null, customSem = null, customTimeframe = null) => {
@@ -1257,7 +1279,13 @@ export default function StudentList({
       const isSku = (target.includes('sku') || target.includes('krishna')) && (univ.includes('sku') || univ.includes('krishna'));
       const isChitrakoot = (target.includes('chitrakoot') || target.includes('gramodaya') || target.includes('mgcgv')) && (univ.includes('chitrakoot') || univ.includes('gramodaya') || univ.includes('mgcgv'));
 
-      if (!univ.includes(target) && !target.includes(univ) && !isMcbu && !isSubharti && !isIes && !isMcrpv && !isBhabha && !isGyanveer && !isMmyvv && !isMpu && !isSku && !isChitrakoot) {
+      const directMatch = univ.includes(target) || target.includes(univ) || isMcbu || isSubharti || isIes || isMcrpv || isBhabha || isGyanveer || isMmyvv || isMpu || isSku || isChitrakoot;
+      const linkedUnivMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+        const lu = (lc.universityName || lc.collegeName || '').toLowerCase();
+        return lu.includes(target) || target.includes(lu);
+      });
+
+      if (!directMatch && !linkedUnivMatch) {
         return false;
       }
     }
@@ -1279,7 +1307,13 @@ export default function StudentList({
         const numOnly = (colObj.code || colObj.name).replace(/\D/g, '');
         if (numOnly.length >= 3 && cleanSc.includes(numOnly)) isMatch = true;
       }
-      if (!isMatch) return false;
+
+      const linkedColMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+        const lsc = (lc.collegeName || '').toLowerCase();
+        return lsc === targetCol || lsc.includes(targetCol) || targetCol.includes(lsc);
+      });
+
+      if (!isMatch && !linkedColMatch) return false;
     }
 
     if (!q) return true;
@@ -1300,13 +1334,20 @@ export default function StudentList({
     const emailMatch = q.includes('@') && s.email?.toLowerCase().includes(q);
 
     const courseMatch = s.courseName?.toLowerCase().includes(q);
+    const univMatch = s.universityName?.toLowerCase().includes(q);
+    const collegeMatch = s.collegeName?.toLowerCase().includes(q);
+    const branchMatch = s.branch?.toLowerCase().includes(q);
+    const categoryMatch = (s.socialCategory || s.category || '').toLowerCase().includes(q);
+
     const linkedMatch = s.linkedCourses && s.linkedCourses.some(l => 
       l.courseName?.toLowerCase().includes(q) ||
       l.rollNo?.toLowerCase().includes(q) ||
-      l.registrationNo?.toLowerCase().includes(q)
+      l.registrationNo?.toLowerCase().includes(q) ||
+      l.universityName?.toLowerCase().includes(q) ||
+      l.collegeName?.toLowerCase().includes(q)
     );
 
-    return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || courseMatch || linkedMatch;
+    return nameMatch || fatherMatch || rollMatch || aadharMatch || phoneMatch || emailMatch || courseMatch || univMatch || collegeMatch || branchMatch || categoryMatch || linkedMatch;
   });
 
   return (
@@ -1316,14 +1357,22 @@ export default function StudentList({
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-              Student Records Directorate
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{isRecordsDesk ? 'Master Student Records Directory' : 'Student Records Directorate'}</span>
+              </span>
+              <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                {filteredStudents.length} of {students.length} Students
+              </span>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-              Enrolled Students Directory &amp; Documents
+              {isRecordsDesk ? 'All Student Records (विद्यार्थी रिकॉर्ड्स)' : 'Enrolled Students Directory & Documents'}
             </h1>
             <p className="text-xs text-slate-500">
-              View student profiles, inspect uploaded marksheets and KYC identity proofs, print admission slips, and check fee status.
+              {isRecordsDesk 
+                ? 'Search, filter and inspect all enrolled students by University, Affiliated College, Course and Session with 39-field records, fee status, and full profiles.'
+                : 'View student profiles, inspect uploaded marksheets and KYC identity proofs, print admission slips, and check fee status.'}
             </p>
           </div>
 
@@ -1360,7 +1409,7 @@ export default function StudentList({
             </label>
             <select
               value={filterSession}
-              onChange={(e) => setFilterSession(e.target.value)}
+              onChange={(e) => handleFilterSessionChange(e.target.value)}
               className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">All Sessions</option>
@@ -1380,7 +1429,7 @@ export default function StudentList({
             </label>
             <select
               value={filterSatra}
-              onChange={(e) => setFilterSatra(e.target.value)}
+              onChange={(e) => handleFilterSatraChange(e.target.value)}
               className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">All Satras</option>
@@ -1396,7 +1445,7 @@ export default function StudentList({
             <select
               value={filterUniversity}
               onChange={(e) => handleFilterUniversityChange(e.target.value)}
-              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-bold text-indigo-900 cursor-pointer shadow-xs"
             >
               <option value="all">Select University (All)</option>
               {allAvailableUniversities.map((uName, i) => (
@@ -1416,7 +1465,7 @@ export default function StudentList({
             </label>
             <select
               value={filterCollege}
-              onChange={(e) => setFilterCollege(e.target.value)}
+              onChange={(e) => handleFilterCollegeChange(e.target.value)}
               className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
             >
               <option value="all">Select College (All)</option>
@@ -1446,7 +1495,7 @@ export default function StudentList({
                 type="text"
                 value={search}
                 onChange={handleSearchChange}
-                placeholder="Name, Roll, Mobile, Aadhaar..."
+                placeholder="Name, Roll, Univ, College, Mobile..."
                 className="w-full pl-7 pr-6 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium shadow-xs"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
@@ -1463,14 +1512,25 @@ export default function StudentList({
           </div>
         </div>
 
-        <div className="pt-0.5">
+        <div className="pt-0.5 flex flex-col sm:flex-row items-center gap-2">
           <button
             type="button"
             onClick={handleApplyFilters}
-            className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-2"
+            className="flex-1 w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            <span>Show Students Record</span>
+            <span>Show Students Record ({filteredStudents.length} Students Matching)</span>
           </button>
+          {(appliedUniversity !== 'all' || appliedCollege !== 'all' || appliedSession !== 'all' || appliedSatra !== 'all' || search) && (
+            <button
+              type="button"
+              onClick={handleResetFiltersToAll}
+              className="bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-bold py-2 px-3.5 rounded-lg text-xs cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1.5 shadow-2xs"
+              title="Reset all filters back to show all students"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Filters (Show All)</span>
+            </button>
+          )}
         </div>
       </div>
 

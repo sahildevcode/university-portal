@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX
+  UserX, GraduationCap
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -40,6 +40,9 @@ export default function AdminPortal({
         return 'hub';
       }
 
+      if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
+        return 'records';
+      }
       if (p.includes('registration') || p.includes('register') || p.includes('admissions') || p.includes('admission') || search.includes('registration') || search.includes('admission')) {
         return 'admissions';
       }
@@ -338,6 +341,16 @@ export default function AdminPortal({
       badge: 'Admissions'
     },
     { 
+      id: 'records', 
+      label: 'Student Records', 
+      fullName: 'Master Student Records & University/College Directory',
+      sub: 'All enrolled students database, search by university & college, full profile & fee ledger',
+      shortDesc: 'All Student Records, Search by University & College',
+      icon: GraduationCap, 
+      color: 'text-emerald-500',
+      badge: 'All Students'
+    },
+    { 
       id: 'documents', 
       label: 'Documents Tracker', 
       fullName: 'Student Documents Tracker & Verification Desk',
@@ -485,7 +498,7 @@ export default function AdminPortal({
                       Admin Desks
                     </span>
                     <span className="text-[10px] font-black text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-md">
-                      8 Modules
+                      {adminModules.length} Modules
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
@@ -630,11 +643,11 @@ export default function AdminPortal({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/30">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-md border border-amber-400/30">
                           Admin Desks
                         </span>
-                        <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2 py-0.5 rounded-md">
-                          8 Modules
+                        <span className="text-[10px] font-black text-slate-400 bg-white/10 px-2.5 py-0.5 rounded-md">
+                          {adminModules.length} Modules
                         </span>
                       </div>
                       <h3 className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
@@ -926,6 +939,20 @@ export default function AdminPortal({
             />
           )}
         </div>
+      )}
+
+      {/* TAB: STUDENT RECORDS MASTER DIRECTORY (SEARCH BY UNIVERSITY & COLLEGE) */}
+      {activeTab === 'records' && (
+        <StudentList 
+          courses={localCourses} 
+          lang={lang}
+          toggleLang={toggleLang}
+          isRecordsDesk={true}
+          onOpenNewAdmission={() => {
+            setActiveTab('admissions');
+            setAdmissionSubTab('new');
+          }}
+        />
       )}
 
       {/* TAB 2: CASH COUNTER & TREASURY FEED (WITH ADMIN EDIT POWER) */}

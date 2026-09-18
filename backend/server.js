@@ -957,7 +957,7 @@ app.post('/api/students/reset-demo-data', (req, res) => {
 app.get('/api/students', (req, res) => {
   try {
     const db = readDB();
-    const { course = 'all', semester = 'all', timeframe = 'all', search = '', session = 'all' } = req.query;
+    const { course = 'all', semester = 'all', timeframe = 'all', search = '', session = 'all', university = 'all', college = 'all' } = req.query;
     let list = [...(db.students || [])];
 
     const now = new Date();
@@ -984,6 +984,16 @@ app.get('/api/students', (req, res) => {
       list = list.filter(s => (s.currentSession || s.admissionSession || '') === session);
     }
 
+    if (university !== 'all') {
+      const uTarget = university.toLowerCase();
+      list = list.filter(s => (s.universityName || s.collegeName || '').toLowerCase().includes(uTarget) || uTarget.includes((s.universityName || '').toLowerCase()));
+    }
+
+    if (college !== 'all') {
+      const cTarget = college.toLowerCase();
+      list = list.filter(s => (s.collegeName || s.universityName || '').toLowerCase().includes(cTarget) || cTarget.includes((s.collegeName || '').toLowerCase()));
+    }
+
     if (timeframe === 'week') {
       list = list.filter(s => s.admissionTimestamp && new Date(s.admissionTimestamp) >= oneWeekAgo);
     } else if (timeframe === 'month') {
@@ -1002,7 +1012,10 @@ app.get('/api/students', (req, res) => {
         (s.fatherName || '').toLowerCase().includes(q) ||
         (s.phone || s.contact || '').includes(q) ||
         (s.aadhaarNo && s.aadhaarNo.replace(/[\s-]/g, '').includes(cleanNum)) ||
-        (s.courseName || '').toLowerCase().includes(q)
+        (s.courseName || '').toLowerCase().includes(q) ||
+        (s.universityName || '').toLowerCase().includes(q) ||
+        (s.collegeName || '').toLowerCase().includes(q) ||
+        (s.branch || '').toLowerCase().includes(q)
       );
     }
 
