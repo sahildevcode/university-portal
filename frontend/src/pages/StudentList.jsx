@@ -3568,13 +3568,13 @@ export default function StudentList({
 
       {/* Full Student Profile & Document Viewer Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden my-8 border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
             
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-indigo-900 to-navy-900 text-white p-6 flex items-start justify-between">
+            <div className="bg-gradient-to-r from-indigo-900 to-navy-900 text-white p-5 sm:p-6 flex items-start justify-between shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0">
                   {selectedStudent.studentImage || selectedStudent.documents?.photo ? (
                     <img src={selectedStudent.studentImage || selectedStudent.documents?.photo} alt="Photo" className="w-full h-full object-cover" />
                   ) : (
@@ -3606,7 +3606,7 @@ export default function StudentList({
                 </button>
                 <button
                   onClick={() => setSelectedStudent(null)}
-                  className="text-slate-300 hover:text-white p-1 rounded-lg"
+                  className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -3614,10 +3614,10 @@ export default function StudentList({
             </div>
 
             {/* Profile Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-50 px-6 text-xs font-bold gap-2">
+            <div className="flex border-b border-slate-200 bg-slate-50 px-6 text-xs font-bold gap-2 shrink-0 overflow-x-auto">
               <button
                 onClick={() => setActiveProfileTab('profile')}
-                className={`py-3 px-3 border-b-2 transition-all ${
+                className={`py-3 px-3 border-b-2 transition-all cursor-pointer ${
                   activeProfileTab === 'profile' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500'
                 }`}
               >
@@ -3625,7 +3625,7 @@ export default function StudentList({
               </button>
               <button
                 onClick={() => setActiveProfileTab('documents')}
-                className={`py-3 px-3 border-b-2 transition-all ${
+                className={`py-3 px-3 border-b-2 transition-all cursor-pointer ${
                   activeProfileTab === 'documents' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500'
                 }`}
               >
@@ -3633,7 +3633,7 @@ export default function StudentList({
               </button>
               <button
                 onClick={() => setActiveProfileTab('fees')}
-                className={`py-3 px-3 border-b-2 transition-all ${
+                className={`py-3 px-3 border-b-2 transition-all cursor-pointer ${
                   activeProfileTab === 'fees' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500'
                 }`}
               >
@@ -3641,13 +3641,16 @@ export default function StudentList({
               </button>
               <button
                 onClick={() => setActiveProfileTab('results')}
-                className={`py-3 px-3 border-b-2 transition-all ${
+                className={`py-3 px-3 border-b-2 transition-all cursor-pointer ${
                   activeProfileTab === 'results' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-slate-500'
                 }`}
               >
                 Semester Results ({selectedStudent.results?.length || 0})
               </button>
             </div>
+
+            {/* Scrollable Modal Body Container */}
+            <div className="overflow-y-auto flex-1 overscroll-contain">
 
             {/* Tab 1: Personal, Academic & MP Govt KYC */}
             {activeProfileTab === 'profile' && (
@@ -3870,6 +3873,16 @@ export default function StudentList({
                     <div><span className="text-slate-400 block text-[10px]">Remark:</span><p className="font-medium text-slate-700">{selectedStudent.remark || 'N/A'}</p></div>
                   </div>
                 </div>
+
+                {/* 5. नियम एवं शर्तें (Terms & Conditions & Undertaking) */}
+                <div className="pt-2">
+                  <StudentTermsAndConditions
+                    compact={false}
+                    showSignatures={true}
+                    studentSignatureImage={selectedStudent.documents?.signature || null}
+                    title="विद्यार्थी प्रवेश नियम एवं शर्तें (Student Admission Terms & Conditions)"
+                  />
+                </div>
               </div>
             )}
 
@@ -4033,17 +4046,19 @@ export default function StudentList({
               </div>
             )}
 
+            </div>
+
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 shrink-0">
               <button
                 onClick={() => setPrintSlipStudent(selectedStudent)}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs"
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow-xs"
               >
                 <Printer className="w-4 h-4" /> Print Admission Slip
               </button>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-xl text-xs"
+                className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-xl text-xs cursor-pointer"
               >
                 Close
               </button>
@@ -4071,10 +4086,10 @@ export default function StudentList({
 
       {/* Comprehensive Student Edit Modal */}
       {editingStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden my-8 border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
                   <Edit3 className="w-5 h-5" />
@@ -4097,20 +4112,20 @@ export default function StudentList({
 
             {/* Error & Success alerts */}
             {editError && (
-              <div className="m-6 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
+              <div className="m-4 mb-0 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2 shrink-0">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{editError}</span>
               </div>
             )}
             {editSuccess && (
-              <div className="m-6 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-bold flex items-center gap-2">
+              <div className="m-4 mb-0 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-bold flex items-center gap-2 shrink-0">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{editSuccess}</span>
               </div>
             )}
 
             {/* Edit Form */}
-            <form onSubmit={handleSaveEdit} noValidate className="p-6 space-y-6 text-xs max-h-[70vh] overflow-y-auto">
+            <form onSubmit={handleSaveEdit} noValidate className="p-6 space-y-6 text-xs flex-1 overflow-y-auto overscroll-contain">
               {/* Section: Personal Information */}
               {/* Section 1: Basic & Demographic Details */}
               <div className="space-y-3">
