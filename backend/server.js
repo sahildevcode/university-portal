@@ -1733,6 +1733,139 @@ app.delete('/api/students/:rollNo/photo', (req, res) => {
     console.error('Error removing student photo:', err);
     res.status(500).json({ success: false, message: 'Failed to remove photo: ' + err.message });
   }
+// Dedicated endpoint to promote individual student to next semester / year
+app.post('/api/students/:rollNo/promote', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const index = findStudentIndex(db.students, rawKey);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const student = db.students[index];
+    const { nextSemester, nextClass, nextSession, promotionDate, remark } = req.body;
+
+    const prevClass = student.currentClass || `SEM-${student.currentSemester || 1}`;
+    const prevSession = student.currentSession || student.admissionSession || '';
+
+    // Update student fields
+    if (nextSemester !== undefined && nextSemester !== '') {
+      student.currentSemester = Number(nextSemester);
+      student.manualSemester = Number(nextSemester);
+    }
+    if (nextClass) {
+      student.currentClass = String(nextClass).trim();
+    } else if (nextSemester) {
+      student.currentClass = `SEM-${nextSemester}`;
+    }
+    if (nextSession) {
+      student.currentSession = String(nextSession).trim();
+    }
+    student.updatedAt = new Date().toISOString();
+
+    // Log in promotion history
+    if (!student.promotionHistory) student.promotionHistory = [];
+    student.promotionHistory.push({
+      id: 'PROM-' + Date.now(),
+      date: promotionDate || new Date().toISOString().split('T')[0],
+      fromClass: prevClass,
+      toClass: student.currentClass,
+      fromSession: prevSession,
+      toSession: student.currentSession,
+      promotedAt: new Date().toISOString(),
+      remark: remark || 'Promoted to next academic term'
+    });
+
+    // Also update any linked dual enrollment secondary student record if applicable
+    if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+      student.linkedCourses.forEach(l => {
+        if (l.rollNo) {
+          const lIdx = findStudentIndex(db.students, l.rollNo);
+          if (lIdx !== -1) {
+            db.students[lIdx].currentSession = student.currentSession;
+          }
+        }
+      });
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Student ${student.fullName || student.studentName} successfully promoted to ${student.currentClass || ('SEM-' + student.currentSemester)}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error promoting student:', err);
+    res.status(500).json({ success: false, message: 'Failed to promote student: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to batch promote multiple students
+app.post('/api/students/batch-promote', (req, res) => {
+  try {
+    const db = readDB();
+    const { rollNumbers, nextSemester, nextClass, nextSession, promotionDate, remark } = req.body;
+
+    if (!Array.isArray(rollNumbers) || rollNumbers.length === 0) {
+      return res.status(400).json({ success: false, message: 'No students selected for promotion.' });
+    }
+
+    let promotedCount = 0;
+    const promotedStudents = [];
+
+    rollNumbers.forEach(roll => {
+      const idx = findStudentIndex(db.students, roll);
+      if (idx !== -1) {
+        const student = db.students[idx];
+        const prevClass = student.currentClass || `SEM-${student.currentSemester || 1}`;
+        const prevSession = student.currentSession || student.admissionSession || '';
+
+        if (nextSemester !== undefined && nextSemester !== '') {
+          student.currentSemester = Number(nextSemester);
+          student.manualSemester = Number(nextSemester);
+        }
+        if (nextClass) {
+          student.currentClass = String(nextClass).trim();
+        } else if (nextSemester) {
+          student.currentClass = `SEM-${nextSemester}`;
+        }
+        if (nextSession) {
+          student.currentSession = String(nextSession).trim();
+        }
+        student.updatedAt = new Date().toISOString();
+
+        if (!student.promotionHistory) student.promotionHistory = [];
+        student.promotionHistory.push({
+          id: 'PROM-' + Date.now() + '-' + promotedCount,
+          date: promotionDate || new Date().toISOString().split('T')[0],
+          fromClass: prevClass,
+          toClass: student.currentClass,
+          fromSession: prevSession,
+          toSession: student.currentSession,
+          promotedAt: new Date().toISOString(),
+          remark: remark || 'Batch promoted to next academic term'
+        });
+
+        promotedStudents.push(student);
+        promotedCount++;
+      }
+    });
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Successfully promoted ${promotedCount} students to ${nextClass || ('SEM-' + nextSemester)}!`,
+      promotedCount,
+      students: promotedStudents
+    });
+  } catch (err) {
+    console.error('Error in batch promote:', err);
+    res.status(500).json({ success: false, message: 'Batch promotion failed: ' + err.message });
+  }
 });
 
 // Dedicated endpoint to cancel student admission

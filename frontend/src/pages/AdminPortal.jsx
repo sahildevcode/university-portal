@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX, GraduationCap, FolderLock
+  UserX, GraduationCap, FolderLock, TrendingUp
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -15,6 +15,7 @@ import WebsiteCmsManager from './WebsiteCmsManager';
 import UniversityPaidManager from './UniversityPaidManager';
 import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import SavePersonalDocuments from './SavePersonalDocuments';
+import PromoteStudentsManager from './PromoteStudentsManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -36,11 +37,14 @@ export default function AdminPortal({
       const p = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
 
-      // If URL is explicitly /admin or /admin/ or /admin/hub -> always open Hub
-      if (p === '/admin' || p === '/admin/' || p.includes('hub') || search.includes('hub')) {
+      // If URL explicitly requests hub
+      if (p.includes('hub') || search.includes('hub')) {
         return 'hub';
       }
 
+      if (p.includes('promote') || search.includes('promote')) {
+        return 'promote';
+      }
       if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
         return 'records';
       }
@@ -73,10 +77,11 @@ export default function AdminPortal({
       }
       try {
         const saved = localStorage.getItem('pkc_admin_active_tab');
-        if (saved) return saved;
+        if (saved && saved !== 'hub') return saved;
       } catch {}
     }
-    return 'hub';
+    // 1 DISPLAY SHOW STUDENT RECORDS (BY DEFAULT)
+    return 'records';
   };
 
   const getInitialAdmissionSubTab = () => {
@@ -315,14 +320,24 @@ export default function AdminPortal({
 
   const adminModules = [
     { 
-      id: 'syllabus', 
-      label: 'Universities & Courses', 
-      fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
-      sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
-      shortDesc: 'Universities, Colleges, Branches & Syllabus',
-      icon: Building2, 
-      color: 'text-indigo-600',
-      badge: 'MPU • 18 Colleges'
+      id: 'records', 
+      label: 'Student Records', 
+      fullName: 'Master Student Records & University/College Directory',
+      sub: 'All enrolled students database, search by university & college, full profile & fee ledger',
+      shortDesc: 'All Student Records, Search by University & College',
+      icon: GraduationCap, 
+      color: 'text-emerald-500',
+      badge: 'All Students'
+    },
+    { 
+      id: 'admissions', 
+      label: 'Enroll New Student', 
+      fullName: 'Enroll New Student & Enrolled Directory',
+      sub: 'All enrolled students records & new student registration (39 fields)',
+      shortDesc: 'Enrolled Students & New Form (39 Fields)',
+      icon: Users, 
+      color: 'text-blue-600',
+      badge: 'Admissions'
     },
     { 
       id: 'cashcounter', 
@@ -335,34 +350,34 @@ export default function AdminPortal({
       badge: 'Live Counter'
     },
     { 
-      id: 'admissions', 
-      label: 'Student Admissions', 
-      fullName: 'Enrolled Students Directory & Admissions',
-      sub: 'All enrolled students records & new admissions',
-      shortDesc: 'Enrolled Students & New Form (39 Fields)',
-      icon: Users, 
-      color: 'text-blue-600',
-      badge: 'Admissions'
+      id: 'promote', 
+      label: 'Promote Students', 
+      fullName: 'Promote Students to Next Semester / Year Desk',
+      sub: 'Upgrade enrolled students to next semester or academic year with 1-click',
+      shortDesc: '1-Click Next Semester / Year Promotion',
+      icon: TrendingUp, 
+      color: 'text-teal-500',
+      badge: 'Promote'
     },
     { 
-      id: 'records', 
-      label: 'Student Records', 
-      fullName: 'Master Student Records & University/College Directory',
-      sub: 'All enrolled students database, search by university & college, full profile & fee ledger',
-      shortDesc: 'All Student Records, Search by University & College',
-      icon: GraduationCap, 
-      color: 'text-emerald-500',
-      badge: 'All Students'
+      id: 'university-paid', 
+      label: 'University Settlement', 
+      fullName: 'University Paid & Settlement Ledger',
+      sub: 'University official fees paid, outstanding dues & margin ledger',
+      shortDesc: 'Official Dues, Margins & University Pay',
+      icon: Building2, 
+      color: 'text-amber-600',
+      badge: 'Settlement'
     },
     { 
-      id: 'documents', 
-      label: 'Documents Tracker', 
-      fullName: 'Student Documents Tracker & Verification Desk',
-      sub: 'Student documents verification & KYC compliance desk',
-      shortDesc: 'KYC, Marksheets & Digital Dossier',
-      icon: FolderCheck, 
-      color: 'text-purple-600',
-      badge: 'KYC Desk'
+      id: 'cancelled', 
+      label: 'Cancelled Admissions', 
+      fullName: 'Cancelled Admissions & Student Fee Settlement Registry',
+      sub: 'Cancelled student records, deposited fees & refund clearance ledger',
+      shortDesc: 'Cancelled Records, Paid Fees & Refund Status',
+      icon: UserX, 
+      color: 'text-rose-600',
+      badge: 'Refund Desk'
     },
     { 
       id: 'staff', 
@@ -385,24 +400,24 @@ export default function AdminPortal({
       badge: 'CMS'
     },
     { 
-      id: 'university-paid', 
-      label: 'University Settlement', 
-      fullName: 'University Paid & Settlement Ledger',
-      sub: 'University official fees paid, outstanding dues & margin ledger',
-      shortDesc: 'Official Dues, Margins & University Pay',
-      icon: Building2, 
-      color: 'text-amber-600',
-      badge: 'Settlement'
+      id: 'documents', 
+      label: 'Documents Tracker', 
+      fullName: 'Student Documents Tracker & Verification Desk',
+      sub: 'Student documents verification & KYC compliance desk',
+      shortDesc: 'KYC, Marksheets & Digital Dossier',
+      icon: FolderCheck, 
+      color: 'text-purple-600',
+      badge: 'KYC Desk'
     },
     { 
-      id: 'cancelled', 
-      label: 'Cancelled Admissions', 
-      fullName: 'Cancelled Admissions & Student Fee Settlement Registry',
-      sub: 'Cancelled student records, deposited fees & refund clearance ledger',
-      shortDesc: 'Cancelled Records, Paid Fees & Refund Status',
-      icon: UserX, 
-      color: 'text-rose-600',
-      badge: 'Refund Desk'
+      id: 'syllabus', 
+      label: 'Universities & Courses', 
+      fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
+      sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
+      shortDesc: 'Universities, Colleges, Branches & Syllabus',
+      icon: Building2, 
+      color: 'text-indigo-600',
+      badge: 'MPU • 18 Colleges'
     },
     { 
       id: 'personal-docs', 
@@ -966,6 +981,16 @@ export default function AdminPortal({
             setActiveTab('admissions');
             setAdmissionSubTab('new');
           }}
+        />
+      )}
+
+      {/* TAB: PROMOTE STUDENTS DESK */}
+      {activeTab === 'promote' && (
+        <PromoteStudentsManager 
+          courses={localCourses} 
+          lang={lang} 
+          toggleLang={toggleLang} 
+          onRefreshCourses={onRefreshCourses}
         />
       )}
 
