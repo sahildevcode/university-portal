@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowRight, 
   BookOpen, 
@@ -13,10 +13,20 @@ import {
   MessageSquare,
   Building2,
   Star,
-  Compass
+  Compass,
+  Sparkles,
+  Zap,
+  Check,
+  ChevronRight,
+  Filter,
+  Search,
+  School
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import CampusEventSlider from '../components/CampusEventSlider';
+import AnimatedCounter from '../components/AnimatedCounter';
+import AdmissionLiveTicker from '../components/AdmissionLiveTicker';
+import { fireCelebration } from '../utils/confetti';
 
 export default function MainUniversityHome({ 
   setActiveTab, 
@@ -27,6 +37,68 @@ export default function MainUniversityHome({
 }) {
   const t = translations[lang] || translations.en;
 
+  // Dynamic rotating headlines in Hero
+  const dynamicPhrases = [
+    lang === 'hi' ? 'उज्ज्वल भविष्य और सम्मान।' : 'A Future of Impact.',
+    lang === 'hi' ? '100% यूजीसी मान्यता प्राप्त डिग्रियां।' : '100% Certified UGC Degrees.',
+    lang === 'hi' ? 'शासकीय नौकरियों हेतु कंप्यूटर डिप्लोमा।' : 'Govt Approved Computer Diplomas.',
+    lang === 'hi' ? '100% छात्रवृत्ति मार्गदर्शन (MPTASS/NSP)।' : '100% Scholarship Assistance.'
+  ];
+  const [currentPhraseIdx, setCurrentPhraseIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentPhraseIdx(prev => (prev + 1) % dynamicPhrases.length);
+    }, 3200);
+    return () => clearInterval(timer);
+  }, [dynamicPhrases.length]);
+
+  // Program Category Filter State
+  const [selectedFilter, setSelectedFilter] = useState('all');
+
+  // Interactive Quick Eligibility Tool State
+  const [selectedQualification, setSelectedQualification] = useState('12th');
+
+  const qualificationOptions = [
+    { id: '10th', label: lang === 'hi' ? '10वीं पास (High School)' : '10th Pass (High School)', badge: 'Diplomas' },
+    { id: '12th', label: lang === 'hi' ? '12वीं पास (सभी संकाय)' : '12th Pass (Any Stream)', badge: 'Undergraduate' },
+    { id: '12th_science', label: lang === 'hi' ? '12वीं गणित / विज्ञान' : '12th Science / Maths', badge: 'Technical / IT' },
+    { id: 'graduate', label: lang === 'hi' ? 'स्नातक / ग्रेजुएट' : 'Graduate Degree Holder', badge: 'Postgraduate' }
+  ];
+
+  const getRecommendedPrograms = (qual) => {
+    switch (qual) {
+      case '10th':
+        return [
+          { name: 'DCA (Diploma in Computer Applications)', univ: 'Makhanlal / MPU Univ', duration: '1 Year', career: 'Govt & Private Computer Operator' },
+          { name: 'CPCT Certification Preparation', univ: 'MP Govt Recognized', duration: 'Exam Ready', career: 'Mandatory MP Govt Vacancies' },
+          { name: 'Polytechnic Diploma Consultation', univ: 'Affiliated Polytechnic', duration: '3 Years', career: 'Junior Engineer & Technical' }
+        ];
+      case '12th':
+        return [
+          { name: 'BCA (Bachelor of Computer Applications)', univ: 'UGC Approved Univ', duration: '3 Years', career: 'Software & IT Developer' },
+          { name: 'BBA / B.Com (Commerce & Management)', univ: 'UGC Approved Univ', duration: '3 Years', career: 'Banking, Accounts & Corporate' },
+          { name: 'DCA / CPCT Computer Diplomas', univ: 'Makhanlal / MPU', duration: '1 Year', career: 'MP Patwari, Court, Police Jobs' },
+          { name: 'BA (Humanities & Social Sciences)', univ: 'State / Central Univ', duration: '3 Years', career: 'Civil Services & Teaching' }
+        ];
+      case '12th_science':
+        return [
+          { name: 'B.Tech Computer Science & Engineering', univ: 'AICTE / UGC Univ', duration: '4 Years', career: 'Software Engineer & Tech Lead' },
+          { name: 'B.Sc (Computer Science / Maths / Bio)', univ: 'UGC Approved Univ', duration: '3 Years', career: 'Scientific Research, IT, Lab' },
+          { name: 'BCA (Software Development Track)', univ: 'UGC Approved Univ', duration: '3 Years', career: 'Full Stack & Web Developer' }
+        ];
+      case 'graduate':
+        return [
+          { name: 'MBA (Dual Specialization HR/Finance/Mktg)', univ: 'UGC / AICTE Univ', duration: '2 Years', career: 'Managerial & Executive Career' },
+          { name: 'MCA (Master of Computer Applications)', univ: 'AICTE / UGC Univ', duration: '2 Years', career: 'Senior Software Engineer' },
+          { name: 'PGDCA (Post Graduate Computer Diploma)', univ: 'Makhanlal / UGC Univ', duration: '1 Year', career: 'Higher Govt Job Pay Scales' },
+          { name: 'M.Sc / MA Post Graduate Degrees', univ: 'UGC Approved Univ', duration: '2 Years', career: 'College Lecturer, UGC NET, R&D' }
+        ];
+      default:
+        return [];
+    }
+  };
+
   // Newsletter subscribe state
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
@@ -34,6 +106,7 @@ export default function MainUniversityHome({
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (!newsletterEmail) return;
+    fireCelebration();
     setNewsletterSubscribed(true);
     setTimeout(() => {
       setNewsletterEmail('');
@@ -108,21 +181,32 @@ export default function MainUniversityHome({
           <div className="absolute inset-0 bg-gradient-to-t from-[#071530] via-transparent to-black/50" />
         </div>
 
+        {/* Ambient Floating Glowing Particle Orbs */}
+        <div className="absolute w-96 h-96 rounded-full bg-[#C59B27]/15 blur-3xl -top-20 -left-20 animate-float-slow pointer-events-none" />
+        <div className="absolute w-96 h-96 rounded-full bg-blue-600/15 blur-3xl -bottom-20 -right-20 animate-float pointer-events-none" />
+        <div className="absolute w-80 h-80 rounded-full bg-amber-500/10 blur-3xl top-1/3 left-1/2 -translate-x-1/2 animate-pulse pointer-events-none" />
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
             {/* Left Content */}
             <div className="lg:col-span-8 space-y-6 text-center lg:text-left">
               <div className="inline-flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded border border-[#C59B27]/40">
-                  {lang === 'hi' ? 'बुंदेलखंड एवं मध्य भारत का प्रतिष्ठित संस्थान' : 'SHAPING MINDS. INSPIRING FUTURES.'}
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5 animate-pulse">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{lang === 'hi' ? 'बुंदेलखंड एवं मध्य भारत का प्रतिष्ठित संस्थान' : 'SHAPING MINDS. INSPIRING FUTURES.'}</span>
                 </span>
               </div>
 
               <h1 className="font-serif-academic text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
                 A Legacy of Excellence. <br />
-                <span className="text-[#C59B27] italic font-serif-academic font-bold">
-                  A Future of Impact.
+                <span className="relative inline-block mt-1">
+                  <span 
+                    key={currentPhraseIdx}
+                    className="text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic font-bold block animate-fadeIn"
+                  >
+                    {dynamicPhrases[currentPhraseIdx]}
+                  </span>
                 </span>
               </h1>
 
@@ -136,17 +220,25 @@ export default function MainUniversityHome({
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
                 <button
-                  onClick={() => setActiveTab('courses')}
-                  className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-md border border-[#C59B27]/60 shadow-lg hover:border-[#C59B27] transition-all cursor-pointer flex items-center justify-center gap-2 group"
+                  onClick={() => {
+                    fireCelebration({ x: 0.3, y: 0.5 });
+                    setActiveTab('courses');
+                  }}
+                  className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl border border-[#C59B27]/80 shadow-xl hover:border-[#C59B27] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
                 >
-                  <span>{t.viewCourses}</span>
-                  <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1 transition-transform" />
+                  <span className="relative z-10">{t.viewCourses}</span>
+                  <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1.5 transition-transform relative z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#C59B27]/0 via-[#C59B27]/20 to-[#C59B27]/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </button>
 
                 <button
-                  onClick={() => setActiveTab('inquiry')}
-                  className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-md shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  onClick={() => {
+                    fireCelebration({ x: 0.5, y: 0.5 });
+                    setActiveTab('inquiry');
+                  }}
+                  className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
                   <span>{t.onlineInquiry}</span>
                   <ArrowRight className="w-4 h-4 text-slate-600" />
                 </button>
@@ -155,14 +247,15 @@ export default function MainUniversityHome({
               {/* Social Proof */}
               <div className="pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-3 border-t border-slate-800/80">
                 <div className="flex -space-x-2 overflow-hidden">
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop" alt="Student" />
+                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="Student" />
+                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" alt="Student" />
+                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop" alt="Student" />
+                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop" alt="Student" />
                 </div>
                 <div className="text-left text-xs">
-                  <strong className="text-white block font-bold text-sm">
-                    18,500+ Students Guided Successfully
+                  <strong className="text-white block font-bold text-sm flex items-center gap-1.5">
+                    <span>18,500+ Students Guided Successfully</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   </strong>
                   <span className="text-slate-400 block text-xs">
                     Serving 50+ Districts Across Madhya Pradesh &amp; Central India
@@ -172,23 +265,32 @@ export default function MainUniversityHome({
 
             </div>
 
-            {/* Right: Floating Honor Badge */}
+            {/* Right: Floating Interactive Honor Badge */}
             <div className="lg:col-span-4 flex justify-center lg:justify-end">
-              <div className="bg-[#0A1931]/95 border-2 border-[#C59B27]/70 rounded-3xl p-7 sm:p-8 shadow-2xl backdrop-blur-md max-w-sm text-center space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-[#C59B27]/15 border border-[#C59B27]/40 flex items-center justify-center text-[#C59B27] shadow-md">
+              <div 
+                onClick={() => fireCelebration({ x: 0.8, y: 0.4 })}
+                className="bg-[#0A1931]/95 border-2 border-[#C59B27] rounded-3xl p-7 sm:p-8 shadow-2xl backdrop-blur-md max-w-sm text-center space-y-4 animate-float hover:scale-105 transition-all duration-300 cursor-pointer relative group overflow-hidden"
+                title="Click for celebration! 🎓"
+              >
+                {/* Shimmer sweep */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-[#C59B27]/15 border border-[#C59B27]/40 flex items-center justify-center text-[#C59B27] shadow-md group-hover:rotate-6 transition-transform">
                   <GraduationCap className="w-9 h-9" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#C59B27] block">
-                  15+ YEARS OF TRUST • EST. 2011
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#C59B27] block flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
+                  <span>15+ YEARS OF TRUST • EST. 2011</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
                 </span>
-                <h3 className="font-serif-academic text-xl font-bold text-white leading-snug">
+                <h3 className="font-serif-academic text-xl font-bold text-white leading-snug group-hover:text-[#C59B27] transition-colors">
                   Ranked Among Top Educational Consultancies in MP
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Approved &amp; Registered Educational Society • Reg. No. 06/03/01/12345/18
                 </p>
                 <div className="pt-3 border-t border-slate-800 text-xs text-[#C59B27] font-semibold flex items-center justify-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>UGC &amp; MP Higher Education Partner</span>
                 </div>
               </div>
@@ -197,6 +299,15 @@ export default function MainUniversityHome({
           </div>
         </div>
       </section>
+
+      {/* Admissions Live Marquee Ticker Ribbon */}
+      <AdmissionLiveTicker 
+        onAction={() => {
+          fireCelebration();
+          setActiveTab('inquiry');
+        }} 
+        lang={lang} 
+      />
 
       {/* ========================================================================= */}
       {/* SECTION 2: ACADEMIC PROGRAMS & DISCIPLINES */}
@@ -258,37 +369,77 @@ export default function MainUniversityHome({
               </h2>
             </div>
             <button
-              onClick={() => setActiveTab('courses')}
-              className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-sm transition-colors cursor-pointer flex items-center gap-2 self-start sm:self-auto"
+              onClick={() => {
+                fireCelebration({ x: 0.7, y: 0.4 });
+                setActiveTab('courses');
+              }}
+              className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 self-start sm:self-auto group"
             >
               <span>VIEW ALL PROGRAMS</span>
-              <ArrowRight className="w-4 h-4 text-[#C59B27]" />
+              <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
-          {/* 5 Vertical Program Cards */}
+          {/* Interactive Discipline Filter Tabs */}
+          <div className="flex flex-wrap items-center justify-start sm:justify-center gap-2 pt-1 pb-2">
+            <button
+              onClick={() => setSelectedFilter('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedFilter === 'all'
+                  ? 'bg-[#071530] text-[#C59B27] shadow-md scale-105 border border-[#C59B27]/40'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>{lang === 'hi' ? 'सभी पाठ्यक्रम (All 5)' : 'All Programs (5)'}</span>
+            </button>
+            {programCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedFilter(cat.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedFilter === cat.id
+                    ? 'bg-[#071530] text-[#C59B27] shadow-md scale-105 border border-[#C59B27]/40'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {cat.discipline.split('•')[0].trim()}
+              </button>
+            ))}
+          </div>
+
+          {/* 5 Vertical Interactive Program Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {programCategories.map((prog) => {
+            {programCategories
+              .filter(prog => selectedFilter === 'all' || prog.id === selectedFilter)
+              .map((prog) => {
               const Icon = prog.icon;
               return (
                 <div
                   key={prog.id}
-                  onClick={() => setActiveTab('courses')}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer group"
+                  onClick={() => {
+                    fireCelebration({ x: 0.5, y: 0.5 });
+                    setActiveTab('courses');
+                  }}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer group relative"
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-900">
                     <img 
                       src={prog.image} 
                       alt={prog.title} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    
+                    {/* Shimmer Light sweep effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
                     <div className="absolute -bottom-3 left-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#071530] border border-white text-[#C59B27] flex items-center justify-center shadow-md">
+                      <div className="w-9 h-9 rounded-xl bg-[#071530] border-2 border-white text-[#C59B27] flex items-center justify-center shadow-md group-hover:rotate-12 transition-transform">
                         <Icon className="w-4 h-4" />
                       </div>
                     </div>
-                    <span className="absolute top-2.5 right-2.5 bg-black/70 text-[#C59B27] text-[9px] font-black uppercase px-2.5 py-0.5 rounded border border-[#C59B27]/40">
+                    <span className="absolute top-2.5 right-2.5 bg-black/80 text-[#C59B27] text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border border-[#C59B27]/40 shadow-xs">
                       {prog.badge}
                     </span>
                   </div>
@@ -308,12 +459,114 @@ export default function MainUniversityHome({
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
                       <span className="uppercase tracking-wider text-[11px]">EXPLORE PROGRAM</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform" />
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* ========================================================================= */}
+          {/* INTERACTIVE MINI-TOOL: SMART ELIGIBILITY & COURSE FINDER */}
+          {/* ========================================================================= */}
+          <div className="bg-gradient-to-br from-[#071530] via-slate-900 to-[#071530] text-white rounded-3xl p-6 sm:p-10 border border-[#C59B27]/40 shadow-2xl space-y-6 relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+              <div>
+                <div className="inline-flex items-center gap-2 text-[#C59B27] text-xs font-black uppercase tracking-widest mb-1">
+                  <Zap className="w-4 h-4 text-amber-400 animate-bounce" />
+                  <span>SMART ELIGIBILITY &amp; ADMISSION FINDER</span>
+                </div>
+                <h3 className="font-serif-academic text-2xl sm:text-3xl font-bold text-white">
+                  Find Your Ideal Degree or Diploma in 1-Click
+                </h3>
+                <p className="text-xs text-slate-300 mt-1">
+                  Select your current qualification below to instantly explore verified programs suited for you.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start md:self-auto bg-[#C59B27]/20 border border-[#C59B27]/40 px-3.5 py-1.5 rounded-full text-[11px] font-bold text-[#C59B27]">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Instant University Match</span>
+              </div>
+            </div>
+
+            {/* Qualification Selector Buttons */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                Choose Your Educational Qualification:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {qualificationOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSelectedQualification(opt.id)}
+                    className={`p-3.5 rounded-2xl text-left transition-all duration-200 border cursor-pointer ${
+                      selectedQualification === opt.id
+                        ? 'bg-[#C59B27] text-slate-950 font-black border-[#C59B27] shadow-xl scale-[1.02]'
+                        : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 border-slate-700'
+                    }`}
+                  >
+                    <span className="text-[10px] uppercase tracking-wider opacity-80 block font-mono">
+                      {opt.badge}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold block mt-0.5">
+                      {opt.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommended Matching Programs */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#C59B27] uppercase tracking-wider flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>Recommended Programs Matching Your Profile:</span>
+                </span>
+                <span className="text-[11px] text-slate-400 hidden sm:inline">
+                  UGC Recognized • 100% Scholarship Help Available
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {getRecommendedPrograms(selectedQualification).map((item, i) => (
+                  <div 
+                    key={i}
+                    className="bg-slate-800/70 border border-slate-700 hover:border-[#C59B27] rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between space-y-3 hover:-translate-y-1 group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-mono">
+                        <span className="text-amber-400 font-bold">{item.univ}</span>
+                        <span>{item.duration}</span>
+                      </div>
+                      <h4 className="font-bold text-white text-sm group-hover:text-[#C59B27] transition-colors leading-snug">
+                        {item.name}
+                      </h4>
+                      <p className="text-xs text-slate-300 mt-1.5 flex items-center gap-1.5">
+                        <ArrowRight className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <span>{item.career}</span>
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        fireCelebration();
+                        setActiveTab('inquiry');
+                      }}
+                      className="w-full bg-[#071530] hover:bg-[#C59B27] text-white hover:text-slate-950 font-black text-[11px] uppercase tracking-wider py-2.5 rounded-xl border border-slate-600 hover:border-[#C59B27] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                    >
+                      <span>Check Fees &amp; Inquire</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -322,11 +575,14 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 3: ACCREDITATIONS & KEY STATISTICS */}
       {/* ========================================================================= */}
-      <section className="bg-[#071530] text-white py-16 sm:py-24 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-center">
+      <section className="bg-[#071530] text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
+        {/* Ambient Light */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#C59B27]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-center relative z-10">
           
           <div className="max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27]">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3 py-1 rounded-full border border-[#C59B27]/30 inline-block">
               TRUST &amp; RECOGNITIONS
             </span>
             <h2 className="font-serif-academic text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
@@ -337,62 +593,62 @@ export default function MainUniversityHome({
             </p>
           </div>
 
-          {/* 5 Counters */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-[#0A1931]/60 p-6 sm:p-10 rounded-3xl border border-slate-800">
-            <div className="space-y-2 pt-4 md:pt-0">
+          {/* 5 Animated Counters */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-[#0A1931]/80 p-6 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl backdrop-blur-sm">
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
               <div className="flex justify-center text-[#C59B27] mb-1">
-                <GraduationCap className="w-8 h-8" />
+                <GraduationCap className="w-8 h-8 animate-badge-bounce" />
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-white block">
-                18,500+
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={18500} suffix="+" />
               </strong>
               <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
                 Students Guided
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0">
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
               <div className="flex justify-center text-[#C59B27] mb-1">
-                <Building2 className="w-8 h-8" />
+                <Building2 className="w-8 h-8 animate-badge-bounce" />
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-white block">
-                28+
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={28} suffix="+" />
               </strong>
               <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
                 University Affiliations
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0">
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
               <div className="flex justify-center text-[#C59B27] mb-1">
-                <BookOpen className="w-8 h-8" />
+                <BookOpen className="w-8 h-8 animate-badge-bounce" />
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-white block">
-                50+
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={50} suffix="+" />
               </strong>
               <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
                 Degree &amp; Diplomas
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0">
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
               <div className="flex justify-center text-[#C59B27] mb-1">
-                <Award className="w-8 h-8" />
+                <Award className="w-8 h-8 animate-badge-bounce" />
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-white block">
-                15+
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={15} suffix="+" />
               </strong>
               <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
                 Years of Excellence
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0 col-span-2 md:col-span-1">
+            <div className="space-y-2 pt-4 md:pt-0 col-span-2 md:col-span-1 hover:scale-105 transition-transform duration-300">
               <div className="flex justify-center text-[#C59B27] mb-1">
-                <Star className="w-8 h-8" />
+                <Star className="w-8 h-8 animate-badge-bounce" />
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-white block">
-                95%
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={95} suffix="%" />
               </strong>
               <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
                 Career Guidance Rate
@@ -566,10 +822,14 @@ export default function MainUniversityHome({
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
-                onClick={() => setActiveTab('inquiry')}
-                className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-md cursor-pointer"
+                onClick={() => {
+                  fireCelebration({ x: 0.75, y: 0.75 });
+                  setActiveTab('inquiry');
+                }}
+                className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 group"
               >
-                DIRECT ADMISSION INQUIRY
+                <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
+                <span>DIRECT ADMISSION INQUIRY</span>
               </button>
 
               <a

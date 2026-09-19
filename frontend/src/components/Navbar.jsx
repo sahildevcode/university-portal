@@ -19,6 +19,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { translations } from '../utils/translations';
+import { fireCelebration } from '../utils/confetti';
 
 export default function Navbar({ 
   activeView, 
@@ -83,8 +84,9 @@ export default function Navbar({
               <PhoneCall className="w-3 h-3 text-emerald-400 shrink-0" />
               <span>{t.helpline}</span>
             </span>
-            <span className="hidden lg:inline text-amber-400/90 font-semibold">
-              • {t.admissionsOpen}
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-amber-300 font-semibold bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>{t.admissionsOpen}</span>
             </span>
           </div>
 
@@ -232,11 +234,15 @@ export default function Navbar({
           {/* ========================================================================= */}
           <div className="hidden sm:flex items-center gap-3">
             <button
-              onClick={() => handleNavClick('inquiry')}
-              className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-md shadow-sm transition-all duration-200 cursor-pointer flex items-center gap-1.5"
+              onClick={() => {
+                fireCelebration({ x: 0.9, y: 0.1 });
+                handleNavClick('inquiry');
+              }}
+              className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 group relative overflow-hidden"
             >
+              <Sparkles className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-12 transition-transform" />
               <span>APPLY NOW</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
 

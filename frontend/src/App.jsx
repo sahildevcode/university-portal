@@ -12,6 +12,7 @@ import InquiryPage from './pages/InquiryPage';
 import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
+import ScrollProgressTop from './components/ScrollProgressTop';
 
 // Helper to detect if running on dedicated admin domain
 const isAdminHost = () => {
@@ -424,6 +425,9 @@ export default function App() {
 
       {/* Floating WhatsApp and Email Contact Widget */}
       {activeView === 'public' && <FloatingContactWidget />}
+
+      {/* Floating Scroll To Top Indicator with Progress */}
+      {activeView === 'public' && <ScrollProgressTop />}
 
       {/* Student Login / Sign Up Modal */}
       <StudentAuthModal

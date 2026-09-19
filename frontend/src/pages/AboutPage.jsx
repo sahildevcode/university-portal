@@ -16,6 +16,8 @@ import {
   Compass
 } from 'lucide-react';
 import { translations } from '../utils/translations';
+import AnimatedCounter from '../components/AnimatedCounter';
+import { fireCelebration } from '../utils/confetti';
 
 export default function AboutPage({ lang = 'en', onNavigateTab }) {
   const t = translations[lang] || translations.en;
@@ -35,25 +37,25 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
   const stats = [
     {
       icon: Building2,
-      number: `${aboutData?.yearsOfExcellence || 15}+`,
+      number: <AnimatedCounter end={aboutData?.yearsOfExcellence || 15} suffix="+" />,
       label: t.statYears,
       sub: lang === 'hi' ? 'स्थापना: 2011 से निरंतर' : 'Established in 2011'
     },
     {
       icon: Users,
-      number: `${(aboutData?.totalStudentsGuided || 18500).toLocaleString('en-IN')}+`,
+      number: <AnimatedCounter end={aboutData?.totalStudentsGuided || 18500} suffix="+" />,
       label: t.statStudents,
       sub: lang === 'hi' ? 'डिग्री व डिप्लोमा में प्रवेशित' : 'Enrolled in Degrees & Diplomas'
     },
     {
       icon: Award,
-      number: `${aboutData?.totalAffiliations || 28}+`,
+      number: <AnimatedCounter end={aboutData?.totalAffiliations || 28} suffix="+" />,
       label: t.statAffiliations,
       sub: lang === 'hi' ? 'UGC / AICTE मान्यता प्राप्त' : 'UGC & Govt Recognized'
     },
     {
       icon: Briefcase,
-      number: aboutData?.placementRate || '95%',
+      number: <AnimatedCounter end={parseInt(aboutData?.placementRate || '95', 10)} suffix="%" />,
       label: t.statPlacement,
       sub: lang === 'hi' ? 'सफलता एवं जॉब गाइडेंस' : 'Placement & Exam Guidance'
     }
@@ -233,8 +235,11 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
           </div>
           
           <button
-            onClick={() => onNavigateTab && onNavigateTab('courses')}
-            className="flex items-center gap-2 bg-[#071530] hover:bg-[#0a1f44] text-white font-bold px-5 py-2.5 rounded-md text-xs shadow-sm transition-colors cursor-pointer shrink-0"
+            onClick={() => {
+              fireCelebration({ x: 0.8, y: 0.5 });
+              onNavigateTab && onNavigateTab('courses');
+            }}
+            className="flex items-center gap-2 bg-[#071530] hover:bg-[#0a1f44] text-white font-bold px-5 py-2.5 rounded-md text-xs shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
           >
             <span>{t.viewCourses}</span>
             <ArrowRight className="w-4 h-4 text-[#C59B27]" />
@@ -243,7 +248,7 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
           {[t.service1, t.service2, t.service3, t.service4, t.service5].map((srv, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-lg border border-slate-200/80 flex items-start gap-3 shadow-2xs">
+            <div key={idx} className="bg-white p-4 rounded-lg border border-slate-200/80 flex items-start gap-3 shadow-2xs hover:border-[#C59B27] hover:shadow-md transition-all">
               <CheckCircle2 className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
               <span className="font-semibold text-slate-800 leading-snug">{srv}</span>
             </div>
@@ -252,7 +257,7 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
       </div>
 
       {/* 6. Call to Action Banner */}
-      <div className="bg-[#C59B27] text-slate-950 rounded-xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+      <div className="bg-[#C59B27] text-slate-950 rounded-xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div>
           <span className="text-[10px] font-black uppercase tracking-widest bg-[#071530] text-[#C59B27] px-2.5 py-0.5 rounded">
             {t.admissionsOpen}
@@ -266,8 +271,11 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
         </div>
 
         <button
-          onClick={() => onNavigateTab && onNavigateTab('inquiry')}
-          className="bg-[#071530] hover:bg-[#061124] text-white font-bold px-6 py-3 rounded-md text-xs uppercase tracking-wider shadow-md transition-all cursor-pointer shrink-0"
+          onClick={() => {
+            fireCelebration({ x: 0.8, y: 0.7 });
+            onNavigateTab && onNavigateTab('inquiry');
+          }}
+          className="bg-[#071530] hover:bg-[#061124] text-white font-bold px-6 py-3 rounded-md text-xs uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
         >
           {t.onlineInquiry} &rarr;
         </button>
