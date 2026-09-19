@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX, GraduationCap
+  UserX, GraduationCap, FolderLock
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -14,6 +14,7 @@ import StudentDocumentsTracker from './StudentDocumentsTracker';
 import WebsiteCmsManager from './WebsiteCmsManager';
 import UniversityPaidManager from './UniversityPaidManager';
 import CancelledAdmissionsManager from './CancelledAdmissionsManager';
+import SavePersonalDocuments from './SavePersonalDocuments';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -63,6 +64,9 @@ export default function AdminPortal({
       }
       if (p.includes('staff') || search.includes('staff')) {
         return 'staff';
+      }
+      if (p.includes('personal-doc') || p.includes('personal-document') || p.includes('save-personal') || search.includes('personal-doc')) {
+        return 'personal-docs';
       }
       if (p.includes('syllabus') || p.includes('course') || search.includes('syllabus')) {
         return 'syllabus';
@@ -399,6 +403,16 @@ export default function AdminPortal({
       icon: UserX, 
       color: 'text-rose-600',
       badge: 'Refund Desk'
+    },
+    { 
+      id: 'personal-docs', 
+      label: 'Save Personal Documents', 
+      fullName: 'Save Personal Documents Vault & Manager',
+      sub: 'Personal identity proofs, certificates, agreements & confidential records',
+      shortDesc: 'Aadhaar, PAN, Marksheets & Private Docs Vault',
+      icon: FolderLock, 
+      color: 'text-amber-500',
+      badge: 'Personal Docs'
     }
   ];
 
@@ -983,6 +997,15 @@ export default function AdminPortal({
       {/* TAB 8: CANCELLED ADMISSIONS & REFUND DESK */}
       {activeTab === 'cancelled' && (
         <CancelledAdmissionsManager lang={lang} toggleLang={toggleLang} />
+      )}
+
+      {/* TAB 10: SAVE PERSONAL DOCUMENTS */}
+      {activeTab === 'personal-docs' && (
+        <SavePersonalDocuments 
+          adminUser={adminUser} 
+          lang={lang} 
+          toggleLang={toggleLang} 
+        />
       )}
 
       </main>
