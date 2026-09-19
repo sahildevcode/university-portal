@@ -236,12 +236,8 @@ export default function App() {
     localStorage.removeItem('pkc_admin_user');
     localStorage.removeItem('pkc_admin_active_tab');
     localStorage.removeItem('pkc_admin_admission_subtab');
-    if (isAdminHost()) {
-      navigateTo('admin', '/');
-    } else {
-      localStorage.setItem('pkc_active_view', 'public');
-      navigateTo('public', '/');
-    }
+    localStorage.setItem('pkc_active_view', 'admin');
+    navigateTo('admin', '/admin');
   };
 
   // Staff Handlers
@@ -256,12 +252,8 @@ export default function App() {
     setStaffUser(null);
     localStorage.removeItem('pkc_staff_user');
     localStorage.removeItem('pkc_staff_active_tab');
-    if (isAdminHost()) {
-      navigateTo('admin', '/');
-    } else {
-      localStorage.setItem('pkc_active_view', 'public');
-      navigateTo('public', '/');
-    }
+    localStorage.setItem('pkc_active_view', 'admin');
+    navigateTo('admin', '/admin');
   };
 
   return (
