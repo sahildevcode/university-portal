@@ -4925,12 +4925,43 @@ app.delete('/api/colleges/:id/courses', (req, res) => {
 });
 
 // ============================================================================
-// VOCATIONAL COURSES & SKILLS DESK API ENDPOINTS
+// VOCATIONAL INSTITUTES, COURSES & SKILLS DESK API ENDPOINTS
 // ============================================================================
+
+const DEFAULT_VOCATIONAL_INSTITUTES = [
+  {
+    id: 'inst-mdvti',
+    name: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    shortName: 'MDVTI',
+    code: 'MDVTI-01',
+    parentCenter: 'PTC Institute',
+    type: 'Vocational Training Institute',
+    address: 'Bhopal / Damoh (M.P)',
+    contact: '9876543210',
+    description: 'Premier Vocational, Skill Development and Technical Trade Training Institute.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'inst-mdette',
+    name: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    shortName: 'MDETTE',
+    code: 'MDETTE-02',
+    parentCenter: 'PTC Institute',
+    type: 'Early Teachers Training & Education',
+    address: 'Bhopal / Damoh (M.P)',
+    contact: '9876543210',
+    description: 'Specialized Nursery Teacher Training (NTT), ECCE and Pre-Primary Educator Programs.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  }
+];
 
 const DEFAULT_VOCATIONAL_COURSES = [
   {
     id: 'voc-1',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Electrician & Building Wireman',
     courseCode: 'VOC-ELE-101',
     sector: 'Electrical & Electronics',
@@ -4945,6 +4976,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-2',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Web Development & Full-Stack Coding',
     courseCode: 'VOC-IT-102',
     sector: 'IT & Computer Software',
@@ -4959,6 +4992,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-3',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Beautician, Cosmetology & Salon Styling',
     courseCode: 'VOC-BW-103',
     sector: 'Beauty & Wellness',
@@ -4973,6 +5008,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-4',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Solar PV System Installer & Technician',
     courseCode: 'VOC-SOL-104',
     sector: 'Solar & Renewable Energy',
@@ -4987,6 +5024,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-5',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Computer Hardware & Network Engineering',
     courseCode: 'VOC-IT-105',
     sector: 'IT & Hardware',
@@ -5001,6 +5040,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-6',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Tally Prime with GST & Professional Accounting',
     courseCode: 'VOC-ACC-106',
     sector: 'Accounting & Finance',
@@ -5015,6 +5056,8 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-7',
+    instituteId: 'inst-mdvti',
+    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
     courseName: 'Mobile Phone Hardware & Software Repairing',
     courseCode: 'VOC-MOB-107',
     sector: 'Electronics & Mobile Tech',
@@ -5029,6 +5072,72 @@ const DEFAULT_VOCATIONAL_COURSES = [
   },
   {
     id: 'voc-8',
+    instituteId: 'inst-mdette',
+    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    courseName: 'Nursery Teacher Training (NTT)',
+    courseCode: 'VOC-NTT-201',
+    sector: 'Early Childhood & Teachers Training',
+    duration: '1 Year',
+    eligibility: '12th Pass',
+    fee: 14000,
+    certification: 'National Diploma in Nursery Teacher Training',
+    mode: 'Regular / Distance',
+    description: 'Child psychology, pedagogy, preschool lesson planning, teaching aids, phonics and classroom management.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-9',
+    instituteId: 'inst-mdette',
+    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    courseName: 'Early Childhood Care & Education (ECCE)',
+    courseCode: 'VOC-ECC-202',
+    sector: 'Early Childhood & Teachers Training',
+    duration: '1 Year',
+    eligibility: '12th Pass',
+    fee: 15000,
+    certification: 'Diploma in Early Childhood Care & Education',
+    mode: 'Regular',
+    description: 'Foundational literacy & numeracy, cognitive child development, play-way curriculum and modern kindergarten methods.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-10',
+    instituteId: 'inst-mdette',
+    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    courseName: 'Primary Teacher Training (PTT)',
+    courseCode: 'VOC-PTT-203',
+    sector: 'Early Childhood & Teachers Training',
+    duration: '1 Year',
+    eligibility: '12th Pass / Graduate',
+    fee: 16000,
+    certification: 'Primary Teacher Training Certification',
+    mode: 'Regular',
+    description: 'Primary school curricula, classroom leadership, educational psychology, evaluation and modern digital teaching methods.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-11',
+    instituteId: 'inst-mdette',
+    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    courseName: 'Yoga & Physical Education Instructor',
+    courseCode: 'VOC-YOG-204',
+    sector: 'Health & Physical Education',
+    duration: '6 Months',
+    eligibility: '10th / 12th Pass',
+    fee: 9500,
+    certification: 'Yoga & Physical Trainer Certificate',
+    mode: 'Regular',
+    description: 'Asanas, pranayama, school yoga training, physical fitness exercises, anatomy and lifestyle wellness.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-12',
+    instituteId: 'inst-mdette',
+    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
     courseName: 'Fashion Designing & Garment Fabrication',
     courseCode: 'VOC-TEX-108',
     sector: 'Apparel & Fashion',
@@ -5042,6 +5151,131 @@ const DEFAULT_VOCATIONAL_COURSES = [
     createdAt: new Date().toISOString()
   }
 ];
+
+// 0. Get all vocational institutes
+app.get('/api/vocational-institutes', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalInstitutes) || db.vocationalInstitutes.length === 0) {
+      db.vocationalInstitutes = DEFAULT_VOCATIONAL_INSTITUTES;
+      writeDB(db);
+    }
+    res.json({ success: true, institutes: db.vocationalInstitutes });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch vocational institutes: ' + err.message });
+  }
+});
+
+// 0.1 Add single vocational institute manually
+app.post('/api/vocational-institutes', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalInstitutes)) db.vocationalInstitutes = [];
+
+    const { name, code, parentCenter, type, address, contact, description, status } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Institute name is required.' });
+    }
+
+    const newInst = {
+      id: 'inst-' + Date.now(),
+      name: name.trim(),
+      shortName: (code || name.slice(0, 8)).trim().toUpperCase(),
+      code: (code || `INST-${Date.now().toString().slice(-4)}`).trim().toUpperCase(),
+      parentCenter: (parentCenter || 'PTC Institute').trim(),
+      type: (type || 'Vocational Training Institute').trim(),
+      address: (address || '').trim(),
+      contact: (contact || '').trim(),
+      description: (description || '').trim(),
+      status: status || 'Active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.vocationalInstitutes.unshift(newInst);
+
+    // Also register in db.universities if not present
+    if (!Array.isArray(db.universities)) db.universities = [];
+    if (!db.universities.some(u => (u.name || '').toLowerCase() === newInst.name.toLowerCase())) {
+      db.universities.push({
+        id: newInst.id,
+        name: newInst.name,
+        shortName: newInst.shortName,
+        code: newInst.code,
+        status: 'Active'
+      });
+    }
+
+    // Also ensure parentCenter is in db.colleges
+    if (!Array.isArray(db.colleges)) db.colleges = [];
+    if (!db.colleges.some(c => (c.name || '').toLowerCase() === newInst.parentCenter.toLowerCase())) {
+      db.colleges.push({
+        id: 'col-' + Date.now(),
+        name: newInst.parentCenter,
+        shortName: newInst.parentCenter,
+        code: 'PTC-01',
+        universityName: newInst.name,
+        status: 'Active'
+      });
+    }
+
+    writeDB(db);
+    res.json({ success: true, message: 'Institute added successfully!', institute: newInst });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to add institute: ' + err.message });
+  }
+});
+
+// 0.2 Update vocational institute
+app.put('/api/vocational-institutes/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalInstitutes)) db.vocationalInstitutes = [];
+
+    const id = req.params.id;
+    const index = db.vocationalInstitutes.findIndex(inst => inst.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Institute not found.' });
+    }
+
+    const existing = db.vocationalInstitutes[index];
+    const { name, code, parentCenter, type, address, contact, description, status } = req.body;
+
+    db.vocationalInstitutes[index] = {
+      ...existing,
+      name: name !== undefined ? name.trim() : existing.name,
+      shortName: code !== undefined ? code.trim().toUpperCase() : existing.shortName,
+      code: code !== undefined ? code.trim().toUpperCase() : existing.code,
+      parentCenter: parentCenter !== undefined ? parentCenter.trim() : existing.parentCenter,
+      type: type !== undefined ? type.trim() : existing.type,
+      address: address !== undefined ? address.trim() : existing.address,
+      contact: contact !== undefined ? contact.trim() : existing.contact,
+      description: description !== undefined ? description.trim() : existing.description,
+      status: status !== undefined ? status : existing.status,
+      updatedAt: new Date().toISOString()
+    };
+
+    writeDB(db);
+    res.json({ success: true, message: 'Institute updated successfully!', institute: db.vocationalInstitutes[index] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update institute: ' + err.message });
+  }
+});
+
+// 0.3 Delete vocational institute
+app.delete('/api/vocational-institutes/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalInstitutes)) db.vocationalInstitutes = [];
+
+    const id = req.params.id;
+    db.vocationalInstitutes = db.vocationalInstitutes.filter(inst => inst.id !== id);
+    writeDB(db);
+    res.json({ success: true, message: 'Institute removed successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete institute: ' + err.message });
+  }
+});
 
 // 1. Get all vocational courses
 app.get('/api/vocational-courses', (req, res) => {
@@ -5073,15 +5307,24 @@ app.post('/api/vocational-courses', (req, res) => {
       certification, 
       mode, 
       description,
-      status 
+      status,
+      instituteId,
+      instituteName
     } = req.body;
 
     if (!courseName || !courseName.trim()) {
       return res.status(400).json({ success: false, message: 'Course name is required.' });
     }
 
+    const targetInstId = instituteId || 'inst-mdvti';
+    const targetInstName = instituteName || (targetInstId === 'inst-mdette' 
+      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
+      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
+
     const newCourse = {
       id: 'voc-' + Date.now(),
+      instituteId: targetInstId,
+      instituteName: targetInstName,
       courseName: courseName.trim(),
       courseCode: (courseCode || `VOC-${Date.now().toString().slice(-4)}`).trim().toUpperCase(),
       sector: (sector || 'General Vocational').trim(),
@@ -5181,16 +5424,23 @@ app.post('/api/vocational-courses/bulk-import', (req, res) => {
     const db = readDB();
     if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
 
-    const { courses: incomingCourses, mode } = req.body;
+    const { courses: incomingCourses, mode, instituteId, instituteName } = req.body;
     if (!Array.isArray(incomingCourses) || incomingCourses.length === 0) {
       return res.status(400).json({ success: false, message: 'No courses provided to import.' });
     }
+
+    const targetInstId = instituteId || 'inst-mdvti';
+    const targetInstName = instituteName || (targetInstId === 'inst-mdette' 
+      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
+      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
 
     let addedCount = 0;
     const formatted = incomingCourses.map((c, i) => {
       addedCount++;
       return {
         id: 'voc-' + Date.now() + '-' + i,
+        instituteId: c.instituteId || targetInstId,
+        instituteName: c.instituteName || targetInstName,
         courseName: String(c.courseName || c.name || c['Course Name'] || c['पाठ्यक्रम'] || `Vocational Course ${i + 1}`).trim(),
         courseCode: String(c.courseCode || c.code || c['Course Code'] || `VOC-${Date.now().toString().slice(-4)}-${i + 1}`).trim().toUpperCase(),
         sector: String(c.sector || c.category || c['Sector'] || c['Trade'] || 'General Vocational').trim(),
@@ -5209,7 +5459,7 @@ app.post('/api/vocational-courses/bulk-import', (req, res) => {
     if (mode === 'replace') {
       db.vocationalCourses = formatted;
     } else {
-      const existingNames = new Set(db.vocationalCourses.map(c => c.courseName.toLowerCase()));
+      const existingNames = new Set(db.vocationalCourses.map(c => (c.courseName || '').toLowerCase()));
       const toAdd = formatted.filter(c => !existingNames.has(c.courseName.toLowerCase()));
       db.vocationalCourses = [...toAdd, ...db.vocationalCourses];
       addedCount = toAdd.length;
@@ -5246,12 +5496,19 @@ app.post('/api/vocational-courses/upload', upload.single('file'), (req, res) => 
     const db = readDB();
     if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
 
+    const targetInstId = req.body.instituteId || 'inst-mdvti';
+    const targetInstName = req.body.instituteName || (targetInstId === 'inst-mdette' 
+      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
+      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
+
     const formatted = rawRows.map((r, i) => {
       const name = r['Course Name'] || r['courseName'] || r['Course'] || r['Trade'] || r['पाठ्यक्रम'] || r['Name'] || '';
       if (!name) return null;
 
       return {
         id: 'voc-' + Date.now() + '-' + i,
+        instituteId: targetInstId,
+        instituteName: targetInstName,
         courseName: String(name).trim(),
         courseCode: String(r['Course Code'] || r['Code'] || r['courseCode'] || `VOC-${Date.now().toString().slice(-4)}-${i + 1}`).trim().toUpperCase(),
         sector: String(r['Sector'] || r['Category'] || r['sector'] || 'General Vocational').trim(),
@@ -5271,12 +5528,200 @@ app.post('/api/vocational-courses/upload', upload.single('file'), (req, res) => 
 
     res.json({
       success: true,
-      message: `🎉 Successfully parsed and imported ${formatted.length} vocational courses from "${req.file.originalname}"!`,
+      message: `🎉 Successfully parsed and imported ${formatted.length} vocational courses from "${req.file.originalname}" into ${targetInstName}!`,
       count: formatted.length,
       courses: db.vocationalCourses
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to process Excel file: ' + err.message });
+  }
+});
+
+// ============================================================================
+// VOCATIONAL STUDENTS ENROLLMENT & TRACKING
+// ============================================================================
+
+// 8. Enroll Vocational Student into Central Students Database (db.students)
+app.post('/api/vocational-students', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.students)) db.students = [];
+
+    const {
+      studentName,
+      fullName,
+      fatherName,
+      motherName,
+      aadhaarNo,
+      abcId,
+      phone,
+      contact,
+      instituteId,
+      instituteName,
+      parentCenter,
+      courseId,
+      courseName,
+      trade,
+      sector,
+      duration,
+      totalFee,
+      initialPaid,
+      paymentMode,
+      admissionSession,
+      admissionDate,
+      address,
+      category,
+      gender,
+      dob,
+      remark
+    } = req.body;
+
+    const name = (fullName || studentName || '').trim();
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Student Name is required (छात्र का नाम आवश्यक है).' });
+    }
+    if (!fatherName || !fatherName.trim()) {
+      return res.status(400).json({ success: false, message: "Father's Name is required (पिता का नाम आवश्यक है)." });
+    }
+    if (!aadhaarNo || !String(aadhaarNo).trim()) {
+      return res.status(400).json({ success: false, message: 'Aadhaar Card No. is required (आधार कार्ड आवश्यक है).' });
+    }
+
+    const currentTotal = db.students.length;
+    const nextSeq = currentTotal + 1;
+    const year = new Date().getFullYear();
+
+    const targetInstId = instituteId || 'inst-mdvti';
+    const targetInstName = (instituteName || (targetInstId === 'inst-mdette' 
+      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
+      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)')).trim();
+
+    const targetParentCenter = (parentCenter || 'PTC Institute').trim();
+    const instPrefix = targetInstName.includes('टीचर्स') || targetInstId === 'inst-mdette' ? 'MDETTE' : 'MDVTI';
+    
+    const rollNo = req.body.rollNo ? String(req.body.rollNo).trim().toUpperCase() : `${instPrefix}-${year}-${String(nextSeq).padStart(4, '0')}`;
+    const registrationNo = `REG-VOC-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const feeVal = Number(totalFee) || 0;
+    const paidVal = Number(initialPaid) || 0;
+    const dueVal = Math.max(0, feeVal - paidVal);
+
+    const newStudent = {
+      id: `std-voc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      rollNo,
+      enrollmentNo: rollNo,
+      registrationNo,
+      studentName: name,
+      fullName: name,
+      fatherName: fatherName.trim(),
+      motherName: (motherName || '').trim(),
+      aadhaarNo: String(aadhaarNo).trim(),
+      abcId: String(abcId || '').trim(),
+      phone: String(phone || contact || '').trim(),
+      contact: String(phone || contact || '').trim(),
+      gender: gender || 'Male',
+      dob: dob || '',
+      address: (address || '').trim(),
+      socialCategory: category || 'General',
+      category: category || 'General',
+      admissionSession: admissionSession || `${year}-${year + 1}`,
+      admissionDate: admissionDate || new Date().toISOString().split('T')[0],
+      universityName: targetInstName,
+      collegeName: targetParentCenter,
+      courseId: courseId || 'voc-custom',
+      courseName: (courseName || trade || 'Vocational Skill Program').trim(),
+      branch: (sector || trade || 'Vocational Skills').trim(),
+      courseType: 'Vocational Certification',
+      courseMode: 'Regular',
+      currentSemester: 1,
+      currentClass: 'Year-1 / Cert',
+      academicFee: feeVal,
+      studentFee: feeVal,
+      courseFee: feeVal,
+      totalFee: feeVal,
+      initialPayment: paidVal,
+      totalPaid: paidVal,
+      balanceDue: dueVal,
+      pendingDue: dueVal,
+      status: 'Active',
+      isVocational: true,
+      instituteId: targetInstId,
+      instituteName: targetInstName,
+      parentCenter: targetParentCenter,
+      remark: remark || `Enrolled under ${targetInstName} (${targetParentCenter})`,
+      paymentMode: paymentMode || 'Cash',
+      admissionTimestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      feeHistory: paidVal > 0 ? [
+        {
+          id: `FEE-VOC-${Date.now()}`,
+          date: admissionDate || new Date().toISOString().split('T')[0],
+          amount: paidVal,
+          purpose: 'Admission & Course Fee',
+          paymentMode: paymentMode || 'Cash',
+          receivedBy: 'Admin Desk',
+          remark: 'Initial fee payment at admission'
+        }
+      ] : []
+    };
+
+    // Push into db.students at top - instantly incrementing student count from 718 -> 719, 720, etc.!
+    db.students.unshift(newStudent);
+
+    // Ensure PTC Institute is in db.colleges
+    if (!Array.isArray(db.colleges)) db.colleges = [];
+    const hasCol = db.colleges.some(c => (c.name || '').toLowerCase() === targetParentCenter.toLowerCase());
+    if (!hasCol) {
+      db.colleges.push({
+        id: 'col-ptc-' + Date.now(),
+        name: targetParentCenter,
+        shortName: targetParentCenter,
+        code: 'PTC-01',
+        universityName: targetInstName,
+        status: 'Active'
+      });
+    }
+
+    // Ensure institute is in db.universities
+    if (!Array.isArray(db.universities)) db.universities = [];
+    const hasUniv = db.universities.some(u => (u.name || '').toLowerCase() === targetInstName.toLowerCase());
+    if (!hasUniv) {
+      db.universities.push({
+        id: targetInstId,
+        name: targetInstName,
+        shortName: instPrefix,
+        code: instPrefix,
+        status: 'Active'
+      });
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Student "${name}" successfully enrolled in ${targetInstName}! Total students: ${db.students.length}`,
+      student: newStudent,
+      totalStudents: db.students.length
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to enroll student: ' + err.message });
+  }
+});
+
+// 9. Get all vocational students specifically
+app.get('/api/vocational-students', (req, res) => {
+  try {
+    const db = readDB();
+    const students = (db.students || []).filter(s => 
+      s.isVocational === true ||
+      (s.universityName && (s.universityName.includes('दयानंद') || s.universityName.includes('Vocational') || s.universityName.includes('Teachers Training'))) ||
+      (s.collegeName && s.collegeName.includes('PTC')) ||
+      s.courseType === 'Vocational Certification'
+    );
+    res.json({ success: true, count: students.length, totalEnrolledAll: (db.students || []).length, students });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

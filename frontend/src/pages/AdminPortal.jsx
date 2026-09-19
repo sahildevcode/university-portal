@@ -1058,6 +1058,10 @@ export default function AdminPortal({
         <VocationalCoursesManager 
           lang={lang} 
           toggleLang={toggleLang} 
+          adminUser={adminUser}
+          onNavigateToRecords={() => setActiveTab('records')}
+          onNavigateToAdmissions={() => setActiveTab('admissions')}
+          onRefreshCourses={onRefreshCourses}
         />
       )}
 
