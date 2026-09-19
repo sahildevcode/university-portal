@@ -12,8 +12,8 @@ export default function PrintMarksheet({ result, student, onClose }) {
   const isPass = result.resultStatus?.includes('PASS');
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-8 border border-slate-200">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm overflow-y-auto p-2 sm:p-4 py-6 sm:py-10 flex justify-center items-start">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-auto sm:my-8 border border-slate-200">
         
         {/* Top Controls */}
         <div className="no-print bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between">

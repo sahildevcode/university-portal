@@ -1553,7 +1553,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ========================================================================= */}
       {payModalStudent && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setPayModalStudent(null)}
         >
           <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-7 shadow-2xl border border-amber-200 space-y-5 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>
@@ -1879,7 +1879,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ========================================================================= */}
       {editFeeStudent && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setEditFeeStudent(null)}
         >
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>
@@ -1982,7 +1982,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ========================================================================= */}
       {showRateModal && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setShowRateModal(false)}
         >
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>
@@ -2095,7 +2095,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ========================================================================= */}
       {profileStudent && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setProfileStudent(null)}
         >
           <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>
@@ -2177,7 +2177,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       {/* ========================================================================= */}
       {editingUnivPayment && createPortal(
         <div 
-          className="fixed inset-0 z-[10000] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-[10000] bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setEditingUnivPayment(null)}
         >
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 my-auto text-slate-900" onClick={(e) => e.stopPropagation()}>

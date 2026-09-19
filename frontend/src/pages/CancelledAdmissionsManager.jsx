@@ -646,8 +646,8 @@ export default function CancelledAdmissionsManager({ lang: propLang, toggleLang:
       {/* RECORD REFUND MODAL */}
       {/* ========================================================================= */}
       {refundModalStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-indigo-200 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-indigo-200 my-auto animate-fadeIn">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -793,8 +793,8 @@ export default function CancelledAdmissionsManager({ lang: propLang, toggleLang:
       {/* DETAILED VIEW MODAL */}
       {/* ========================================================================= */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-auto animate-fadeIn">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
@@ -951,8 +951,8 @@ export default function CancelledAdmissionsManager({ lang: propLang, toggleLang:
       {/* PRINTABLE CANCELLATION & REFUND VOUCHER MODAL */}
       {/* ========================================================================= */}
       {printSlipStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start">
+          <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-6 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b pb-3">
               <span className="text-xs font-black text-rose-800 uppercase tracking-wider">
                 Admission Cancellation &amp; Refund Settlement Slip

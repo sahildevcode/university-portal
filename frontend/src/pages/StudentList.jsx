@@ -2298,7 +2298,7 @@ export default function StudentList({
 
       {/* Unified "Paid Student Fee" & Fee Desk Modal (Matching User Reference Images) */}
       {feeDeskStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs overflow-y-auto p-2 sm:p-4 py-4 sm:py-8 flex justify-center items-start">
           <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
             
             {/* Modal Header: Distinct color and title for each separated section */}
@@ -3464,8 +3464,8 @@ export default function StudentList({
 
       {/* Edit Payment Entry Modal */}
       {editingPaymentModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 py-4 sm:py-8 flex justify-center items-start">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 my-auto">
             <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-indigo-400" />
@@ -3630,8 +3630,8 @@ export default function StudentList({
 
       {/* Full Student Profile & Document Viewer Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm overflow-y-auto p-2 sm:p-4 py-4 sm:py-8 flex justify-center items-start">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] my-auto animate-in fade-in zoom-in duration-150">
             
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-900 to-navy-900 text-white p-5 sm:p-6 flex items-start justify-between shrink-0">
@@ -4148,8 +4148,8 @@ export default function StudentList({
 
       {/* Comprehensive Student Edit Modal */}
       {editingStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm overflow-y-auto p-2 sm:p-4 py-4 sm:py-8 flex justify-center items-start">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[94vh] my-auto animate-in fade-in zoom-in duration-150">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -5102,8 +5102,8 @@ export default function StudentList({
 
       {/* Cancel Admission Confirmation & Details Modal */}
       {cancellingStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-rose-200 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-4 sm:py-8 flex justify-center items-start">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-rose-200 my-auto animate-fadeIn">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-rose-900 via-rose-800 to-slate-900 text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -42,11 +42,11 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
       onClick={onClose}
     >
       <div 
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-fadeIn"
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-fadeIn my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

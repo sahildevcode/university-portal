@@ -808,7 +808,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
       {/* Collect Fee Installment Modal */}
       {showCollectModal && payStudent && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-2 sm:p-6 py-4 sm:py-8 flex justify-center items-start"
           onClick={() => setShowCollectModal(false)}
         >
           <div 
@@ -1153,7 +1153,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
       {/* Admin Fee Correction & Adjustment Modal (Admin Only) */}
       {showAdjustModal && adjustStudent && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-2 sm:p-6 py-4 sm:py-8 flex justify-center items-start"
           onClick={() => setShowAdjustModal(false)}
         >
           <div 

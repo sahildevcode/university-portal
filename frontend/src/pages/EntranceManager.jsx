@@ -183,8 +183,8 @@ export default function EntranceManager({ courses }) {
 
       {/* Add Candidate Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 sm:p-8 space-y-5 border border-slate-200" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 sm:p-8 space-y-5 border border-slate-200 my-auto animate-fadeIn" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-lg text-slate-900">Add Entrance Exam Candidate</h3>
             
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">

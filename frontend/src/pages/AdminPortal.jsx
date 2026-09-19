@@ -991,8 +991,8 @@ export default function AdminPortal({
 
       {/* Modal Add Course */}
       {showCourseModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4" onClick={() => setShowCourseModal(false)}>
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-slate-950/80 overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start" onClick={() => setShowCourseModal(false)}>
+          <div className="bg-white w-full max-w-xl rounded-3xl p-6 space-y-4 my-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-bold text-base text-slate-900">{editingCourseId ? 'Edit Course & Fees' : 'Add New Degree Program'}</h3>
             <form onSubmit={handleSaveCourse} className="space-y-3 text-xs text-slate-900">
               <div className="grid grid-cols-2 gap-2">
@@ -1017,8 +1017,8 @@ export default function AdminPortal({
 
       {/* Modal Add Staff */}
       {showStaffModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4" onClick={() => setShowStaffModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-7 space-y-4 text-slate-900" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-slate-950/80 overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start" onClick={() => setShowStaffModal(false)}>
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-7 space-y-4 text-slate-900 my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="border-b border-slate-100 pb-3">
               <h3 className="font-extrabold text-lg text-slate-900 flex items-center gap-2">
                 <UserCheck className="w-5 h-5 text-emerald-600" />

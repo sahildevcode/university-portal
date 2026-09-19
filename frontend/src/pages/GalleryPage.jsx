@@ -327,7 +327,7 @@ export default function GalleryPage({ lang = 'hi', onNavigateTab }) {
       {/* 4. LIGHTBOX MODAL */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn"
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start animate-fadeIn"
           onClick={() => setSelectedImage(null)}
         >
           <div 

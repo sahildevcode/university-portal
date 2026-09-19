@@ -29,7 +29,7 @@ export default function PrintFeeCard({ student, payments = [], onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-2 sm:p-4 py-6 sm:py-10 flex justify-center items-start"
       onClick={onClose}
     >
       <div 

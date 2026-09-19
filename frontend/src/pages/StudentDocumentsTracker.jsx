@@ -807,7 +807,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       {/* ========================================================================= */}
       {selectedStudentForSingleDocs && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
           onClick={() => setSelectedStudentForSingleDocs(null)}
         >
           <div 
@@ -1020,7 +1020,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       {/* ========================================================================= */}
       {selectedStudentForDossier && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
           onClick={() => setSelectedStudentForDossier(null)}
         >
           <div 
@@ -1238,7 +1238,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       {/* ========================================================================= */}
       {previewDocFile && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
           onClick={() => setPreviewDocFile(null)}
         >
           <div 
@@ -1313,7 +1313,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       {/* ========================================================================= */}
       {singleHardcopySlip && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
           onClick={() => setSingleHardcopySlip(null)}
         >
           <div 
@@ -1412,7 +1412,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       {/* ========================================================================= */}
       {selectedStudent && (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
           onClick={() => setSelectedStudent(null)}
         >
           <div 
