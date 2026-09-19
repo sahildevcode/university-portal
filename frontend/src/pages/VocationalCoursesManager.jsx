@@ -79,11 +79,11 @@ const ELIGIBILITY_OPTIONS = [
   'ITI / Diploma'
 ];
 
-// Pre-seeded Default Vocational Institutes
+// Pre-seeded Default Vocational Institutes (English)
 const INITIAL_DEMO_INSTITUTES = [
   {
     id: 'inst-mdvti',
-    name: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     shortName: 'MDVTI',
     code: 'MDVTI-01',
     parentCenter: 'PTC Institute',
@@ -95,7 +95,7 @@ const INITIAL_DEMO_INSTITUTES = [
   },
   {
     id: 'inst-mdette',
-    name: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
     shortName: 'MDETTE',
     code: 'MDETTE-02',
     parentCenter: 'PTC Institute',
@@ -127,7 +127,16 @@ export default function VocationalCoursesManager({
   const [institutes, setInstitutes] = useState(() => {
     try {
       const cached = localStorage.getItem('pkc_vocational_institutes');
-      return cached ? JSON.parse(cached) : INITIAL_DEMO_INSTITUTES;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Clear if it contains legacy Hindi institute names
+        if (Array.isArray(parsed) && parsed.some(i => i.name && /[\u0900-\u097F]/.test(i.name))) {
+          localStorage.removeItem('pkc_vocational_institutes');
+          return INITIAL_DEMO_INSTITUTES;
+        }
+        return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DEMO_INSTITUTES;
+      }
+      return INITIAL_DEMO_INSTITUTES;
     } catch {
       return INITIAL_DEMO_INSTITUTES;
     }
@@ -169,7 +178,7 @@ export default function VocationalCoursesManager({
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseFormData, setCourseFormData] = useState({
     instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     courseName: '',
     courseCode: '',
     sector: SECTOR_OPTIONS[0],
@@ -186,7 +195,7 @@ export default function VocationalCoursesManager({
   const [showInstituteModal, setShowInstituteModal] = useState(false);
   const [editingInstitute, setEditingInstitute] = useState(null);
   const [instituteFormData, setInstituteFormData] = useState({
-    name: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     code: 'MDVTI',
     parentCenter: 'PTC Institute',
     type: 'Vocational Training Institute',
@@ -217,7 +226,7 @@ export default function VocationalCoursesManager({
     abcId: '',
     phone: '',
     instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     parentCenter: 'PTC Institute',
     courseId: '',
     courseName: '',
@@ -273,14 +282,14 @@ export default function VocationalCoursesManager({
 
   // Clear all vocational courses
   const handleClearAllCourses = async () => {
-    if (!window.confirm(isHindi ? 'क्या आप वाकई सभी वोकेशनल कोर्सेस हटाना चाहते हैं?' : 'Are you sure you want to remove all vocational courses?')) return;
+    if (!window.confirm('Are you sure you want to remove all vocational courses?')) return;
     try {
       const res = await fetch('/api/vocational-courses', { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         setCourses([]);
         try { localStorage.setItem('pkc_vocational_courses', JSON.stringify([])); } catch {}
-        showToast(isHindi ? '🗑️ सभी वोकेशनल कोर्स हटा दिए गए हैं!' : '🗑️ All vocational courses cleared successfully!');
+        showToast('🗑️ All vocational courses cleared successfully!');
       }
     } catch (err) {
       setCourses([]);
@@ -347,7 +356,7 @@ export default function VocationalCoursesManager({
     setEditingCourse(course);
     setCourseFormData({
       instituteId: course.instituteId || 'inst-mdvti',
-      instituteName: course.instituteName || 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट',
+      instituteName: course.instituteName || 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
       courseName: course.courseName || '',
       courseCode: course.courseCode || '',
       sector: course.sector || SECTOR_OPTIONS[0],
@@ -366,7 +375,7 @@ export default function VocationalCoursesManager({
   const handleSaveCourse = async (e) => {
     e.preventDefault();
     if (!courseFormData.courseName.trim()) {
-      alert(isHindi ? 'कृपया कोर्स का नाम दर्ज करें' : 'Please enter course name');
+      alert('Please enter course name');
       return;
     }
 
@@ -466,7 +475,7 @@ export default function VocationalCoursesManager({
   const applyInstitutePreset = (presetIndex) => {
     if (presetIndex === 1) {
       setInstituteFormData({
-        name: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+        name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
         code: 'MDVTI',
         parentCenter: 'PTC Institute',
         type: 'Vocational Training Institute',
@@ -477,7 +486,7 @@ export default function VocationalCoursesManager({
       });
     } else if (presetIndex === 2) {
       setInstituteFormData({
-        name: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+        name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
         code: 'MDETTE',
         parentCenter: 'PTC Institute',
         type: 'Early Teachers Training & Education',
@@ -493,7 +502,7 @@ export default function VocationalCoursesManager({
   const handleSaveInstitute = async (e) => {
     e.preventDefault();
     if (!instituteFormData.name.trim()) {
-      alert('Please enter institute name (संस्थान का नाम दर्ज करें)');
+      alert('Please enter institute name');
       return;
     }
 
@@ -610,15 +619,15 @@ export default function VocationalCoursesManager({
   const handleEnrollSubmit = async (e) => {
     e.preventDefault();
     if (!enrollForm.studentName.trim()) {
-      alert('Please enter student name (छात्र का नाम दर्ज करें)');
+      alert('Please enter student name');
       return;
     }
     if (!enrollForm.fatherName.trim()) {
-      alert("Please enter father's name (पिता का नाम दर्ज करें)");
+      alert("Please enter father's name");
       return;
     }
     if (!enrollForm.aadhaarNo.trim()) {
-      alert('Please enter Aadhaar card number (आधार कार्ड नंबर दर्ज करें)');
+      alert('Please enter Aadhaar card number');
       return;
     }
 
@@ -809,7 +818,7 @@ export default function VocationalCoursesManager({
     return courses.filter(c => {
       // Institute filter
       if (selectedInstituteFilter !== 'all') {
-        const cInstId = c.instituteId || (c.instituteName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
+        const cInstId = c.instituteId || (c.instituteName?.toLowerCase().includes('teacher') || c.instituteName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
         if (cInstId !== selectedInstituteFilter) return false;
       }
       // Sector filter
@@ -834,7 +843,7 @@ export default function VocationalCoursesManager({
   const filteredStudents = useMemo(() => {
     return vocationalStudents.filter(s => {
       if (selectedInstituteFilter !== 'all') {
-        const sInstId = s.instituteId || (s.universityName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
+        const sInstId = s.instituteId || (s.universityName?.toLowerCase().includes('teacher') || s.universityName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
         if (sInstId !== selectedInstituteFilter) return false;
       }
       if (searchQuery.trim()) {
@@ -896,9 +905,6 @@ export default function VocationalCoursesManager({
               <Briefcase className="w-8 h-8 text-amber-400 shrink-0" />
               <span>Vocational Courses & Institutes Desk</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट एवं महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (PTC Institute) के कोर्सेस, एक्सेल अपलोड व छात्र दाखिला (Enrollment) का संपूर्ण प्रबंधन।
-            </p>
           </div>
 
           {/* Action Buttons */}
@@ -911,7 +917,7 @@ export default function VocationalCoursesManager({
               title="Add / Enroll Vocational Student"
             >
               <GraduationCap className="w-4 h-4 text-slate-950" />
-              <span>+ Enroll Vocational Student (छात्र दाखिला)</span>
+              <span>+ Enroll Vocational Student</span>
             </button>
 
             {/* 2. ADD INSTITUTE BUTTON */}
@@ -922,7 +928,7 @@ export default function VocationalCoursesManager({
               title="Add New Institute"
             >
               <Building2 className="w-4 h-4 text-amber-400" />
-              <span>+ Add Institute (संस्थान जोड़ें)</span>
+              <span>+ Add Institute</span>
             </button>
 
             {/* 3. ADD COURSE BUTTON */}
@@ -1226,10 +1232,10 @@ export default function VocationalCoursesManager({
                   type="button"
                   onClick={handleClearAllCourses}
                   className="text-[11px] text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1"
-                  title="सभी वोकेशनल कोर्सेस हटाएं"
+                  title="Clear all vocational courses"
                 >
                   <Trash2 className="w-3 h-3" />
-                  <span>{isHindi ? 'सभी कोर्स हटाएं' : 'Clear All Courses'}</span>
+                  <span>Clear All Courses</span>
                 </button>
               )}
             </div>
@@ -1247,18 +1253,12 @@ export default function VocationalCoursesManager({
               </div>
               <div className="max-w-md mx-auto space-y-2">
                 <h3 className="text-lg font-black text-slate-900">
-                  {courses.length === 0 
-                    ? (isHindi ? 'सभी डमी कोर्सेस हटा दिए गए हैं (कैटलॉग खाली है)' : 'No Vocational Courses Added Yet')
-                    : (isHindi ? 'फ़िल्टर के अनुसार कोई कोर्स नहीं मिला' : 'No courses match your search/filter')}
+                  {courses.length === 0 ? 'No Vocational Courses Added Yet' : 'No courses match your search or filter'}
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   {courses.length === 0
-                    ? (isHindi 
-                        ? 'अब आप अपने अनुसार एक्सेल शीट (.xlsx) अपलोड करके एक साथ कोर्स जोड़ सकते हैं या "+ Add Course Manually" बटन से खुद नया कोर्स बना सकते हैं।' 
-                        : 'All demo courses have been removed. You can now upload your custom Excel file (.xlsx) or manually add your vocational courses.')
-                    : (isHindi 
-                        ? 'कृपया सर्च या सेक्टर फ़िल्टर बदलें, या नीचे दिए गए बटनों से नया कोर्स जोड़ें।' 
-                        : 'Try adjusting your search or filters, or add a new course below.')}
+                    ? 'All demo courses have been removed. You can now upload your custom Excel file (.xlsx) or click "+ Add Course Manually" to create your vocational courses.'
+                    : 'Try adjusting your search or sector filters, or click below to add a new course or upload an Excel sheet.'}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1272,7 +1272,7 @@ export default function VocationalCoursesManager({
                   className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs cursor-pointer shadow-lg shadow-indigo-600/20 hover:scale-105 transition-all"
                 >
                   <Upload className="w-4 h-4 text-amber-300" />
-                  <span>{isHindi ? '📊 एक्सेल शीट अपलोड करें (.xlsx)' : 'Upload Excel Sheet (.xlsx)'}</span>
+                  <span>Upload Excel Sheet (.xlsx)</span>
                 </button>
                 <button
                   type="button"
@@ -1280,7 +1280,7 @@ export default function VocationalCoursesManager({
                   className="flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl font-black text-xs cursor-pointer shadow-lg shadow-amber-400/20 hover:scale-105 transition-all"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>{isHindi ? '+ खुद से नया कोर्स जोड़ें' : '+ Add Course Manually'}</span>
+                  <span>+ Add Course Manually</span>
                 </button>
                 <button
                   type="button"
@@ -1288,7 +1288,7 @@ export default function VocationalCoursesManager({
                   className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs cursor-pointer transition-all border border-slate-200"
                 >
                   <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span>{isHindi ? 'एक्सेल फॉर्मेट डाउनलोड करें' : 'Download Sample Excel'}</span>
+                  <span>Download Sample Excel</span>
                 </button>
               </div>
             </div>
@@ -1296,8 +1296,8 @@ export default function VocationalCoursesManager({
             /* GRID VIEW OF COURSES */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {filteredCourses.map((c) => {
-                const instName = c.instituteName || 'Maharishi Dayanand Vocational Institute';
-                const isMDETTE = instName.includes('टीचर्स') || c.instituteId === 'inst-mdette';
+                const instName = c.instituteName || 'Maharishi Dayanand Vocational Training Institute (MDVTI)';
+                const isMDETTE = instName.toLowerCase().includes('teacher') || instName.includes('टीचर्स') || c.instituteId === 'inst-mdette';
                 
                 return (
                   <div
@@ -1415,7 +1415,7 @@ export default function VocationalCoursesManager({
                           <span className="block text-[10px] text-slate-400 font-normal truncate max-w-xs">{c.certification}</span>
                         </td>
                         <td className="p-3 text-slate-700 text-[11px]">
-                          {c.instituteName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
+                          {c.instituteName?.toLowerCase().includes('teacher') || c.instituteName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
                         </td>
                         <td className="p-3 text-slate-600">{c.sector}</td>
                         <td className="p-3 text-slate-700 font-semibold">{c.duration}</td>
@@ -1481,7 +1481,7 @@ export default function VocationalCoursesManager({
             {institutes.map((inst, index) => {
               const instCourses = courses.filter(c => c.instituteId === inst.id || (!c.instituteId && index === 0));
               const instStudents = vocationalStudents.filter(s => s.instituteId === inst.id || s.universityName?.includes(inst.shortName));
-              const isTeachers = inst.name.includes('टीचर्स') || inst.type.includes('Teachers');
+              const isTeachers = inst.name.toLowerCase().includes('teacher') || inst.name.includes('टीचर्स') || inst.type.toLowerCase().includes('teacher');
 
               return (
                 <div
@@ -1521,7 +1521,7 @@ export default function VocationalCoursesManager({
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                            Affiliated Study Center / कॉलेज
+                            Affiliated Study Center / College
                           </span>
                           <span className="text-xs font-black text-slate-900">
                             {inst.parentCenter || 'PTC Institute'}
@@ -1707,7 +1707,7 @@ export default function VocationalCoursesManager({
                         <td className="p-3 font-mono text-indigo-700">{st.abcId || '-'}</td>
                         <td className="p-3 text-slate-700 text-[11px]">
                           <span className="font-bold block truncate max-w-[180px]">
-                            {st.universityName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
+                            {st.universityName?.toLowerCase().includes('teacher') || st.universityName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
                           </span>
                           <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">
                             {st.collegeName || 'PTC Institute'}
@@ -1757,10 +1757,10 @@ export default function VocationalCoursesManager({
                 </div>
                 <div>
                   <h3 className="font-black text-lg text-slate-900">
-                    Enroll Vocational Student (छात्र दाखिला फॉर्म)
+                    Enroll Vocational Student
                   </h3>
                   <p className="text-xs text-slate-500">
-                    दाखिला होते ही छात्र संख्या {totalCentralStudents} से बढ़कर {totalCentralStudents + 1} हो जाएगी।
+                    Central student count will increase from {totalCentralStudents} to {totalCentralStudents + 1}.
                   </p>
                 </div>
               </div>
@@ -1778,7 +1778,7 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Student Full Name (छात्र का पूरा नाम) *
+                    Student Full Name *
                   </label>
                   <input
                     type="text"
@@ -1791,7 +1791,7 @@ export default function VocationalCoursesManager({
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Father's Name (पिता का नाम) *
+                    Father's Name *
                   </label>
                   <input
                     type="text"
@@ -1808,7 +1808,7 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Mother's Name (माता का नाम)
+                    Mother's Name
                   </label>
                   <input
                     type="text"
@@ -1820,7 +1820,7 @@ export default function VocationalCoursesManager({
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Mobile / Contact Number (मोबाइल नंबर)
+                    Mobile / Contact Number
                   </label>
                   <input
                     type="tel"
@@ -1837,7 +1837,7 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 p-3 rounded-2xl border border-amber-200">
                 <div>
                   <label className="font-black text-amber-900 block mb-1">
-                    Aadhaar Card No. (आधार कार्ड) *
+                    Aadhaar Card Number *
                   </label>
                   <input
                     type="text"
@@ -1853,7 +1853,7 @@ export default function VocationalCoursesManager({
 
                 <div>
                   <label className="font-black text-amber-900 block mb-1">
-                    ABC ID (एबीसी आईडी / Academic Bank of Credits)
+                    ABC ID (Academic Bank of Credits)
                   </label>
                   <input
                     type="text"
@@ -1871,7 +1871,7 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Select Institute (संस्थान चुनें) *
+                    Select Institute *
                   </label>
                   <select
                     value={enrollForm.instituteId}
@@ -1888,7 +1888,7 @@ export default function VocationalCoursesManager({
 
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Affiliated Study Center (कॉलेज / सेंटर) *
+                    Affiliated Study Center *
                   </label>
                   <input
                     type="text"
@@ -1905,7 +1905,7 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Vocational Course / Trade (कोर्स / ट्रेड) *
+                    Vocational Course / Trade *
                   </label>
                   <select
                     value={enrollForm.courseId}
@@ -1924,7 +1924,7 @@ export default function VocationalCoursesManager({
 
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Session & Admission Date (सत्र व दिनांक)
+                    Session & Admission Date
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
@@ -1979,7 +1979,7 @@ export default function VocationalCoursesManager({
                     onChange={(e) => setEnrollForm({ ...enrollForm, paymentMode: e.target.value })}
                     className="w-full p-2 bg-white border border-slate-300 rounded-xl font-semibold focus:outline-none"
                   >
-                    <option value="Cash">Cash (नकद)</option>
+                    <option value="Cash">Cash</option>
                     <option value="UPI / Online">UPI / QR Code</option>
                     <option value="Bank Transfer">Bank Transfer</option>
                   </select>
@@ -1989,7 +1989,7 @@ export default function VocationalCoursesManager({
               {/* Row 7: Address / Location */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Address / City (पता)
+                  Address / City
                 </label>
                 <input
                   type="text"
@@ -2140,7 +2140,7 @@ export default function VocationalCoursesManager({
                     {editingInstitute ? 'Edit Institute Details' : 'Add New Vocational Institute'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    संस्थान का नाम व संबद्ध केंद्र (PTC Institute) सेट करें
+                    Configure institute details and affiliated study center (PTC Institute)
                   </p>
                 </div>
               </div>
@@ -2157,7 +2157,7 @@ export default function VocationalCoursesManager({
             {!editingInstitute && (
               <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 space-y-2">
                 <span className="text-[11px] font-black text-amber-900 block uppercase tracking-wider">
-                  ⚡ 1-Click Fast Presets (क्लिक करके तुरंत भरें):
+                  ⚡ 1-Click Fast Presets:
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
@@ -2165,14 +2165,14 @@ export default function VocationalCoursesManager({
                     onClick={() => applyInstitutePreset(1)}
                     className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span>🛠️ महर्षि दयानंद वोकेशनल ट्रेनिंग</span>
+                    <span>🛠️ Maharishi Dayanand Vocational Training (MDVTI)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => applyInstitutePreset(2)}
                     className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span>👩‍🏫 महर्षि दयानंद इयरली टीचर्स ट्रेनिंग</span>
+                    <span>👩‍🏫 Maharishi Dayanand Early Teachers Training (MDETTE)</span>
                   </button>
                 </div>
               </div>
@@ -2181,14 +2181,14 @@ export default function VocationalCoursesManager({
             <form onSubmit={handleSaveInstitute} className="space-y-3.5 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Institute Name (संस्थान का पूरा नाम) *
+                  Institute Name *
                 </label>
                 <input
                   type="text"
                   required
                   value={instituteFormData.name}
                   onChange={(e) => setInstituteFormData({ ...instituteFormData, name: e.target.value })}
-                  placeholder="e.g. महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट"
+                  placeholder="e.g. Maharishi Dayanand Vocational Training Institute"
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
@@ -2298,7 +2298,7 @@ export default function VocationalCoursesManager({
                     Upload Vocational Courses Excel Sheet
                   </h3>
                   <p className="text-xs text-slate-500">
-                    कोर्स एक्सेल शीट अपलोड करें और जिस संस्थान के लिए अपलोड करना हो उसे चुनें
+                    Upload course spreadsheet and select the destination institute
                   </p>
                 </div>
               </div>
@@ -2314,7 +2314,7 @@ export default function VocationalCoursesManager({
             {/* Target Institute Selector */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
               <label className="font-black text-xs text-slate-800 block">
-                Select Destination Institute for this Excel (यह एक्सेल किस संस्थान के लिए अपलोड कर रहे हैं?) *
+                Select Destination Institute for this Excel *
               </label>
               <select
                 value={targetExcelInstituteId}
@@ -2364,7 +2364,7 @@ export default function VocationalCoursesManager({
                         checked={importMode === 'append'}
                         onChange={() => setImportMode('append')}
                       />
-                      <span>Append (जोड़ें)</span>
+                      <span>Append (Keep existing)</span>
                     </label>
                     <label className="flex items-center gap-1 font-bold text-slate-600">
                       <input
@@ -2461,7 +2461,7 @@ export default function VocationalCoursesManager({
                     {editingCourse ? 'Edit Vocational Course' : 'Create New Vocational Course'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    व्यावसायिक पाठ्यक्रम, फीस, अवधि व योग्यता विवरण
+                    Course fee, duration, eligibility & trade details
                   </p>
                 </div>
               </div>
@@ -2478,7 +2478,7 @@ export default function VocationalCoursesManager({
               {/* Institute Selection */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Select Institute (संस्थान चुनें) *
+                  Select Institute *
                 </label>
                 <select
                   value={courseFormData.instituteId}
@@ -2503,7 +2503,7 @@ export default function VocationalCoursesManager({
               {/* Course Name */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Course / Trade Name (पाठ्यक्रम का नाम) *
+                  Course / Trade Name *
                 </label>
                 <input
                   type="text"
@@ -2544,7 +2544,7 @@ export default function VocationalCoursesManager({
               {/* Duration & Fee */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Duration (अवधि)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Duration</label>
                   <select
                     value={courseFormData.duration}
                     onChange={(e) => setCourseFormData({ ...courseFormData, duration: e.target.value })}
@@ -2569,7 +2569,7 @@ export default function VocationalCoursesManager({
               {/* Eligibility & Certification */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Eligibility (योग्यता)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Eligibility</label>
                   <select
                     value={courseFormData.eligibility}
                     onChange={(e) => setCourseFormData({ ...courseFormData, eligibility: e.target.value })}

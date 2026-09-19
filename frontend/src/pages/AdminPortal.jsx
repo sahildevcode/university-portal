@@ -504,7 +504,7 @@ export default function AdminPortal({
               }
             }}
             className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/20 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            title="Open Student Public Website (छात्र पोर्टल देखें)"
+            title="Open Student Public Website"
           >
             <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
             <span>🌐 View Student Website</span>
@@ -622,26 +622,16 @@ export default function AdminPortal({
         <>
           {/* Top Action & Navigation Bar inside an Active Desk */}
           <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn">
-            {/* Left: Quick Switcher First, then Back to Main Menu Button */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsSidebarOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm shadow-md hover:shadow-xl border-2 border-amber-400 transition-all cursor-pointer shrink-0"
-                title="Switch between desks"
-              >
-                <Menu className="w-4 h-4 text-slate-950" />
-                <span>☰ Switch Desk</span>
-              </button>
-
+            {/* Left: Single Back to Main Menu Button */}
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setActiveTab('hub')}
-                className="flex items-center gap-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm border border-slate-300 hover:border-slate-400 transition-all cursor-pointer group shrink-0"
-                title="Return to Portal Navigation Hub"
+                className="flex items-center gap-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm shadow-md hover:shadow-xl border-2 border-amber-400 transition-all cursor-pointer group shrink-0"
+                title="Return to Main Menu"
               >
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-slate-600" />
-                <span>← Back to Main Menu (मुख्य मेनू पर वापस जाएं)</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-slate-950" />
+                <span>← Back to Main Menu</span>
               </button>
             </div>
 
@@ -726,7 +716,7 @@ export default function AdminPortal({
                     className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>← Back to Main Menu (मुख्य मेनू पर वापस जाएं)</span>
+                    <span>← Back to Main Menu</span>
                   </button>
                 </div>
 
@@ -1178,8 +1168,8 @@ export default function AdminPortal({
                   onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
                   className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none"
                 >
-                  <option value="Active">Active (चालू)</option>
-                  <option value="Inactive">Inactive (अस्थाई बंद)</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
                 </select>
               </div>
 

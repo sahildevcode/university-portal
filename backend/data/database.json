@@ -58301,7 +58301,7 @@
   "vocationalInstitutes": [
     {
       "id": "inst-mdvti",
-      "name": "महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)",
+      "name": "Maharishi Dayanand Vocational Training Institute (MDVTI)",
       "shortName": "MDVTI",
       "code": "MDVTI-01",
       "parentCenter": "PTC Institute",
@@ -58310,11 +58310,11 @@
       "contact": "9876543210",
       "description": "Premier Vocational, Skill Development and Technical Trade Training Institute.",
       "status": "Active",
-      "createdAt": "2026-09-19T16:25:26.283Z"
+      "createdAt": "2026-09-19T16:40:22.666Z"
     },
     {
       "id": "inst-mdette",
-      "name": "महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)",
+      "name": "Maharishi Dayanand Early Teachers Training and Education (MDETTE)",
       "shortName": "MDETTE",
       "code": "MDETTE-02",
       "parentCenter": "PTC Institute",
@@ -58323,7 +58323,7 @@
       "contact": "9876543210",
       "description": "Specialized Nursery Teacher Training (NTT), ECCE and Pre-Primary Educator Programs.",
       "status": "Active",
-      "createdAt": "2026-09-19T16:25:26.284Z"
+      "createdAt": "2026-09-19T16:40:22.667Z"
     }
   ]
 }

@@ -4931,7 +4931,7 @@ app.delete('/api/colleges/:id/courses', (req, res) => {
 const DEFAULT_VOCATIONAL_INSTITUTES = [
   {
     id: 'inst-mdvti',
-    name: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
+    name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     shortName: 'MDVTI',
     code: 'MDVTI-01',
     parentCenter: 'PTC Institute',
@@ -4944,7 +4944,7 @@ const DEFAULT_VOCATIONAL_INSTITUTES = [
   },
   {
     id: 'inst-mdette',
-    name: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
+    name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
     shortName: 'MDETTE',
     code: 'MDETTE-02',
     parentCenter: 'PTC Institute',
@@ -5137,8 +5137,8 @@ app.post('/api/vocational-courses', (req, res) => {
 
     const targetInstId = instituteId || 'inst-mdvti';
     const targetInstName = instituteName || (targetInstId === 'inst-mdette' 
-      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
-      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
+      ? 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)'
+      : 'Maharishi Dayanand Vocational Training Institute (MDVTI)');
 
     const newCourse = {
       id: 'voc-' + Date.now(),
@@ -5317,8 +5317,8 @@ app.post('/api/vocational-courses/upload', upload.single('file'), (req, res) => 
 
     const targetInstId = req.body.instituteId || 'inst-mdvti';
     const targetInstName = req.body.instituteName || (targetInstId === 'inst-mdette' 
-      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
-      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
+      ? 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)'
+      : 'Maharishi Dayanand Vocational Training Institute (MDVTI)');
 
     const formatted = rawRows.map((r, i) => {
       const name = r['Course Name'] || r['courseName'] || r['Course'] || r['Trade'] || r['पाठ्यक्रम'] || r['Name'] || '';
@@ -5397,13 +5397,13 @@ app.post('/api/vocational-students', (req, res) => {
 
     const name = (fullName || studentName || '').trim();
     if (!name) {
-      return res.status(400).json({ success: false, message: 'Student Name is required (छात्र का नाम आवश्यक है).' });
+      return res.status(400).json({ success: false, message: 'Student Name is required.' });
     }
     if (!fatherName || !fatherName.trim()) {
-      return res.status(400).json({ success: false, message: "Father's Name is required (पिता का नाम आवश्यक है)." });
+      return res.status(400).json({ success: false, message: "Father's Name is required." });
     }
     if (!aadhaarNo || !String(aadhaarNo).trim()) {
-      return res.status(400).json({ success: false, message: 'Aadhaar Card No. is required (आधार कार्ड आवश्यक है).' });
+      return res.status(400).json({ success: false, message: 'Aadhaar Card No. is required.' });
     }
 
     const currentTotal = db.students.length;
@@ -5412,11 +5412,11 @@ app.post('/api/vocational-students', (req, res) => {
 
     const targetInstId = instituteId || 'inst-mdvti';
     const targetInstName = (instituteName || (targetInstId === 'inst-mdette' 
-      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
-      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)')).trim();
+      ? 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)'
+      : 'Maharishi Dayanand Vocational Training Institute (MDVTI)')).trim();
 
     const targetParentCenter = (parentCenter || 'PTC Institute').trim();
-    const instPrefix = targetInstName.includes('टीचर्स') || targetInstId === 'inst-mdette' ? 'MDETTE' : 'MDVTI';
+    const instPrefix = targetInstName.toLowerCase().includes('teacher') || targetInstName.includes('टीचर्स') || targetInstId === 'inst-mdette' ? 'MDETTE' : 'MDVTI';
     
     const rollNo = req.body.rollNo ? String(req.body.rollNo).trim().toUpperCase() : `${instPrefix}-${year}-${String(nextSeq).padStart(4, '0')}`;
     const registrationNo = `REG-VOC-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
