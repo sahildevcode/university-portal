@@ -602,26 +602,26 @@ export default function AdminPortal({
         <>
           {/* Top Action & Navigation Bar inside an Active Desk */}
           <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-sm p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn">
-            {/* Left: Prominent Back to Main Menu Button + Drawer Quick Switcher */}
+            {/* Left: Quick Switcher First, then Back to Main Menu Button */}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => setActiveTab('hub')}
-                className="flex items-center gap-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm shadow-md hover:shadow-xl border-2 border-amber-400 transition-all cursor-pointer group shrink-0"
-                title="Return to Portal Navigation Hub"
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm shadow-md hover:shadow-xl border-2 border-amber-400 transition-all cursor-pointer shrink-0"
+                title="Switch between desks"
               >
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                <span>← Back to Main Menu (मुख्य मेनू पर वापस जाएं)</span>
+                <Menu className="w-4 h-4 text-slate-950" />
+                <span>☰ Switch Desk</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setIsSidebarOpen(true)}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-3 rounded-2xl font-bold text-xs border border-slate-300 transition-all cursor-pointer shrink-0"
-                title="Switch between desks"
+                onClick={() => setActiveTab('hub')}
+                className="flex items-center gap-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm border border-slate-300 hover:border-slate-400 transition-all cursor-pointer group shrink-0"
+                title="Return to Portal Navigation Hub"
               >
-                <Menu className="w-4 h-4 text-slate-600" />
-                <span>Switch Desk</span>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-slate-600" />
+                <span>← Back to Main Menu (मुख्य मेनू पर वापस जाएं)</span>
               </button>
             </div>
 
