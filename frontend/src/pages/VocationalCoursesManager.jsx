@@ -86,7 +86,7 @@ const INITIAL_DEMO_INSTITUTES = [
     name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     shortName: 'MDVTI',
     code: 'MDVTI-01',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     type: 'Vocational Training Institute',
     address: 'Bhopal / Damoh (M.P)',
     contact: '9876543210',
@@ -98,7 +98,7 @@ const INITIAL_DEMO_INSTITUTES = [
     name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
     shortName: 'MDETTE',
     code: 'MDETTE-02',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     type: 'Early Teachers Training & Education',
     address: 'Bhopal / Damoh (M.P)',
     contact: '9876543210',
@@ -129,8 +129,8 @@ export default function VocationalCoursesManager({
       const cached = localStorage.getItem('pkc_vocational_institutes');
       if (cached) {
         const parsed = JSON.parse(cached);
-        // Clear if it contains legacy Hindi institute names
-        if (Array.isArray(parsed) && parsed.some(i => i.name && /[\u0900-\u097F]/.test(i.name))) {
+        // Clear if it contains legacy Hindi institute names or old PTC Institute
+        if (Array.isArray(parsed) && parsed.some(i => (i.name && /[\u0900-\u097F]/.test(i.name)) || i.parentCenter === 'PTC Institute')) {
           localStorage.removeItem('pkc_vocational_institutes');
           return INITIAL_DEMO_INSTITUTES;
         }
@@ -197,7 +197,7 @@ export default function VocationalCoursesManager({
   const [instituteFormData, setInstituteFormData] = useState({
     name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     code: 'MDVTI',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     type: 'Vocational Training Institute',
     address: 'Bhopal / Damoh (M.P)',
     contact: '9876543210',
@@ -227,7 +227,7 @@ export default function VocationalCoursesManager({
     phone: '',
     instituteId: 'inst-mdvti',
     instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     courseId: '',
     courseName: '',
     sector: 'Electrical & Electronics',
@@ -446,7 +446,7 @@ export default function VocationalCoursesManager({
     setInstituteFormData({
       name: '',
       code: '',
-      parentCenter: 'PTC Institute',
+      parentCenter: 'PKC Institute',
       type: 'Vocational Training Institute',
       address: 'Bhopal / Damoh (M.P)',
       contact: '9876543210',
@@ -461,7 +461,7 @@ export default function VocationalCoursesManager({
     setInstituteFormData({
       name: inst.name,
       code: inst.code || inst.shortName || '',
-      parentCenter: inst.parentCenter || 'PTC Institute',
+      parentCenter: inst.parentCenter || 'PKC Institute',
       type: inst.type || 'Vocational Training Institute',
       address: inst.address || '',
       contact: inst.contact || '',
@@ -477,7 +477,7 @@ export default function VocationalCoursesManager({
       setInstituteFormData({
         name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
         code: 'MDVTI',
-        parentCenter: 'PTC Institute',
+        parentCenter: 'PKC Institute',
         type: 'Vocational Training Institute',
         address: 'Bhopal / Damoh (M.P)',
         contact: '9876543210',
@@ -488,7 +488,7 @@ export default function VocationalCoursesManager({
       setInstituteFormData({
         name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
         code: 'MDETTE',
-        parentCenter: 'PTC Institute',
+        parentCenter: 'PKC Institute',
         type: 'Early Teachers Training & Education',
         address: 'Bhopal / Damoh (M.P)',
         contact: '9876543210',
@@ -562,7 +562,7 @@ export default function VocationalCoursesManager({
       phone: '',
       instituteId: inst.id,
       instituteName: inst.name,
-      parentCenter: inst.parentCenter || 'PTC Institute',
+      parentCenter: inst.parentCenter || 'PKC Institute',
       courseId: defCourse?.id || '',
       courseName: defCourse?.courseName || '',
       sector: defCourse?.sector || 'Electrical & Electronics',
@@ -590,7 +590,7 @@ export default function VocationalCoursesManager({
       ...prev,
       instituteId: inst.id,
       instituteName: inst.name,
-      parentCenter: inst.parentCenter || 'PTC Institute',
+      parentCenter: inst.parentCenter || 'PKC Institute',
       courseId: defCourse?.id || '',
       courseName: defCourse?.courseName || '',
       sector: defCourse?.sector || prev.sector,
@@ -894,7 +894,7 @@ export default function VocationalCoursesManager({
                 <span>Skill Development & Vocational Master Hub</span>
               </span>
               <span className="bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
-                Affiliated with PTC Institute
+                Affiliated with PKC Institute
               </span>
               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold">
                 Central Students: {totalCentralStudents}
@@ -955,17 +955,6 @@ export default function VocationalCoursesManager({
             >
               <Upload className="w-4 h-4 text-amber-300" />
               <span>Upload Excel</span>
-            </button>
-
-            {/* 5. DOWNLOAD SAMPLE EXCEL */}
-            <button
-              type="button"
-              onClick={handleDownloadTemplate}
-              className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2.5 rounded-2xl text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
-              title="Download formatted Excel sample"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span>Template</span>
             </button>
           </div>
         </div>
@@ -1041,7 +1030,7 @@ export default function VocationalCoursesManager({
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vocational Institutes</span>
             <h3 className="text-xl font-black text-slate-900 mt-0.5">{institutes.length} Centers</h3>
-            <span className="text-[10px] text-amber-600 font-bold">PTC Institute Linked</span>
+            <span className="text-[10px] text-amber-600 font-bold">PKC Institute Linked</span>
           </div>
         </div>
 
@@ -1282,14 +1271,6 @@ export default function VocationalCoursesManager({
                   <Plus className="w-4 h-4" />
                   <span>+ Add Course Manually</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadTemplate}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs cursor-pointer transition-all border border-slate-200"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Download Sample Excel</span>
-                </button>
               </div>
             </div>
           ) : viewMode === 'grid' ? (
@@ -1513,7 +1494,7 @@ export default function VocationalCoursesManager({
                       </p>
                     </div>
 
-                    {/* Associated Study Center Box (PTC Institute by default, editable!) */}
+                    {/* Associated Study Center Box (PKC Institute by default, editable!) */}
                     <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0">
@@ -1524,7 +1505,7 @@ export default function VocationalCoursesManager({
                             Affiliated Study Center / College
                           </span>
                           <span className="text-xs font-black text-slate-900">
-                            {inst.parentCenter || 'PTC Institute'}
+                            {inst.parentCenter || 'PKC Institute'}
                           </span>
                         </div>
                       </div>
@@ -1664,7 +1645,7 @@ export default function VocationalCoursesManager({
               <div>
                 <h3 className="text-base font-bold text-slate-900">No vocational students enrolled yet</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  Click the button below to enroll your first student under Maharishi Dayanand Vocational Training Institute or Teachers Training (PTC Institute).
+                  Click the button below to enroll your first student under Maharishi Dayanand Vocational Training Institute or Teachers Training (PKC Institute).
                 </p>
               </div>
               <button
@@ -1710,7 +1691,7 @@ export default function VocationalCoursesManager({
                             {st.universityName?.toLowerCase().includes('teacher') || st.universityName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
                           </span>
                           <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">
-                            {st.collegeName || 'PTC Institute'}
+                            {st.collegeName || 'PKC Institute'}
                           </span>
                         </td>
                         <td className="p-3">
@@ -1867,7 +1848,7 @@ export default function VocationalCoursesManager({
                 </div>
               </div>
 
-              {/* Row 4: Institute & Associated PTC Study Center Selection */}
+              {/* Row 4: Institute & Associated PKC Study Center Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
@@ -1894,10 +1875,10 @@ export default function VocationalCoursesManager({
                     type="text"
                     value={enrollForm.parentCenter}
                     onChange={(e) => setEnrollForm({ ...enrollForm, parentCenter: e.target.value })}
-                    placeholder="PTC Institute"
+                    placeholder="PKC Institute"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none"
                   />
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">Pre-filled with PTC Institute (editable)</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Pre-filled with PKC Institute (editable)</span>
                 </div>
               </div>
 
@@ -2083,7 +2064,7 @@ export default function VocationalCoursesManager({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-bold">Center:</span>
-                <span className="font-bold text-amber-700">{enrollSuccessData.student.collegeName || 'PTC Institute'}</span>
+                <span className="font-bold text-amber-700">{enrollSuccessData.student.collegeName || 'PKC Institute'}</span>
               </div>
             </div>
 
@@ -2140,7 +2121,7 @@ export default function VocationalCoursesManager({
                     {editingInstitute ? 'Edit Institute Details' : 'Add New Vocational Institute'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Configure institute details and affiliated study center (PTC Institute)
+                    Configure institute details and affiliated study center (PKC Institute)
                   </p>
                 </div>
               </div>
@@ -2207,7 +2188,7 @@ export default function VocationalCoursesManager({
                   />
                 </div>
 
-                {/* PTC Institute selection */}
+                {/* PKC Institute selection */}
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
                     Affiliated Study Center *
@@ -2217,7 +2198,7 @@ export default function VocationalCoursesManager({
                     required
                     value={instituteFormData.parentCenter}
                     onChange={(e) => setInstituteFormData({ ...instituteFormData, parentCenter: e.target.value })}
-                    placeholder="PTC Institute"
+                    placeholder="PKC Institute"
                     className="w-full p-2.5 bg-amber-50/70 border border-amber-300 rounded-xl font-black text-slate-900 focus:bg-white focus:outline-none"
                   />
                 </div>
@@ -2323,7 +2304,7 @@ export default function VocationalCoursesManager({
               >
                 {institutes.map(inst => (
                   <option key={inst.id} value={inst.id}>
-                    {inst.name} ({inst.parentCenter || 'PTC Institute'})
+                    {inst.name} ({inst.parentCenter || 'PKC Institute'})
                   </option>
                 ))}
               </select>

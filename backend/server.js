@@ -4934,7 +4934,7 @@ const DEFAULT_VOCATIONAL_INSTITUTES = [
     name: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     shortName: 'MDVTI',
     code: 'MDVTI-01',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     type: 'Vocational Training Institute',
     address: 'Bhopal / Damoh (M.P)',
     contact: '9876543210',
@@ -4947,7 +4947,7 @@ const DEFAULT_VOCATIONAL_INSTITUTES = [
     name: 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)',
     shortName: 'MDETTE',
     code: 'MDETTE-02',
-    parentCenter: 'PTC Institute',
+    parentCenter: 'PKC Institute',
     type: 'Early Teachers Training & Education',
     address: 'Bhopal / Damoh (M.P)',
     contact: '9876543210',
@@ -4959,17 +4959,24 @@ const DEFAULT_VOCATIONAL_INSTITUTES = [
 
 const DEFAULT_VOCATIONAL_COURSES = [];
 
-// 0. Get all vocational institutes
+// Helper: Ensure vocational tables exist
+function ensureVocationalData(db) {
+  if (!Array.isArray(db.vocationalInstitutes) || db.vocationalInstitutes.length === 0) {
+    db.vocationalInstitutes = DEFAULT_VOCATIONAL_INSTITUTES;
+  }
+  if (!Array.isArray(db.vocationalCourses)) {
+    db.vocationalCourses = DEFAULT_VOCATIONAL_COURSES;
+  }
+}
+
+// 1. Get all vocational institutes
 app.get('/api/vocational-institutes', (req, res) => {
   try {
     const db = readDB();
-    if (!Array.isArray(db.vocationalInstitutes) || db.vocationalInstitutes.length === 0) {
-      db.vocationalInstitutes = DEFAULT_VOCATIONAL_INSTITUTES;
-      writeDB(db);
-    }
+    ensureVocationalData(db);
     res.json({ success: true, institutes: db.vocationalInstitutes });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to fetch vocational institutes: ' + err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -4989,7 +4996,7 @@ app.post('/api/vocational-institutes', (req, res) => {
       name: name.trim(),
       shortName: (code || name.slice(0, 8)).trim().toUpperCase(),
       code: (code || `INST-${Date.now().toString().slice(-4)}`).trim().toUpperCase(),
-      parentCenter: (parentCenter || 'PTC Institute').trim(),
+      parentCenter: (parentCenter || 'PKC Institute').trim(),
       type: (type || 'Vocational Training Institute').trim(),
       address: (address || '').trim(),
       contact: (contact || '').trim(),
@@ -5020,7 +5027,7 @@ app.post('/api/vocational-institutes', (req, res) => {
         id: 'col-' + Date.now(),
         name: newInst.parentCenter,
         shortName: newInst.parentCenter,
-        code: 'PTC-01',
+        code: 'PKC-01',
         universityName: newInst.name,
         status: 'Active'
       });
@@ -5415,7 +5422,7 @@ app.post('/api/vocational-students', (req, res) => {
       ? 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)'
       : 'Maharishi Dayanand Vocational Training Institute (MDVTI)')).trim();
 
-    const targetParentCenter = (parentCenter || 'PTC Institute').trim();
+    const targetParentCenter = (parentCenter || 'PKC Institute').trim();
     const instPrefix = targetInstName.toLowerCase().includes('teacher') || targetInstName.includes('टीचर्स') || targetInstId === 'inst-mdette' ? 'MDETTE' : 'MDVTI';
     
     const rollNo = req.body.rollNo ? String(req.body.rollNo).trim().toUpperCase() : `${instPrefix}-${year}-${String(nextSeq).padStart(4, '0')}`;
@@ -5488,15 +5495,15 @@ app.post('/api/vocational-students', (req, res) => {
     // Push into db.students at top - instantly incrementing student count from 718 -> 719, 720, etc.!
     db.students.unshift(newStudent);
 
-    // Ensure PTC Institute is in db.colleges
+    // Ensure PKC Institute is in db.colleges
     if (!Array.isArray(db.colleges)) db.colleges = [];
     const hasCol = db.colleges.some(c => (c.name || '').toLowerCase() === targetParentCenter.toLowerCase());
     if (!hasCol) {
       db.colleges.push({
-        id: 'col-ptc-' + Date.now(),
+        id: 'col-pkc-' + Date.now(),
         name: targetParentCenter,
         shortName: targetParentCenter,
-        code: 'PTC-01',
+        code: 'PKC-01',
         universityName: targetInstName,
         status: 'Active'
       });
@@ -5535,7 +5542,7 @@ app.get('/api/vocational-students', (req, res) => {
     const students = (db.students || []).filter(s => 
       s.isVocational === true ||
       (s.universityName && (s.universityName.includes('दयानंद') || s.universityName.includes('Vocational') || s.universityName.includes('Teachers Training'))) ||
-      (s.collegeName && s.collegeName.includes('PTC')) ||
+      (s.collegeName && (s.collegeName.includes('PKC') || s.collegeName.includes('PTC'))) ||
       s.courseType === 'Vocational Certification'
     );
     res.json({ success: true, count: students.length, totalEnrolledAll: (db.students || []).length, students });
