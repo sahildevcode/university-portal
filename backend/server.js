@@ -1733,6 +1733,8 @@ app.delete('/api/students/:rollNo/photo', (req, res) => {
     console.error('Error removing student photo:', err);
     res.status(500).json({ success: false, message: 'Failed to remove photo: ' + err.message });
   }
+});
+
 // Dedicated endpoint to promote individual student to next semester / year
 app.post('/api/students/:rollNo/promote', (req, res) => {
   try {
@@ -1800,31 +1802,6 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
             db.students[lIdx].currentClass = nextClass;
             db.students[lIdx].manualSemester = nextSem;
             if (nextSession) db.students[lIdx].currentSession = student.currentSession;
-          }
-        }
-      });
-    }
-
-    writeDB(db);
-
-    res.json({
-      success: true,
-      message: `🎉 Student ${student.fullName || student.studentName} successfully promoted to ${student.currentClass || ('SEM-' + student.currentSemester)}!`,
-      student
-    });
-  } catch (err) {
-    console.error('Error promoting student:', err);
-    res.status(500).json({ success: false, message: 'Failed to promote student: ' + err.message });
-  }
-});
-
-    // Also update any linked dual enrollment secondary student record if applicable
-    if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
-      student.linkedCourses.forEach(l => {
-        if (l.rollNo) {
-          const lIdx = findStudentIndex(db.students, l.rollNo);
-          if (lIdx !== -1) {
-            db.students[lIdx].currentSession = student.currentSession;
           }
         }
       });
@@ -4944,6 +4921,424 @@ app.delete('/api/colleges/:id/courses', (req, res) => {
     res.json({ success: true, message: `Courses cleared for ${college.shortName || college.name}.` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ============================================================================
+// VOCATIONAL COURSES & SKILLS DESK API ENDPOINTS
+// ============================================================================
+
+const DEFAULT_VOCATIONAL_COURSES = [
+  {
+    id: 'voc-1',
+    courseName: 'Electrician & Building Wireman',
+    courseCode: 'VOC-ELE-101',
+    sector: 'Electrical & Electronics',
+    duration: '1 Year',
+    eligibility: '10th Pass',
+    fee: 12000,
+    certification: 'PKC Certified Skill Diploma',
+    mode: 'Regular',
+    description: 'Domestic wiring, industrial electrical control panel installation, motor winding and home appliance repair.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-2',
+    courseName: 'Web Development & Full-Stack Coding',
+    courseCode: 'VOC-IT-102',
+    sector: 'IT & Computer Software',
+    duration: '6 Months',
+    eligibility: '12th Pass / Any Graduate',
+    fee: 15000,
+    certification: 'PKC Professional Tech Certification',
+    mode: 'Regular / Hybrid',
+    description: 'HTML5, CSS3, JavaScript, React.js, Node.js, Express, databases and real-world web application development.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-3',
+    courseName: 'Beautician, Cosmetology & Salon Styling',
+    courseCode: 'VOC-BW-103',
+    sector: 'Beauty & Wellness',
+    duration: '6 Months',
+    eligibility: '8th / 10th Pass',
+    fee: 10000,
+    certification: 'PKC Professional Beauty Diploma',
+    mode: 'Regular',
+    description: 'Bridal makeup, skin treatments, hair styling, chemical treatments, salon hygiene and professional client care.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-4',
+    courseName: 'Solar PV System Installer & Technician',
+    courseCode: 'VOC-SOL-104',
+    sector: 'Solar & Renewable Energy',
+    duration: '3 Months',
+    eligibility: '10th Pass',
+    fee: 8500,
+    certification: 'National Green Energy Skill Certification',
+    mode: 'Regular',
+    description: 'Rooftop solar panel installation, inverter grid connection, battery maintenance and solar power site inspection.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-5',
+    courseName: 'Computer Hardware & Network Engineering',
+    courseCode: 'VOC-IT-105',
+    sector: 'IT & Hardware',
+    duration: '6 Months',
+    eligibility: '10th / 12th Pass',
+    fee: 9000,
+    certification: 'Hardware & Networking Diploma',
+    mode: 'Regular',
+    description: 'PC assembling, OS installation, motherboard diagnostics, LAN/Wi-Fi router configuration and troubleshooting.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-6',
+    courseName: 'Tally Prime with GST & Professional Accounting',
+    courseCode: 'VOC-ACC-106',
+    sector: 'Accounting & Finance',
+    duration: '3 Months',
+    eligibility: '12th Commerce / Any Stream',
+    fee: 6500,
+    certification: 'PKC Certified Accountant',
+    mode: 'Regular',
+    description: 'Voucher entry, inventory management, GST return filing, E-way billing, balance sheet preparation and TDS calculation.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-7',
+    courseName: 'Mobile Phone Hardware & Software Repairing',
+    courseCode: 'VOC-MOB-107',
+    sector: 'Electronics & Mobile Tech',
+    duration: '3 Months',
+    eligibility: '8th / 10th Pass',
+    fee: 7500,
+    certification: 'Mobile Repairing Certification',
+    mode: 'Regular',
+    description: 'SMD rework, display replacement, charging port repair, flashing, FRP unlock and software troubleshooting for all smartphones.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'voc-8',
+    courseName: 'Fashion Designing & Garment Fabrication',
+    courseCode: 'VOC-TEX-108',
+    sector: 'Apparel & Fashion',
+    duration: '1 Year',
+    eligibility: '8th Pass',
+    fee: 11000,
+    certification: 'PKC Garment Design Diploma',
+    mode: 'Regular',
+    description: 'Pattern drafting, garment stitching, boutique management, embroidery, cutting techniques and contemporary design.',
+    status: 'Active',
+    createdAt: new Date().toISOString()
+  }
+];
+
+// 1. Get all vocational courses
+app.get('/api/vocational-courses', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses) || db.vocationalCourses.length === 0) {
+      db.vocationalCourses = DEFAULT_VOCATIONAL_COURSES;
+      writeDB(db);
+    }
+    res.json({ success: true, courses: db.vocationalCourses });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch vocational courses: ' + err.message });
+  }
+});
+
+// 2. Add single vocational course manually
+app.post('/api/vocational-courses', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
+
+    const { 
+      courseName, 
+      courseCode, 
+      sector, 
+      duration, 
+      eligibility, 
+      fee, 
+      certification, 
+      mode, 
+      description,
+      status 
+    } = req.body;
+
+    if (!courseName || !courseName.trim()) {
+      return res.status(400).json({ success: false, message: 'Course name is required.' });
+    }
+
+    const newCourse = {
+      id: 'voc-' + Date.now(),
+      courseName: courseName.trim(),
+      courseCode: (courseCode || `VOC-${Date.now().toString().slice(-4)}`).trim().toUpperCase(),
+      sector: (sector || 'General Vocational').trim(),
+      duration: (duration || '6 Months').trim(),
+      eligibility: (eligibility || '10th Pass').trim(),
+      fee: Number(fee) || 0,
+      certification: (certification || 'PKC Certified Skill Diploma').trim(),
+      mode: (mode || 'Regular').trim(),
+      description: (description || '').trim(),
+      status: status || 'Active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.vocationalCourses.unshift(newCourse);
+    writeDB(db);
+
+    res.json({ success: true, message: `🎉 Course "${newCourse.courseName}" added successfully!`, course: newCourse });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to add vocational course: ' + err.message });
+  }
+});
+
+// 3. Update vocational course
+app.put('/api/vocational-courses/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
+
+    const id = req.params.id;
+    const index = db.vocationalCourses.findIndex(c => c.id === id || c.courseCode === id);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Vocational course not found.' });
+    }
+
+    const existing = db.vocationalCourses[index];
+    const { 
+      courseName, 
+      courseCode, 
+      sector, 
+      duration, 
+      eligibility, 
+      fee, 
+      certification, 
+      mode, 
+      description,
+      status 
+    } = req.body;
+
+    db.vocationalCourses[index] = {
+      ...existing,
+      courseName: courseName !== undefined ? courseName.trim() : existing.courseName,
+      courseCode: courseCode !== undefined ? courseCode.trim().toUpperCase() : existing.courseCode,
+      sector: sector !== undefined ? sector.trim() : existing.sector,
+      duration: duration !== undefined ? duration.trim() : existing.duration,
+      eligibility: eligibility !== undefined ? eligibility.trim() : existing.eligibility,
+      fee: fee !== undefined ? Number(fee) : existing.fee,
+      certification: certification !== undefined ? certification.trim() : existing.certification,
+      mode: mode !== undefined ? mode.trim() : existing.mode,
+      description: description !== undefined ? description.trim() : existing.description,
+      status: status !== undefined ? status : existing.status,
+      updatedAt: new Date().toISOString()
+    };
+
+    writeDB(db);
+    res.json({ success: true, message: 'Course updated successfully!', course: db.vocationalCourses[index] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update course: ' + err.message });
+  }
+});
+
+// 4. Delete vocational course
+app.delete('/api/vocational-courses/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
+
+    const id = req.params.id;
+    const beforeCount = db.vocationalCourses.length;
+    db.vocationalCourses = db.vocationalCourses.filter(c => c.id !== id && c.courseCode !== id);
+
+    if (db.vocationalCourses.length === beforeCount) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    writeDB(db);
+    res.json({ success: true, message: 'Vocational course deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete course: ' + err.message });
+  }
+});
+
+// 5. Bulk Import Vocational Courses from parsed Excel array
+app.post('/api/vocational-courses/bulk-import', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
+
+    const { courses: incomingCourses, mode } = req.body;
+    if (!Array.isArray(incomingCourses) || incomingCourses.length === 0) {
+      return res.status(400).json({ success: false, message: 'No courses provided to import.' });
+    }
+
+    let addedCount = 0;
+    const formatted = incomingCourses.map((c, i) => {
+      addedCount++;
+      return {
+        id: 'voc-' + Date.now() + '-' + i,
+        courseName: String(c.courseName || c.name || c['Course Name'] || c['पाठ्यक्रम'] || `Vocational Course ${i + 1}`).trim(),
+        courseCode: String(c.courseCode || c.code || c['Course Code'] || `VOC-${Date.now().toString().slice(-4)}-${i + 1}`).trim().toUpperCase(),
+        sector: String(c.sector || c.category || c['Sector'] || c['Trade'] || 'General Vocational').trim(),
+        duration: String(c.duration || c['Duration'] || '6 Months').trim(),
+        eligibility: String(c.eligibility || c['Eligibility'] || '10th Pass').trim(),
+        fee: Number(c.fee || c.courseFee || c['Fee'] || c['Fees'] || 0) || 0,
+        certification: String(c.certification || c['Certification'] || 'PKC Certified Skill Diploma').trim(),
+        mode: String(c.mode || c['Mode'] || 'Regular').trim(),
+        description: String(c.description || c['Description'] || '').trim(),
+        status: c.status || 'Active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    if (mode === 'replace') {
+      db.vocationalCourses = formatted;
+    } else {
+      const existingNames = new Set(db.vocationalCourses.map(c => c.courseName.toLowerCase()));
+      const toAdd = formatted.filter(c => !existingNames.has(c.courseName.toLowerCase()));
+      db.vocationalCourses = [...toAdd, ...db.vocationalCourses];
+      addedCount = toAdd.length;
+    }
+
+    writeDB(db);
+    res.json({
+      success: true,
+      message: `🎉 Successfully imported ${addedCount} vocational courses!`,
+      count: addedCount,
+      courses: db.vocationalCourses
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Bulk import failed: ' + err.message });
+  }
+});
+
+// 6. Direct Excel File Upload & Parse endpoint
+app.post('/api/vocational-courses/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please upload an Excel file (.xlsx, .xls, .csv).' });
+    }
+
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(sheet);
+
+    if (!rawRows || rawRows.length === 0) {
+      return res.status(400).json({ success: false, message: 'The uploaded Excel sheet contains no rows.' });
+    }
+
+    const db = readDB();
+    if (!Array.isArray(db.vocationalCourses)) db.vocationalCourses = [];
+
+    const formatted = rawRows.map((r, i) => {
+      const name = r['Course Name'] || r['courseName'] || r['Course'] || r['Trade'] || r['पाठ्यक्रम'] || r['Name'] || '';
+      if (!name) return null;
+
+      return {
+        id: 'voc-' + Date.now() + '-' + i,
+        courseName: String(name).trim(),
+        courseCode: String(r['Course Code'] || r['Code'] || r['courseCode'] || `VOC-${Date.now().toString().slice(-4)}-${i + 1}`).trim().toUpperCase(),
+        sector: String(r['Sector'] || r['Category'] || r['sector'] || 'General Vocational').trim(),
+        duration: String(r['Duration'] || r['duration'] || '6 Months').trim(),
+        eligibility: String(r['Eligibility'] || r['eligibility'] || '10th Pass').trim(),
+        fee: Number(r['Fee'] || r['Total Fee'] || r['fee'] || 0) || 0,
+        certification: String(r['Certification'] || r['certification'] || 'PKC Certified Skill Diploma').trim(),
+        mode: String(r['Mode'] || r['mode'] || 'Regular').trim(),
+        description: String(r['Description'] || r['description'] || '').trim(),
+        status: 'Active',
+        createdAt: new Date().toISOString()
+      };
+    }).filter(Boolean);
+
+    db.vocationalCourses = [...formatted, ...db.vocationalCourses];
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Successfully parsed and imported ${formatted.length} vocational courses from "${req.file.originalname}"!`,
+      count: formatted.length,
+      courses: db.vocationalCourses
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to process Excel file: ' + err.message });
+  }
+});
+
+// 7. Download sample Excel template
+app.get('/api/vocational-courses/template', (req, res) => {
+  try {
+    const wb = XLSX.utils.book_new();
+    const sampleData = [
+      {
+        'Course Name': 'Electrician & Building Wireman',
+        'Course Code': 'VOC-ELE-101',
+        'Sector': 'Electrical & Electronics',
+        'Duration': '1 Year',
+        'Eligibility': '10th Pass',
+        'Total Fee': 12000,
+        'Certification': 'PKC Certified Skill Diploma',
+        'Mode': 'Regular',
+        'Description': 'House wiring, single phase and three phase motor repair, control panels'
+      },
+      {
+        'Course Name': 'Web Development & Full-Stack Coding',
+        'Course Code': 'VOC-IT-102',
+        'Sector': 'IT & Computer Software',
+        'Duration': '6 Months',
+        'Eligibility': '12th Pass',
+        'Total Fee': 15000,
+        'Certification': 'PKC Professional Tech Certification',
+        'Mode': 'Regular / Hybrid',
+        'Description': 'HTML, CSS, JavaScript, React, Node.js and full-stack project building'
+      },
+      {
+        'Course Name': 'Beautician & Salon Management',
+        'Course Code': 'VOC-BW-103',
+        'Sector': 'Beauty & Wellness',
+        'Duration': '6 Months',
+        'Eligibility': '8th / 10th Pass',
+        'Total Fee': 10000,
+        'Certification': 'PKC Beauty Diploma',
+        'Mode': 'Regular',
+        'Description': 'Bridal makeup, hair styling, skin treatments, facials and salon management'
+      },
+      {
+        'Course Name': 'Solar PV System Installer',
+        'Course Code': 'VOC-SOL-104',
+        'Sector': 'Solar & Renewable Energy',
+        'Duration': '3 Months',
+        'Eligibility': '10th Pass',
+        'Total Fee': 8500,
+        'Certification': 'Green Energy Skill Certificate',
+        'Mode': 'Regular',
+        'Description': 'Rooftop solar panel mounting, wiring, inverter connection and maintenance'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Vocational_Courses');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', 'attachment; filename="Vocational_Course_Import_Template.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to generate template: ' + err.message });
   }
 });
 

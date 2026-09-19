@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX, GraduationCap, FolderLock, TrendingUp
+  UserX, GraduationCap, FolderLock, TrendingUp, Briefcase
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -16,6 +16,7 @@ import UniversityPaidManager from './UniversityPaidManager';
 import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import SavePersonalDocuments from './SavePersonalDocuments';
 import PromoteStudentsManager from './PromoteStudentsManager';
+import VocationalCoursesManager from './VocationalCoursesManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -72,6 +73,9 @@ export default function AdminPortal({
       }
       if (p.includes('personal-doc') || p.includes('personal-document') || p.includes('save-personal') || search.includes('personal-doc')) {
         return 'personal-docs';
+      }
+      if (p.includes('vocational') || search.includes('vocational') || p.includes('trade') || search.includes('trade')) {
+        return 'vocational';
       }
       if (p.includes('syllabus') || p.includes('course') || search.includes('syllabus')) {
         return 'syllabus';
@@ -429,6 +433,16 @@ export default function AdminPortal({
       icon: FolderLock, 
       color: 'text-amber-500',
       badge: 'Personal Docs'
+    },
+    { 
+      id: 'vocational', 
+      label: 'Vocational Courses', 
+      fullName: 'Vocational Courses, Skills & Trades Master Hub',
+      sub: 'Import vocational courses via Excel and create customized skill certification programs',
+      shortDesc: 'Excel Upload, Skill Trades & Add Custom Courses',
+      icon: Briefcase, 
+      color: 'text-amber-500',
+      badge: 'Vocational'
     }
   ];
 
@@ -1034,6 +1048,14 @@ export default function AdminPortal({
       {activeTab === 'personal-docs' && (
         <SavePersonalDocuments 
           adminUser={adminUser} 
+          lang={lang} 
+          toggleLang={toggleLang} 
+        />
+      )}
+
+      {/* TAB 12: VOCATIONAL COURSES HUB (EXCEL IMPORT & MANUAL ADD) */}
+      {activeTab === 'vocational' && (
+        <VocationalCoursesManager 
           lang={lang} 
           toggleLang={toggleLang} 
         />
