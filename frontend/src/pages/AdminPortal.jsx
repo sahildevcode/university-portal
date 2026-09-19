@@ -24,6 +24,7 @@ export default function AdminPortal({
   courses, 
   onRefreshCourses, 
   onLogout,
+  onViewStudentWebsite,
   lang: propLang,
   setLang: propSetLang,
   toggleLang: propToggleLang
@@ -479,16 +480,21 @@ export default function AdminPortal({
           </button>
 
           {/* View Public Student Website */}
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
-            title="Open Student Public Website in new tab"
+          <button
+            type="button"
+            onClick={() => {
+              if (onViewStudentWebsite) {
+                onViewStudentWebsite();
+              } else {
+                window.location.href = '/';
+              }
+            }}
+            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white border border-white/20 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            title="Open Student Public Website (छात्र पोर्टल देखें)"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
             <span>🌐 View Student Website</span>
-          </a>
+          </button>
 
           {/* Logout */}
           <button

@@ -32,13 +32,6 @@ const getInitialView = () => {
     const p = window.location.pathname.toLowerCase();
     if (p === '/admin' || p.startsWith('/admin')) return 'admin';
     if (p === '/staff' || p.startsWith('/staff')) return 'staff';
-    try {
-      const saved = localStorage.getItem('pkc_active_view');
-      const hasAdmin = !!localStorage.getItem('pkc_admin_user');
-      const hasStaff = !!localStorage.getItem('pkc_staff_user');
-      if (saved === 'admin' && hasAdmin) return 'admin';
-      if (saved === 'staff' && (hasStaff || hasAdmin)) return 'staff';
-    } catch {}
   }
   return 'public';
 };
@@ -362,6 +355,10 @@ export default function App() {
                 courses={courses} 
                 onRefreshCourses={fetchGlobalData}
                 onLogout={handleAdminLogout}
+                onViewStudentWebsite={() => {
+                  localStorage.setItem('pkc_active_view', 'public');
+                  navigateTo('public', '/');
+                }}
                 lang={lang}
                 setLang={setLang}
                 toggleLang={toggleLang}
@@ -382,6 +379,10 @@ export default function App() {
                   courses={courses} 
                   onRefreshCourses={fetchGlobalData}
                   onLogout={handleAdminLogout}
+                  onViewStudentWebsite={() => {
+                    localStorage.setItem('pkc_active_view', 'public');
+                    navigateTo('public', '/');
+                  }}
                   lang={lang}
                   setLang={setLang}
                   toggleLang={toggleLang}
@@ -402,6 +403,10 @@ export default function App() {
                 courses={courses} 
                 staffUser={staffUser}
                 onStaffLogout={handleStaffLogout}
+                onViewStudentWebsite={() => {
+                  localStorage.setItem('pkc_active_view', 'public');
+                  navigateTo('public', '/');
+                }}
                 lang={lang}
                 setLang={setLang}
                 toggleLang={toggleLang}

@@ -10,6 +10,7 @@ export default function CashCounterPortal({
   courses, 
   staffUser, 
   onStaffLogout,
+  onViewStudentWebsite,
   lang: propLang,
   toggleLang: propToggleLang 
 }) {
@@ -167,15 +168,21 @@ export default function CashCounterPortal({
                 <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
                 <span>Bulk Import</span>
               </button>
-              <a
-                href="/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-colors border border-white/10"
+              <button
+                type="button"
+                onClick={() => {
+                  if (onViewStudentWebsite) {
+                    onViewStudentWebsite();
+                  } else {
+                    window.location.href = '/';
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-colors border border-white/10 cursor-pointer"
+                title="Open Student Public Website"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Student Site</span>
-              </a>
+              </button>
               <button
                 onClick={onStaffLogout}
                 className="flex items-center gap-1.5 text-xs font-bold text-rose-200 hover:text-white bg-rose-600/80 hover:bg-rose-600 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
