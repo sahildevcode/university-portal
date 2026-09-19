@@ -107,174 +107,8 @@ const INITIAL_DEMO_INSTITUTES = [
   }
 ];
 
-// Pre-seeded Default Vocational Courses
-const INITIAL_DEMO_COURSES = [
-  {
-    id: 'voc-1',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Electrician & Building Wireman',
-    courseCode: 'VOC-ELE-101',
-    sector: 'Electrical & Electronics',
-    duration: '1 Year',
-    eligibility: '10th Pass (High School)',
-    fee: 12000,
-    certification: 'PKC Certified Skill Diploma',
-    mode: 'Regular',
-    description: 'Domestic wiring, industrial electrical control panel installation, motor winding and home appliance repair.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-2',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Web Development & Full-Stack Coding',
-    courseCode: 'VOC-IT-102',
-    sector: 'IT & Computer Software',
-    duration: '6 Months',
-    eligibility: '12th Pass (Intermediate)',
-    fee: 15000,
-    certification: 'PKC Professional Tech Certification',
-    mode: 'Regular / Hybrid',
-    description: 'HTML5, CSS3, JavaScript, React.js, Node.js, Express, databases and real-world web application development.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-3',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Beautician, Cosmetology & Salon Styling',
-    courseCode: 'VOC-BW-103',
-    sector: 'Beauty & Wellness',
-    duration: '6 Months',
-    eligibility: '8th Pass',
-    fee: 10000,
-    certification: 'PKC Professional Beauty Diploma',
-    mode: 'Regular',
-    description: 'Bridal makeup, skin treatments, hair styling, chemical treatments, salon hygiene and professional client care.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-4',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Solar PV System Installer & Technician',
-    courseCode: 'VOC-SOL-104',
-    sector: 'Solar & Renewable Energy',
-    duration: '3 Months',
-    eligibility: '10th Pass (High School)',
-    fee: 8500,
-    certification: 'National Green Energy Skill Certification',
-    mode: 'Regular',
-    description: 'Rooftop solar panel installation, inverter grid connection, battery maintenance and solar power site inspection.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-5',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Computer Hardware & Network Engineering',
-    courseCode: 'VOC-IT-105',
-    sector: 'IT & Computer Software',
-    duration: '6 Months',
-    eligibility: '10th Pass (High School)',
-    fee: 9000,
-    certification: 'Hardware & Networking Diploma',
-    mode: 'Regular',
-    description: 'PC assembling, OS installation, motherboard diagnostics, LAN/Wi-Fi router configuration and troubleshooting.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-6',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Tally Prime with GST & Professional Accounting',
-    courseCode: 'VOC-ACC-106',
-    sector: 'Accounting & Finance',
-    duration: '3 Months',
-    eligibility: '12th Commerce',
-    fee: 6500,
-    certification: 'PKC Certified Accountant',
-    mode: 'Regular',
-    description: 'Voucher entry, inventory management, GST return filing, E-way billing, balance sheet preparation and TDS calculation.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-7',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Mobile Phone Hardware & Software Repairing',
-    courseCode: 'VOC-MOB-107',
-    sector: 'Electronics & Mobile Tech',
-    duration: '3 Months',
-    eligibility: '8th Pass',
-    fee: 7500,
-    certification: 'Mobile Repairing Certification',
-    mode: 'Regular',
-    description: 'SMD rework, display replacement, charging port repair, flashing, FRP unlock and software troubleshooting for all smartphones.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-8',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Nursery Teacher Training (NTT)',
-    courseCode: 'VOC-NTT-201',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass (Intermediate)',
-    fee: 14000,
-    certification: 'National Diploma in Nursery Teacher Training',
-    mode: 'Regular / Distance',
-    description: 'Child psychology, pedagogy, preschool lesson planning, teaching aids, phonics and classroom management.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-9',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Early Childhood Care & Education (ECCE)',
-    courseCode: 'VOC-ECC-202',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass (Intermediate)',
-    fee: 15000,
-    certification: 'Diploma in Early Childhood Care & Education',
-    mode: 'Regular',
-    description: 'Foundational literacy & numeracy, cognitive child development, play-way curriculum and modern kindergarten methods.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-10',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Primary Teacher Training (PTT)',
-    courseCode: 'VOC-PTT-203',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass / Any Graduate',
-    fee: 16000,
-    certification: 'Primary Teacher Training Certification',
-    mode: 'Regular',
-    description: 'Primary school curricula, classroom leadership, educational psychology, evaluation and modern digital teaching methods.',
-    status: 'Active'
-  },
-  {
-    id: 'voc-11',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Fashion Designing & Garment Fabrication',
-    courseCode: 'VOC-TEX-108',
-    sector: 'Apparel & Fashion',
-    duration: '1 Year',
-    eligibility: '8th Pass',
-    fee: 11000,
-    certification: 'PKC Garment Design Diploma',
-    mode: 'Regular',
-    description: 'Pattern drafting, garment stitching, boutique management, embroidery, cutting techniques and contemporary design.',
-    status: 'Active'
-  }
-];
+// Default Vocational Courses (empty so admin adds or uploads their own courses)
+const INITIAL_DEMO_COURSES = [];
 
 export default function VocationalCoursesManager({ 
   lang = 'en', 
@@ -299,13 +133,22 @@ export default function VocationalCoursesManager({
     }
   });
 
-  // Courses State
+  // Courses State - starts empty so user can add or upload their own courses!
   const [courses, setCourses] = useState(() => {
     try {
       const cached = localStorage.getItem('pkc_vocational_courses');
-      return cached ? JSON.parse(cached) : INITIAL_DEMO_COURSES;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // If it was the old demo courses (e.g. contains VOC-ELE-101), clear it
+        if (Array.isArray(parsed) && parsed.some(c => c.courseCode === 'VOC-ELE-101' || c.courseName?.includes('Electrician'))) {
+          localStorage.removeItem('pkc_vocational_courses');
+          return [];
+        }
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
     } catch {
-      return INITIAL_DEMO_COURSES;
+      return [];
     }
   });
 
@@ -417,7 +260,7 @@ export default function VocationalCoursesManager({
     try {
       const res = await fetch('/api/vocational-courses');
       const data = await res.json();
-      if (data.success && Array.isArray(data.courses) && data.courses.length > 0) {
+      if (data.success && Array.isArray(data.courses)) {
         setCourses(data.courses);
         try {
           localStorage.setItem('pkc_vocational_courses', JSON.stringify(data.courses));
@@ -425,6 +268,24 @@ export default function VocationalCoursesManager({
       }
     } catch (err) {
       console.warn('Could not fetch vocational courses:', err);
+    }
+  };
+
+  // Clear all vocational courses
+  const handleClearAllCourses = async () => {
+    if (!window.confirm(isHindi ? 'क्या आप वाकई सभी वोकेशनल कोर्सेस हटाना चाहते हैं?' : 'Are you sure you want to remove all vocational courses?')) return;
+    try {
+      const res = await fetch('/api/vocational-courses', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setCourses([]);
+        try { localStorage.setItem('pkc_vocational_courses', JSON.stringify([])); } catch {}
+        showToast(isHindi ? '🗑️ सभी वोकेशनल कोर्स हटा दिए गए हैं!' : '🗑️ All vocational courses cleared successfully!');
+      }
+    } catch (err) {
+      setCourses([]);
+      try { localStorage.setItem('pkc_vocational_courses', JSON.stringify([])); } catch {}
+      showToast('Cleared courses!');
     }
   };
 
@@ -1355,10 +1216,23 @@ export default function VocationalCoursesManager({
       {/* ========================================================================= */}
       {activeMainTab === 'courses' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>
-              Showing <strong className="text-slate-900 font-bold">{filteredCourses.length}</strong> of {courses.length} vocational courses
-            </span>
+          <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 px-1 gap-2">
+            <div className="flex items-center gap-3">
+              <span>
+                Showing <strong className="text-slate-900 font-bold">{filteredCourses.length}</strong> of {courses.length} vocational courses
+              </span>
+              {courses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllCourses}
+                  className="text-[11px] text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1"
+                  title="सभी वोकेशनल कोर्सेस हटाएं"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>{isHindi ? 'सभी कोर्स हटाएं' : 'Clear All Courses'}</span>
+                </button>
+              )}
+            </div>
             <span className="text-slate-400">
               {selectedInstituteFilter !== 'all' 
                 ? `Filtered by ${institutes.find(i => i.id === selectedInstituteFilter)?.shortName || 'Selected Institute'}`
@@ -1367,30 +1241,54 @@ export default function VocationalCoursesManager({
           </div>
 
           {filteredCourses.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-4">
-              <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-500 mx-auto flex items-center justify-center">
-                <BookOpen className="w-8 h-8" />
+            <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border-2 border-dashed border-slate-200 shadow-sm space-y-5">
+              <div className="w-20 h-20 rounded-3xl bg-amber-50 text-amber-500 mx-auto flex items-center justify-center border border-amber-200 shadow-inner">
+                <BookOpen className="w-10 h-10" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">No vocational courses found</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  Try adjusting search or sector filters, or click below to add a new course or import an Excel sheet.
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-lg font-black text-slate-900">
+                  {courses.length === 0 
+                    ? (isHindi ? 'सभी डमी कोर्सेस हटा दिए गए हैं (कैटलॉग खाली है)' : 'No Vocational Courses Added Yet')
+                    : (isHindi ? 'फ़िल्टर के अनुसार कोई कोर्स नहीं मिला' : 'No courses match your search/filter')}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {courses.length === 0
+                    ? (isHindi 
+                        ? 'अब आप अपने अनुसार एक्सेल शीट (.xlsx) अपलोड करके एक साथ कोर्स जोड़ सकते हैं या "+ Add Course Manually" बटन से खुद नया कोर्स बना सकते हैं।' 
+                        : 'All demo courses have been removed. You can now upload your custom Excel file (.xlsx) or manually add your vocational courses.')
+                    : (isHindi 
+                        ? 'कृपया सर्च या सेक्टर फ़िल्टर बदलें, या नीचे दिए गए बटनों से नया कोर्स जोड़ें।' 
+                        : 'Try adjusting your search or filters, or add a new course below.')}
                 </p>
               </div>
-              <div className="flex justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => handleOpenAddCourse()}
-                  className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl font-bold text-xs cursor-pointer"
+                  onClick={() => {
+                    setExcelFile(null);
+                    setExcelParsedRows([]);
+                    setShowExcelModal(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs cursor-pointer shadow-lg shadow-indigo-600/20 hover:scale-105 transition-all"
                 >
-                  + Add Course Manually
+                  <Upload className="w-4 h-4 text-amber-300" />
+                  <span>{isHindi ? '📊 एक्सेल शीट अपलोड करें (.xlsx)' : 'Upload Excel Sheet (.xlsx)'}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowExcelModal(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs cursor-pointer"
+                  onClick={() => handleOpenAddCourse()}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl font-black text-xs cursor-pointer shadow-lg shadow-amber-400/20 hover:scale-105 transition-all"
                 >
-                  Upload Excel Sheet
+                  <Plus className="w-4 h-4" />
+                  <span>{isHindi ? '+ खुद से नया कोर्स जोड़ें' : '+ Add Course Manually'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs cursor-pointer transition-all border border-slate-200"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <span>{isHindi ? 'एक्सेल फॉर्मेट डाउनलोड करें' : 'Download Sample Excel'}</span>
                 </button>
               </div>
             </div>

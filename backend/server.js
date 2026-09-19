@@ -4957,200 +4957,7 @@ const DEFAULT_VOCATIONAL_INSTITUTES = [
   }
 ];
 
-const DEFAULT_VOCATIONAL_COURSES = [
-  {
-    id: 'voc-1',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Electrician & Building Wireman',
-    courseCode: 'VOC-ELE-101',
-    sector: 'Electrical & Electronics',
-    duration: '1 Year',
-    eligibility: '10th Pass',
-    fee: 12000,
-    certification: 'PKC Certified Skill Diploma',
-    mode: 'Regular',
-    description: 'Domestic wiring, industrial electrical control panel installation, motor winding and home appliance repair.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-2',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Web Development & Full-Stack Coding',
-    courseCode: 'VOC-IT-102',
-    sector: 'IT & Computer Software',
-    duration: '6 Months',
-    eligibility: '12th Pass / Any Graduate',
-    fee: 15000,
-    certification: 'PKC Professional Tech Certification',
-    mode: 'Regular / Hybrid',
-    description: 'HTML5, CSS3, JavaScript, React.js, Node.js, Express, databases and real-world web application development.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-3',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Beautician, Cosmetology & Salon Styling',
-    courseCode: 'VOC-BW-103',
-    sector: 'Beauty & Wellness',
-    duration: '6 Months',
-    eligibility: '8th / 10th Pass',
-    fee: 10000,
-    certification: 'PKC Professional Beauty Diploma',
-    mode: 'Regular',
-    description: 'Bridal makeup, skin treatments, hair styling, chemical treatments, salon hygiene and professional client care.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-4',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Solar PV System Installer & Technician',
-    courseCode: 'VOC-SOL-104',
-    sector: 'Solar & Renewable Energy',
-    duration: '3 Months',
-    eligibility: '10th Pass',
-    fee: 8500,
-    certification: 'National Green Energy Skill Certification',
-    mode: 'Regular',
-    description: 'Rooftop solar panel installation, inverter grid connection, battery maintenance and solar power site inspection.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-5',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Computer Hardware & Network Engineering',
-    courseCode: 'VOC-IT-105',
-    sector: 'IT & Hardware',
-    duration: '6 Months',
-    eligibility: '10th / 12th Pass',
-    fee: 9000,
-    certification: 'Hardware & Networking Diploma',
-    mode: 'Regular',
-    description: 'PC assembling, OS installation, motherboard diagnostics, LAN/Wi-Fi router configuration and troubleshooting.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-6',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Tally Prime with GST & Professional Accounting',
-    courseCode: 'VOC-ACC-106',
-    sector: 'Accounting & Finance',
-    duration: '3 Months',
-    eligibility: '12th Commerce / Any Stream',
-    fee: 6500,
-    certification: 'PKC Certified Accountant',
-    mode: 'Regular',
-    description: 'Voucher entry, inventory management, GST return filing, E-way billing, balance sheet preparation and TDS calculation.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-7',
-    instituteId: 'inst-mdvti',
-    instituteName: 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)',
-    courseName: 'Mobile Phone Hardware & Software Repairing',
-    courseCode: 'VOC-MOB-107',
-    sector: 'Electronics & Mobile Tech',
-    duration: '3 Months',
-    eligibility: '8th / 10th Pass',
-    fee: 7500,
-    certification: 'Mobile Repairing Certification',
-    mode: 'Regular',
-    description: 'SMD rework, display replacement, charging port repair, flashing, FRP unlock and software troubleshooting for all smartphones.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-8',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Nursery Teacher Training (NTT)',
-    courseCode: 'VOC-NTT-201',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass',
-    fee: 14000,
-    certification: 'National Diploma in Nursery Teacher Training',
-    mode: 'Regular / Distance',
-    description: 'Child psychology, pedagogy, preschool lesson planning, teaching aids, phonics and classroom management.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-9',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Early Childhood Care & Education (ECCE)',
-    courseCode: 'VOC-ECC-202',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass',
-    fee: 15000,
-    certification: 'Diploma in Early Childhood Care & Education',
-    mode: 'Regular',
-    description: 'Foundational literacy & numeracy, cognitive child development, play-way curriculum and modern kindergarten methods.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-10',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Primary Teacher Training (PTT)',
-    courseCode: 'VOC-PTT-203',
-    sector: 'Early Childhood & Teachers Training',
-    duration: '1 Year',
-    eligibility: '12th Pass / Graduate',
-    fee: 16000,
-    certification: 'Primary Teacher Training Certification',
-    mode: 'Regular',
-    description: 'Primary school curricula, classroom leadership, educational psychology, evaluation and modern digital teaching methods.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-11',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Yoga & Physical Education Instructor',
-    courseCode: 'VOC-YOG-204',
-    sector: 'Health & Physical Education',
-    duration: '6 Months',
-    eligibility: '10th / 12th Pass',
-    fee: 9500,
-    certification: 'Yoga & Physical Trainer Certificate',
-    mode: 'Regular',
-    description: 'Asanas, pranayama, school yoga training, physical fitness exercises, anatomy and lifestyle wellness.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'voc-12',
-    instituteId: 'inst-mdette',
-    instituteName: 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)',
-    courseName: 'Fashion Designing & Garment Fabrication',
-    courseCode: 'VOC-TEX-108',
-    sector: 'Apparel & Fashion',
-    duration: '1 Year',
-    eligibility: '8th Pass',
-    fee: 11000,
-    certification: 'PKC Garment Design Diploma',
-    mode: 'Regular',
-    description: 'Pattern drafting, garment stitching, boutique management, embroidery, cutting techniques and contemporary design.',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  }
-];
+const DEFAULT_VOCATIONAL_COURSES = [];
 
 // 0. Get all vocational institutes
 app.get('/api/vocational-institutes', (req, res) => {
@@ -5281,13 +5088,25 @@ app.delete('/api/vocational-institutes/:id', (req, res) => {
 app.get('/api/vocational-courses', (req, res) => {
   try {
     const db = readDB();
-    if (!Array.isArray(db.vocationalCourses) || db.vocationalCourses.length === 0) {
-      db.vocationalCourses = DEFAULT_VOCATIONAL_COURSES;
+    if (!Array.isArray(db.vocationalCourses)) {
+      db.vocationalCourses = [];
       writeDB(db);
     }
     res.json({ success: true, courses: db.vocationalCourses });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch vocational courses: ' + err.message });
+  }
+});
+
+// 1.1 Clear all vocational courses
+app.delete('/api/vocational-courses', (req, res) => {
+  try {
+    const db = readDB();
+    db.vocationalCourses = [];
+    writeDB(db);
+    res.json({ success: true, message: 'All vocational courses removed successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
