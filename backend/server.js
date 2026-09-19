@@ -1745,38 +1745,78 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
     }
 
     const student = db.students[index];
-    const { nextSemester, nextClass, nextSession, promotionDate, remark } = req.body;
+    const rawTargetSem = req.body.targetSemester !== undefined ? req.body.targetSemester : req.body.nextSemester;
+    const currentSem = Number(student.currentSemester) || 1;
+    const nextSem = rawTargetSem !== undefined && rawTargetSem !== '' ? Number(rawTargetSem) : currentSem + 1;
+    const nextClass = req.body.targetClass || req.body.nextClass || `SEM-${nextSem}`;
+    const nextSession = req.body.nextSession;
+    const promotionDate = req.body.promotionDate || new Date().toISOString().split('T')[0];
+    const remark = req.body.remark || `Promoted to ${nextClass}`;
 
-    const prevClass = student.currentClass || `SEM-${student.currentSemester || 1}`;
+    const prevClass = student.currentClass || `SEM-${currentSem}`;
     const prevSession = student.currentSession || student.admissionSession || '';
 
     // Update student fields
-    if (nextSemester !== undefined && nextSemester !== '') {
-      student.currentSemester = Number(nextSemester);
-      student.manualSemester = Number(nextSemester);
-    }
-    if (nextClass) {
-      student.currentClass = String(nextClass).trim();
-    } else if (nextSemester) {
-      student.currentClass = `SEM-${nextSemester}`;
-    }
+    student.currentSemester = nextSem;
+    student.manualSemester = nextSem;
+    student.manualPromotion = true;
+    student.currentClass = String(nextClass).trim();
     if (nextSession) {
       student.currentSession = String(nextSession).trim();
     }
+    student.promotedAt = new Date().toISOString();
     student.updatedAt = new Date().toISOString();
 
+    // Log in semester history
+    if (!Array.isArray(student.semesterHistory)) student.semesterHistory = [];
+    student.semesterHistory.push({
+      fromSemester: currentSem,
+      toSemester: nextSem,
+      className: nextClass,
+      promotedAt: new Date().toISOString(),
+      remark
+    });
+
     // Log in promotion history
-    if (!student.promotionHistory) student.promotionHistory = [];
+    if (!Array.isArray(student.promotionHistory)) student.promotionHistory = [];
     student.promotionHistory.push({
       id: 'PROM-' + Date.now(),
-      date: promotionDate || new Date().toISOString().split('T')[0],
+      date: promotionDate,
       fromClass: prevClass,
       toClass: student.currentClass,
       fromSession: prevSession,
       toSession: student.currentSession,
       promotedAt: new Date().toISOString(),
-      remark: remark || 'Promoted to next academic term'
+      remark
     });
+
+    // Also update any linked dual enrollment secondary student record if applicable
+    if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+      student.linkedCourses.forEach(l => {
+        if (l.rollNo) {
+          const lIdx = findStudentIndex(db.students, l.rollNo);
+          if (lIdx !== -1) {
+            db.students[lIdx].currentSemester = nextSem;
+            db.students[lIdx].currentClass = nextClass;
+            db.students[lIdx].manualSemester = nextSem;
+            if (nextSession) db.students[lIdx].currentSession = student.currentSession;
+          }
+        }
+      });
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Student ${student.fullName || student.studentName} successfully promoted to ${student.currentClass || ('SEM-' + student.currentSemester)}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error promoting student:', err);
+    res.status(500).json({ success: false, message: 'Failed to promote student: ' + err.message });
+  }
+});
 
     // Also update any linked dual enrollment secondary student record if applicable
     if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
@@ -2109,16 +2149,26 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { targetSemester, targetClass, remark } = req.body;
+  const rawTargetSem = req.body.targetSemester !== undefined ? req.body.targetSemester : req.body.nextSemester;
   const currentSem = Number(student.currentSemester) || 1;
-  const nextSem = targetSemester !== undefined ? Number(targetSemester) : currentSem + 1;
-  const nextClass = targetClass || `SEM-${nextSem}`;
+  const nextSem = rawTargetSem !== undefined && rawTargetSem !== '' ? Number(rawTargetSem) : currentSem + 1;
+  const nextClass = req.body.targetClass || req.body.nextClass || `SEM-${nextSem}`;
+  const nextSession = req.body.nextSession;
+  const promotionDate = req.body.promotionDate || new Date().toISOString().split('T')[0];
+  const remark = req.body.remark || `Promoted to ${nextClass}`;
+
+  const prevClass = student.currentClass || `SEM-${currentSem}`;
+  const prevSession = student.currentSession || student.admissionSession || '';
 
   student.currentSemester = nextSem;
-  student.currentClass = nextClass;
   student.manualSemester = nextSem;
   student.manualPromotion = true;
+  student.currentClass = String(nextClass).trim();
+  if (nextSession) {
+    student.currentSession = String(nextSession).trim();
+  }
   student.promotedAt = new Date().toISOString();
+  student.updatedAt = new Date().toISOString();
 
   if (!Array.isArray(student.semesterHistory)) {
     student.semesterHistory = [];
@@ -2128,18 +2178,47 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
     toSemester: nextSem,
     className: nextClass,
     promotedAt: new Date().toISOString(),
-    remark: remark || 'Admin manual semester promotion'
+    remark
   });
+
+  if (!Array.isArray(student.promotionHistory)) {
+    student.promotionHistory = [];
+  }
+  student.promotionHistory.push({
+    id: 'PROM-' + Date.now(),
+    date: promotionDate,
+    fromClass: prevClass,
+    toClass: student.currentClass,
+    fromSession: prevSession,
+    toSession: student.currentSession,
+    promotedAt: new Date().toISOString(),
+    remark
+  });
+
+  if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+    student.linkedCourses.forEach(l => {
+      if (l.rollNo) {
+        const lIdx = findStudentIndex(db.students, l.rollNo);
+        if (lIdx !== -1) {
+          db.students[lIdx].currentSemester = nextSem;
+          db.students[lIdx].currentClass = nextClass;
+          db.students[lIdx].manualSemester = nextSem;
+          if (nextSession) db.students[lIdx].currentSession = student.currentSession;
+        }
+      }
+    });
+  }
 
   writeDB(db);
 
   res.json({
     success: true,
-    message: `Student ${student.fullName} promoted to ${nextClass} successfully!`,
+    message: `🎉 Student ${student.fullName || student.studentName} promoted to ${student.currentClass} successfully!`,
     student: {
       rollNo: student.rollNo,
       currentSemester: student.currentSemester,
       currentClass: student.currentClass,
+      currentSession: student.currentSession,
       promotedAt: student.promotedAt
     }
   });

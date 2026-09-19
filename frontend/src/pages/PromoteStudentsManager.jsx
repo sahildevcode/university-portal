@@ -160,33 +160,71 @@ export default function PromoteStudentsManager({
     if (!promoteStudent) return;
 
     setSubmitting(true);
+    const lookupKey = promoteStudent.rollNo || promoteStudent.enrollmentNo || promoteStudent.registrationNo || promoteStudent.id;
+    const targetSemNum = Number(nextSemester);
+
+    const payload = {
+      targetSemester: targetSemNum,
+      targetClass: nextClass,
+      nextSemester: targetSemNum,
+      nextClass: nextClass,
+      nextSession: nextSession,
+      promotionDate: promotionDate,
+      remark: promotionRemark
+    };
+
     try {
-      const rollKey = promoteStudent.rollNo || promoteStudent.id;
-      const res = await fetch(`/api/students/${rollKey}/promote`, {
-        method: 'POST',
+      // Primary attempt: PUT (actively supported by deployed backend)
+      let res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/promote`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nextSemester: Number(nextSemester),
-          nextClass,
-          nextSession,
-          promotionDate,
-          remark: promotionRemark
-        })
+        body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
-      if (data.success) {
+      // Fallback: POST if PUT is not allowed or 404
+      if (!res.ok && (res.status === 404 || res.status === 405)) {
+        res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/promote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (err) {
+        data = { success: res.ok };
+      }
+
+      if (res.ok && data.success !== false) {
+        // Optimistic update in UI table state immediately
+        setStudents(prev => prev.map(s => {
+          const r = s.rollNo || s.enrollmentNo || s.registrationNo || s.id;
+          if (r === lookupKey || (s.id && s.id === promoteStudent.id)) {
+            return {
+              ...s,
+              currentSemester: targetSemNum,
+              currentClass: nextClass,
+              manualSemester: targetSemNum,
+              currentSession: nextSession || s.currentSession,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return s;
+        }));
+
         fireCelebration({ x: 0.5, y: 0.5 });
-        showToast(data.message, 'success');
+        showToast(data.message || `🎉 Student promoted to ${nextClass} successfully!`, 'success');
         setPromoteStudent(null);
         fetchStudents();
         if (onRefreshCourses) onRefreshCourses();
       } else {
-        showToast(data.message || 'Promotion failed', 'error');
+        showToast(data.message || 'Promotion failed! Please try again.', 'error');
       }
     } catch (err) {
       console.error('Error promoting student:', err);
-      showToast('Network error while promoting student', 'error');
+      showToast('Network error while promoting student: ' + err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -286,34 +324,92 @@ export default function PromoteStudentsManager({
     if (selectedRolls.length === 0) return;
 
     setSubmitting(true);
-    try {
-      const res = await fetch('/api/students/batch-promote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rollNumbers: selectedRolls,
-          nextSemester: Number(batchNextSemester),
-          nextClass: batchNextClass,
-          nextSession: batchNextSession,
-          promotionDate: new Date().toISOString().split('T')[0],
-          remark: `Batch promoted to ${batchNextClass}`
-        })
-      });
+    const targetSemNum = Number(batchNextSemester);
+    const payload = {
+      targetSemester: targetSemNum,
+      targetClass: batchNextClass,
+      nextSemester: targetSemNum,
+      nextClass: batchNextClass,
+      nextSession: batchNextSession,
+      promotionDate: new Date().toISOString().split('T')[0],
+      remark: `Batch promoted to ${batchNextClass}`
+    };
 
-      const data = await res.json();
-      if (data.success) {
+    try {
+      let success = false;
+      let successMsg = '';
+
+      // Attempt 1: Try backend batch endpoint
+      try {
+        const res = await fetch('/api/students/batch-promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rollNumbers: selectedRolls,
+            ...payload
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            success = true;
+            successMsg = data.message;
+          }
+        }
+      } catch (err) {
+        // Fall back to individual promotions
+      }
+
+      // Attempt 2: Fallback to parallel individual promotions via PUT
+      if (!success) {
+        const results = await Promise.allSettled(
+          selectedRolls.map(async (roll) => {
+            const res = await fetch(`/api/students/${encodeURIComponent(roll)}/promote`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            return res.ok;
+          })
+        );
+
+        const succeeded = results.filter(r => r.status === 'fulfilled' && r.value).length;
+        if (succeeded > 0) {
+          success = true;
+          successMsg = `🎉 ${succeeded} छात्र सफलतापूर्वक ${batchNextClass} में प्रमोट हो गए!`;
+        }
+      }
+
+      if (success) {
+        // Optimistic UI state update
+        setStudents(prev => prev.map(s => {
+          const r = s.rollNo || s.enrollmentNo || s.registrationNo || s.id;
+          if (selectedRolls.includes(r) || (s.rollNo && selectedRolls.includes(s.rollNo)) || (s.id && selectedRolls.includes(s.id))) {
+            return {
+              ...s,
+              currentSemester: targetSemNum,
+              currentClass: batchNextClass,
+              manualSemester: targetSemNum,
+              currentSession: batchNextSession || s.currentSession,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return s;
+        }));
+
         fireCelebration({ x: 0.5, y: 0.5 });
-        showToast(data.message, 'success');
+        showToast(successMsg || 'Batch promotion successful!', 'success');
         setShowBatchModal(false);
         setSelectedRolls([]);
         fetchStudents();
         if (onRefreshCourses) onRefreshCourses();
       } else {
-        showToast(data.message || 'Batch promotion failed', 'error');
+        showToast('Batch promotion failed! Please try again.', 'error');
       }
     } catch (err) {
       console.error('Error in batch promotion:', err);
-      showToast('Network error in batch promotion', 'error');
+      showToast('Network error in batch promotion: ' + err.message, 'error');
     } finally {
       setSubmitting(false);
     }
