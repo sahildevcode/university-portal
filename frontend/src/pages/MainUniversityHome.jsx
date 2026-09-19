@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowRight, 
   BookOpen, 
@@ -55,6 +55,48 @@ export default function MainUniversityHome({
 
   // Program Category Filter State
   const [selectedFilter, setSelectedFilter] = useState('all');
+
+  // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
+  const [cardsInView, setCardsInView] = useState(false);
+  const cardsRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCardsInView(true);
+        } else if (entry.boundingClientRect && entry.boundingClientRect.top > (window.innerHeight || document.documentElement.clientHeight)) {
+          // Reset when scrolled back up above the cards so it animates again on scroll down
+          setCardsInView(false);
+        }
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    if (cardsRef.current) observer.observe(cardsRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll entrance observer for Section 4: Life at PKC (Left & Right slide-in fade)
+  const [experienceInView, setExperienceInView] = useState(false);
+  const experienceRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setExperienceInView(true);
+        } else if (entry.boundingClientRect && entry.boundingClientRect.top > (window.innerHeight || document.documentElement.clientHeight)) {
+          // Reset when scrolled back up above the section so it animates again on scroll down
+          setExperienceInView(false);
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    if (experienceRef.current) observer.observe(experienceRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Newsletter subscribe state
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -366,10 +408,10 @@ export default function MainUniversityHome({
           </div>
 
           {/* 5 Vertical Interactive Program Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div ref={cardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {programCategories
               .filter(prog => selectedFilter === 'all' || prog.id === selectedFilter)
-              .map((prog) => {
+              .map((prog, index) => {
               const Icon = prog.icon;
               return (
                 <div
@@ -378,7 +420,14 @@ export default function MainUniversityHome({
                     fireCelebration({ x: 0.5, y: 0.5 });
                     setActiveTab('courses');
                   }}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer group relative"
+                  style={{
+                    transitionDelay: cardsInView && selectedFilter === 'all' ? `${index * 120}ms` : '0ms'
+                  }}
+                  className={`bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2.5 overflow-hidden flex flex-col cursor-pointer group relative transition-all duration-700 ease-out hover:duration-300 hover:delay-0 ${
+                    cardsInView
+                      ? 'opacity-100 translate-y-0 scale-100'
+                      : 'opacity-0 translate-y-16 scale-[0.98] pointer-events-none'
+                  }`}
                 >
                   <div className="relative h-36 overflow-hidden bg-slate-900">
                     <img 
@@ -537,18 +586,26 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 4: CAMPUS EXPERIENCE & EVENTS */}
       {/* ========================================================================= */}
-      <section className="bg-white text-slate-900 py-16 sm:py-24 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <section className="bg-white text-slate-900 py-16 sm:py-24 border-b border-slate-200 overflow-hidden">
+        <div ref={experienceRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
-            {/* Left: Campus Slider */}
-            <div className="lg:col-span-6 relative">
+            {/* Left: Campus Slider - Slides in from Left with Fade-In */}
+            <div className={`lg:col-span-6 relative transition-all duration-1000 ease-out ${
+              experienceInView 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 -translate-x-12 sm:-translate-x-20 pointer-events-none'
+            }`}>
               <CampusEventSlider lang={lang} />
             </div>
 
-            {/* Right: Details & Highlights */}
-            <div className="lg:col-span-6 space-y-6">
+            {/* Right: Details & Highlights - More Than a Degree, About PKC (Slides in from Right with Fade-In) */}
+            <div className={`lg:col-span-6 space-y-6 transition-all duration-1000 ease-out delay-150 ${
+              experienceInView 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-12 sm:translate-x-20 pointer-events-none'
+            }`}>
               <div>
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C59B27] block mb-1">
                   LIFE AT PKC INSTITUTE
