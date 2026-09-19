@@ -9,17 +9,20 @@ import {
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 
-export default function PublicCourseCatalog({ courses, studentUser, onOpenStudentAuth, lang = 'en' }) {
+export default function PublicCourseCatalog({ courses = [], studentUser, onOpenStudentAuth, lang = 'en' }) {
   const t = translations[lang] || translations.en;
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
 
-  const departments = ['all', ...new Set(courses.map(c => c.department).filter(Boolean))];
+  const safeCourses = Array.isArray(courses) ? courses : [];
+  const departments = ['all', ...new Set(safeCourses.map(c => c.department).filter(Boolean))];
 
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          course.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          course.description?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCourses = safeCourses.filter(course => {
+    const matchesSearch = (course.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (course.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (course.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (course.universityName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (course.collegeName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = selectedDept === 'all' || course.department === selectedDept;
     return matchesSearch && matchesDept;
   });

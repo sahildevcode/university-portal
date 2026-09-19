@@ -3614,6 +3614,140 @@ app.delete('/api/event-photos/:id', (req, res) => {
 });
 
 // ====================================================
+// ACADEMIC COURSES CMS & CATALOG APIS
+// ====================================================
+// Get all academic courses
+app.get('/api/courses', (req, res) => {
+  try {
+    const db = readDB();
+    res.json({ success: true, courses: db.courses || [] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Add new academic course
+app.post('/api/courses', (req, res) => {
+  try {
+    const db = readDB();
+    const { 
+      name, 
+      code, 
+      department, 
+      universityName, 
+      collegeName, 
+      durationYears, 
+      totalSemesters, 
+      totalFee, 
+      feePerSemester, 
+      eligibility, 
+      description 
+    } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Course Name is required.' });
+    }
+
+    if (!db.courses) db.courses = [];
+    const courseCode = (code || name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)).toUpperCase();
+    const baseSlug = (code || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `crs-${Date.now()}`;
+
+    let finalId = baseSlug;
+    let counter = 1;
+    while (db.courses.some(c => c.id === finalId)) {
+      finalId = `${baseSlug}-${counter++}`;
+    }
+
+    const newCourse = {
+      id: finalId,
+      name: name.trim(),
+      code: courseCode,
+      department: department || 'School of General Studies',
+      universityName: universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
+      collegeName: collegeName || 'PKC Education Learning Institute & Consultancy',
+      durationYears: Number(durationYears) || 3,
+      totalSemesters: Number(totalSemesters) || (Number(durationYears) ? Number(durationYears) * 2 : 6),
+      totalFee: Number(totalFee) || 0,
+      feePerSemester: Number(feePerSemester) || 0,
+      eligibility: eligibility || '10+2 or equivalent recognized qualification',
+      description: description || `${name} - Approved Academic Program offered with comprehensive curriculum.`,
+      createdAt: new Date().toISOString()
+    };
+
+    db.courses.push(newCourse);
+    writeDB(db);
+
+    res.status(201).json({ 
+      success: true, 
+      message: `Course "${newCourse.name}" added successfully!`, 
+      course: newCourse 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Update academic course
+app.put('/api/courses/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const { id } = req.params;
+    if (!db.courses) db.courses = [];
+    const index = db.courses.findIndex(c => c.id === id || c.code === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    const current = db.courses[index];
+    const updated = {
+      ...current,
+      ...req.body,
+      id: current.id, // preserve immutable ID
+      durationYears: req.body.durationYears !== undefined ? Number(req.body.durationYears) : current.durationYears,
+      totalSemesters: req.body.totalSemesters !== undefined ? Number(req.body.totalSemesters) : current.totalSemesters,
+      totalFee: req.body.totalFee !== undefined ? Number(req.body.totalFee) : current.totalFee,
+      feePerSemester: req.body.feePerSemester !== undefined ? Number(req.body.feePerSemester) : current.feePerSemester,
+      updatedAt: new Date().toISOString()
+    };
+
+    db.courses[index] = updated;
+    writeDB(db);
+
+    res.json({ 
+      success: true, 
+      message: `Course "${updated.name}" updated successfully!`, 
+      course: updated 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete academic course
+app.delete('/api/courses/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const { id } = req.params;
+    if (!db.courses) db.courses = [];
+    const index = db.courses.findIndex(c => c.id === id || c.code === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    const deleted = db.courses.splice(index, 1);
+    writeDB(db);
+
+    res.json({ 
+      success: true, 
+      message: `Course "${deleted[0].name}" deleted successfully.`, 
+      course: deleted[0] 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ====================================================
 // 8. UNIVERSITY PAID & SETTLEMENT MANAGEMENT (COUNSELOR LEDGER)
 // ====================================================
 

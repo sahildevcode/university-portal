@@ -967,7 +967,12 @@ export default function AdminPortal({
 
       {/* TAB 6: WEBSITE CMS & INQUIRIES */}
       {activeTab === 'cms' && (
-        <WebsiteCmsManager lang={lang} toggleLang={toggleLang} />
+        <WebsiteCmsManager 
+          lang={lang} 
+          toggleLang={toggleLang} 
+          courses={localCourses} 
+          onRefreshCourses={onRefreshCourses} 
+        />
       )}
 
       {/* TAB 7: UNIVERSITY PAID & SETTLEMENT MANAGEMENT */}
