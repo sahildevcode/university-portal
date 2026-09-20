@@ -3227,21 +3227,21 @@ export default function VocationalCoursesManager({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {[
-                    { key: 'marksheet10', label: '10th Marksheet',    icon: '📄', required: true  },
-                    { key: 'marksheet12', label: '12th Marksheet',    icon: '📄', required: false },
-                    { key: 'graduation',  label: 'Graduation Cert.',  icon: '🎓', required: false },
-                    { key: 'aadhaar',     label: 'Aadhaar Card',      icon: '🪪', required: true  },
-                    { key: 'abcId',       label: 'ABC ID Card',       icon: '🆔', required: true  },
-                    { key: 'photo',       label: 'Student Photo',     icon: '🖼️', required: true  },
-                    { key: 'signature',   label: 'Student Signature', icon: '✍️', required: true  },
-                  ].map(({ key, label, icon, required }) => {
+                    { key: 'marksheet10', label: '10th Marksheet',    icon: '📄' },
+                    { key: 'marksheet12', label: '12th Marksheet',    icon: '📄' },
+                    { key: 'graduation',  label: 'Graduation Cert.',  icon: '🎓' },
+                    { key: 'aadhaar',     label: 'Aadhaar Card',      icon: '🪪' },
+                    { key: 'abcId',       label: 'ABC ID Card',       icon: '🆔' },
+                    { key: 'photo',       label: 'Student Photo',     icon: '🖼️' },
+                    { key: 'signature',   label: 'Student Signature', icon: '✍️' },
+                  ].map(({ key, label, icon }) => {
                     const doc = enrollForm.documents[key];
                     const isImage = doc && doc.type && doc.type.startsWith('image/');
                     return (
                       <div key={key} className="relative bg-slate-50 border-2 border-dashed border-slate-200 hover:border-amber-400 rounded-xl p-2.5 transition-all group">
                         {/* Status badge */}
-                        <div className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${doc ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : required ? 'bg-rose-50 text-rose-500 border border-rose-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-                          {doc ? '✓' : required ? 'Required' : 'Optional'}
+                        <div className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${doc ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                          {doc ? '✓' : 'Optional'}
                         </div>
                         {/* Preview */}
                         <div className="flex flex-col items-center gap-1 mb-1.5">
