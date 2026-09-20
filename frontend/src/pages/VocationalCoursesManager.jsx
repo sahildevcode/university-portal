@@ -250,6 +250,7 @@ export default function VocationalCoursesManager({
 
   // Dedicated Vocational Student Fee Desk Modal state (StudentList Parity)
   const [feeDeskStudent, setFeeDeskStudent] = useState(null);
+  const [feeDeskMode, setFeeDeskMode] = useState('receive'); // 'receive' | 'set_fee'
   const [feeDeskPayments, setFeeDeskPayments] = useState([]);
   const [feeDeskTotalFee, setFeeDeskTotalFee] = useState('');
   const [feeDeskDate, setFeeDeskDate] = useState(new Date().toISOString().split('T')[0]);
@@ -345,8 +346,29 @@ export default function VocationalCoursesManager({
     });
   };
 
+  // Helper open functions matching StudentList parity
+  const handleOpenReceiveFeeModal = (student) => handleOpenFeeDesk(student, 'receive');
+  const handleOpenSetFeeModal = (student) => handleOpenFeeDesk(student, 'set_fee');
+
+  // Switch between 'receive' and 'set_fee' modes inside modal
+  const switchFeeDeskMode = (newMode) => {
+    setFeeDeskMode(newMode);
+    setFeeDeskError(null);
+    setFeeDeskSuccess(null);
+    if (newMode === 'set_fee') {
+      setFeeDeskPurpose('Total Vocational Course Fee');
+    } else {
+      setFeeDeskPurpose('Course Fee Installment');
+      const tot = Number(feeDeskTotalFee || (feeDeskStudent?.totalFee || feeDeskStudent?.academicFee || 0));
+      const paid = Number(feeDeskStudent?.totalPaid || 0);
+      const rem = Math.max(0, tot - paid);
+      setFeeDeskAmount(rem > 0 ? String(rem) : '');
+    }
+  };
+
   // Open Vocational Fee Desk Modal (Matching StudentList.jsx)
-  const handleOpenFeeDesk = async (student) => {
+  const handleOpenFeeDesk = async (student, mode = 'receive') => {
+    setFeeDeskMode(mode);
     setFeeDeskStudent(student);
     setFeeDeskError(null);
     setFeeDeskSuccess(null);
@@ -354,15 +376,15 @@ export default function VocationalCoursesManager({
     setFeeDeskDate(new Date().toISOString().split('T')[0]);
     setFeeDeskModePayment('Cash');
     setFeeDeskRefNo('');
-    setFeeDeskPurpose('Course Fee Installment');
+    setFeeDeskPurpose(mode === 'set_fee' ? 'Total Vocational Course Fee' : 'Course Fee Installment');
     setFeeDeskReceivedBy('Admin Desk');
     setFeeDeskRemark('');
 
-    const tot = Number(student.totalFee !== undefined ? student.totalFee : (student.academicFee || 0));
+    const tot = Number(student.totalFee !== undefined && student.totalFee !== null ? student.totalFee : (student.academicFee || student.courseFee || 0));
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
-    setFeeDeskTotalFee(tot > 0 ? String(tot) : (student.totalFee !== undefined && student.totalFee !== null && student.totalFee !== '' ? String(student.totalFee) : ''));
-    setFeeDeskAmount(rem > 0 ? String(rem) : '');
+    setFeeDeskTotalFee(tot > 0 ? String(tot) : (student.totalFee !== undefined && student.totalFee !== null && student.totalFee !== '' ? String(student.totalFee) : '0'));
+    setFeeDeskAmount(mode === 'set_fee' ? '' : (rem > 0 ? String(rem) : ''));
 
     // Set initial payments from student record if available
     let initialList = Array.isArray(student.feeHistory) && student.feeHistory.length > 0
@@ -393,11 +415,13 @@ export default function VocationalCoursesManager({
             ? data.student.payments
             : (data.student.feeHistory || initialList);
           setFeeDeskPayments(serverPayments);
-          const latestTot = Number(data.student.totalFee !== undefined ? data.student.totalFee : (data.student.academicFee || 0));
+          const latestTot = Number(data.student.totalFee !== undefined && data.student.totalFee !== null ? data.student.totalFee : (data.student.academicFee || data.student.courseFee || 0));
           const latestPaid = Number(data.student.totalPaid || 0);
           const latestRem = Math.max(0, latestTot - latestPaid);
-          setFeeDeskTotalFee(latestTot > 0 ? String(latestTot) : (data.student.totalFee !== undefined && data.student.totalFee !== null && data.student.totalFee !== '' ? String(data.student.totalFee) : ''));
-          setFeeDeskAmount(latestRem > 0 ? String(latestRem) : '');
+          setFeeDeskTotalFee(latestTot > 0 ? String(latestTot) : (data.student.totalFee !== undefined && data.student.totalFee !== null && data.student.totalFee !== '' ? String(data.student.totalFee) : '0'));
+          if (mode === 'receive') {
+            setFeeDeskAmount(latestRem > 0 ? String(latestRem) : '');
+          }
         }
       } catch (err) {
         console.warn('Could not fetch student payments:', err);
@@ -2502,6 +2526,8 @@ export default function VocationalCoursesManager({
                       <th className="p-3">Course / Trade</th>
                       <th className="p-3">Fee Details</th>
                       <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-center">Paid_Fee</th>
+                      <th className="p-3 text-center">Set_Fee</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -2556,13 +2582,19 @@ export default function VocationalCoursesManager({
                           <span className="text-[10px] text-slate-500">{st.branch}</span>
                         </td>
                         <td className="p-3">
-                          <span className="font-black text-slate-900 block">₹{Number(st.totalFee || 0).toLocaleString('en-IN')}</span>
-                          <span className="text-[10px] text-emerald-700 font-bold">
+                          <span className="font-black text-slate-900 block font-mono">
+                            ₹{Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)).toLocaleString('en-IN')}/-
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-bold font-mono block">
                             Paid: ₹{Number(st.totalPaid || 0).toLocaleString('en-IN')}
                           </span>
-                          {st.balanceDue > 0 && (
-                            <span className="text-[10px] text-rose-600 font-bold block">
-                              Due: ₹{Number(st.balanceDue || 0).toLocaleString('en-IN')}
+                          {Math.max(0, Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)) - Number(st.totalPaid || 0)) > 0 ? (
+                            <span className="text-[10px] text-rose-600 font-bold font-mono block">
+                              Due: ₹{Number(Math.max(0, Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)) - Number(st.totalPaid || 0))).toLocaleString('en-IN')}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-emerald-600 font-bold block">
+                              Cleared
                             </span>
                           )}
                         </td>
@@ -2584,19 +2616,36 @@ export default function VocationalCoursesManager({
                             </span>
                           )}
                         </td>
+
+                        {/* Paid_Fee Column (Blue button matching StudentList Receive_Student_Fee) */}
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReceiveFeeModal(st)}
+                            title="Receive Fee from Student (छात्र शुल्क भुगतान डेस्क)"
+                            className="bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Receive_Student_Fee</span>
+                          </button>
+                        </td>
+
+                        {/* Set_Fee Column (Green button matching StudentList Set_Student_Fee) */}
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenSetFeeModal(st)}
+                            title="Set Student Course Fee (कोर्स फीस सेट करें)"
+                            className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Set_Student_Fee</span>
+                          </button>
+                        </td>
+
+                        {/* Actions Column */}
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            {/* Open Student Fee Desk Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleOpenFeeDesk(st)}
-                              title="Open Student Fee Desk (फीस जमा करें / रसीद देखें)"
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs hover:scale-105 transition-all cursor-pointer"
-                            >
-                              <CreditCard className="w-3.5 h-3.5" />
-                              <span>Fee Desk</span>
-                            </button>
-
                             {/* Quick Print Latest Fee Receipt Slip */}
                             {Number(st.totalPaid || 0) > 0 && (
                               <button
@@ -2625,7 +2674,7 @@ export default function VocationalCoursesManager({
                             <button
                               type="button"
                               onClick={() => handleOpenEditStudent(st)}
-                              title="Edit Student, Aadhaar, Enrollment & Fees"
+                              title="Edit Student, Aadhaar, Enrollment & Details"
                               className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -2639,7 +2688,7 @@ export default function VocationalCoursesManager({
                                 title="Cancel Admission (Move to Cancelled Hub)"
                                 className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
                               >
-                                <Ban className="w-3.5 h-3.5" />
+                                <Ban className="w-2.5 h-2.5" />
                               </button>
                             )}
 
@@ -2648,7 +2697,7 @@ export default function VocationalCoursesManager({
                               type="button"
                               onClick={() => setDeletingStudent(st)}
                               title="Permanently Delete Student"
-                              className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -4229,17 +4278,24 @@ export default function VocationalCoursesManager({
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs overflow-y-auto p-2 sm:p-4 py-4 sm:py-8 flex justify-center items-start">
           <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-slate-300 my-auto flex flex-col max-h-[94vh] animate-in fade-in zoom-in duration-150">
             
-            {/* Modal Header: Emerald Green matching Fee Desk in StudentList */}
-            <div className="bg-gradient-to-r from-emerald-800 to-green-800 text-white px-5 py-3.5 flex items-center justify-between gap-3 shrink-0 shadow-sm">
+            {/* Modal Header: Sky Blue for Set Fee, Emerald Green for Receive Fee */}
+            <div className={`text-white px-5 py-3.5 flex items-center justify-between gap-3 shrink-0 shadow-sm transition-colors ${
+              feeDeskMode === 'set_fee'
+                ? 'bg-gradient-to-r from-sky-700 to-blue-800'
+                : 'bg-gradient-to-r from-emerald-800 to-green-800'
+            }`}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-black text-white text-base">
-                  ₹
+                  {feeDeskMode === 'set_fee' ? <BookOpen className="w-5 h-5 text-white" /> : '₹'}
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
-                    Paid Vocational Student Fee (छात्र शुल्क भुगतान डेस्क)
+                    {feeDeskMode === 'set_fee' 
+                      ? 'Set Vocational Student Course Fee (कोर्स फीस निर्धारण)'
+                      : 'Paid Vocational Student Fee (छात्र शुल्क भुगतान डेस्क)'
+                    }
                   </h3>
-                  <div className="text-xs text-emerald-100 flex items-center flex-wrap gap-2">
+                  <div className="text-xs text-white/90 flex items-center flex-wrap gap-2">
                     <span className="font-bold uppercase text-white">{feeDeskStudent.fullName || feeDeskStudent.studentName}</span>
                     <span className="text-white/70">•</span>
                     <span className="font-mono text-amber-200">Roll: {feeDeskStudent.rollNo || feeDeskStudent.registrationNo || '-'}</span>
@@ -4255,15 +4311,39 @@ export default function VocationalCoursesManager({
                 </div>
               </div>
 
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={() => setFeeDeskStudent(null)}
-                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors cursor-pointer"
-                title="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Mode Switch Tabs */}
+                <div className="flex items-center bg-black/25 p-1 rounded-xl border border-white/20">
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('receive')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      feeDeskMode === 'receive' ? 'bg-white text-emerald-900 shadow-sm' : 'text-white/80 hover:text-white'
+                    }`}
+                  >
+                    Receive Fee (भुगतान)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('set_fee')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      feeDeskMode === 'set_fee' ? 'bg-white text-sky-900 shadow-sm' : 'text-white/80 hover:text-white'
+                    }`}
+                  >
+                    Set Fee (फीस सेट करें)
+                  </button>
+                </div>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setFeeDeskStudent(null)}
+                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Content Body */}
@@ -4283,235 +4363,449 @@ export default function VocationalCoursesManager({
                 </div>
               )}
 
-              {/* Form: Collect / Receive Fee Installment */}
-              <form onSubmit={(e) => handleFeeDeskSubmit(e, 'add')} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Student Name:</label>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} 
-                      className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Father Name:</label>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={feeDeskStudent.fatherName || '-'} 
-                      className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Institute Name:</label>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={feeDeskStudent.instituteName || feeDeskStudent.universityName || 'Maharishi Dayanand Vocational Training Institute'} 
-                      className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Course Name:</label>
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={feeDeskStudent.courseName || '-'} 
-                      className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" 
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-bold text-indigo-950">
-                        Total Course Fee (₹) * :
-                      </label>
-                      <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
-                        Set / Edit Fee
-                      </span>
+              {/* 1. SET COURSE FEE FORM */}
+              {feeDeskMode === 'set_fee' && (
+                <form onSubmit={(e) => handleFeeDeskSubmit(e, 'set_total_fee')} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Student Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} 
+                        className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
+                      />
                     </div>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      step="1" 
-                      value={feeDeskTotalFee} 
-                      onChange={(e) => setFeeDeskTotalFee(e.target.value)} 
-                      placeholder="e.g. 15000" 
-                      className="w-full px-3 py-2 text-xs font-mono font-black border-2 border-indigo-400 bg-indigo-50/30 rounded-lg text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none" 
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Duration / Class:</label>
-                    <select 
-                      value={feeDeskClass} 
-                      onChange={(e) => setFeeDeskClass(e.target.value)} 
-                      className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="1 Month">1 Month Certificate</option>
-                      <option value="3 Months">3 Months Certificate</option>
-                      <option value="6 Months">6 Months Diploma</option>
-                      <option value="9 Months">9 Months Diploma</option>
-                      <option value="1 Year">1 Year Advance Diploma</option>
-                      <option value="2 Years">2 Years Master Diploma</option>
-                      <option value="Year-1 / Cert">Year-1 / Cert</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee Date * :</label>
-                    <input 
-                      type="date" 
-                      required 
-                      value={feeDeskDate} 
-                      onChange={(e) => setFeeDeskDate(e.target.value)} 
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose * :</label>
-                    <select 
-                      value={feeDeskPurpose} 
-                      onChange={(e) => setFeeDeskPurpose(e.target.value)} 
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="Course Fee Installment">Course Fee Installment</option>
-                      <option value="1st Installment (Admission)">1st Installment (Admission)</option>
-                      <option value="2nd Installment">2nd Installment</option>
-                      <option value="3rd Installment">3rd Installment</option>
-                      <option value="Final Installment">Final Installment / Full Cleared</option>
-                      <option value="Admission & Course Fee">Admission & Course Fee</option>
-                      <option value="Tuition Fee">Tuition Fee</option>
-                      <option value="Examination Fee">Examination Fee</option>
-                      <option value="Registration Fee">Registration Fee</option>
-                      <option value="Certification Fee">Certification Fee</option>
-                      <option value="Other Fee">Other Fee</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment Mode * :</label>
-                    <select 
-                      value={feeDeskModePayment} 
-                      onChange={(e) => setFeeDeskModePayment(e.target.value)} 
-                      className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
-                    >
-                      <option value="Cash">Cash (नकद)</option>
-                      <option value="Online / UPI">Online / UPI QR</option>
-                      <option value="Bank Transfer">Bank Transfer (IMPS / NEFT)</option>
-                      <option value="Cheque">Cheque / DD</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-bold text-slate-700">
-                        Ref No (UTR / Txn ID):
-                      </label>
-                      {(feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank')) && (
-                        <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300">
-                          UPI UTR Required
-                        </span>
-                      )}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Father Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.fatherName || '-'} 
+                        className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
+                      />
                     </div>
-                    <input 
-                      type="text" 
-                      value={feeDeskRefNo} 
-                      onChange={(e) => setFeeDeskRefNo(e.target.value)} 
-                      placeholder={
-                        (feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank'))
-                          ? 'Enter 12-digit UTR / UPI Ref ID'
-                          : 'Direct Cash Counter (No UTR needed)'
-                      } 
-                      className={`w-full px-3 py-2 text-xs font-mono border rounded-lg focus:outline-none ${
-                        (feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank'))
-                          ? 'border-amber-400 bg-amber-50/40 ring-1 ring-amber-300 text-slate-900 font-bold'
-                          : 'border-slate-300 bg-white text-slate-900'
-                      }`}
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Received By:</label>
-                    <input 
-                      type="text" 
-                      value={feeDeskReceivedBy} 
-                      onChange={(e) => setFeeDeskReceivedBy(e.target.value)} 
-                      placeholder="Admin Desk" 
-                      className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Aadhaar Card No:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.aadhaarNo || '-'} 
+                        className="w-full px-3 py-2 text-xs font-mono font-bold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
+                      />
+                    </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-bold text-slate-900">
-                        Enter Fee Amount (₹) * :
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
-                            const paid = Number(feeDeskStudent.totalPaid || 0);
-                            const rem = Math.max(0, tot - paid);
-                            setFeeDeskAmount(String(rem));
-                          }} 
-                          className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
-                          title="Auto fill full balance remaining"
-                        >
-                          Full Due
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setFeeDeskAmount('0')} 
-                          className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
-                          title="Set amount to 0"
-                        >
-                          Set 0
-                        </button>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Course / Trade:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.courseName || '-'} 
+                        className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Institute / Center:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.instituteName || feeDeskStudent.universityName || 'Maharishi Dayanand Vocational Training Institute'} 
+                        className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Duration / Class:</label>
+                      <select 
+                        value={feeDeskClass} 
+                        onChange={(e) => setFeeDeskClass(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="1 Month">1 Month Certificate</option>
+                        <option value="3 Months">3 Months Certificate</option>
+                        <option value="6 Months">6 Months Diploma</option>
+                        <option value="9 Months">9 Months Diploma</option>
+                        <option value="1 Year">1 Year Advance Diploma</option>
+                        <option value="2 Years">2 Years Master Diploma</option>
+                        <option value="Year-1 / Cert">Year-1 / Cert</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee Date * :</label>
+                      <input 
+                        type="date" 
+                        required 
+                        value={feeDeskDate} 
+                        onChange={(e) => setFeeDeskDate(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose * :</label>
+                      <select 
+                        value={feeDeskPurpose} 
+                        onChange={(e) => setFeeDeskPurpose(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Total Vocational Course Fee">Total Vocational Course Fee</option>
+                        <option value="Annual Course Fee">Annual Course Fee</option>
+                        <option value="Center Fee">Center Fee</option>
+                        <option value="Academic Fee">Academic Fee</option>
+                        <option value="Admission & Course Fee">Admission & Course Fee</option>
+                        <option value="Tuition Fee">Tuition Fee</option>
+                        <option value="Certification Fee">Certification Fee</option>
+                        <option value="Other Fee">Other Fee</option>
+                      </select>
+                    </div>
+
+                    {/* Set Course Fee Section */}
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-sky-50/80 border-2 border-sky-300 rounded-xl p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-black text-sky-950 uppercase tracking-wide">
+                              Set Total Course Fee (₹) * :
+                            </label>
+                            <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded border border-sky-300">
+                              By default: ₹0
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-sky-800 mb-2 font-medium">
+                            Set the student's official course fee. This fee will be saved permanently and displayed across the portal.
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input 
+                              type="number" 
+                              min="0" 
+                              step="1" 
+                              value={feeDeskTotalFee} 
+                              onChange={(e) => setFeeDeskTotalFee(e.target.value)} 
+                              placeholder="0" 
+                              className="w-full sm:max-w-xs px-4 py-2 text-sm font-extrabold border-2 border-sky-600 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none font-mono shadow-2xs" 
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => setFeeDeskTotalFee('0')} 
+                              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                              title="Set to ₹0"
+                            >
+                              Set 0
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setFeeDeskTotalFee('5000')} 
+                              className="px-2.5 py-2 bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                            >
+                              ₹5,000
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setFeeDeskTotalFee('10000')} 
+                              className="px-2.5 py-2 bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                            >
+                              ₹10,000
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setFeeDeskTotalFee('15000')} 
+                              className="px-2.5 py-2 bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                            >
+                              ₹15,000
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-end">
+                          <button 
+                            type="submit" 
+                            disabled={feeDeskLoading} 
+                            className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" 
+                            title="Set Student Course Fee"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{feeDeskLoading ? 'Saving...' : 'Set Student Fee (कोर्स फीस सेट करें)'}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <input 
-                      type="number" 
-                      min="0" 
-                      step="1" 
-                      value={feeDeskAmount} 
-                      onChange={(e) => setFeeDeskAmount(e.target.value)} 
-                      placeholder="0" 
-                      className="w-full px-3 py-2 text-xs font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" 
-                    />
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <button 
-                    type="button"
-                    onClick={(e) => handleFeeDeskSubmit(e, 'set_total_fee')}
-                    disabled={feeDeskLoading}
-                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                    title="Save course fee without making a payment installment"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-                    <span>Set Course Fee Only (सिर्फ कोर्स फीस सेट करें)</span>
-                  </button>
+                  {/* 3 Summary Metrics: Course Fee | Paid Fee | Remaining Due */}
+                  {(() => {
+                    const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
+                    const paid = Number(feeDeskStudent.totalPaid || 0);
+                    const rem = Math.max(0, tot - paid);
 
-                  <button 
-                    type="submit" 
-                    disabled={feeDeskLoading} 
-                    className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" 
-                    title="Add new fee installment entry and update course fee"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    <span>{feeDeskLoading ? 'Saving...' : '+ Add Payment (जमा करें)'}</span>
-                  </button>
-                </div>
-              </form>
+                    return (
+                      <div className="space-y-2 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                          <div className="bg-sky-50/80 border border-sky-300 rounded-xl p-3 shadow-2xs">
+                            <div className="text-[10px] text-sky-700 uppercase font-bold">Total Course Fee</div>
+                            <div className="text-base font-black text-sky-950 font-mono mt-0.5">
+                              ₹{tot.toLocaleString('en-IN')}/-
+                            </div>
+                          </div>
+
+                          <div className="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 shadow-2xs">
+                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee (Total Deposited)</div>
+                            <div className="text-base font-black text-emerald-800 font-mono mt-0.5">
+                              ₹{paid.toLocaleString('en-IN')}/-
+                            </div>
+                          </div>
+
+                          <div className={`rounded-xl p-3 border shadow-2xs ${
+                            rem === 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50/80 border-rose-300'
+                          }`}>
+                            <div className={`text-[10px] uppercase font-bold ${rem === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              Remaining Fee (Due)
+                            </div>
+                            <div className={`text-base font-black font-mono mt-0.5 ${rem === 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                              ₹{rem.toLocaleString('en-IN')}/-
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </form>
+              )}
+
+              {/* 2. RECEIVE FEE FORM (Form: Collect / Receive Fee Installment) */}
+              {feeDeskMode === 'receive' && (
+                <form onSubmit={(e) => handleFeeDeskSubmit(e, 'add')} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Student Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} 
+                        className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Father Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.fatherName || '-'} 
+                        className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Institute Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.instituteName || feeDeskStudent.universityName || 'Maharishi Dayanand Vocational Training Institute'} 
+                        className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Course Name:</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={feeDeskStudent.courseName || '-'} 
+                        className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" 
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-indigo-950">
+                          Total Course Fee (₹) * :
+                        </label>
+                        <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                          Set / Edit Fee
+                        </span>
+                      </div>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="1" 
+                        value={feeDeskTotalFee} 
+                        onChange={(e) => setFeeDeskTotalFee(e.target.value)} 
+                        placeholder="e.g. 15000" 
+                        className="w-full px-3 py-2 text-xs font-mono font-black border-2 border-indigo-400 bg-indigo-50/30 rounded-lg text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Duration / Class:</label>
+                      <select 
+                        value={feeDeskClass} 
+                        onChange={(e) => setFeeDeskClass(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="1 Month">1 Month Certificate</option>
+                        <option value="3 Months">3 Months Certificate</option>
+                        <option value="6 Months">6 Months Diploma</option>
+                        <option value="9 Months">9 Months Diploma</option>
+                        <option value="1 Year">1 Year Advance Diploma</option>
+                        <option value="2 Years">2 Years Master Diploma</option>
+                        <option value="Year-1 / Cert">Year-1 / Cert</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee Date * :</label>
+                      <input 
+                        type="date" 
+                        required 
+                        value={feeDeskDate} 
+                        onChange={(e) => setFeeDeskDate(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose * :</label>
+                      <select 
+                        value={feeDeskPurpose} 
+                        onChange={(e) => setFeeDeskPurpose(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Course Fee Installment">Course Fee Installment</option>
+                        <option value="1st Installment (Admission)">1st Installment (Admission)</option>
+                        <option value="2nd Installment">2nd Installment</option>
+                        <option value="3rd Installment">3rd Installment</option>
+                        <option value="Final Installment">Final Installment / Full Cleared</option>
+                        <option value="Admission & Course Fee">Admission & Course Fee</option>
+                        <option value="Tuition Fee">Tuition Fee</option>
+                        <option value="Examination Fee">Examination Fee</option>
+                        <option value="Registration Fee">Registration Fee</option>
+                        <option value="Certification Fee">Certification Fee</option>
+                        <option value="Other Fee">Other Fee</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment Mode * :</label>
+                      <select 
+                        value={feeDeskModePayment} 
+                        onChange={(e) => setFeeDeskModePayment(e.target.value)} 
+                        className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Cash">Cash (नकद)</option>
+                        <option value="Online / UPI">Online / UPI QR</option>
+                        <option value="Bank Transfer">Bank Transfer (IMPS / NEFT)</option>
+                        <option value="Cheque">Cheque / DD</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700">
+                          Ref No (UTR / Txn ID):
+                        </label>
+                        {(feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank')) && (
+                          <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300">
+                            UPI UTR Required
+                          </span>
+                        )}
+                      </div>
+                      <input 
+                        type="text" 
+                        value={feeDeskRefNo} 
+                        onChange={(e) => setFeeDeskRefNo(e.target.value)} 
+                        placeholder={
+                          (feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank'))
+                            ? 'Enter 12-digit UTR / UPI Ref ID'
+                            : 'Direct Cash Counter (No UTR needed)'
+                        } 
+                        className={`w-full px-3 py-2 text-xs font-mono border rounded-lg focus:outline-none ${
+                          (feeDeskModePayment?.toLowerCase().includes('upi') || feeDeskModePayment?.toLowerCase().includes('online') || feeDeskModePayment?.toLowerCase().includes('bank'))
+                            ? 'border-amber-400 bg-amber-50/40 ring-1 ring-amber-300 text-slate-900 font-bold'
+                            : 'border-slate-300 bg-white text-slate-900'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Received By:</label>
+                      <input 
+                        type="text" 
+                        value={feeDeskReceivedBy} 
+                        onChange={(e) => setFeeDeskReceivedBy(e.target.value)} 
+                        placeholder="Admin Desk" 
+                        className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" 
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-900">
+                          Enter Fee Amount (₹) * :
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
+                              const paid = Number(feeDeskStudent.totalPaid || 0);
+                              const rem = Math.max(0, tot - paid);
+                              setFeeDeskAmount(String(rem));
+                            }} 
+                            className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
+                            title="Auto fill full balance remaining"
+                          >
+                            Full Due
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => setFeeDeskAmount('0')} 
+                            className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
+                            title="Set amount to 0"
+                          >
+                            Set 0
+                          </button>
+                        </div>
+                      </div>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="1" 
+                        value={feeDeskAmount} 
+                        onChange={(e) => setFeeDeskAmount(e.target.value)} 
+                        placeholder="0" 
+                        className="w-full px-3 py-2 text-xs font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <button 
+                      type="button"
+                      onClick={(e) => handleFeeDeskSubmit(e, 'set_total_fee')}
+                      disabled={feeDeskLoading}
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Save course fee without making a payment installment"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                      <span>Set Course Fee Only (सिर्फ कोर्स फीस सेट करें)</span>
+                    </button>
+
+                    <button 
+                      type="submit" 
+                      disabled={feeDeskLoading} 
+                      className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" 
+                      title="Add new fee installment entry and update course fee"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>{feeDeskLoading ? 'Saving...' : '+ Add Payment (जमा करें)'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
 
               {/* 3 Summary Metrics: Course Fee | Paid Fee | Remaining Due */}
               {(() => {
