@@ -265,6 +265,9 @@ export default function VocationalCoursesManager({
   const [feeDeskError, setFeeDeskError] = useState(null);
   const [feeDeskSuccess, setFeeDeskSuccess] = useState(null);
 
+  // Expandable Row State (horizontal dropdown)
+  const [expandedRowId, setExpandedRowId] = useState(null);
+
   // Official Fee Receipt Print Modal State
   const [receiptToPrint, setReceiptToPrint] = useState(null);
 
@@ -2516,195 +2519,333 @@ export default function VocationalCoursesManager({
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-900 text-white uppercase text-[10px] font-bold">
                     <tr>
-                      <th className="p-3">Roll / Reg No</th>
-                      <th className="p-3">Enrollment No</th>
+                      <th className="p-3 cursor-pointer select-none">Roll / Reg No</th>
                       <th className="p-3">Student Name</th>
-                      <th className="p-3">Father's Name</th>
-                      <th className="p-3">Aadhaar Card</th>
-                      <th className="p-3">ABC ID</th>
-                      <th className="p-3">Institute / Center</th>
-                      <th className="p-3">Course / Trade</th>
-                      <th className="p-3">Fee Details</th>
                       <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-center">Fee Details</th>
                       <th className="p-3 text-center">Paid_Fee</th>
                       <th className="p-3 text-center">Set_Fee</th>
                       <th className="p-3 text-center">Actions</th>
+                      <th className="p-3 text-center">Details</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
-                    {filteredStudents.map((st) => (
-                      <tr key={st.id || st.rollNo} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/40 rounded">
-                          {st.rollNo || st.registrationNo}
-                        </td>
-                        <td className="p-3 font-mono">
-                          {st.enrollmentNo ? (
-                            <div className="flex items-center gap-1.5 group">
-                              <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                                {st.enrollmentNo}
-                              </span>
-                              <button
-                                type="button"
-                                title="Edit Enrollment Number"
-                                onClick={() => handleOpenEditEnrollmentNo(st)}
-                                className="text-slate-400 hover:text-indigo-600 p-0.5 rounded hover:bg-slate-200 transition-colors cursor-pointer"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditEnrollmentNo(st)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg transition-all cursor-pointer shadow-xs"
-                            >
-                              <Plus className="w-3 h-3" /> Set Enr No
-                            </button>
-                          )}
-                        </td>
-                        <td className="p-3 font-black text-slate-900">
-                          {st.fullName || st.studentName}
-                          <span className="block text-[10px] text-slate-400 font-normal">{st.phone || st.contact}</span>
-                        </td>
-                        <td className="p-3 text-slate-700 font-semibold">{st.fatherName || '-'}</td>
-                        <td className="p-3 font-mono text-slate-800 font-bold">{st.aadhaarNo || '-'}</td>
-                        <td className="p-3 font-mono text-indigo-700">{st.abcId || '-'}</td>
-                        <td className="p-3 text-slate-700 text-[11px]">
-                          <span className="font-bold block truncate max-w-[180px]">
-                            {st.universityName?.toLowerCase().includes('teacher') || st.universityName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
-                          </span>
-                          <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">
-                            {st.collegeName || 'PKC Institute'}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span className="font-bold text-slate-900 block">{st.courseName}</span>
-                          <span className="text-[10px] text-slate-500">{st.branch}</span>
-                        </td>
-                        <td className="p-3">
-                          <span className="font-black text-slate-900 block font-mono">
-                            ₹{Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)).toLocaleString('en-IN')}/-
-                          </span>
-                          <span className="text-[10px] text-emerald-700 font-bold font-mono block">
-                            Paid: ₹{Number(st.totalPaid || 0).toLocaleString('en-IN')}
-                          </span>
-                          {Math.max(0, Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)) - Number(st.totalPaid || 0)) > 0 ? (
-                            <span className="text-[10px] text-rose-600 font-bold font-mono block">
-                              Due: ₹{Number(Math.max(0, Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0)) - Number(st.totalPaid || 0))).toLocaleString('en-IN')}
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-emerald-600 font-bold block">
-                              Cleared
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3 text-center">
-                          {st.status === 'Cancelled' || st.cancel === 'Yes' ? (
-                            <div className="space-y-0.5">
-                              <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1">
-                                <Ban className="w-2.5 h-2.5" /> Cancelled
-                              </span>
-                              {st.cancellationReason && (
-                                <span className="block text-[9px] text-slate-500 truncate max-w-[110px]" title={st.cancellationReason}>
-                                  {st.cancellationReason}
+                    {filteredStudents.map((st) => {
+                      const stKey = st.id || st.rollNo;
+                      const isExpanded = expandedRowId === stKey;
+                      const totalFeeVal = Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0));
+                      const totalPaidVal = Number(st.totalPaid || 0);
+                      const dueVal = Math.max(0, totalFeeVal - totalPaidVal);
+                      return (
+                        <React.Fragment key={stKey}>
+                          {/* ── Main Compact Row ── */}
+                          <tr className={`hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-indigo-50/60' : ''}`}>
+                            {/* Roll No */}
+                            <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/40">
+                              {st.rollNo || st.registrationNo}
+                            </td>
+
+                            {/* Student Name + Phone */}
+                            <td className="p-3">
+                              <span className="font-black text-slate-900 block">{st.fullName || st.studentName}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">{st.phone || st.contact}</span>
+                            </td>
+
+                            {/* Status */}
+                            <td className="p-3 text-center">
+                              {st.status === 'Cancelled' || st.cancel === 'Yes' ? (
+                                <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1">
+                                  <Ban className="w-2.5 h-2.5" /> Cancelled
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                  {st.status || 'Active'}
                                 </span>
                               )}
-                            </div>
-                          ) : (
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                              {st.status || 'Active'}
-                            </span>
+                            </td>
+
+                            {/* Fee Details compact */}
+                            <td className="p-3 text-center">
+                              <span className="font-black text-slate-900 font-mono text-[11px] block">₹{totalFeeVal.toLocaleString('en-IN')}/-</span>
+                              <span className="text-[10px] text-emerald-700 font-bold font-mono">Paid: ₹{totalPaidVal.toLocaleString('en-IN')}</span>
+                              {dueVal > 0 ? (
+                                <span className="text-[10px] text-rose-600 font-bold font-mono block">Due: ₹{dueVal.toLocaleString('en-IN')}</span>
+                              ) : (
+                                <span className="text-[9px] text-emerald-600 font-bold block">✓ Cleared</span>
+                              )}
+                            </td>
+
+                            {/* Receive Fee Button */}
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenReceiveFeeModal(st)}
+                                title="Receive Fee from Student"
+                                className="bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>Receive_Student_Fee</span>
+                              </button>
+                            </td>
+
+                            {/* Set Fee Button */}
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSetFeeModal(st)}
+                                title="Set Student Course Fee"
+                                className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Set_Student_Fee</span>
+                              </button>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                {Number(st.totalPaid || 0) > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const latestPayment = (st.feeHistory && st.feeHistory.length > 0)
+                                        ? st.feeHistory[0]
+                                        : { receiptNo: `REC-${st.rollNo || '0001'}-01`, amount: Number(st.totalPaid), date: st.admissionDate || st.createdAt || new Date().toISOString().split('T')[0], paymentMode: st.paymentMode || 'Cash', referenceNo: st.referenceNo || st.upiId || st.utrNo || '', purpose: 'Vocational Course Fee Payment' };
+                                      handleTriggerPrintReceipt(latestPayment, st);
+                                    }}
+                                    title="Print Fee Receipt"
+                                    className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer"
+                                  >
+                                    <Printer className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditStudent(st)}
+                                  title="Edit Student Details"
+                                  className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                {!(st.status === 'Cancelled' || st.cancel === 'Yes') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCancelStudent(st)}
+                                    title="Cancel Admission"
+                                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                                  >
+                                    <Ban className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setDeletingStudent(st)}
+                                  title="Delete Student"
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+
+                            {/* Expand / Collapse toggle */}
+                            <td className="p-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedRowId(isExpanded ? null : stKey)}
+                                title={isExpanded ? 'Collapse Details' : 'Expand All Details'}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${isExpanded ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'}`}
+                              >
+                                {isExpanded ? '▲ Hide' : '▼ View'}
+                              </button>
+                            </td>
+                          </tr>
+
+                          {/* ── Expandable Detail Row ── */}
+                          {isExpanded && (
+                            <tr className="bg-gradient-to-br from-indigo-50 to-slate-50">
+                              <td colSpan={8} className="p-0">
+                                <div className="px-4 py-3 border-t border-indigo-100">
+                                  {/* Horizontal Card Grid */}
+                                  <div className="flex flex-wrap gap-3">
+
+                                    {/* Card 1: Identity */}
+                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        👤 Identity
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Roll / Reg No</span>
+                                          <p className="text-[11px] font-black text-indigo-700 font-mono">{st.rollNo || st.registrationNo || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Student Name</span>
+                                          <p className="text-[12px] font-black text-slate-900">{st.fullName || st.studentName || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Father's Name</span>
+                                          <p className="text-[11px] font-semibold text-slate-700">{st.fatherName || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Phone</span>
+                                          <p className="text-[11px] font-mono text-slate-700">{st.phone || st.contact || '-'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card 2: Documents */}
+                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        🪪 Documents
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Aadhaar Card</span>
+                                          <p className="text-[11px] font-mono font-bold text-slate-800">{st.aadhaarNo || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">ABC ID</span>
+                                          <p className="text-[11px] font-mono text-indigo-700 font-bold">{st.abcId || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Enrollment No</span>
+                                          <div className="flex items-center gap-1.5 mt-0.5">
+                                            {st.enrollmentNo ? (
+                                              <>
+                                                <span className="text-[11px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{st.enrollmentNo}</span>
+                                                <button type="button" onClick={() => handleOpenEditEnrollmentNo(st)} className="text-slate-400 hover:text-indigo-600 cursor-pointer"><Edit3 className="w-3 h-3" /></button>
+                                              </>
+                                            ) : (
+                                              <button type="button" onClick={() => handleOpenEditEnrollmentNo(st)} className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg cursor-pointer">
+                                                <Plus className="w-2.5 h-2.5" /> Set Enr No
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">DOB</span>
+                                          <p className="text-[11px] font-mono text-slate-700">{st.dob || st.dateOfBirth || '-'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card 3: Course & Institute */}
+                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        🎓 Course & Institute
+                                      </div>
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Institute</span>
+                                          <p className="text-[11px] font-bold text-slate-800">
+                                            {st.universityName?.toLowerCase().includes('teacher') || st.universityName?.includes('टीचर्स') ? 'MD Early Teachers Training' : 'MD Vocational Training'}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Center / College</span>
+                                          <p className="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded inline-block">{st.collegeName || 'PKC Institute'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Course / Trade</span>
+                                          <p className="text-[12px] font-black text-slate-900">{st.courseName || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Branch / Stream</span>
+                                          <p className="text-[11px] text-slate-600">{st.branch || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Duration</span>
+                                          <p className="text-[11px] text-slate-700">{st.courseDuration || st.duration || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Admission Date</span>
+                                          <p className="text-[11px] font-mono text-slate-700">{st.admissionDate || '-'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card 4: Fee Summary */}
+                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-rose-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        💰 Fee Summary
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center bg-slate-50 rounded-lg px-2 py-1">
+                                          <span className="text-[10px] text-slate-500 font-semibold">Total Fee</span>
+                                          <span className="text-[12px] font-black text-slate-900 font-mono">₹{totalFeeVal.toLocaleString('en-IN')}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center bg-emerald-50 rounded-lg px-2 py-1">
+                                          <span className="text-[10px] text-emerald-600 font-semibold">Paid</span>
+                                          <span className="text-[12px] font-black text-emerald-700 font-mono">₹{totalPaidVal.toLocaleString('en-IN')}</span>
+                                        </div>
+                                        <div className={`flex justify-between items-center rounded-lg px-2 py-1 ${dueVal > 0 ? 'bg-rose-50' : 'bg-emerald-50'}`}>
+                                          <span className={`text-[10px] font-semibold ${dueVal > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                            {dueVal > 0 ? 'Due' : '✓ Cleared'}
+                                          </span>
+                                          <span className={`text-[12px] font-black font-mono ${dueVal > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
+                                            ₹{dueVal.toLocaleString('en-IN')}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between items-center bg-slate-50 rounded-lg px-2 py-1">
+                                          <span className="text-[10px] text-slate-500 font-semibold">Payment Mode</span>
+                                          <span className="text-[10px] font-bold text-slate-700">{st.paymentMode || 'Cash'}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card 5: Quick Actions */}
+                                    <div className="flex-1 min-w-[160px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        ⚡ Quick Actions
+                                      </div>
+                                      <div className="flex flex-col gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenReceiveFeeModal(st)}
+                                          className="w-full bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2 py-1.5 rounded-lg text-[10px] cursor-pointer inline-flex items-center justify-center gap-1 transition-all"
+                                        >
+                                          <CreditCard className="w-3 h-3" /> Receive Fee
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenSetFeeModal(st)}
+                                          className="w-full bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2 py-1.5 rounded-lg text-[10px] cursor-pointer inline-flex items-center justify-center gap-1 transition-all"
+                                        >
+                                          <CheckCircle2 className="w-3 h-3" /> Set Fee
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditStudent(st)}
+                                          className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-2 py-1.5 rounded-lg text-[10px] cursor-pointer inline-flex items-center justify-center gap-1 transition-all"
+                                        >
+                                          <Edit3 className="w-3 h-3" /> Edit Student
+                                        </button>
+                                        {Number(st.totalPaid || 0) > 0 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const latestPayment = (st.feeHistory && st.feeHistory.length > 0)
+                                                ? st.feeHistory[0]
+                                                : { receiptNo: `REC-${st.rollNo || '0001'}-01`, amount: Number(st.totalPaid), date: st.admissionDate || st.createdAt || new Date().toISOString().split('T')[0], paymentMode: st.paymentMode || 'Cash', referenceNo: st.referenceNo || st.upiId || st.utrNo || '', purpose: 'Vocational Course Fee Payment' };
+                                              handleTriggerPrintReceipt(latestPayment, st);
+                                            }}
+                                            className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold px-2 py-1.5 rounded-lg text-[10px] cursor-pointer inline-flex items-center justify-center gap-1 transition-all"
+                                          >
+                                            <Printer className="w-3 h-3" /> Print Receipt
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                  </div>{/* end flex wrapper */}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-
-                        {/* Paid_Fee Column (Blue button matching StudentList Receive_Student_Fee) */}
-                        <td className="p-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenReceiveFeeModal(st)}
-                            title="Receive Fee from Student (छात्र शुल्क भुगतान डेस्क)"
-                            className="bg-[#1d72b8] hover:bg-[#155a96] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>Receive_Student_Fee</span>
-                          </button>
-                        </td>
-
-                        {/* Set_Fee Column (Green button matching StudentList Set_Student_Fee) */}
-                        <td className="p-3 text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenSetFeeModal(st)}
-                            title="Set Student Course Fee (कोर्स फीस सेट करें)"
-                            className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] shadow-xs hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Set_Student_Fee</span>
-                          </button>
-                        </td>
-
-                        {/* Actions Column */}
-                        <td className="p-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* Quick Print Latest Fee Receipt Slip */}
-                            {Number(st.totalPaid || 0) > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const latestPayment = (st.feeHistory && st.feeHistory.length > 0)
-                                    ? st.feeHistory[0]
-                                    : {
-                                        receiptNo: `REC-${st.rollNo || '0001'}-01`,
-                                        amount: Number(st.totalPaid),
-                                        date: st.admissionDate || st.createdAt || new Date().toISOString().split('T')[0],
-                                        paymentMode: st.paymentMode || 'Cash',
-                                        referenceNo: st.referenceNo || st.upiId || st.utrNo || '',
-                                        purpose: 'Vocational Course Fee Payment'
-                                      };
-                                  handleTriggerPrintReceipt(latestPayment, st);
-                                }}
-                                title="Print Official Fee Receipt Slip"
-                                className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer"
-                              >
-                                <Printer className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Edit Student & Fees Button */}
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditStudent(st)}
-                              title="Edit Student, Aadhaar, Enrollment & Details"
-                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Cancel Admission Button (if not cancelled) */}
-                            {!(st.status === 'Cancelled' || st.cancel === 'Yes') && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCancelStudent(st)}
-                                title="Cancel Admission (Move to Cancelled Hub)"
-                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
-                              >
-                                <Ban className="w-2.5 h-2.5" />
-                              </button>
-                            )}
-
-                            {/* Permanent Delete Button */}
-                            <button
-                              type="button"
-                              onClick={() => setDeletingStudent(st)}
-                              title="Permanently Delete Student"
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
