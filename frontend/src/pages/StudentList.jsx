@@ -122,6 +122,7 @@ export default function StudentList({
   // Admission Cancellation State
   const [cancellingStudent, setCancellingStudent] = useState(null);
   const [cancelReason, setCancelReason] = useState('Student Request / Discontinued');
+  const [cancelOtherReason, setCancelOtherReason] = useState('');
   const [cancelRefundPaid, setCancelRefundPaid] = useState('0');
   const [cancelPaymentMode, setCancelPaymentMode] = useState('Cash');
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -1160,6 +1161,7 @@ export default function StudentList({
 
       setCancellingStudent(null);
       setCancelReason('Student Request / Discontinued');
+      setCancelOtherReason('');
       setCancelRefundPaid('0');
       alert(`Admission cancelled for ${data.student?.fullName || data.student?.rollNo || cancellingStudent.fullName}! Record has been archived in Cancelled Admissions.`);
     } catch (err) {
@@ -5170,8 +5172,26 @@ export default function StudentList({
                   <option value="Personal / Family Reasons">Personal / Family Reasons (पारिवारिक / व्यक्तिगत कारण)</option>
                   <option value="Document Ineligibility">Document Ineligibility (दस्तावेज़ अपूर्ण / अपात्र)</option>
                   <option value="Other Administration Decision">Other Administration Decision (अन्य प्रशासनिक कारण)</option>
+                  <option value="Other">⚙️ Other (अन्य — खुद लिखें)</option>
                 </select>
+
+                {/* Custom reason input — shows only when "Other" is selected */}
+                {cancelReason === 'Other' && (
+                  <div className="mt-2">
+                    <label className="block text-[11px] font-bold text-rose-700 mb-1">
+                      अपना कारण लिखें (Write Your Custom Reason) *
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={cancelOtherReason}
+                      onChange={(e) => setCancelOtherReason(e.target.value)}
+                      placeholder="यहाँ कारण लिखें... (e.g. Student moved to another city, long illness, etc.)"
+                      className="w-full p-2.5 bg-white border-2 border-rose-400 rounded-xl font-medium text-slate-800 text-[12px] focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none placeholder:text-slate-400"
+                    />
+                  </div>
+                )}
               </div>
+
 
               {/* Immediate Refund Option */}
               <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2">
