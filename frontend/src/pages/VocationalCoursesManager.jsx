@@ -237,7 +237,16 @@ export default function VocationalCoursesManager({
     admissionDate: new Date().toISOString().split('T')[0],
     address: '',
     category: 'General',
-    remark: ''
+    remark: '',
+    documents: {
+      marksheet10: null,
+      marksheet12: null,
+      graduation: null,
+      aadhaar: null,
+      abcId: null,
+      photo: null,
+      signature: null,
+    }
   });
 
   // Quick Edit Enrollment Number Modal state
@@ -1201,6 +1210,22 @@ export default function VocationalCoursesManager({
     } finally {
       setEnrollSubmitting(false);
     }
+  };
+
+  // Document Upload Handler for Enrollment Form
+  const handleDocUpload = (key, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setEnrollForm(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          [key]: { name: file.name, url: e.target.result, type: file.type }
+        }
+      }));
+    };
+    reader.readAsDataURL(file);
   };
 
   // Smart Sector Detector based on course name
@@ -2695,13 +2720,13 @@ export default function VocationalCoursesManager({
                                     </div>
 
                                     {/* Card 2: Documents */}
-                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                    <div className="flex-1 min-w-[220px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
                                       <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1">
                                         🪪 Documents
                                       </div>
-                                      <div className="space-y-1">
+                                      <div className="space-y-1 mb-2">
                                         <div>
-                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Aadhaar Card</span>
+                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Aadhaar Card No</span>
                                           <p className="text-[11px] font-mono font-bold text-slate-800">{st.aadhaarNo || '-'}</p>
                                         </div>
                                         <div>
@@ -2728,7 +2753,41 @@ export default function VocationalCoursesManager({
                                           <p className="text-[11px] font-mono text-slate-700">{st.dob || st.dateOfBirth || '-'}</p>
                                         </div>
                                       </div>
+                                      {/* Uploaded Docs Grid */}
+                                      <div className="border-t border-dashed border-amber-200 pt-2">
+                                        <span className="text-[9px] font-black text-amber-600 uppercase tracking-wider block mb-1.5">📎 Uploaded Documents</span>
+                                        <div className="grid grid-cols-4 gap-1">
+                                          {[
+                                            { key: 'marksheet10', label: '10th' },
+                                            { key: 'marksheet12', label: '12th' },
+                                            { key: 'graduation',  label: 'Grad' },
+                                            { key: 'aadhaar',     label: 'Aadhaar' },
+                                            { key: 'abcId',       label: 'ABC ID' },
+                                            { key: 'photo',       label: 'Photo' },
+                                            { key: 'signature',   label: 'Sign' },
+                                          ].map(({ key, label }) => {
+                                            const docs = st.documents || {};
+                                            const doc = docs[key];
+                                            const isImg = doc && doc.type && doc.type.startsWith('image/');
+                                            return (
+                                              <div key={key} className="flex flex-col items-center gap-0.5" title={label}>
+                                                {doc && isImg ? (
+                                                  <a href={doc.url} target="_blank" rel="noreferrer">
+                                                    <img src={doc.url} alt={label} className="w-8 h-8 object-cover rounded border border-slate-200 cursor-pointer hover:opacity-80" />
+                                                  </a>
+                                                ) : doc ? (
+                                                  <a href={doc.url} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center bg-indigo-50 border border-indigo-200 rounded text-base hover:opacity-80">📄</a>
+                                                ) : (
+                                                  <div className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 rounded text-slate-300 text-[10px]">—</div>
+                                                )}
+                                                <span className={`text-[8px] font-semibold text-center leading-tight ${doc ? 'text-emerald-600' : 'text-slate-400'}`}>{label}</span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
                                     </div>
+
 
                                     {/* Card 3: Course & Institute */}
                                     <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
@@ -3155,6 +3214,64 @@ export default function VocationalCoursesManager({
                   placeholder="e.g. Civil Lines, Damoh / Bhopal (M.P)"
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:bg-white focus:outline-none"
                 />
+              </div>
+
+              {/* ── Document Upload Section ── */}
+              <div className="mt-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1 bg-amber-200" />
+                  <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                    📎 Required Documents for Admission
+                  </span>
+                  <div className="h-px flex-1 bg-amber-200" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'marksheet10', label: '10th Marksheet',    icon: '📄', required: true  },
+                    { key: 'marksheet12', label: '12th Marksheet',    icon: '📄', required: false },
+                    { key: 'graduation',  label: 'Graduation Cert.',  icon: '🎓', required: false },
+                    { key: 'aadhaar',     label: 'Aadhaar Card',      icon: '🪪', required: true  },
+                    { key: 'abcId',       label: 'ABC ID Card',       icon: '🆔', required: true  },
+                    { key: 'photo',       label: 'Student Photo',     icon: '🖼️', required: true  },
+                    { key: 'signature',   label: 'Student Signature', icon: '✍️', required: true  },
+                  ].map(({ key, label, icon, required }) => {
+                    const doc = enrollForm.documents[key];
+                    const isImage = doc && doc.type && doc.type.startsWith('image/');
+                    return (
+                      <div key={key} className="relative bg-slate-50 border-2 border-dashed border-slate-200 hover:border-amber-400 rounded-xl p-2.5 transition-all group">
+                        {/* Status badge */}
+                        <div className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${doc ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : required ? 'bg-rose-50 text-rose-500 border border-rose-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                          {doc ? '✓' : required ? 'Required' : 'Optional'}
+                        </div>
+                        {/* Preview */}
+                        <div className="flex flex-col items-center gap-1 mb-1.5">
+                          {doc && isImage ? (
+                            <img src={doc.url} alt={label} className="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-xs" />
+                          ) : (
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${doc ? 'bg-indigo-50 border border-indigo-200' : 'bg-white border border-slate-200'}`}>
+                              {doc ? '📄' : icon}
+                            </div>
+                          )}
+                          <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{label}</span>
+                          {doc && (
+                            <span className="text-[9px] text-slate-400 truncate max-w-full font-medium">{doc.name}</span>
+                          )}
+                        </div>
+                        {/* Invisible file input covering whole card */}
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          onChange={(e) => handleDocUpload(key, e.target.files[0])}
+                          title={`Upload ${label}`}
+                        />
+                        <div className="text-center text-[9px] text-slate-400 font-medium group-hover:text-amber-600 transition-colors">
+                          {doc ? 'Click to replace' : 'Click to upload'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>
