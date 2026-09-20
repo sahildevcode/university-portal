@@ -209,6 +209,7 @@ export default function VocationalCoursesManager({
     motherName: '',
     aadhaarNo: '',
     abcId: '',
+    enrollmentNo: '',
     phone: '',
     instituteId: 'inst-mdvti',
     instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
@@ -227,10 +228,55 @@ export default function VocationalCoursesManager({
     remark: ''
   });
 
+  // Quick Edit Enrollment Number Modal state
+  const [editingEnrollmentStudent, setEditingEnrollmentStudent] = useState(null);
+  const [tempEnrollmentNo, setTempEnrollmentNo] = useState('');
+  const [savingEnrollmentNo, setSavingEnrollmentNo] = useState(false);
+
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4500);
+  };
+
+  // Open Edit Enrollment Number Modal
+  const handleOpenEditEnrollmentNo = (student) => {
+    setEditingEnrollmentStudent(student);
+    setTempEnrollmentNo(student.enrollmentNo || '');
+  };
+
+  // Save Enrollment Number
+  const handleSaveEnrollmentNo = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editingEnrollmentStudent) return;
+    setSavingEnrollmentNo(true);
+    try {
+      const key = editingEnrollmentStudent.id || editingEnrollmentStudent.rollNo;
+      const res = await fetch(`/api/vocational-students/${encodeURIComponent(key)}/enrollment-no`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentNo: tempEnrollmentNo.trim().toUpperCase() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const updatedVal = tempEnrollmentNo.trim().toUpperCase();
+        setVocationalStudents(prev => prev.map(s => {
+          if ((editingEnrollmentStudent.id && s.id === editingEnrollmentStudent.id) || 
+              (editingEnrollmentStudent.rollNo && s.rollNo === editingEnrollmentStudent.rollNo)) {
+            return { ...s, enrollmentNo: updatedVal };
+          }
+          return s;
+        }));
+        showToast(updatedVal ? `✅ Enrollment Number set to ${updatedVal}!` : 'Enrollment Number cleared.');
+        setEditingEnrollmentStudent(null);
+      } else {
+        throw new Error(data.message || 'Failed to update enrollment number');
+      }
+    } catch (err) {
+      alert('Error updating Enrollment Number: ' + err.message);
+    } finally {
+      setSavingEnrollmentNo(false);
+    }
   };
 
   // Fetch Institutes from Backend
@@ -544,6 +590,7 @@ export default function VocationalCoursesManager({
       motherName: '',
       aadhaarNo: '',
       abcId: '',
+      enrollmentNo: '',
       phone: '',
       instituteId: inst.id,
       instituteName: inst.name,
@@ -1659,6 +1706,7 @@ export default function VocationalCoursesManager({
                   <thead className="bg-slate-900 text-white uppercase text-[10px] font-bold">
                     <tr>
                       <th className="p-3">Roll / Reg No</th>
+                      <th className="p-3">Enrollment No</th>
                       <th className="p-3">Student Name</th>
                       <th className="p-3">Father's Name</th>
                       <th className="p-3">Aadhaar Card</th>
@@ -1674,6 +1722,31 @@ export default function VocationalCoursesManager({
                       <tr key={st.id || st.rollNo} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/40 rounded">
                           {st.rollNo || st.registrationNo}
+                        </td>
+                        <td className="p-3 font-mono">
+                          {st.enrollmentNo ? (
+                            <div className="flex items-center gap-1.5 group">
+                              <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                {st.enrollmentNo}
+                              </span>
+                              <button
+                                type="button"
+                                title="Edit Enrollment Number"
+                                onClick={() => handleOpenEditEnrollmentNo(st)}
+                                className="text-slate-400 hover:text-indigo-600 p-0.5 rounded hover:bg-slate-200 transition-colors cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditEnrollmentNo(st)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg transition-all cursor-pointer shadow-xs"
+                            >
+                              <Plus className="w-3 h-3" /> Set Enr No
+                            </button>
+                          )}
                         </td>
                         <td className="p-3 font-black text-slate-900">
                           {st.fullName || st.studentName}
@@ -1842,6 +1915,31 @@ export default function VocationalCoursesManager({
                   />
                   <span className="text-[10px] text-amber-700 mt-0.5 block">Academic Bank of Credits identification</span>
                 </div>
+              </div>
+
+              {/* Row: Enrollment Number (Optional - Leave blank to assign later) */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <span>Enrollment Number</span>
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full">
+                      Optional
+                    </span>
+                  </label>
+                  <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Default: Blank (Admin can set later)
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={enrollForm.enrollmentNo || ''}
+                  onChange={(e) => setEnrollForm({ ...enrollForm, enrollmentNo: e.target.value.toUpperCase() })}
+                  placeholder="Leave blank to assign later (by default empty)"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 placeholder:font-normal placeholder:text-slate-400"
+                />
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  By default left blank. Admin can fill it now or assign / update it later from the Enrolled Students list.
+                </span>
               </div>
 
               {/* Row 4: Institute & Associated PKC Study Center Selection */}
@@ -2033,6 +2131,16 @@ export default function VocationalCoursesManager({
               <div className="flex justify-between items-center border-b border-slate-200 pb-2">
                 <span className="text-slate-400 font-bold">Assigned Roll No:</span>
                 <span className="font-mono font-black text-indigo-700 text-sm">{enrollSuccessData.student.rollNo}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                <span className="text-slate-400 font-bold">Enrollment No:</span>
+                <span className="font-mono font-bold text-slate-800">
+                  {enrollSuccessData.student.enrollmentNo ? (
+                    <span className="text-emerald-700 font-black">{enrollSuccessData.student.enrollmentNo}</span>
+                  ) : (
+                    <span className="text-slate-400 italic font-normal text-[11px]">Not assigned (Can be set later)</span>
+                  )}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 font-bold">Student Name:</span>
@@ -2601,6 +2709,89 @@ export default function VocationalCoursesManager({
                 >
                   <Check className="w-4 h-4" />
                   <span>{editingCourse ? 'Update Course' : 'Create Course'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: SET / EDIT ENROLLMENT NUMBER (ADMIN ASSIGNMENT) */}
+      {/* ========================================================================= */}
+      {editingEnrollmentStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-4 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-indigo-500">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-sm">
+                  #
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">
+                    {editingEnrollmentStudent.enrollmentNo ? 'Edit Enrollment Number' : 'Assign Enrollment Number'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {editingEnrollmentStudent.fullName || editingEnrollmentStudent.studentName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingEnrollmentStudent(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Roll / Reg No:</span>
+                <span className="font-mono font-bold text-indigo-700">{editingEnrollmentStudent.rollNo || editingEnrollmentStudent.registrationNo || '-'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Course / Trade:</span>
+                <span className="font-semibold text-slate-800">{editingEnrollmentStudent.courseName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-bold">Institute:</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[200px]">{editingEnrollmentStudent.universityName}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEnrollmentNo} className="space-y-4">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1 text-xs">
+                  Enrollment Number
+                </label>
+                <input
+                  type="text"
+                  value={tempEnrollmentNo}
+                  onChange={(e) => setTempEnrollmentNo(e.target.value.toUpperCase())}
+                  placeholder="e.g. ENR-2024-001 or MDVTI-ENR-01"
+                  autoFocus
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-indigo-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Enter official institute enrollment number or leave blank to clear.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingEnrollmentStudent(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEnrollmentNo}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  {savingEnrollmentNo ? 'Saving...' : 'Save Enrollment Number'}
                 </button>
               </div>
             </form>

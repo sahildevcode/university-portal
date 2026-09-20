@@ -1472,6 +1472,7 @@ app.put('/api/students/:rollNo', (req, res) => {
       email: body.email !== undefined ? body.email : (body.Email_ID !== undefined ? body.Email_ID : existing.email),
       address: body.address !== undefined ? body.address : (body.Address !== undefined ? body.Address : existing.address),
       aadhaarNo: body.aadhaarNo !== undefined ? body.aadhaarNo : (body.aadhaar_no !== undefined ? body.aadhaar_no : (body.aadharNo !== undefined ? body.aadharNo : existing.aadhaarNo)),
+      enrollmentNo: body.enrollmentNo !== undefined ? String(body.enrollmentNo).trim().toUpperCase() : (body.Enrollment_No !== undefined ? String(body.Enrollment_No).trim().toUpperCase() : existing.enrollmentNo),
       samagraId: body.samagraId !== undefined ? body.samagraId : (body.samagra_id !== undefined ? body.samagra_id : existing.samagraId),
       abcId: body.abcId !== undefined ? body.abcId : (body.abc_id !== undefined ? body.abc_id : existing.abcId),
       mptassId: body.mptassId !== undefined ? body.mptassId : (body.mpTassId !== undefined ? body.mpTassId : (body.mptass_id !== undefined ? body.mptass_id : existing.mptassId)),
@@ -5426,6 +5427,7 @@ app.post('/api/vocational-students', (req, res) => {
     const instPrefix = targetInstName.toLowerCase().includes('teacher') || targetInstName.includes('टीचर्स') || targetInstId === 'inst-mdette' ? 'MDETTE' : 'MDVTI';
     
     const rollNo = req.body.rollNo ? String(req.body.rollNo).trim().toUpperCase() : `${instPrefix}-${year}-${String(nextSeq).padStart(4, '0')}`;
+    const enrollmentNo = req.body.enrollmentNo ? String(req.body.enrollmentNo).trim().toUpperCase() : '';
     const registrationNo = `REG-VOC-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const feeVal = Number(totalFee) || 0;
@@ -5435,7 +5437,7 @@ app.post('/api/vocational-students', (req, res) => {
     const newStudent = {
       id: `std-voc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       rollNo,
-      enrollmentNo: rollNo,
+      enrollmentNo,
       registrationNo,
       studentName: name,
       fullName: name,
@@ -5548,6 +5550,32 @@ app.get('/api/vocational-students', (req, res) => {
     res.json({ success: true, count: students.length, totalEnrolledAll: (db.students || []).length, students });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9b. Update Student Enrollment Number (Admin can set or edit anytime)
+app.patch('/api/vocational-students/:id/enrollment-no', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.students)) db.students = [];
+    const key = (req.params.id || '').trim();
+    const index = findStudentIndex(db.students, key);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found in database.' });
+    }
+
+    const enr = req.body.enrollmentNo !== undefined ? String(req.body.enrollmentNo).trim().toUpperCase() : '';
+    db.students[index].enrollmentNo = enr;
+    db.students[index].updatedAt = new Date().toISOString();
+
+    writeDB(db);
+    res.json({
+      success: true,
+      message: `Enrollment number updated to "${enr || 'None'}" successfully.`,
+      student: db.students[index]
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update enrollment number: ' + err.message });
   }
 });
 
