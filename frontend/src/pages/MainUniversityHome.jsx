@@ -56,6 +56,10 @@ export default function MainUniversityHome({
   // Program Category Filter State
   const [selectedFilter, setSelectedFilter] = useState('all');
 
+  // 62 Courses — Search + Category Filter State
+  const [courseSearch, setCourseSearch] = useState('');
+  const [courseCategory, setCourseCategory] = useState('all');
+
   // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
   const [cardsInView, setCardsInView] = useState(false);
   const cardsRef = useRef(null);
@@ -112,6 +116,80 @@ export default function MainUniversityHome({
       setNewsletterSubscribed(false);
     }, 4000);
   };
+
+  // All 62 Courses Static Data
+  const allCourses = [
+    { id: 1,  name: 'BA',                                    duration: '3 Years', category: 'Arts' },
+    { id: 2,  name: 'MA (Education)',                        duration: '2 Years', category: 'Arts' },
+    { id: 3,  name: 'MA (History)',                          duration: '2 Years', category: 'Arts' },
+    { id: 4,  name: 'MA (English)',                          duration: '2 Years', category: 'Arts' },
+    { id: 5,  name: 'MA (Sociology)',                        duration: '2 Years', category: 'Arts' },
+    { id: 6,  name: 'MA (Economics)',                        duration: '2 Years', category: 'Arts' },
+    { id: 7,  name: 'MA (Political Science)',                duration: '2 Years', category: 'Arts' },
+    { id: 8,  name: 'MA (Hindi)',                            duration: '2 Years', category: 'Arts' },
+    { id: 9,  name: 'MA (Yoga)',                             duration: '2 Years', category: 'Arts' },
+    { id: 10, name: 'BSW',                                   duration: '3 Years', category: 'Arts' },
+    { id: 11, name: 'MSW',                                   duration: '2 Years', category: 'Arts' },
+    { id: 12, name: 'B.Com.',                                duration: '3 Years', category: 'Commerce' },
+    { id: 13, name: 'M.Com.',                                duration: '2 Years', category: 'Commerce' },
+    { id: 14, name: 'B.Sc.',                                 duration: '3 Years', category: 'Science' },
+    { id: 15, name: 'M.Sc.(Physics)',                        duration: '2 Years', category: 'Science' },
+    { id: 16, name: 'M.Sc.(Chemistry)',                      duration: '2 Years', category: 'Science' },
+    { id: 17, name: 'M.Sc.(Mathematics)',                    duration: '2 Years', category: 'Science' },
+    { id: 18, name: 'M.Sc.(Zoology)',                        duration: '2 Years', category: 'Science' },
+    { id: 19, name: 'M.Sc.(Botany)',                         duration: '2 Years', category: 'Science' },
+    { id: 20, name: 'M.Sc.(Yogic Science)',                  duration: '2 Years', category: 'Science' },
+    { id: 21, name: 'M.Sc.(Forensic Science)',               duration: '2 Years', category: 'Science' },
+    { id: 22, name: 'M.Sc.(Micro Biology)',                  duration: '2 Years', category: 'Science' },
+    { id: 23, name: 'M.Sc.(Computer Science)',               duration: '2 Years', category: 'Science' },
+    { id: 24, name: 'B.B.A.',                                duration: '3 Years', category: 'Commerce' },
+    { id: 25, name: 'M.B.A.',                                duration: '2 Years', category: 'Commerce' },
+    { id: 26, name: 'B.Lib',                                 duration: '1 Year',  category: 'Commerce' },
+    { id: 27, name: 'M.Lib',                                 duration: '1 Year',  category: 'Commerce' },
+    { id: 28, name: 'D.C.A.',                                duration: '1 Year',  category: 'Computer' },
+    { id: 29, name: 'P.G.D.C.A.',                            duration: '1 Year',  category: 'Computer' },
+    { id: 30, name: 'B.C.A.',                                duration: '3 Years', category: 'Computer' },
+    { id: 31, name: 'M.C.A.',                                duration: '2 Years', category: 'Computer' },
+    { id: 32, name: 'B.Pharm',                               duration: '4 Years', category: 'Science' },
+    { id: 33, name: 'D.Pharm',                               duration: '2 Years', category: 'Science' },
+    { id: 34, name: 'B.Sc.(Hons) Agriculture',               duration: '4 Years', category: 'Science' },
+    { id: 35, name: 'M.Sc. Agriculture (Soil Science)',       duration: '2 Years', category: 'Science' },
+    { id: 36, name: 'M.Sc. Agriculture (Agronomy)',           duration: '2 Years', category: 'Science' },
+    { id: 37, name: 'M.Sc. Agriculture (Plant Pathology)',    duration: '2 Years', category: 'Science' },
+    { id: 38, name: 'LLB',                                   duration: '3 Years', category: 'Law' },
+    { id: 39, name: 'B.A.LLB',                               duration: '5 Years', category: 'Law' },
+    { id: 40, name: 'L.L.M.',                                 duration: '2 Years', category: 'Law' },
+    { id: 41, name: 'BPA',                                   duration: '4 Years', category: 'Arts' },
+    { id: 42, name: 'MPA',                                   duration: '2 Years', category: 'Arts' },
+    { id: 43, name: 'BFA',                                   duration: '4 Years', category: 'Arts' },
+    { id: 44, name: 'MFA',                                   duration: '2 Years', category: 'Arts' },
+    { id: 45, name: 'B.Music / B.Dance',                     duration: '3 Years', category: 'Arts' },
+    { id: 46, name: 'M.Music / M.Dance',                     duration: '2 Years', category: 'Arts' },
+    { id: 47, name: 'BAJMC',                                  duration: '3 Years', category: 'Arts' },
+    { id: 48, name: 'MAJMC',                                  duration: '2 Years', category: 'Arts' },
+    { id: 49, name: 'B.P.ED',                                 duration: '2 Years', category: 'Arts' },
+    { id: 50, name: 'BPES',                                   duration: '3 Years', category: 'Arts' },
+    { id: 51, name: 'MPES',                                   duration: '2 Years', category: 'Arts' },
+    { id: 52, name: 'B.Tech',                                 duration: '4 Years', category: 'Computer' },
+    { id: 53, name: 'M.Tech',                                 duration: '2 Years', category: 'Computer' },
+    { id: 54, name: 'DMLT',                                   duration: '2 Years', category: 'Science' },
+    { id: 55, name: 'BMLT',                                   duration: '3 Years', category: 'Science' },
+    { id: 56, name: 'B.P.ED.',                                duration: '2 Years', category: 'Arts' },
+    { id: 57, name: 'Ph.D. (Social Science)',                  duration: '3 Years', category: 'Research' },
+    { id: 58, name: 'Ph.D. (Science)',                        duration: '3 Years', category: 'Research' },
+    { id: 59, name: 'Ph.D. (Education)',                      duration: '3 Years', category: 'Research' },
+    { id: 60, name: 'Ph.D. (Commerce / Management)',           duration: '3 Years', category: 'Research' },
+    { id: 61, name: 'Ph.D. (Law)',                            duration: '3 Years', category: 'Research' },
+    { id: 62, name: 'Ph.D. (Engineering)',                    duration: '3 Years', category: 'Research' },
+  ];
+
+  const courseCategories = ['all', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
+
+  const filteredCourses = allCourses.filter(c => {
+    const matchCat = courseCategory === 'all' || c.category === courseCategory;
+    const matchSearch = c.name.toLowerCase().includes(courseSearch.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   // 5 Program Categories
   const programCategories = [
@@ -472,6 +550,163 @@ export default function MainUniversityHome({
               );
             })}
           </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 2B: ALL 62 COURSES — SEARCHABLE LIST */}
+      {/* ========================================================================= */}
+      <section className="bg-slate-50 py-14 sm:py-20 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <span className="text-xs font-black uppercase tracking-[0.22em] text-[#C59B27] bg-[#C59B27]/10 px-4 py-1.5 rounded-full border border-[#C59B27]/30 inline-block">
+              COMPLETE COURSE CATALOG
+            </span>
+            <h2 className="font-serif-academic text-3xl sm:text-4xl font-bold text-[#071530]">
+              {lang === 'hi' ? 'सभी 62 पाठ्यक्रम देखें' : 'All 62 Academic Programs'}
+            </h2>
+            <p className="text-sm text-slate-500 max-w-xl mx-auto">
+              {lang === 'hi'
+                ? 'श्रेणी अनुसार फ़िल्टर करें या सीधे कोर्स खोजें'
+                : 'Filter by category or search for your desired course'}
+            </p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="max-w-lg mx-auto relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              value={courseSearch}
+              onChange={e => setCourseSearch(e.target.value)}
+              placeholder={lang === 'hi' ? 'कोर्स नाम खोजें...' : 'Search course name...'}
+              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white shadow-sm text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]/60 transition-all"
+            />
+            {courseSearch && (
+              <button
+                onClick={() => setCourseSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+              >×</button>
+            )}
+          </div>
+
+          {/* Category Filter Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {courseCategories.map(cat => {
+              const catLabels = {
+                all: `All (${allCourses.length})`,
+                Arts: 'Arts',
+                Science: 'Science',
+                Commerce: 'Commerce',
+                Computer: 'Computer & IT',
+                Law: 'Law',
+                Research: 'Research / Ph.D.'
+              };
+              const catColors = {
+                Arts:     'bg-purple-100 text-purple-700 border-purple-300',
+                Science:  'bg-green-100 text-green-700 border-green-300',
+                Commerce: 'bg-blue-100 text-blue-700 border-blue-300',
+                Computer: 'bg-cyan-100 text-cyan-700 border-cyan-300',
+                Law:      'bg-red-100 text-red-700 border-red-300',
+                Research: 'bg-amber-100 text-amber-700 border-amber-300',
+                all:      'bg-[#071530] text-[#C59B27] border-[#C59B27]/40',
+              };
+              const isActive = courseCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCourseCategory(cat)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                    isActive
+                      ? (cat === 'all' ? catColors.all : catColors[cat]) + ' shadow-md scale-105'
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {catLabels[cat] || cat}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Results Count */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {filteredCourses.length} {lang === 'hi' ? 'पाठ्यक्रम मिले' : 'courses found'}
+            </span>
+            {(courseSearch || courseCategory !== 'all') && (
+              <button
+                onClick={() => { setCourseSearch(''); setCourseCategory('all'); }}
+                className="text-xs font-bold text-[#C59B27] hover:text-amber-600 cursor-pointer underline"
+              >
+                {lang === 'hi' ? 'फ़िल्टर हटाएं' : 'Clear filters'}
+              </button>
+            )}
+          </div>
+
+          {/* Course Table */}
+          {filteredCourses.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium">
+                {lang === 'hi' ? 'कोई कोर्स नहीं मिला' : 'No courses found. Try a different search.'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 px-5 py-3 bg-[#071530] text-[#C59B27] text-[11px] font-black uppercase tracking-widest">
+                <div className="col-span-1">#</div>
+                <div className="col-span-6 sm:col-span-7">Course Name</div>
+                <div className="col-span-3 sm:col-span-2 text-center">Category</div>
+                <div className="col-span-2 text-right">Duration</div>
+              </div>
+
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-100">
+                {filteredCourses.map((course, idx) => {
+                  const rowCatBadge = {
+                    Arts:     'bg-purple-50 text-purple-600 border-purple-200',
+                    Science:  'bg-green-50 text-green-600 border-green-200',
+                    Commerce: 'bg-blue-50 text-blue-600 border-blue-200',
+                    Computer: 'bg-cyan-50 text-cyan-600 border-cyan-200',
+                    Law:      'bg-red-50 text-red-600 border-red-200',
+                    Research: 'bg-amber-50 text-amber-600 border-amber-200',
+                  };
+                  return (
+                    <div
+                      key={course.id}
+                      className={`grid grid-cols-12 px-5 py-3.5 items-center text-sm transition-colors hover:bg-slate-50 ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}
+                    >
+                      {/* S.No */}
+                      <div className="col-span-1 text-xs font-bold text-slate-400">{course.id}</div>
+
+                      {/* Course Name */}
+                      <div className="col-span-6 sm:col-span-7 font-semibold text-[#071530] text-sm leading-snug">
+                        {course.name}
+                      </div>
+
+                      {/* Category Badge */}
+                      <div className="col-span-3 sm:col-span-2 flex justify-center">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${rowCatBadge[course.category] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                          {course.category}
+                        </span>
+                      </div>
+
+                      {/* Duration */}
+                      <div className="col-span-2 text-right">
+                        <span className="text-xs font-bold text-[#C59B27] bg-[#C59B27]/10 px-2 py-0.5 rounded-lg">
+                          {course.duration}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
         </div>
       </section>
