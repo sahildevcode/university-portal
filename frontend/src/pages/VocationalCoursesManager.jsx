@@ -197,6 +197,10 @@ export default function VocationalCoursesManager({
   const [excelParsedRows, setExcelParsedRows] = useState([]);
   const [excelParsing, setExcelParsing] = useState(false);
   const [importMode, setImportMode] = useState('append'); // 'append' | 'replace'
+  const [workbookObj, setWorkbookObj] = useState(null);
+  const [availableSheets, setAvailableSheets] = useState([]);
+  const [selectedSheetName, setSelectedSheetName] = useState('');
+  const [sheetCourseCounts, setSheetCourseCounts] = useState({});
   const fileInputRef = useRef(null);
 
   // Enroll Vocational Student Modal state
@@ -692,6 +696,193 @@ export default function VocationalCoursesManager({
     }
   };
 
+  // Smart Sector Detector based on course name
+  const detectCourseSector = (courseName = '') => {
+    const cn = String(courseName).toLowerCase();
+    if (cn.includes('computer') || cn.includes('dca') || cn.includes('software') || cn.includes('web') || 
+        cn.includes('hardware') || cn.includes('it') || cn.includes('cctv') || cn.includes('programming') || 
+        cn.includes('python') || cn.includes('data') || cn.includes('desktop') || cn.includes('ddtp') || cn.includes('adca')) {
+      return 'Information Technology & Computer';
+    }
+    if (cn.includes('electric') || cn.includes('wireman') || cn.includes('solar') || cn.includes('electronic') || cn.includes('appliance')) {
+      return 'Electrical & Electronics';
+    }
+    if (cn.includes('teacher') || cn.includes('nursery') || cn.includes('ntt') || cn.includes('primary') || cn.includes('education') || cn.includes('ptc')) {
+      return 'Teacher Training & Education';
+    }
+    if (cn.includes('account') || cn.includes('tally') || cn.includes('gst') || cn.includes('finance') || cn.includes('dfa')) {
+      return 'Banking & Financial Accounting';
+    }
+    if (cn.includes('mechanic') || cn.includes('fitter') || cn.includes('weld') || cn.includes('auto') || cn.includes('motor') || cn.includes('diesel')) {
+      return 'Mechanical & Automobile';
+    }
+    if (cn.includes('beauty') || cn.includes('hair') || cn.includes('makeup') || cn.includes('cosmetology') || cn.includes('fashion') || cn.includes('tailor') || cn.includes('dress')) {
+      return 'Beauty, Wellness & Fashion';
+    }
+    if (cn.includes('yoga') || cn.includes('health') || cn.includes('nursing') || cn.includes('medical') || cn.includes('pharmacy') || cn.includes('ayur')) {
+      return 'Healthcare & Yoga';
+    }
+    if (cn.includes('hotel') || cn.includes('tourism') || cn.includes('hospitality') || cn.includes('cook') || cn.includes('catering') || cn.includes('event')) {
+      return 'Hospitality & Tourism';
+    }
+    return 'Vocational & Technical Skills';
+  };
+
+  // Smart Worksheet Courses Parser (handles title rows, custom headers, and multi-sheets)
+  const parseCoursesFromWorksheet = (ws, sheetName = '') => {
+    if (!ws) return [];
+    const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (!rawRows || rawRows.length === 0) return [];
+
+    // Step 1: Detect actual header row (look within first 15 rows)
+    let headerRowIndex = -1;
+    for (let i = 0; i < Math.min(15, rawRows.length); i++) {
+      const row = rawRows[i];
+      if (!Array.isArray(row)) continue;
+      const strCells = row.map(c => String(c || '').trim().toLowerCase());
+      const hasHeaderKeyword = strCells.some(c => 
+        c.includes('course') || c.includes('trade') || c.includes('subject') || 
+        c.includes('duration') || c.includes('code') || c.includes('branch') || 
+        c.includes('full name') || c.includes('programme') || c.includes('पाठ्यक्रम') || 
+        c.includes('अवधि') || c.includes('शुल्क')
+      );
+      if (hasHeaderKeyword) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    let headers = [];
+    let dataRows = [];
+
+    if (headerRowIndex !== -1) {
+      headers = rawRows[headerRowIndex].map(h => String(h || '').trim());
+      dataRows = rawRows.slice(headerRowIndex + 1);
+    } else {
+      let startIdx = 0;
+      for (let i = 0; i < Math.min(10, rawRows.length); i++) {
+        const r = rawRows[i];
+        if (Array.isArray(r) && r.filter(c => String(c || '').trim() !== '').length >= 2) {
+          if (r.length < 2 || String(r[0]).toLowerCase().includes('university') || String(r[0]).toLowerCase().includes('institute')) {
+            startIdx = i + 1;
+          } else {
+            startIdx = i;
+          }
+          break;
+        }
+      }
+      dataRows = rawRows.slice(startIdx);
+    }
+
+    const coursesList = [];
+    dataRows.forEach((row, idx) => {
+      if (!Array.isArray(row) || row.every(c => String(c || '').trim() === '')) return;
+
+      const r = {};
+      if (headers.length > 0) {
+        headers.forEach((h, hIdx) => {
+          if (h) r[h] = row[hIdx] !== undefined ? String(row[hIdx]).trim() : '';
+        });
+      }
+
+      const getVal = (...keys) => {
+        for (const k of keys) {
+          if (r[k] !== undefined && String(r[k]).trim() !== '') return String(r[k]).trim();
+          const foundKey = Object.keys(r).find(existingKey => existingKey.toLowerCase() === k.toLowerCase());
+          if (foundKey && r[foundKey] !== undefined && String(r[foundKey]).trim() !== '') {
+            return String(r[foundKey]).trim();
+          }
+        }
+        return '';
+      };
+
+      const shortName = getVal('Course Name', 'courseName', 'Course', 'Trade', 'Short Name', 'Name', 'Subject', 'पाठ्यक्रम');
+      const fullName = getVal('Full Name of Course', 'Full Name', 'Course Full Name', 'Description', 'Long Name', 'Program Full Name');
+      
+      let courseName = '';
+      if (shortName && fullName && shortName.toLowerCase() !== fullName.toLowerCase()) {
+        courseName = `${shortName} - ${fullName}`;
+      } else if (fullName) {
+        courseName = fullName;
+      } else if (shortName) {
+        courseName = shortName;
+      } else {
+        const nonNumCells = row.filter(c => c && isNaN(Number(String(c).trim())));
+        if (nonNumCells.length > 0) {
+          courseName = String(nonNumCells[0]).trim();
+        }
+      }
+
+      if (!courseName || courseName.length < 2) return;
+
+      // Filter out repeated header/title rows
+      if (courseName.toLowerCase().includes('maharishi dayanand') || 
+          courseName.toLowerCase().includes('vocational training institute') || 
+          courseName.toLowerCase().includes('s. no.') || 
+          courseName.toLowerCase() === 'course name') {
+        return;
+      }
+
+      let courseCode = getVal('Course Code', 'Code', 'courseCode', 'Trade Code', 'Subject Code', 'Code No');
+      if (!courseCode) {
+        if (row[1] && String(row[1]).trim().match(/^[A-Z0-9\-_]{2,12}$/i)) {
+          courseCode = String(row[1]).trim().toUpperCase();
+        } else {
+          const pfx = shortName && shortName.length <= 6 ? shortName.toUpperCase() : 'VOC';
+          courseCode = `${pfx}-${String(idx + 1).padStart(3, '0')}`;
+        }
+      }
+
+      let duration = getVal('Duration', 'duration', 'Time', 'Period', 'Course Duration', 'Year / Sem', 'अवधि');
+      if (!duration) {
+        const durMatch = row.find(c => String(c).match(/\b(month|year|sem|day|yr|mo|वर्ष|माह)\b/i));
+        if (durMatch) duration = String(durMatch).trim();
+        else duration = '6 Months';
+      }
+
+      if (/^1\s*y/i.test(duration)) duration = '1 Year';
+      else if (/^2\s*y/i.test(duration)) duration = '2 Years';
+      else if (/^3\s*y/i.test(duration)) duration = '3 Years';
+      else if (/^6\s*m/i.test(duration)) duration = '6 Months';
+      else if (/^3\s*m/i.test(duration)) duration = '3 Months';
+      else if (/^1\s*m/i.test(duration)) duration = '1 Month';
+
+      let sector = getVal('Sector', 'sector', 'Category', 'Branch', 'Trade', 'Stream', 'विभाग');
+      if (!sector || sector.toLowerCase() === 'general' || sector === '') {
+        sector = detectCourseSector(courseName);
+      }
+
+      let fee = Number(getVal('Fee', 'Total Fee', 'Fees', 'courseFee', 'शुल्क')) || 0;
+      if (!fee) {
+        if (duration.includes('3 Year')) fee = 30000;
+        else if (duration.includes('2 Year')) fee = 20000;
+        else if (duration.includes('1 Year')) fee = 12000;
+        else if (duration.includes('6 Month')) fee = 8000;
+        else if (duration.includes('3 Month')) fee = 5000;
+        else fee = 10000;
+      }
+
+      let eligibility = getVal('Eligibility', 'qualification', 'eligibility', 'योग्यता') || '10th Pass (High School)';
+      let certification = getVal('Certification', 'certification', 'Certificate') || 'PKC Certified Skill Diploma';
+
+      coursesList.push({
+        id: 'voc-imp-' + Date.now() + '-' + idx + '-' + Math.floor(Math.random() * 1000),
+        courseName,
+        courseCode: courseCode.toUpperCase(),
+        sector,
+        duration,
+        eligibility,
+        fee,
+        certification,
+        mode: 'Regular',
+        description: fullName && fullName !== courseName ? fullName : `Vocational certification course in ${courseName}.`,
+        status: 'Active'
+      });
+    });
+
+    return coursesList;
+  };
+
   // Excel Upload Parser & Preview
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -704,29 +895,33 @@ export default function VocationalCoursesManager({
       try {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const sheetNames = wb.SheetNames || [];
+        setWorkbookObj(wb);
+        setAvailableSheets(sheetNames);
 
-        const formatted = rows.map((r, i) => {
-          const name = r['Course Name'] || r['courseName'] || r['Course'] || r['Trade'] || r['पाठ्यक्रम'] || r['Name'] || '';
-          if (!name) return null;
-          return {
-            id: 'voc-imp-' + Date.now() + '-' + i,
-            courseName: String(name).trim(),
-            courseCode: String(r['Course Code'] || r['Code'] || `VOC-IMP-${i + 1}`).trim().toUpperCase(),
-            sector: String(r['Sector'] || r['Category'] || r['Trade'] || 'General Vocational').trim(),
-            duration: String(r['Duration'] || '6 Months').trim(),
-            eligibility: String(r['Eligibility'] || '10th Pass').trim(),
-            fee: Number(r['Fee'] || r['Total Fee'] || r['Fees'] || 0) || 0,
-            certification: String(r['Certification'] || 'PKC Certified Skill Diploma').trim(),
-            mode: String(r['Mode'] || 'Regular').trim(),
-            description: String(r['Description'] || '').trim(),
-            status: 'Active'
-          };
-        }).filter(Boolean);
+        // Pre-calculate count for all sheets to find best match
+        const counts = {};
+        let bestSheet = sheetNames[0];
+        let maxCourses = 0;
 
-        setExcelParsedRows(formatted);
+        sheetNames.forEach(name => {
+          const parsed = parseCoursesFromWorksheet(wb.Sheets[name], name);
+          counts[name] = parsed.length;
+          const isVocKw = /voc|inst|course|trade|mdvti/i.test(name);
+          if (isVocKw && parsed.length > 0) {
+            bestSheet = name;
+            maxCourses = parsed.length;
+          } else if (parsed.length > maxCourses) {
+            bestSheet = name;
+            maxCourses = parsed.length;
+          }
+        });
+
+        setSheetCourseCounts(counts);
+        setSelectedSheetName(bestSheet);
+
+        const coursesFromBest = parseCoursesFromWorksheet(wb.Sheets[bestSheet], bestSheet);
+        setExcelParsedRows(coursesFromBest);
       } catch (err) {
         alert('Failed to parse Excel file: ' + err.message);
       } finally {
@@ -734,6 +929,14 @@ export default function VocationalCoursesManager({
       }
     };
     reader.readAsBinaryString(file);
+  };
+
+  // Switch sheet inside workbook
+  const handleSwitchSheet = (sheetName) => {
+    setSelectedSheetName(sheetName);
+    if (!workbookObj || !workbookObj.Sheets[sheetName]) return;
+    const parsed = parseCoursesFromWorksheet(workbookObj.Sheets[sheetName], sheetName);
+    setExcelParsedRows(parsed);
   };
 
   // Confirm Excel Bulk Import
@@ -766,6 +969,10 @@ export default function VocationalCoursesManager({
         setShowExcelModal(false);
         setExcelFile(null);
         setExcelParsedRows([]);
+        setWorkbookObj(null);
+        setAvailableSheets([]);
+        setSelectedSheetName('');
+        setSheetCourseCounts({});
         fireCelebration();
       } else {
         throw new Error(data.message || 'Import failed');
@@ -783,10 +990,25 @@ export default function VocationalCoursesManager({
       setShowExcelModal(false);
       setExcelFile(null);
       setExcelParsedRows([]);
+      setWorkbookObj(null);
+      setAvailableSheets([]);
+      setSelectedSheetName('');
+      setSheetCourseCounts({});
       showToast(`Imported ${coursesToUpload.length} courses!`);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Close Excel Upload Modal & Reset
+  const handleCloseExcelModal = () => {
+    setShowExcelModal(false);
+    setExcelFile(null);
+    setExcelParsedRows([]);
+    setWorkbookObj(null);
+    setAvailableSheets([]);
+    setSelectedSheetName('');
+    setSheetCourseCounts({});
   };
 
   // Download Sample Excel Template
@@ -2389,8 +2611,8 @@ export default function VocationalCoursesManager({
               </div>
               <button
                 type="button"
-                onClick={() => setShowExcelModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                onClick={handleCloseExcelModal}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2434,6 +2656,49 @@ export default function VocationalCoursesManager({
                 Auto-detects Course Name, Code, Sector, Duration, Eligibility, Fee, Certification, Mode
               </p>
             </div>
+
+            {/* Multi-Sheet Selector if Workbook contains multiple sheets */}
+            {availableSheets.length > 1 && (
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-3.5 rounded-2xl border-2 border-indigo-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <FileSpreadsheet className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-xs text-indigo-950 flex items-center gap-1.5">
+                      <span>Select Worksheet to Import:</span>
+                      <span className="text-[10px] font-bold bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full">
+                        {availableSheets.length} sheets
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-600">
+                      Switch sheet to choose which courses to import
+                    </p>
+                  </div>
+                </div>
+                <select
+                  value={selectedSheetName}
+                  onChange={(e) => handleSwitchSheet(e.target.value)}
+                  className="w-full sm:w-auto p-2.5 bg-white border-2 border-indigo-400 rounded-xl font-black text-xs text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm"
+                >
+                  {availableSheets.map(sName => (
+                    <option key={sName} value={sName}>
+                      📄 {sName} ({sheetCourseCounts[sName] !== undefined ? `${sheetCourseCounts[sName]} courses` : 'detecting...'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* No courses detected alert */}
+            {excelFile && excelParsedRows.length === 0 && !excelParsing && (
+              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-center text-xs text-amber-900 space-y-1">
+                <p className="font-black">⚠️ No vocational courses detected in sheet "{selectedSheetName}".</p>
+                <p className="text-[11px] text-amber-700">
+                  {availableSheets.length > 1 ? 'Please select another worksheet from the dropdown above.' : 'Please ensure your file has valid course rows.'}
+                </p>
+              </div>
+            )}
 
             {/* Live Preview of parsed rows */}
             {excelParsedRows.length > 0 && (
@@ -2510,7 +2775,7 @@ export default function VocationalCoursesManager({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowExcelModal(false)}
+                  onClick={handleCloseExcelModal}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer"
                 >
                   Cancel

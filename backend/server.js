@@ -5258,8 +5258,8 @@ app.post('/api/vocational-courses/bulk-import', (req, res) => {
 
     const targetInstId = instituteId || 'inst-mdvti';
     const targetInstName = instituteName || (targetInstId === 'inst-mdette' 
-      ? 'महर्षि दयानंद इयरली टीचर्स ट्रेनिंग एंड एजुकेशन (Maharishi Dayanand Early Teachers Training and Education)'
-      : 'महर्षि दयानंद वोकेशनल ट्रेनिंग इंस्टीट्यूट (Maharishi Dayanand Vocational Training Institute)');
+      ? 'Maharishi Dayanand Early Teachers Training and Education (MDETTE)'
+      : 'Maharishi Dayanand Vocational Training Institute (MDVTI)');
 
     let addedCount = 0;
     const formatted = incomingCourses.map((c, i) => {
