@@ -389,7 +389,7 @@ export default function VocationalCoursesManager({
 
   // Lock background scroll when any modal is active
   useEffect(() => {
-    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent) {
+    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -397,7 +397,7 @@ export default function VocationalCoursesManager({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent]);
+  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData]);
 
   // Update default course when opening Add Course
   const handleOpenAddCourse = (targetInst = null) => {
@@ -2059,10 +2059,10 @@ export default function VocationalCoursesManager({
       {/* MODAL 1: ENROLL VOCATIONAL STUDENT (MANUAL STUDENT REGISTRATION) */}
       {/* ========================================================================= */}
       {showEnrollModal && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
           <form 
             onSubmit={handleEnrollSubmit}
-            className="bg-white w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-emerald-400 overflow-hidden my-auto"
+            className="bg-white w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-emerald-400 overflow-hidden"
           >
             {/* Modal Header (Fixed at top) */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
@@ -2385,8 +2385,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 2: ENROLLMENT SUCCESS POPUP */}
       {/* ========================================================================= */}
       {enrollSuccessData && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-xs p-4 flex justify-center items-center">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-4 border-emerald-400 text-center my-auto">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/85 backdrop-blur-xs p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-4 border-emerald-400 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center font-black">
               <Sparkles className="w-8 h-8 text-emerald-600 animate-bounce" />
             </div>
@@ -2491,10 +2491,10 @@ export default function VocationalCoursesManager({
       {/* MODAL 3: ADD / EDIT VOCATIONAL INSTITUTE */}
       {/* ========================================================================= */}
       {showInstituteModal && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
           <form 
             onSubmit={handleSaveInstitute}
-            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden my-auto"
+            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden"
           >
             {/* Header (Pinned at top) */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
@@ -2656,8 +2656,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 4: EXCEL UPLOAD MODAL WITH INSTITUTE SELECTION */}
       {/* ========================================================================= */}
       {showExcelModal && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
-          <div className="bg-white w-full max-w-3xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden my-auto">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-3xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden">
             {/* Header (Pinned at top) */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
               <div className="flex items-center gap-3">
@@ -2877,10 +2877,10 @@ export default function VocationalCoursesManager({
       {/* MODAL 5: ADD / EDIT VOCATIONAL COURSE MANUALLY */}
       {/* ========================================================================= */}
       {showAddCourseModal && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
           <form 
             onSubmit={handleSaveCourse}
-            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden my-auto"
+            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden"
           >
             {/* Header (Pinned at top) */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
@@ -3072,8 +3072,8 @@ export default function VocationalCoursesManager({
       {/* MODAL: SET / EDIT ENROLLMENT NUMBER (ADMIN ASSIGNMENT) */}
       {/* ========================================================================= */}
       {editingEnrollmentStudent && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-4 flex justify-center items-center">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-indigo-500 my-auto">
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-indigo-500">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-sm">
