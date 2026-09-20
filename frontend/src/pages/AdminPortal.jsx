@@ -1051,6 +1051,7 @@ export default function AdminPortal({
           adminUser={adminUser}
           onNavigateToRecords={() => setActiveTab('records')}
           onNavigateToAdmissions={() => setActiveTab('admissions')}
+          onNavigateToCancelled={() => setActiveTab('cancelled')}
           onRefreshCourses={onRefreshCourses}
         />
       )}

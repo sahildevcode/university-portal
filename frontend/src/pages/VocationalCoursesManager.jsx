@@ -37,7 +37,10 @@ import {
   ArrowRight,
   Printer,
   ShieldCheck,
-  Calendar
+  Calendar,
+  Ban,
+  AlertTriangle,
+  DollarSign
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { fireCelebration } from '../utils/confetti';
@@ -102,6 +105,7 @@ export default function VocationalCoursesManager({
   adminUser,
   onNavigateToRecords,
   onNavigateToAdmissions,
+  onNavigateToCancelled,
   onRefreshCourses
 }) {
   const isHindi = lang === 'hi';
@@ -238,6 +242,50 @@ export default function VocationalCoursesManager({
   const [tempEnrollmentNo, setTempEnrollmentNo] = useState('');
   const [savingEnrollmentNo, setSavingEnrollmentNo] = useState(false);
 
+  // Student Status Filter: 'active' | 'cancelled' | 'all'
+  const [studentStatusFilter, setStudentStatusFilter] = useState('active');
+
+  // Edit Student Modal state
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editStudentForm, setEditStudentForm] = useState({
+    studentName: '',
+    fatherName: '',
+    motherName: '',
+    phone: '',
+    aadhaarNo: '',
+    abcId: '',
+    enrollmentNo: '',
+    instituteId: 'inst-mdvti',
+    instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
+    parentCenter: 'PKC Institute',
+    courseName: '',
+    branch: '',
+    duration: '1 Year',
+    totalFee: 0,
+    totalPaid: 0,
+    newPaymentAmount: '',
+    paymentMode: 'Cash',
+    paymentRemark: '',
+    status: 'Active'
+  });
+  const [editStudentSubmitting, setEditStudentSubmitting] = useState(false);
+
+  // Cancel Admission Modal state
+  const [cancellingStudent, setCancellingStudent] = useState(null);
+  const [cancelForm, setCancelForm] = useState({
+    cancellationDate: new Date().toISOString().split('T')[0],
+    reason: 'Student requested cancellation',
+    refundPaid: '',
+    paymentMode: 'Cash',
+    refundNotes: '',
+    cancelledBy: 'Admin'
+  });
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+
+  // Delete Student confirmation state
+  const [deletingStudent, setDeletingStudent] = useState(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -248,6 +296,135 @@ export default function VocationalCoursesManager({
   const handleOpenEditEnrollmentNo = (student) => {
     setEditingEnrollmentStudent(student);
     setTempEnrollmentNo(student.enrollmentNo || '');
+  };
+
+  // Open Edit Student Modal
+  const handleOpenEditStudent = (student) => {
+    setEditingStudent(student);
+    const feeVal = Number(student.totalFee !== undefined ? student.totalFee : (student.academicFee || 0));
+    const paidVal = Number(student.totalPaid || 0);
+    setEditStudentForm({
+      studentName: student.fullName || student.studentName || '',
+      fatherName: student.fatherName || '',
+      motherName: student.motherName || '',
+      phone: student.phone || student.contact || '',
+      aadhaarNo: student.aadhaarNo || '',
+      abcId: student.abcId || '',
+      enrollmentNo: student.enrollmentNo || '',
+      instituteId: student.instituteId || (student.universityName?.toLowerCase().includes('teacher') || student.universityName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti'),
+      instituteName: student.instituteName || student.universityName || 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
+      parentCenter: student.parentCenter || student.collegeName || 'PKC Institute',
+      courseName: student.courseName || '',
+      branch: student.branch || '',
+      duration: student.duration || '1 Year',
+      totalFee: feeVal,
+      totalPaid: paidVal,
+      newPaymentAmount: '',
+      paymentMode: 'Cash',
+      paymentRemark: '',
+      status: student.status || 'Active'
+    });
+  };
+
+  // Save Edit Student
+  const handleSaveEditStudent = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editingStudent) return;
+    if (!editStudentForm.studentName.trim()) {
+      alert('Please enter student name');
+      return;
+    }
+
+    setEditStudentSubmitting(true);
+    try {
+      const key = editingStudent.id || editingStudent.rollNo;
+      const res = await fetch(`/api/vocational-students/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editStudentForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('✅ Student details and fees updated successfully!');
+        setEditingStudent(null);
+        fetchVocationalStudents();
+        if (onRefreshCourses) onRefreshCourses();
+      } else {
+        throw new Error(data.message || 'Failed to update student');
+      }
+    } catch (err) {
+      alert('Error updating student: ' + err.message);
+    } finally {
+      setEditStudentSubmitting(false);
+    }
+  };
+
+  // Open Cancel Admission Modal
+  const handleOpenCancelStudent = (student) => {
+    setCancellingStudent(student);
+    setCancelForm({
+      cancellationDate: new Date().toISOString().split('T')[0],
+      reason: 'Student requested cancellation',
+      refundPaid: '',
+      paymentMode: 'Cash',
+      refundNotes: `Cancellation of vocational course admission for ${student.fullName || student.studentName || student.rollNo}`,
+      cancelledBy: adminUser?.name || 'Admin'
+    });
+  };
+
+  // Confirm Cancel Admission
+  const handleConfirmCancelStudent = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!cancellingStudent) return;
+
+    setCancelSubmitting(true);
+    try {
+      const key = cancellingStudent.id || cancellingStudent.rollNo;
+      const res = await fetch(`/api/vocational-students/${encodeURIComponent(key)}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cancelForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🚫 Admission cancelled and moved to Cancelled Admissions Hub!');
+        setCancellingStudent(null);
+        fetchVocationalStudents();
+        if (onRefreshCourses) onRefreshCourses();
+      } else {
+        throw new Error(data.message || 'Failed to cancel admission');
+      }
+    } catch (err) {
+      alert('Error cancelling admission: ' + err.message);
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
+
+  // Confirm Permanent Delete Student
+  const handleConfirmDeleteStudent = async () => {
+    if (!deletingStudent) return;
+
+    setDeleteSubmitting(true);
+    try {
+      const key = deletingStudent.id || deletingStudent.rollNo;
+      const res = await fetch(`/api/vocational-students/${encodeURIComponent(key)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🗑️ Student record permanently deleted.');
+        setDeletingStudent(null);
+        fetchVocationalStudents();
+        if (onRefreshCourses) onRefreshCourses();
+      } else {
+        throw new Error(data.message || 'Failed to delete student');
+      }
+    } catch (err) {
+      alert('Error deleting student: ' + err.message);
+    } finally {
+      setDeleteSubmitting(false);
+    }
   };
 
   // Save Enrollment Number
@@ -389,7 +566,7 @@ export default function VocationalCoursesManager({
 
   // Lock background scroll when any modal is active
   useEffect(() => {
-    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData) {
+    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData || editingStudent || cancellingStudent || deletingStudent) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -397,7 +574,7 @@ export default function VocationalCoursesManager({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData]);
+  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData, editingStudent, cancellingStudent, deletingStudent]);
 
   // Update default course when opening Add Course
   const handleOpenAddCourse = (targetInst = null) => {
@@ -693,10 +870,6 @@ export default function VocationalCoursesManager({
     }
     if (!enrollForm.fatherName.trim()) {
       alert("Please enter father's name");
-      return;
-    }
-    if (!enrollForm.aadhaarNo.trim()) {
-      alert('Please enter Aadhaar card number');
       return;
     }
 
@@ -1124,6 +1297,15 @@ export default function VocationalCoursesManager({
     });
   }, [courses, selectedInstituteFilter, selectedSector, selectedDuration, searchQuery]);
 
+  // Student status counts
+  const activeStudentCount = useMemo(() => {
+    return vocationalStudents.filter(s => !(s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes')).length;
+  }, [vocationalStudents]);
+
+  const cancelledStudentCount = useMemo(() => {
+    return vocationalStudents.filter(s => s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes').length;
+  }, [vocationalStudents]);
+
   // Filtered Students
   const filteredStudents = useMemo(() => {
     return vocationalStudents.filter(s => {
@@ -1131,12 +1313,17 @@ export default function VocationalCoursesManager({
         const sInstId = s.instituteId || (s.universityName?.toLowerCase().includes('teacher') || s.universityName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
         if (sInstId !== selectedInstituteFilter) return false;
       }
+      const isCancelled = s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes';
+      if (studentStatusFilter === 'active' && isCancelled) return false;
+      if (studentStatusFilter === 'cancelled' && !isCancelled) return false;
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
           (s.studentName || s.fullName || '').toLowerCase().includes(q) ||
           (s.fatherName || '').toLowerCase().includes(q) ||
           (s.rollNo || '').toLowerCase().includes(q) ||
+          (s.enrollmentNo || '').toLowerCase().includes(q) ||
           (s.aadhaarNo || '').includes(q) ||
           (s.abcId || '').includes(q) ||
           (s.courseName || '').toLowerCase().includes(q)
@@ -1144,7 +1331,7 @@ export default function VocationalCoursesManager({
       }
       return true;
     });
-  }, [vocationalStudents, selectedInstituteFilter, searchQuery]);
+  }, [vocationalStudents, selectedInstituteFilter, studentStatusFilter, searchQuery]);
 
   // Dynamic sector & course list extracted purely from actual courses entered by user
   const actualSectors = useMemo(() => {
@@ -1911,17 +2098,73 @@ export default function VocationalCoursesManager({
       {/* ========================================================================= */}
       {activeMainTab === 'students' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 px-1">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs text-slate-500 px-1">
             <div>
-              <span>
-                Vocational Students: <strong className="text-slate-900 font-bold">{filteredStudents.length}</strong> | Total Central Students in Database: <strong className="text-indigo-700 font-bold">{totalCentralStudents}</strong>
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-slate-700">
+                  Showing: <strong className="text-slate-900">{filteredStudents.length}</strong> of <strong className="text-indigo-700 font-bold">{vocationalStudents.length}</strong> vocational students
+                </span>
+                <span className="text-slate-300">|</span>
+                <span>
+                  Total in Central Records: <strong className="text-indigo-700 font-bold">{totalCentralStudents}</strong>
+                </span>
+              </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 Every vocational student added here is also automatically visible in <strong>Master Student Records</strong> & <strong>Enroll New Student Directory</strong>.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Status Filter Pills */}
+              <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setStudentStatusFilter('active')}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    studentStatusFilter === 'active'
+                      ? 'bg-white text-emerald-700 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Active Enrolled ({activeStudentCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentStatusFilter('cancelled')}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    studentStatusFilter === 'cancelled'
+                      ? 'bg-rose-600 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-rose-700'
+                  }`}
+                >
+                  Cancelled ({cancelledStudentCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentStatusFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    studentStatusFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All ({vocationalStudents.length})
+                </button>
+              </div>
+
+              {onNavigateToCancelled && cancelledStudentCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onNavigateToCancelled}
+                  className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold px-3 py-1.5 rounded-xl text-xs transition cursor-pointer"
+                  title="Open full Cancelled Admissions & Refund Desk"
+                >
+                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Cancelled Hub ({cancelledStudentCount})</span>
+                  <ArrowRight className="w-3 h-3 text-rose-500" />
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => handleOpenEnrollStudent()}
@@ -1948,18 +2191,26 @@ export default function VocationalCoursesManager({
                 <GraduationCap className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">No vocational students enrolled yet</h3>
+                <h3 className="text-base font-bold text-slate-900">
+                  {studentStatusFilter === 'cancelled' 
+                    ? 'No cancelled vocational students' 
+                    : 'No vocational students found'}
+                </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                  Click the button below to enroll your first student under Maharishi Dayanand Vocational Training Institute or Teachers Training (PKC Institute).
+                  {studentStatusFilter === 'cancelled'
+                    ? 'When a vocational student admission is cancelled, it will appear here and in the Cancelled Admissions Hub.'
+                    : 'Click the button below to enroll a student or adjust your search filter.'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleOpenEnrollStudent()}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-md"
-              >
-                + Enroll First Vocational Student
-              </button>
+              {studentStatusFilter !== 'cancelled' && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenEnrollStudent()}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-md"
+                >
+                  + Enroll First Vocational Student
+                </button>
+              )}
             </div>
           ) : (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1977,6 +2228,7 @@ export default function VocationalCoursesManager({
                       <th className="p-3">Course / Trade</th>
                       <th className="p-3">Fee Details</th>
                       <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
@@ -2041,9 +2293,57 @@ export default function VocationalCoursesManager({
                           )}
                         </td>
                         <td className="p-3 text-center">
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                            {st.status || 'Active'}
-                          </span>
+                          {st.status === 'Cancelled' || st.cancel === 'Yes' ? (
+                            <div className="space-y-0.5">
+                              <span className="bg-rose-50 text-rose-700 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1">
+                                <Ban className="w-2.5 h-2.5" /> Cancelled
+                              </span>
+                              {st.cancellationReason && (
+                                <span className="block text-[9px] text-slate-500 truncate max-w-[110px]" title={st.cancellationReason}>
+                                  {st.cancellationReason}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              {st.status || 'Active'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {/* Edit Student & Fees Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditStudent(st)}
+                              title="Edit Student, Aadhaar, Enrollment & Fees"
+                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Cancel Admission Button (if not cancelled) */}
+                            {!(st.status === 'Cancelled' || st.cancel === 'Yes') && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCancelStudent(st)}
+                                title="Cancel Admission (Move to Cancelled Hub)"
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Permanent Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => setDeletingStudent(st)}
+                              title="Permanently Delete Student"
+                              className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -2153,18 +2453,17 @@ export default function VocationalCoursesManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 p-3 rounded-2xl border border-amber-200">
                 <div>
                   <label className="font-black text-amber-900 block mb-1">
-                    Aadhaar Card Number *
+                    Aadhaar Card Number <span className="text-slate-500 font-normal text-[11px]">(Optional)</span>
                   </label>
                   <input
                     type="text"
-                    required
                     value={enrollForm.aadhaarNo}
                     onChange={(e) => setEnrollForm({ ...enrollForm, aadhaarNo: e.target.value.replace(/\D/g, '').slice(0, 12) })}
-                    placeholder="12 digit Aadhaar number"
+                    placeholder="12 digit Aadhaar number (optional)"
                     maxLength={12}
                     className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
-                  <span className="text-[10px] text-amber-700 mt-0.5 block">Required for KYC & certification verification</span>
+                  <span className="text-[10px] text-amber-700 mt-0.5 block">Optional: Can be entered now or updated anytime later via Edit.</span>
                 </div>
 
                 <div>
@@ -3147,6 +3446,546 @@ export default function VocationalCoursesManager({
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT VOCATIONAL STUDENT DETAILS & FEE MANAGEMENT */}
+      {/* ========================================================================= */}
+      {editingStudent && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <form 
+            onSubmit={handleSaveEditStudent}
+            className="bg-white w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden"
+          >
+            {/* Header (Pinned at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base sm:text-lg text-slate-900">
+                    Edit Vocational Student & Fees
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Roll: <span className="font-mono font-bold text-indigo-700">{editingStudent.rollNo || editingStudent.registrationNo}</span> • {editingStudent.fullName || editingStudent.studentName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingStudent(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
+              {/* Row 1: Student Name & Father Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Student Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editStudentForm.studentName}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, studentName: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Father's Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editStudentForm.fatherName}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, fatherName: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Mother Name & Contact Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Mother's Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudentForm.motherName}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, motherName: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Contact / Mobile Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={editStudentForm.phone}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, phone: e.target.value })}
+                    maxLength={10}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Aadhaar Card, ABC ID & Enrollment Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-indigo-50/50 p-3.5 rounded-2xl border border-indigo-200">
+                <div>
+                  <label className="font-bold text-indigo-950 block mb-1">
+                    Aadhaar Card <span className="text-[10px] text-slate-500 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudentForm.aadhaarNo}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, aadhaarNo: e.target.value.replace(/\D/g, '').slice(0, 12) })}
+                    placeholder="12 digit Aadhaar"
+                    maxLength={12}
+                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  <span className="text-[10px] text-indigo-700 mt-0.5 block">Can be added/edited anytime</span>
+                </div>
+                <div>
+                  <label className="font-bold text-indigo-950 block mb-1">
+                    ABC ID
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudentForm.abcId}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, abcId: e.target.value.replace(/\D/g, '').slice(0, 12) })}
+                    placeholder="12 digit ABC ID"
+                    maxLength={12}
+                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-indigo-950 block mb-1">
+                    Official Enrollment No
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudentForm.enrollmentNo}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, enrollmentNo: e.target.value.toUpperCase() })}
+                    placeholder="e.g. ENR-2024-001"
+                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Institute & Course */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Vocational Institute
+                  </label>
+                  <select
+                    value={editStudentForm.instituteId}
+                    onChange={(e) => {
+                      const inst = institutes.find(i => i.id === e.target.value);
+                      setEditStudentForm({
+                        ...editStudentForm,
+                        instituteId: e.target.value,
+                        instituteName: inst?.name || editStudentForm.instituteName
+                      });
+                    }}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
+                  >
+                    {institutes.map(inst => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.shortName}: {inst.name.slice(0, 45)}...
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Course / Trade Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editStudentForm.courseName}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, courseName: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: FEE MANAGEMENT & LIVE INSTALLMENT DEPOSIT (User's Primary Request) */}
+              <div className="bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-indigo-50/80 border-2 border-indigo-300 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-indigo-200/80 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-xs sm:text-sm text-indigo-950">
+                        Fee Management & Installment Ledger
+                      </h4>
+                      <p className="text-[10px] text-indigo-700">
+                        Adjust total course fee, update paid amounts, or collect a new fee payment now.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3 Metrics Cards: Total Fee | Total Paid | Balance Due */}
+                {(() => {
+                  const baseTotal = Number(editStudentForm.totalFee) || 0;
+                  const basePaid = Number(editStudentForm.totalPaid) || 0;
+                  const newPayment = Number(editStudentForm.newPaymentAmount) || 0;
+                  const netPaid = basePaid + newPayment;
+                  const netDue = Math.max(0, baseTotal - netPaid);
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                        <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                          Total Course Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editStudentForm.totalFee}
+                          onChange={(e) => setEditStudentForm({ ...editStudentForm, totalFee: Math.max(0, Number(e.target.value)) })}
+                          className="w-full text-center font-mono font-black text-slate-900 text-base p-1 border-b-2 border-slate-300 focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs">
+                        <label className="text-[11px] font-bold text-emerald-700 block mb-1">
+                          Already Paid Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editStudentForm.totalPaid}
+                          onChange={(e) => setEditStudentForm({ ...editStudentForm, totalPaid: Math.max(0, Number(e.target.value)) })}
+                          className="w-full text-center font-mono font-black text-emerald-700 text-base p-1 border-b-2 border-emerald-300 focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className={`p-3 rounded-xl border shadow-2xs flex flex-col justify-center ${
+                        netDue === 0 ? 'bg-emerald-100 border-emerald-300 text-emerald-900' : 'bg-rose-100 border-rose-300 text-rose-900'
+                      }`}>
+                        <span className="text-[11px] font-bold block mb-0.5">
+                          {netDue === 0 ? 'Balance Status' : 'Remaining Due (₹)'}
+                        </span>
+                        <span className="font-mono font-black text-lg">
+                          ₹{netDue.toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[9px] font-bold mt-0.5">
+                          {netDue === 0 ? '🎉 Fully Paid / Cleared' : '⚠️ Due Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Quick Add Fee Installment Payment */}
+                <div className="bg-white p-3.5 rounded-xl border border-indigo-200 space-y-2.5">
+                  <div className="flex items-center gap-1.5 font-bold text-indigo-950 text-xs">
+                    <Plus className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Collect / Deposit New Fee Installment Now (₹)</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="Enter amount (e.g. 3000)"
+                        value={editStudentForm.newPaymentAmount}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, newPaymentAmount: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-indigo-200 rounded-lg font-mono font-bold text-indigo-900 text-xs focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <select
+                        value={editStudentForm.paymentMode}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, paymentMode: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-800 text-xs focus:bg-white focus:outline-none"
+                      >
+                        <option value="Cash">Cash Counter</option>
+                        <option value="UPI / Online">UPI / Online / QR</option>
+                        <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                        <option value="Cheque / DD">Cheque / Demand Draft</option>
+                      </select>
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Remark (e.g. 2nd Installment)"
+                        value={editStudentForm.paymentRemark}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, paymentRemark: e.target.value })}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800 text-xs focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block">
+                    Entering an amount here will automatically add it to student's Total Paid, decrement remaining due, and save an entry in fee transaction records.
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer (Pinned at bottom) */}
+            <div className="flex justify-end gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setEditingStudent(null)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold cursor-pointer transition-colors text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={editStudentSubmitting}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 text-xs transition-colors"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editStudentSubmitting ? 'Saving Changes...' : 'Save & Update Student'}</span>
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: CANCEL VOCATIONAL ADMISSION (MOVES TO CANCELLED HUB) */}
+      {/* ========================================================================= */}
+      {cancellingStudent && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <form 
+            onSubmit={handleConfirmCancelStudent}
+            className="bg-white w-full max-w-lg max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-rose-400 overflow-hidden"
+          >
+            {/* Header (Pinned at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-rose-100 shrink-0 bg-rose-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                  <Ban className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base sm:text-lg text-slate-900">
+                    Cancel Vocational Admission
+                  </h3>
+                  <p className="text-xs text-rose-700 font-medium">
+                    Moves student to Cancelled Admissions Hub & records refund audit
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancellingStudent(null)}
+                className="w-8 h-8 rounded-full bg-white hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
+              {/* Student Summary Card */}
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-bold">Student Name:</span>
+                  <span className="font-extrabold text-slate-900">{cancellingStudent.fullName || cancellingStudent.studentName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-bold">Roll / Reg No:</span>
+                  <span className="font-mono font-bold text-indigo-700">{cancellingStudent.rollNo || cancellingStudent.registrationNo}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-bold">Course / Trade:</span>
+                  <span className="font-semibold text-slate-800">{cancellingStudent.courseName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-bold">Total Fees Deposited:</span>
+                  <span className="font-mono font-black text-emerald-700">₹{Number(cancellingStudent.totalPaid || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* Cancellation Date */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Cancellation Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={cancelForm.cancellationDate}
+                  onChange={(e) => setCancelForm({ ...cancelForm, cancellationDate: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Cancellation Reason */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Reason for Cancellation *
+                </label>
+                <div className="flex gap-1.5 flex-wrap mb-2">
+                  {[
+                    'Student requested cancellation',
+                    'Financial constraints',
+                    'Relocated to another city',
+                    'Selected for other degree',
+                    'Health / personal emergency'
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setCancelForm({ ...cancelForm, reason: preset })}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all cursor-pointer ${
+                        cancelForm.reason === preset 
+                          ? 'bg-rose-100 border-rose-300 text-rose-800 font-bold' 
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  required
+                  rows={2}
+                  value={cancelForm.reason}
+                  onChange={(e) => setCancelForm({ ...cancelForm, reason: e.target.value })}
+                  placeholder="Enter detailed reason for cancellation..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Refund Settlement */}
+              <div className="bg-rose-50/50 p-3.5 rounded-2xl border border-rose-200 space-y-2.5">
+                <div className="flex items-center gap-1.5 font-bold text-rose-950 text-xs">
+                  <CreditCard className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Refund Settlement (Optional)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">
+                      Refund Amount Returned (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={Number(cancellingStudent.totalPaid || 0)}
+                      placeholder="0 (leave blank if 0)"
+                      value={cancelForm.refundPaid}
+                      onChange={(e) => setCancelForm({ ...cancelForm, refundPaid: e.target.value })}
+                      className="w-full p-2 bg-white border border-rose-200 rounded-lg font-mono font-bold text-slate-900 text-xs focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-0.5">
+                      Refund Payment Mode
+                    </label>
+                    <select
+                      value={cancelForm.paymentMode}
+                      onChange={(e) => setCancelForm({ ...cancelForm, paymentMode: e.target.value })}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-lg font-semibold text-slate-800 text-xs focus:outline-none"
+                    >
+                      <option value="Cash">Cash</option>
+                      <option value="UPI / Online">UPI / Online</option>
+                      <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Refund notes / settlement remarks..."
+                  value={cancelForm.refundNotes}
+                  onChange={(e) => setCancelForm({ ...cancelForm, refundNotes: e.target.value })}
+                  className="w-full p-2 bg-white border border-slate-200 rounded-lg font-medium text-slate-800 text-xs focus:outline-none"
+                />
+              </div>
+
+            </div>
+
+            {/* Footer (Pinned at bottom) */}
+            <div className="flex justify-end gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setCancellingStudent(null)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold cursor-pointer transition-colors text-xs"
+              >
+                Keep Admission Active
+              </button>
+              <button
+                type="submit"
+                disabled={cancelSubmitting}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 text-xs transition-colors"
+              >
+                <Ban className="w-4 h-4" />
+                <span>{cancelSubmitting ? 'Cancelling Admission...' : 'Confirm & Cancel Admission'}</span>
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: DELETE VOCATIONAL STUDENT CONFIRMATION */}
+      {/* ========================================================================= */}
+      {deletingStudent && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-red-500 text-center">
+            <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center font-black">
+              <Trash2 className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="font-black text-lg text-slate-900">
+                Permanently Delete Student?
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                Are you sure you want to permanently delete <strong className="text-slate-900">{deletingStudent.fullName || deletingStudent.studentName}</strong> (<span className="font-mono text-indigo-700 font-bold">{deletingStudent.rollNo || deletingStudent.registrationNo}</span>)?
+              </p>
+            </div>
+
+            <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-left text-[11px] text-amber-900 space-y-1">
+              <div className="font-bold flex items-center gap-1 text-amber-800">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Important Recommendation:</span>
+              </div>
+              <p>
+                If the student is discontinuing or cancelling their admission, please use <strong>"Cancel Admission"</strong> instead so their financial records and refund details remain preserved in the Cancelled Admissions Hub.
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingStudent(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer transition-colors"
+              >
+                No, Keep Record
+              </button>
+              <button
+                type="button"
+                disabled={deleteSubmitting}
+                onClick={handleConfirmDeleteStudent}
+                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{deleteSubmitting ? 'Deleting...' : 'Yes, Delete Permanently'}</span>
+              </button>
+            </div>
           </div>
         </div>,
         document.body

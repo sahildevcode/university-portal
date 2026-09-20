@@ -2795,6 +2795,7 @@ app.delete('/api/students/:rollNo', (req, res) => {
 
   // If deleting a primary course, also delete its attached secondary dual course:
   if (!deleted.primaryRollNo) {
+    const roll = (deleted.rollNo || rawKey).toUpperCase();
     db.students = db.students.filter(s => 
       !(s.primaryRollNo && s.primaryRollNo.toUpperCase() === roll) &&
       !(s.primaryStudentId && s.primaryStudentId === deleted.id)
@@ -5410,9 +5411,6 @@ app.post('/api/vocational-students', (req, res) => {
     if (!fatherName || !fatherName.trim()) {
       return res.status(400).json({ success: false, message: "Father's Name is required." });
     }
-    if (!aadhaarNo || !String(aadhaarNo).trim()) {
-      return res.status(400).json({ success: false, message: 'Aadhaar Card No. is required.' });
-    }
 
     const currentTotal = db.students.length;
     const nextSeq = currentTotal + 1;
@@ -5576,6 +5574,174 @@ app.patch('/api/vocational-students/:id/enrollment-no', (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to update enrollment number: ' + err.message });
+  }
+});
+
+// 9c. Full Update Vocational Student (Personal Info, Academic, and Fee Installment Management)
+app.put('/api/vocational-students/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.students)) db.students = [];
+    const key = (req.params.id || '').trim();
+    const index = findStudentIndex(db.students, key);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found in database.' });
+    }
+
+    const existing = db.students[index];
+    const body = req.body;
+
+    const name = (body.fullName || body.studentName || existing.fullName || existing.studentName || '').trim();
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Student name cannot be empty.' });
+    }
+
+    // Fee calculations
+    const feeVal = body.totalFee !== undefined && body.totalFee !== '' ? Math.max(0, Number(body.totalFee) || 0) : Number(existing.totalFee || existing.academicFee || 0);
+    let paidVal = body.totalPaid !== undefined && body.totalPaid !== '' ? Math.max(0, Number(body.totalPaid) || 0) : Number(existing.totalPaid || 0);
+
+    // If new installment amount is passed, add it to totalPaid and record in feeHistory
+    const installment = Number(body.newPaymentAmount) || 0;
+    if (installment > 0) {
+      paidVal += installment;
+      if (!Array.isArray(existing.feeHistory)) existing.feeHistory = [];
+      existing.feeHistory.push({
+        id: `FEE-VOC-${Date.now()}`,
+        date: body.paymentDate || new Date().toISOString().split('T')[0],
+        amount: installment,
+        purpose: body.paymentPurpose || 'Fee Installment',
+        paymentMode: body.paymentMode || 'Cash',
+        receivedBy: 'Admin Desk',
+        remark: body.paymentRemark || 'Fee payment added via student edit'
+      });
+    }
+
+    const dueVal = Math.max(0, feeVal - paidVal);
+
+    // Update fields
+    const updated = {
+      ...existing,
+      studentName: name,
+      fullName: name,
+      fatherName: body.fatherName !== undefined ? body.fatherName.trim() : existing.fatherName,
+      motherName: body.motherName !== undefined ? body.motherName.trim() : existing.motherName,
+      phone: body.phone !== undefined ? String(body.phone).trim() : (existing.phone || ''),
+      contact: body.phone !== undefined ? String(body.phone).trim() : (existing.contact || ''),
+      aadhaarNo: body.aadhaarNo !== undefined ? String(body.aadhaarNo).trim() : (existing.aadhaarNo || ''),
+      abcId: body.abcId !== undefined ? String(body.abcId).trim() : (existing.abcId || ''),
+      enrollmentNo: body.enrollmentNo !== undefined ? String(body.enrollmentNo).trim().toUpperCase() : (existing.enrollmentNo || ''),
+      gender: body.gender || existing.gender || 'Male',
+      dob: body.dob !== undefined ? body.dob : existing.dob,
+      address: body.address !== undefined ? body.address.trim() : (existing.address || ''),
+      category: body.category || existing.category || 'General',
+      socialCategory: body.category || existing.socialCategory || 'General',
+      admissionSession: body.admissionSession || existing.admissionSession || '2025-2026',
+      instituteId: body.instituteId || existing.instituteId,
+      instituteName: body.instituteName || existing.instituteName,
+      universityName: body.instituteName || body.universityName || existing.universityName,
+      parentCenter: body.parentCenter || existing.parentCenter || 'PKC Institute',
+      collegeName: body.parentCenter || existing.collegeName || 'PKC Institute',
+      courseName: body.courseName || existing.courseName,
+      branch: body.branch || body.sector || existing.branch,
+      duration: body.duration || existing.duration,
+      totalFee: feeVal,
+      academicFee: feeVal,
+      studentFee: feeVal,
+      courseFee: feeVal,
+      totalPaid: paidVal,
+      balanceDue: dueVal,
+      pendingDue: dueVal,
+      paymentMode: body.paymentMode || existing.paymentMode || 'Cash',
+      remark: body.remark !== undefined ? body.remark : existing.remark,
+      status: body.status || existing.status || 'Active',
+      updatedAt: new Date().toISOString()
+    };
+
+    db.students[index] = updated;
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Student "${name}" details and fees updated successfully!`,
+      student: updated
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update student: ' + err.message });
+  }
+});
+
+// 9d. Cancel Vocational Student Admission (Moves to Cancelled Admissions Hub)
+app.post('/api/vocational-students/:id/cancel', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.students)) db.students = [];
+    const key = (req.params.id || '').trim();
+    const index = findStudentIndex(db.students, key);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found in database.' });
+    }
+
+    const student = db.students[index];
+    const { reason, cancelledBy, refundPaid, refundNotes, paymentMode } = req.body || {};
+
+    student.status = 'Cancelled';
+    student.cancel = 'Yes';
+    student.cancellationDate = req.body.cancellationDate || new Date().toISOString().split('T')[0];
+    student.cancellationTimestamp = new Date().toISOString();
+    student.cancellationReason = (reason || 'Admission cancelled by administration').trim();
+    student.cancelledBy = (cancelledBy || 'Admin').trim();
+
+    // Financial refund details
+    const refundAmt = Number(refundPaid || 0);
+    student.refundPaid = refundAmt;
+    if (!Array.isArray(student.refundHistory)) student.refundHistory = [];
+    if (refundAmt > 0) {
+      student.refundHistory.push({
+        id: 'REF-VOC-' + Date.now(),
+        amount: refundAmt,
+        paymentMode: paymentMode || 'Cash',
+        referenceNo: req.body.referenceNo || `REF-${Date.now().toString().slice(-6)}`,
+        date: student.cancellationDate,
+        recordedBy: student.cancelledBy,
+        remarks: refundNotes || 'Refund issued upon vocational course cancellation'
+      });
+    }
+
+    student.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Admission successfully cancelled for ${student.fullName || student.rollNo}! Moved to Cancelled Admissions Hub.`,
+      student
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to cancel admission: ' + err.message });
+  }
+});
+
+// 9e. Permanently Delete Vocational Student
+app.delete('/api/vocational-students/:id', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.students)) db.students = [];
+    const key = (req.params.id || '').trim();
+    const index = findStudentIndex(db.students, key);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found in database.' });
+    }
+
+    const deleted = db.students.splice(index, 1)[0];
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Student "${deleted.fullName || deleted.studentName || deleted.rollNo}" permanently deleted successfully.`,
+      student: deleted,
+      totalStudents: db.students.length
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete student: ' + err.message });
   }
 });
 
