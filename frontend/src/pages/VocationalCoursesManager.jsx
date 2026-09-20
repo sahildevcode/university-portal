@@ -169,7 +169,7 @@ export default function VocationalCoursesManager({
     sector: '',
     duration: '6 Months',
     eligibility: '10th Pass (High School)',
-    fee: 10000,
+    fee: 0,
     certification: 'PKC Certified Skill Diploma',
     mode: 'Regular',
     description: '',
@@ -222,8 +222,8 @@ export default function VocationalCoursesManager({
     courseName: '',
     sector: 'Electrical & Electronics',
     duration: '1 Year',
-    totalFee: 12000,
-    initialPaid: 5000,
+    totalFee: 0,
+    initialPaid: 0,
     paymentMode: 'Cash',
     admissionSession: '2024-2025',
     admissionDate: new Date().toISOString().split('T')[0],
@@ -366,6 +366,38 @@ export default function VocationalCoursesManager({
     fetchVocationalStudents();
   }, []);
 
+  // Clean arbitrary default fees from imported courses cache so fee is 0 (set by admin at admission)
+  useEffect(() => {
+    setCourses(prev => {
+      let changed = false;
+      const cleaned = prev.map(c => {
+        // If fee was auto-filled with arbitrary defaults, reset to 0
+        if (c.fee === 8000 || c.fee === 10000 || c.fee === 12000 || c.fee === 20000 || c.fee === 30000 || c.fee === 5000) {
+          changed = true;
+          return { ...c, fee: 0 };
+        }
+        return c;
+      });
+      if (changed) {
+        try { localStorage.setItem('pkc_vocational_courses', JSON.stringify(cleaned)); } catch {}
+        return cleaned;
+      }
+      return prev;
+    });
+  }, []);
+
+  // Lock background scroll when any modal is active
+  useEffect(() => {
+    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent]);
+
   // Update default course when opening Add Course
   const handleOpenAddCourse = (targetInst = null) => {
     setEditingCourse(null);
@@ -378,7 +410,7 @@ export default function VocationalCoursesManager({
       sector: '',
       duration: '6 Months',
       eligibility: '10th Pass (High School)',
-      fee: 10000,
+      fee: 0,
       certification: 'PKC Certified Skill Diploma',
       mode: 'Regular',
       description: '',
@@ -397,7 +429,7 @@ export default function VocationalCoursesManager({
       sector: course.sector || '',
       duration: course.duration || '6 Months',
       eligibility: course.eligibility || '10th Pass (High School)',
-      fee: course.fee !== undefined ? course.fee : 10000,
+      fee: course.fee !== undefined ? course.fee : 0,
       certification: course.certification || 'PKC Certified Skill Diploma',
       mode: course.mode || 'Regular',
       description: course.description || '',
@@ -603,8 +635,8 @@ export default function VocationalCoursesManager({
       courseName: defCourse?.courseName || '',
       sector: defCourse?.sector || 'Electrical & Electronics',
       duration: defCourse?.duration || '1 Year',
-      totalFee: defCourse?.fee || 12000,
-      initialPaid: Math.floor((defCourse?.fee || 12000) * 0.5),
+      totalFee: defCourse?.fee || 0,
+      initialPaid: 0,
       paymentMode: 'Cash',
       admissionSession: '2024-2025',
       admissionDate: new Date().toISOString().split('T')[0],
@@ -631,8 +663,8 @@ export default function VocationalCoursesManager({
       courseName: defCourse?.courseName || '',
       sector: defCourse?.sector || prev.sector,
       duration: defCourse?.duration || prev.duration,
-      totalFee: defCourse?.fee || prev.totalFee,
-      initialPaid: defCourse?.fee ? Math.floor(defCourse.fee * 0.5) : prev.initialPaid
+      totalFee: defCourse?.fee || 0,
+      initialPaid: 0
     }));
   };
 
@@ -646,8 +678,8 @@ export default function VocationalCoursesManager({
       courseName: c.courseName,
       sector: c.sector || prev.sector,
       duration: c.duration || prev.duration,
-      totalFee: c.fee !== undefined ? c.fee : prev.totalFee,
-      initialPaid: c.fee ? Math.floor(c.fee * 0.5) : prev.initialPaid
+      totalFee: c.fee !== undefined ? c.fee : 0,
+      initialPaid: 0
     }));
   };
 
@@ -852,15 +884,8 @@ export default function VocationalCoursesManager({
         sector = detectCourseSector(courseName);
       }
 
+      // Do not auto-fill arbitrary fees; admin will set fee per student individually at admission
       let fee = Number(getVal('Fee', 'Total Fee', 'Fees', 'courseFee', 'शुल्क')) || 0;
-      if (!fee) {
-        if (duration.includes('3 Year')) fee = 30000;
-        else if (duration.includes('2 Year')) fee = 20000;
-        else if (duration.includes('1 Year')) fee = 12000;
-        else if (duration.includes('6 Month')) fee = 8000;
-        else if (duration.includes('3 Month')) fee = 5000;
-        else fee = 10000;
-      }
 
       let eligibility = getVal('Eligibility', 'qualification', 'eligibility', 'योग्यता') || '10th Pass (High School)';
       let certification = getVal('Certification', 'certification', 'Certificate') || 'PKC Certified Skill Diploma';
@@ -1020,7 +1045,7 @@ export default function VocationalCoursesManager({
         'Sector': 'Electrical & Electronics',
         'Duration': '1 Year',
         'Eligibility': '10th Pass',
-        'Total Fee': 12000,
+        'Total Fee': 0,
         'Certification': 'PKC Certified Skill Diploma',
         'Mode': 'Regular',
         'Description': 'Domestic wiring, industrial panel installation and motor winding'
@@ -1031,7 +1056,7 @@ export default function VocationalCoursesManager({
         'Sector': 'Early Childhood & Teachers Training',
         'Duration': '1 Year',
         'Eligibility': '12th Pass',
-        'Total Fee': 14000,
+        'Total Fee': 0,
         'Certification': 'National Diploma in Nursery Teacher Training',
         'Mode': 'Regular',
         'Description': 'Child psychology, pedagogy, teaching aids, preschool management'
@@ -1042,7 +1067,7 @@ export default function VocationalCoursesManager({
         'Sector': 'IT & Computer Software',
         'Duration': '6 Months',
         'Eligibility': '12th Pass',
-        'Total Fee': 15000,
+        'Total Fee': 0,
         'Certification': 'PKC Professional Tech Certification',
         'Mode': 'Regular / Hybrid',
         'Description': 'HTML, CSS, JavaScript, React, Node.js and full-stack project building'
@@ -1053,7 +1078,7 @@ export default function VocationalCoursesManager({
         'Sector': 'Beauty & Wellness',
         'Duration': '6 Months',
         'Eligibility': '8th / 10th Pass',
-        'Total Fee': 10000,
+        'Total Fee': 0,
         'Certification': 'PKC Beauty Diploma',
         'Mode': 'Regular',
         'Description': 'Bridal makeup, hair styling, skin treatments, facials and salon management'
@@ -1758,9 +1783,15 @@ export default function VocationalCoursesManager({
                     <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                       <div>
                         <span className="text-[10px] text-slate-400 block font-bold">Total Course Fee</span>
-                        <span className="text-base font-black text-emerald-700">
-                          ₹{Number(c.fee || 0).toLocaleString('en-IN')}
-                        </span>
+                        {Number(c.fee || 0) > 0 ? (
+                          <span className="text-base font-black text-emerald-700">
+                            ₹{Number(c.fee).toLocaleString('en-IN')}
+                          </span>
+                        ) : (
+                          <span className="inline-block text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                            Set at Admission
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
@@ -1830,7 +1861,15 @@ export default function VocationalCoursesManager({
                         <td className="p-3 text-slate-600">{c.sector}</td>
                         <td className="p-3 text-slate-700 font-semibold">{c.duration}</td>
                         <td className="p-3 text-slate-500">{c.eligibility}</td>
-                        <td className="p-3 font-black text-emerald-700">₹{Number(c.fee || 0).toLocaleString('en-IN')}</td>
+                        <td className="p-3 font-black text-emerald-700">
+                          {Number(c.fee || 0) > 0 ? (
+                            `₹${Number(c.fee).toLocaleString('en-IN')}`
+                          ) : (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              Set at Adm.
+                            </span>
+                          )}
+                        </td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -2019,8 +2058,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 1: ENROLL VOCATIONAL STUDENT (MANUAL STUDENT REGISTRATION) */}
       {/* ========================================================================= */}
       {showEnrollModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex justify-center items-start animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-7 space-y-5 my-auto shadow-2xl border-2 border-emerald-400">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl border-2 border-emerald-400">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
@@ -2213,7 +2252,7 @@ export default function VocationalCoursesManager({
                       .filter(c => !c.instituteId || c.instituteId === enrollForm.instituteId)
                       .map(c => (
                         <option key={c.id} value={c.id}>
-                          {c.courseName} ({c.duration} - ₹{c.fee})
+                          {c.courseName} ({c.duration}{Number(c.fee || 0) > 0 ? ` - ₹${c.fee}` : ''})
                         </option>
                       ))}
                   </select>
@@ -2247,14 +2286,16 @@ export default function VocationalCoursesManager({
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Total Course Fee (₹)
+                    Total Course Fee (₹) *
                   </label>
                   <input
                     type="number"
-                    value={enrollForm.totalFee}
-                    onChange={(e) => setEnrollForm({ ...enrollForm, totalFee: Number(e.target.value) })}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-black text-slate-900 focus:outline-none"
+                    value={enrollForm.totalFee === 0 ? '' : enrollForm.totalFee}
+                    onChange={(e) => setEnrollForm({ ...enrollForm, totalFee: Number(e.target.value) || 0 })}
+                    placeholder="Enter agreed fee (e.g. 10000)"
+                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Admin decides fee per student</span>
                 </div>
                 <div>
                   <label className="font-bold text-emerald-800 block mb-1">
@@ -2262,10 +2303,12 @@ export default function VocationalCoursesManager({
                   </label>
                   <input
                     type="number"
-                    value={enrollForm.initialPaid}
-                    onChange={(e) => setEnrollForm({ ...enrollForm, initialPaid: Number(e.target.value) })}
-                    className="w-full p-2 bg-white border border-emerald-300 rounded-xl font-black text-emerald-700 focus:outline-none"
+                    value={enrollForm.initialPaid === 0 ? '' : enrollForm.initialPaid}
+                    onChange={(e) => setEnrollForm({ ...enrollForm, initialPaid: Number(e.target.value) || 0 })}
+                    placeholder="0 (or paid today)"
+                    className="w-full p-2 bg-white border border-emerald-300 rounded-xl font-black text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Initial paid deposit</span>
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
@@ -2435,8 +2478,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 3: ADD / EDIT VOCATIONAL INSTITUTE */}
       {/* ========================================================================= */}
       {showInstituteModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex justify-center items-start animate-fadeIn">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-7 space-y-4 my-auto shadow-2xl border-2 border-amber-400">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl border-2 border-amber-400">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
@@ -2593,8 +2636,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 4: EXCEL UPLOAD MODAL WITH INSTITUTE SELECTION */}
       {/* ========================================================================= */}
       {showExcelModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex justify-center items-start animate-fadeIn">
-          <div className="bg-white w-full max-w-3xl rounded-3xl p-6 sm:p-8 space-y-5 my-auto shadow-2xl border-2 border-indigo-400">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-2 border-indigo-400">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md">
@@ -2747,7 +2790,15 @@ export default function VocationalCoursesManager({
                           <td className="p-2 font-mono text-indigo-700">{r.courseCode}</td>
                           <td className="p-2 text-slate-600">{r.sector}</td>
                           <td className="p-2 text-slate-700">{r.duration}</td>
-                          <td className="p-2 font-black text-emerald-700">₹{r.fee}</td>
+                          <td className="p-2 font-black text-emerald-700">
+                            {Number(r.fee || 0) > 0 ? (
+                              `₹${r.fee}`
+                            ) : (
+                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                Set at Adm.
+                              </span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2799,8 +2850,8 @@ export default function VocationalCoursesManager({
       {/* MODAL 5: ADD / EDIT VOCATIONAL COURSE MANUALLY */}
       {/* ========================================================================= */}
       {showAddCourseModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 flex justify-center items-start animate-fadeIn">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-7 space-y-4 my-auto shadow-2xl border-2 border-amber-400">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
+          <div className="bg-white w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl border-2 border-amber-400">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
@@ -2910,13 +2961,15 @@ export default function VocationalCoursesManager({
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Total Fee (₹)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Course Fee (₹) - Optional</label>
                   <input
                     type="number"
-                    value={courseFormData.fee}
-                    onChange={(e) => setCourseFormData({ ...courseFormData, fee: Number(e.target.value) })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 focus:bg-white focus:outline-none"
+                    value={courseFormData.fee === 0 ? '' : courseFormData.fee}
+                    onChange={(e) => setCourseFormData({ ...courseFormData, fee: Number(e.target.value) || 0 })}
+                    placeholder="0 (Set per student at admission)"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-emerald-700 focus:bg-white focus:outline-none"
                   />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Leave 0 if fee varies per student.</span>
                 </div>
               </div>
 
