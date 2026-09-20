@@ -1130,7 +1130,16 @@ export default function VocationalCoursesManager({
       admissionDate: new Date().toISOString().split('T')[0],
       address: '',
       category: 'General',
-      remark: ''
+      remark: '',
+      documents: {
+        marksheet10: null,
+        marksheet12: null,
+        graduation: null,
+        aadhaar: null,
+        abcId: null,
+        photo: null,
+        signature: null,
+      }
     });
     setShowEnrollModal(true);
   };
@@ -3235,7 +3244,7 @@ export default function VocationalCoursesManager({
                     { key: 'photo',       label: 'Student Photo',     icon: '🖼️' },
                     { key: 'signature',   label: 'Student Signature', icon: '✍️' },
                   ].map(({ key, label, icon }) => {
-                    const doc = enrollForm.documents[key];
+                    const doc = (enrollForm.documents || {})[key];
                     const isImage = doc && doc.type && doc.type.startsWith('image/');
                     return (
                       <div key={key} className="relative bg-slate-50 border-2 border-dashed border-slate-200 hover:border-amber-400 rounded-xl p-2.5 transition-all group">
