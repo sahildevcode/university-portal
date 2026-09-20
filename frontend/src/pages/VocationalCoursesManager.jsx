@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Briefcase, 
   Plus, 
@@ -1156,7 +1157,7 @@ export default function VocationalCoursesManager({
   }, [courses]);
 
   return (
-    <div className="w-full space-y-6 animate-fadeIn text-slate-900 pb-16">
+    <div className="w-full space-y-6 text-slate-900 pb-16">
       
       {/* Toast Alert */}
       {toast && (
@@ -2057,13 +2058,16 @@ export default function VocationalCoursesManager({
       {/* ========================================================================= */}
       {/* MODAL 1: ENROLL VOCATIONAL STUDENT (MANUAL STUDENT REGISTRATION) */}
       {/* ========================================================================= */}
-      {showEnrollModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl border-2 border-emerald-400">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      {showEnrollModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <form 
+            onSubmit={handleEnrollSubmit}
+            className="bg-white w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-emerald-400 overflow-hidden my-auto"
+          >
+            {/* Modal Header (Fixed at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black shadow-md">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
                   <GraduationCap className="w-6 h-6" />
                 </div>
                 <div>
@@ -2078,13 +2082,14 @@ export default function VocationalCoursesManager({
               <button
                 type="button"
                 onClick={() => setShowEnrollModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleEnrollSubmit} className="space-y-4 text-xs">
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
               {/* Row 1: Student Name & Father's Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -2340,41 +2345,48 @@ export default function VocationalCoursesManager({
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+            </div>
+
+            {/* Modal Footer (Pinned at bottom, always visible) */}
+            <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
+              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline-block">
+                * Required fields must be filled
+              </span>
+              <div className="flex items-center gap-2.5 ml-auto">
                 <button
                   type="button"
                   onClick={() => setShowEnrollModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={enrollSubmitting}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl shadow-lg hover:shadow-emerald-500/25 transition-all cursor-pointer flex items-center gap-2"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black rounded-xl shadow-lg hover:shadow-emerald-500/25 transition-all cursor-pointer flex items-center gap-2"
                 >
                   {enrollSubmitting ? (
                     <span>Enrolling Student...</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Confirm & Enroll Student (+1 to {totalCentralStudents})</span>
+                      <span>Confirm & Enroll (+1 to {totalCentralStudents})</span>
                     </>
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
       {/* MODAL 2: ENROLLMENT SUCCESS POPUP */}
       {/* ========================================================================= */}
-      {enrollSuccessData && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs p-4 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-4 border-emerald-400 text-center">
+      {enrollSuccessData && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-xs p-4 flex justify-center items-center">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-4 border-emerald-400 text-center my-auto">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center font-black">
               <Sparkles className="w-8 h-8 text-emerald-600 animate-bounce" />
             </div>
@@ -2471,18 +2483,23 @@ export default function VocationalCoursesManager({
               Close this window
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
       {/* MODAL 3: ADD / EDIT VOCATIONAL INSTITUTE */}
       {/* ========================================================================= */}
-      {showInstituteModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl border-2 border-amber-400">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {showInstituteModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <form 
+            onSubmit={handleSaveInstitute}
+            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden my-auto"
+          >
+            {/* Header (Pinned at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -2497,38 +2514,38 @@ export default function VocationalCoursesManager({
               <button
                 type="button"
                 onClick={() => setShowInstituteModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Fast 1-Click Presets for the 2 user-requested Institutes */}
-            {!editingInstitute && (
-              <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 space-y-2">
-                <span className="text-[11px] font-black text-amber-900 block uppercase tracking-wider">
-                  ⚡ 1-Click Fast Presets:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => applyInstitutePreset(1)}
-                    className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>🛠️ Maharishi Dayanand Vocational Training (MDVTI)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyInstitutePreset(2)}
-                    className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span>👩‍🏫 Maharishi Dayanand Early Teachers Training (MDETTE)</span>
-                  </button>
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
+              {/* Fast 1-Click Presets for the 2 user-requested Institutes */}
+              {!editingInstitute && (
+                <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 space-y-2">
+                  <span className="text-[11px] font-black text-amber-900 block uppercase tracking-wider">
+                    ⚡ 1-Click Fast Presets:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyInstitutePreset(1)}
+                      className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🛠️ Maharishi Dayanand Vocational Training (MDVTI)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyInstitutePreset(2)}
+                      className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>👩‍🏫 Maharishi Dayanand Early Teachers Training (MDETTE)</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveInstitute} className="space-y-3.5 text-xs">
+              )}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Institute Name *
@@ -2610,37 +2627,41 @@ export default function VocationalCoursesManager({
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowInstituteModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingInstitute ? 'Update Institute' : 'Save Institute'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+
+            {/* Pinned Footer */}
+            <div className="flex justify-end gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setShowInstituteModal(false)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editingInstitute ? 'Update Institute' : 'Save Institute'}</span>
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
       {/* MODAL 4: EXCEL UPLOAD MODAL WITH INSTITUTE SELECTION */}
       {/* ========================================================================= */}
-      {showExcelModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border-2 border-indigo-400">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      {showExcelModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-3xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden my-auto">
+            {/* Header (Pinned at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md">
+                <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
                   <FileSpreadsheet className="w-6 h-6" />
                 </div>
                 <div>
@@ -2660,6 +2681,9 @@ export default function VocationalCoursesManager({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
 
             {/* Target Institute Selector */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
@@ -2812,8 +2836,10 @@ export default function VocationalCoursesManager({
               </div>
             )}
 
-            {/* Buttons */}
-            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+            </div>
+
+            {/* Pinned Footer */}
+            <div className="flex flex-wrap justify-between items-center gap-2 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
@@ -2823,11 +2849,11 @@ export default function VocationalCoursesManager({
                 <span>Download Sample Template</span>
               </button>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCloseExcelModal}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold text-xs cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
@@ -2843,18 +2869,23 @@ export default function VocationalCoursesManager({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
       {/* MODAL 5: ADD / EDIT VOCATIONAL COURSE MANUALLY */}
       {/* ========================================================================= */}
-      {showAddCourseModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-3 sm:p-6 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xl border-2 border-amber-400">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      {showAddCourseModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <form 
+            onSubmit={handleSaveCourse}
+            className="bg-white w-full max-w-xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden my-auto"
+          >
+            {/* Header (Pinned at top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -2869,13 +2900,14 @@ export default function VocationalCoursesManager({
               <button
                 type="button"
                 onClick={() => setShowAddCourseModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCourse} className="space-y-3.5 text-xs">
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 text-xs">
               {/* Institute Selection */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
@@ -3011,35 +3043,37 @@ export default function VocationalCoursesManager({
                 />
               </div>
 
-              {/* Buttons */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddCourseModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingCourse ? 'Update Course' : 'Create Course'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+
+            {/* Pinned Footer */}
+            <div className="flex justify-end gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setShowAddCourseModal(false)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editingCourse ? 'Update Course' : 'Create Course'}</span>
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
       {/* MODAL: SET / EDIT ENROLLMENT NUMBER (ADMIN ASSIGNMENT) */}
       {/* ========================================================================= */}
-      {editingEnrollmentStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs p-4 flex justify-center items-center animate-fadeIn">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-indigo-500">
+      {editingEnrollmentStudent && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-xs p-4 flex justify-center items-center">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl border-2 border-indigo-500 my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-sm">
@@ -3114,7 +3148,8 @@ export default function VocationalCoursesManager({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
