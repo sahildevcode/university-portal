@@ -3968,45 +3968,6 @@ export default function VocationalCoursesManager({
                 </div>
               </div>
 
-              {/* Fee Desk Direct Link Banner (Fee collection is centralized in Fee Desk) */}
-              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 rounded-xl border border-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-xs">
-                    ₹
-                  </div>
-                  <div>
-                    <h5 className="font-extrabold text-xs sm:text-sm text-emerald-950 flex items-center gap-2">
-                      <span>Student Fee Management & Receipts</span>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-300">
-                        Official Fee Desk
-                      </span>
-                    </h5>
-                    <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Total Fee: <span className="font-bold font-mono">₹{Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)).toLocaleString('en-IN')}/-</span>
-                      <span className="mx-1.5 text-emerald-400">•</span>
-                      Paid: <span className="font-bold font-mono text-emerald-700">₹{Number(editingStudent.totalPaid || 0).toLocaleString('en-IN')}/-</span>
-                      <span className="mx-1.5 text-emerald-400">•</span>
-                      Due: <span className={`font-bold font-mono ${Math.max(0, Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)) - Number(editingStudent.totalPaid || 0)) === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                        ₹{Math.max(0, Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)) - Number(editingStudent.totalPaid || 0)).toLocaleString('en-IN')}/-
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const st = editingStudent;
-                    setEditingStudent(null);
-                    handleOpenFeeDesk(st);
-                  }}
-                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
-                  title="Open Official Fee Desk to set course fee, deposit installments, or print receipts"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Open Fee Desk (फीस डेस्क)</span>
-                </button>
-              </div>
-
             </div>
 
             {/* Footer (Pinned at bottom) */}
