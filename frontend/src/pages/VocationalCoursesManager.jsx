@@ -251,6 +251,7 @@ export default function VocationalCoursesManager({
   // Dedicated Vocational Student Fee Desk Modal state (StudentList Parity)
   const [feeDeskStudent, setFeeDeskStudent] = useState(null);
   const [feeDeskPayments, setFeeDeskPayments] = useState([]);
+  const [feeDeskTotalFee, setFeeDeskTotalFee] = useState('');
   const [feeDeskDate, setFeeDeskDate] = useState(new Date().toISOString().split('T')[0]);
   const [feeDeskClass, setFeeDeskClass] = useState('1 Year');
   const [feeDeskPurpose, setFeeDeskPurpose] = useState('Course Fee Installment');
@@ -360,6 +361,7 @@ export default function VocationalCoursesManager({
     const tot = Number(student.totalFee !== undefined ? student.totalFee : (student.academicFee || 0));
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
+    setFeeDeskTotalFee(tot > 0 ? String(tot) : (student.totalFee !== undefined && student.totalFee !== null && student.totalFee !== '' ? String(student.totalFee) : ''));
     setFeeDeskAmount(rem > 0 ? String(rem) : '');
 
     // Set initial payments from student record if available
@@ -394,6 +396,7 @@ export default function VocationalCoursesManager({
           const latestTot = Number(data.student.totalFee !== undefined ? data.student.totalFee : (data.student.academicFee || 0));
           const latestPaid = Number(data.student.totalPaid || 0);
           const latestRem = Math.max(0, latestTot - latestPaid);
+          setFeeDeskTotalFee(latestTot > 0 ? String(latestTot) : (data.student.totalFee !== undefined && data.student.totalFee !== null && data.student.totalFee !== '' ? String(data.student.totalFee) : ''));
           setFeeDeskAmount(latestRem > 0 ? String(latestRem) : '');
         }
       } catch (err) {
@@ -423,21 +426,24 @@ export default function VocationalCoursesManager({
         throw new Error('Please enter a valid amount (0 or more).');
       }
 
-      const isSetPaid = actionOverride === 'set_paid' || amt === 0;
+      const isSetTotalFee = actionOverride === 'set_total_fee';
+      const isSetPaid = actionOverride === 'set_paid';
+      const parsedTotalFee = (feeDeskTotalFee === '' || feeDeskTotalFee === null || feeDeskTotalFee === undefined) ? 0 : Number(feeDeskTotalFee);
 
       const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/receive-fee`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amt,
-          action: isSetPaid ? 'set_paid' : 'add',
+          amount: isSetTotalFee ? 0 : amt,
+          action: isSetTotalFee ? 'set_total_fee' : (isSetPaid ? 'set_paid' : 'add'),
+          totalFee: parsedTotalFee,
           paymentMode: feeDeskModePayment,
           feeDate: feeDeskDate,
-          purpose: feeDeskPurpose || 'Course Fee Installment',
+          purpose: feeDeskPurpose || (isSetTotalFee ? 'Course Fee Update' : 'Course Fee Installment'),
           currentClass: feeDeskClass,
           refNo: feeDeskRefNo,
           receivedBy: feeDeskReceivedBy,
-          remark: feeDeskRemark
+          remark: feeDeskRemark || (isSetTotalFee ? 'Course fee updated from Fee Desk' : '')
         })
       });
       const data = await res.json();
@@ -447,6 +453,7 @@ export default function VocationalCoursesManager({
 
       const updatedStudent = data.student;
       setFeeDeskStudent(updatedStudent);
+      setFeeDeskTotalFee(String(updatedStudent.totalFee !== undefined ? updatedStudent.totalFee : (updatedStudent.academicFee || '')));
       if (data.payments) {
         setFeeDeskPayments(data.payments);
       } else if (data.receipt) {
@@ -461,7 +468,9 @@ export default function VocationalCoursesManager({
           : s
       ));
 
-      if (isSetPaid) {
+      if (isSetTotalFee) {
+        setFeeDeskSuccess(`Total Course Fee set to ₹${parsedTotalFee.toLocaleString('en-IN')}/- successfully! Balance due updated.`);
+      } else if (isSetPaid) {
         setFeeDeskSuccess(`Paid fee updated to ₹${amt.toLocaleString('en-IN')} successfully!`);
       } else {
         setFeeDeskSuccess(`₹${amt.toLocaleString('en-IN')} fee installment recorded successfully! Receipt No: ${data.receipt?.receiptNo || 'Generated'}`);
@@ -469,7 +478,9 @@ export default function VocationalCoursesManager({
 
       const newRem = Math.max(0, (Number(updatedStudent.totalFee) || 0) - (Number(updatedStudent.totalPaid) || 0));
       setFeeDeskAmount(newRem > 0 ? String(newRem) : '0');
-      setFeeDeskRefNo('');
+      if (!isSetTotalFee) {
+        setFeeDeskRefNo('');
+      }
       fetchVocationalStudents();
       if (onRefreshCourses) onRefreshCourses();
     } catch (err) {
@@ -3957,192 +3968,43 @@ export default function VocationalCoursesManager({
                 </div>
               </div>
 
-              {/* Row 5: FEE MANAGEMENT & LIVE INSTALLMENT DEPOSIT (User's Primary Request) */}
-              <div className="bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-indigo-50/80 border-2 border-indigo-300 rounded-2xl p-4 sm:p-5 space-y-4">
-                <div className="flex items-center justify-between border-b border-indigo-200/80 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black">
-                      <CreditCard className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-black text-xs sm:text-sm text-indigo-950">
-                        Fee Management & Installment Ledger
-                      </h4>
-                      <p className="text-[10px] text-indigo-700">
-                        Adjust total course fee, update paid amounts, or collect a new fee payment now.
-                      </p>
-                    </div>
+              {/* Fee Desk Direct Link Banner (Fee collection is centralized in Fee Desk) */}
+              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 rounded-xl border border-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shrink-0 shadow-xs">
+                    ₹
                   </div>
-                </div>
-
-                {/* 3 Metrics Cards: Total Fee | Total Paid | Balance Due */}
-                {(() => {
-                  const baseTotal = Number(editStudentForm.totalFee) || 0;
-                  const basePaid = Number(editStudentForm.totalPaid) || 0;
-                  const newPayment = Number(editStudentForm.newPaymentAmount) || 0;
-                  const netPaid = basePaid + newPayment;
-                  const netDue = Math.max(0, baseTotal - netPaid);
-                  return (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
-                        <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                          Total Course Fee (₹)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={editStudentForm.totalFee}
-                          onChange={(e) => setEditStudentForm({ ...editStudentForm, totalFee: Math.max(0, Number(e.target.value)) })}
-                          className="w-full text-center font-mono font-black text-slate-900 text-base p-1 border-b-2 border-slate-300 focus:border-indigo-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs">
-                        <label className="text-[11px] font-bold text-emerald-700 block mb-1">
-                          Already Paid Fee (₹)
-                        </label>
-                        <div className="text-base font-mono font-black text-emerald-700 py-1">
-                          ₹{Number(editStudentForm.totalPaid || 0).toLocaleString('en-IN')}
-                        </div>
-                        <span className="text-[9px] text-slate-400">Verified from Payment History</span>
-                      </div>
-
-                      <div className={`p-3 rounded-xl border shadow-2xs flex flex-col justify-center ${
-                        netDue === 0 ? 'bg-emerald-100 border-emerald-300 text-emerald-900' : 'bg-rose-100 border-rose-300 text-rose-900'
-                      }`}>
-                        <span className="text-[11px] font-bold block mb-0.5">
-                          {netDue === 0 ? 'Balance Status' : 'Remaining Due (₹)'}
-                        </span>
-                        <span className="font-mono font-black text-lg">
-                          ₹{netDue.toLocaleString('en-IN')}
-                        </span>
-                        <span className="text-[9px] font-bold mt-0.5">
-                          {netDue === 0 ? '🎉 Fully Paid / Cleared' : '⚠️ Due Pending'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Official Student Fee Desk Launcher Card */}
-                <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 rounded-xl border-2 border-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-                  <div className="space-y-0.5 text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 font-black text-emerald-950 text-xs sm:text-sm">
-                      <CreditCard className="w-4 h-4 text-emerald-700" />
-                      <span>Official Student Fee Desk & Receipt Ledger (छात्र शुल्क भुगतान डेस्क)</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-800 font-medium">
-                      Collect 1st, 2nd, 3rd installments, track UPI UTR / Cash payments, and print official fee receipts.
+                  <div>
+                    <h5 className="font-extrabold text-xs sm:text-sm text-emerald-950 flex items-center gap-2">
+                      <span>Student Fee Management & Receipts</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-300">
+                        Official Fee Desk
+                      </span>
+                    </h5>
+                    <p className="text-[11px] text-emerald-800 mt-0.5">
+                      Total Fee: <span className="font-bold font-mono">₹{Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)).toLocaleString('en-IN')}/-</span>
+                      <span className="mx-1.5 text-emerald-400">•</span>
+                      Paid: <span className="font-bold font-mono text-emerald-700">₹{Number(editingStudent.totalPaid || 0).toLocaleString('en-IN')}/-</span>
+                      <span className="mx-1.5 text-emerald-400">•</span>
+                      Due: <span className={`font-bold font-mono ${Math.max(0, Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)) - Number(editingStudent.totalPaid || 0)) === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        ₹{Math.max(0, Number(editingStudent.totalFee !== undefined ? editingStudent.totalFee : (editingStudent.academicFee || 0)) - Number(editingStudent.totalPaid || 0)).toLocaleString('en-IN')}/-
+                      </span>
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const st = editingStudent;
-                      setEditingStudent(null);
-                      handleOpenFeeDesk(st);
-                    }}
-                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Open Fee Desk (फीस जमा / रसीद)</span>
-                  </button>
                 </div>
-
-                {/* Fee Payment History & Printable Receipts Ledger */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-                      <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Fee Payment History & Printable Receipts</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-semibold">
-                      Total Transactions: {((editingStudent.feeHistory?.length) || (Number(editingStudent.totalPaid || 0) > 0 ? 1 : 0))}
-                    </span>
-                  </div>
-
-                  {(() => {
-                    const payments = (Array.isArray(editingStudent.feeHistory) && editingStudent.feeHistory.length > 0)
-                      ? editingStudent.feeHistory
-                      : (Number(editingStudent.totalPaid || 0) > 0 ? [{
-                          id: `FEE-INIT-${editingStudent.id || editingStudent.rollNo}`,
-                          receiptNo: `REC-${editingStudent.rollNo || '0001'}-01`,
-                          date: editingStudent.admissionDate || editingStudent.createdAt || new Date().toISOString().split('T')[0],
-                          amount: Number(editingStudent.totalPaid),
-                          paymentMode: editingStudent.paymentMode || 'Cash',
-                          referenceNo: editingStudent.referenceNo || editingStudent.upiId || editingStudent.utrNo || '',
-                          purpose: 'Admission & Course Fee',
-                          remark: 'Initial fee payment at admission'
-                        }] : []);
-
-                    if (payments.length === 0) {
-                      return (
-                        <div className="p-4 text-center bg-white rounded-lg border border-dashed border-slate-300 text-slate-400 text-xs">
-                          No fee payments recorded yet for this student. Add an installment above to record and print receipts.
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs">
-                        <table className="w-full text-[11px] text-left">
-                          <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
-                            <tr>
-                              <th className="p-2">Receipt #</th>
-                              <th className="p-2">Date</th>
-                              <th className="p-2">Amount</th>
-                              <th className="p-2">Mode & UTR Ref</th>
-                              <th className="p-2">Remark / Purpose</th>
-                              <th className="p-2 text-center">Receipt Slip</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-medium">
-                            {payments.map((p, idx) => {
-                              const upiVal = p.referenceNo || p.upiId || p.utrNo;
-                              return (
-                                <tr key={p.id || idx} className="hover:bg-indigo-50/30 transition-colors">
-                                  <td className="p-2 font-mono font-bold text-indigo-700 whitespace-nowrap">
-                                    {p.receiptNo || `REC-${editingStudent.rollNo || '0001'}-${String(idx + 1).padStart(2, '0')}`}
-                                  </td>
-                                  <td className="p-2 text-slate-600 whitespace-nowrap">
-                                    {p.date ? new Date(p.date).toLocaleDateString('en-IN') : '-'}
-                                  </td>
-                                  <td className="p-2 font-mono font-black text-emerald-700 whitespace-nowrap">
-                                    ₹{Number(p.amount || 0).toLocaleString('en-IN')}
-                                  </td>
-                                  <td className="p-2">
-                                    <div className="flex flex-col gap-0.5">
-                                      <span className="font-semibold text-slate-800">{p.paymentMode || 'Cash'}</span>
-                                      {upiVal && (
-                                        <span className="font-mono text-[9px] text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 truncate max-w-[130px]" title={upiVal}>
-                                          UTR: {upiVal}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="p-2 text-slate-600 truncate max-w-[150px]" title={p.purpose || p.remark}>
-                                    {p.purpose || p.remark || 'Course Fee Payment'}
-                                  </td>
-                                  <td className="p-2 text-center whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleTriggerPrintReceipt(p, editingStudent)}
-                                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                      title="Print Official Fee Receipt Slip"
-                                    >
-                                      <Printer className="w-3 h-3" />
-                                      <span>Print Slip</span>
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })()}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const st = editingStudent;
+                    setEditingStudent(null);
+                    handleOpenFeeDesk(st);
+                  }}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer shrink-0"
+                  title="Open Official Fee Desk to set course fee, deposit installments, or print receipts"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>Open Fee Desk (फीस डेस्क)</span>
+                </button>
               </div>
 
             </div>
@@ -4504,6 +4366,26 @@ export default function VocationalCoursesManager({
                   </div>
 
                   <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-indigo-950">
+                        Total Course Fee (₹) * :
+                      </label>
+                      <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                        Set / Edit Fee
+                      </span>
+                    </div>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      step="1" 
+                      value={feeDeskTotalFee} 
+                      onChange={(e) => setFeeDeskTotalFee(e.target.value)} 
+                      placeholder="e.g. 15000" 
+                      className="w-full px-3 py-2 text-xs font-mono font-black border-2 border-indigo-400 bg-indigo-50/30 rounded-lg text-slate-900 focus:bg-white focus:border-indigo-600 focus:outline-none" 
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Duration / Class:</label>
                     <select 
                       value={feeDeskClass} 
@@ -4605,61 +4487,74 @@ export default function VocationalCoursesManager({
                     />
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-900 mb-1">
-                      Enter Fee Amount (₹) * :
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="number" 
-                        min="0" 
-                        step="1" 
-                        value={feeDeskAmount} 
-                        onChange={(e) => setFeeDeskAmount(e.target.value)} 
-                        placeholder="0" 
-                        className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          const tot = Number(feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0));
-                          const paid = Number(feeDeskStudent.totalPaid || 0);
-                          const rem = Math.max(0, tot - paid);
-                          setFeeDeskAmount(String(rem));
-                        }} 
-                        className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" 
-                        title="Auto fill full balance remaining"
-                      >
-                        Full Due
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setFeeDeskAmount('0')} 
-                        className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" 
-                        title="Set amount to 0"
-                      >
-                        Set 0
-                      </button>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-slate-900">
+                        Enter Fee Amount (₹) * :
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
+                            const paid = Number(feeDeskStudent.totalPaid || 0);
+                            const rem = Math.max(0, tot - paid);
+                            setFeeDeskAmount(String(rem));
+                          }} 
+                          className="px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
+                          title="Auto fill full balance remaining"
+                        >
+                          Full Due
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => setFeeDeskAmount('0')} 
+                          className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-[9px] font-bold cursor-pointer transition-colors" 
+                          title="Set amount to 0"
+                        >
+                          Set 0
+                        </button>
+                      </div>
                     </div>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      step="1" 
+                      value={feeDeskAmount} 
+                      onChange={(e) => setFeeDeskAmount(e.target.value)} 
+                      placeholder="0" 
+                      className="w-full px-3 py-2 text-xs font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" 
+                    />
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <button 
+                    type="button"
+                    onClick={(e) => handleFeeDeskSubmit(e, 'set_total_fee')}
+                    disabled={feeDeskLoading}
+                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                    title="Save course fee without making a payment installment"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                    <span>Set Course Fee Only (सिर्फ कोर्स फीस सेट करें)</span>
+                  </button>
+
                   <button 
                     type="submit" 
                     disabled={feeDeskLoading} 
                     className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" 
-                    title="Add new fee installment entry"
+                    title="Add new fee installment entry and update course fee"
                   >
                     <PlusCircle className="w-4 h-4" />
-                    <span>{feeDeskLoading ? 'Saving...' : 'Add Payment (जमा करें)'}</span>
+                    <span>{feeDeskLoading ? 'Saving...' : '+ Add Payment (जमा करें)'}</span>
                   </button>
                 </div>
               </form>
 
               {/* 3 Summary Metrics: Course Fee | Paid Fee | Remaining Due */}
               {(() => {
-                const tot = Number(feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0));
+                const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
                 const paid = Number(feeDeskStudent.totalPaid || 0);
                 const rem = Math.max(0, tot - paid);
 

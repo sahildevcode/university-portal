@@ -2569,7 +2569,17 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo, action } = req.body;
+  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo, action, totalFee: reqTotalFee } = req.body;
+
+  // If totalFee or totalCourseFee is provided, update student's course fee
+  if (reqTotalFee !== undefined && reqTotalFee !== null && reqTotalFee !== '') {
+    const updatedFee = Math.max(0, Number(reqTotalFee) || 0);
+    student.totalFee = updatedFee;
+    student.academicFee = updatedFee;
+    student.courseFee = updatedFee;
+    student.studentFee = updatedFee;
+  }
+
   const payAmt = (amount === '' || amount === null || amount === undefined) ? 0 : Number(amount);
 
   if (isNaN(payAmt) || payAmt < 0) {
@@ -2579,8 +2589,29 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   const sRoll = (student.rollNo || '').toUpperCase();
   const sId = student.id || '';
 
-  // If action is set_paid or amount is 0: Edit/Set totalPaid directly (allows setting back to 0)
-  if (action === 'set_paid' || payAmt === 0) {
+  // If action is set_total_fee or (payAmt === 0 and action !== 'set_paid' and action !== 'add'): Only update course fee & balance due
+  if (action === 'set_total_fee' || (payAmt === 0 && action !== 'set_paid' && action !== 'add')) {
+    const curPaid = Number(student.totalPaid) || 0;
+    const curTot = Number(student.totalFee) || 0;
+    student.balanceDue = Math.max(0, curTot - curPaid);
+    student.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    const studentPayments = (db.fee_payments || []).filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+
+    return res.json({
+      success: true,
+      message: `Course Fee for ${student.fullName || student.rollNo || 'Student'} set to ₹${curTot.toLocaleString('en-IN')}`,
+      student,
+      payments: studentPayments
+    });
+  }
+
+  // If action is set_paid: Edit/Set totalPaid directly (allows setting back to 0)
+  if (action === 'set_paid') {
     student.totalPaid = payAmt;
     const totalFee = Number(student.totalFee) || 0;
     student.balanceDue = Math.max(0, totalFee - payAmt);
