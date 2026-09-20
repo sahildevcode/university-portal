@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { fireCelebration } from '../utils/confetti';
+import PrintFeeReceipt from '../components/PrintFeeReceipt';
 
 const SECTOR_OPTIONS = [];
 
@@ -230,6 +231,7 @@ export default function VocationalCoursesManager({
     totalFee: 0,
     initialPaid: 0,
     paymentMode: 'Cash',
+    upiId: '',
     admissionSession: '2024-2025',
     admissionDate: new Date().toISOString().split('T')[0],
     address: '',
@@ -244,6 +246,9 @@ export default function VocationalCoursesManager({
 
   // Student Status Filter: 'active' | 'cancelled' | 'all'
   const [studentStatusFilter, setStudentStatusFilter] = useState('active');
+
+  // Official Fee Receipt Print Modal State
+  const [receiptToPrint, setReceiptToPrint] = useState(null);
 
   // Edit Student Modal state
   const [editingStudent, setEditingStudent] = useState(null);
@@ -265,6 +270,7 @@ export default function VocationalCoursesManager({
     totalPaid: 0,
     newPaymentAmount: '',
     paymentMode: 'Cash',
+    upiId: '',
     paymentRemark: '',
     status: 'Active'
   });
@@ -298,6 +304,30 @@ export default function VocationalCoursesManager({
     setTempEnrollmentNo(student.enrollmentNo || '');
   };
 
+  // Trigger Print Fee Receipt Slip / Voucher
+  const handleTriggerPrintReceipt = (payment, student = null) => {
+    const st = student || editingStudent;
+    if (!st || !payment) return;
+    setReceiptToPrint({
+      receiptNo: payment.receiptNo || `REC-${st.rollNo || Date.now().toString().slice(-4)}-01`,
+      paymentDate: payment.date || new Date().toISOString(),
+      paymentMode: payment.paymentMode || 'Cash',
+      transactionRef: payment.referenceNo || payment.upiId || payment.utrNo || 'CASH-COUNTER',
+      studentName: st.fullName || st.studentName,
+      rollNo: st.rollNo || st.registrationNo,
+      collegeName: st.parentCenter || st.collegeName || 'PKC Education Learning Institute & Consultancy',
+      universityName: st.universityName || st.instituteName || 'Maharishi Dayanand Vocational Training Institute',
+      courseName: st.courseName,
+      currentClass: st.duration || 'Vocational Skills Diploma',
+      feeType: 'Vocational Course Fee',
+      paidFor: payment.purpose || payment.remark || 'Fee Installment Payment',
+      amountPaid: payment.amount,
+      totalFee: Number(st.totalFee !== undefined ? st.totalFee : (st.academicFee || 0)),
+      totalPaidToDate: Number(st.totalPaid || 0),
+      balanceRemaining: Number(st.balanceDue || 0)
+    });
+  };
+
   // Open Edit Student Modal
   const handleOpenEditStudent = (student) => {
     setEditingStudent(student);
@@ -321,6 +351,7 @@ export default function VocationalCoursesManager({
       totalPaid: paidVal,
       newPaymentAmount: '',
       paymentMode: 'Cash',
+      upiId: student.upiId || '',
       paymentRemark: '',
       status: student.status || 'Active'
     });
@@ -346,6 +377,16 @@ export default function VocationalCoursesManager({
       const data = await res.json();
       if (data.success) {
         showToast('✅ Student details and fees updated successfully!');
+        if (Number(editStudentForm.newPaymentAmount) > 0 && data.student) {
+          const latestFee = data.student.feeHistory?.[0] || {
+            amount: Number(editStudentForm.newPaymentAmount),
+            paymentMode: editStudentForm.paymentMode || 'Cash',
+            referenceNo: editStudentForm.upiId || '',
+            purpose: editStudentForm.paymentRemark || 'Fee Installment Payment',
+            date: new Date().toISOString().split('T')[0]
+          };
+          handleTriggerPrintReceipt(latestFee, data.student);
+        }
         setEditingStudent(null);
         fetchVocationalStudents();
         if (onRefreshCourses) onRefreshCourses();
@@ -566,7 +607,7 @@ export default function VocationalCoursesManager({
 
   // Lock background scroll when any modal is active
   useEffect(() => {
-    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData || editingStudent || cancellingStudent || deletingStudent) {
+    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData || editingStudent || cancellingStudent || deletingStudent || receiptToPrint) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -574,7 +615,7 @@ export default function VocationalCoursesManager({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData, editingStudent, cancellingStudent, deletingStudent]);
+  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData, editingStudent, cancellingStudent, deletingStudent, receiptToPrint]);
 
   // Update default course when opening Add Course
   const handleOpenAddCourse = (targetInst = null) => {
@@ -2312,6 +2353,30 @@ export default function VocationalCoursesManager({
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
+                            {/* Quick Print Latest Fee Receipt Slip */}
+                            {Number(st.totalPaid || 0) > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const latestPayment = (st.feeHistory && st.feeHistory.length > 0)
+                                    ? st.feeHistory[0]
+                                    : {
+                                        receiptNo: `REC-${st.rollNo || '0001'}-01`,
+                                        amount: Number(st.totalPaid),
+                                        date: st.admissionDate || st.createdAt || new Date().toISOString().split('T')[0],
+                                        paymentMode: st.paymentMode || 'Cash',
+                                        referenceNo: st.referenceNo || st.upiId || st.utrNo || '',
+                                        purpose: 'Vocational Course Fee Payment'
+                                      };
+                                  handleTriggerPrintReceipt(latestPayment, st);
+                                }}
+                                title="Print Official Fee Receipt Slip"
+                                className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
                             {/* Edit Student & Fees Button */}
                             <button
                               type="button"
@@ -2587,7 +2652,7 @@ export default function VocationalCoursesManager({
               </div>
 
               {/* Row 6: Fee Details & Payment */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
                     Total Course Fee (₹) *
@@ -2627,6 +2692,20 @@ export default function VocationalCoursesManager({
                     <option value="UPI / Online">UPI / QR Code</option>
                     <option value="Bank Transfer">Bank Transfer</option>
                   </select>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Transaction method</span>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    UPI Ref / UTR / Txn ID
+                  </label>
+                  <input
+                    type="text"
+                    value={enrollForm.upiId || ''}
+                    onChange={(e) => setEnrollForm({ ...enrollForm, upiId: e.target.value })}
+                    placeholder="e.g. 408221987654"
+                    className={`w-full p-2 bg-white border rounded-xl font-mono text-xs focus:outline-none ${enrollForm.paymentMode?.toLowerCase().includes('upi') ? 'border-amber-400 ring-2 ring-amber-200' : 'border-slate-300'}`}
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">For UPI / Bank tracking</span>
                 </div>
               </div>
 
@@ -2747,6 +2826,29 @@ export default function VocationalCoursesManager({
                 <span className="font-bold text-amber-700">{enrollSuccessData.student.collegeName || 'PKC Institute'}</span>
               </div>
             </div>
+
+            {/* Print Receipt Button if fee was paid at admission */}
+            {Number(enrollSuccessData.student.totalPaid || 0) > 0 && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const p = enrollSuccessData.student.feeHistory?.[0] || {
+                      receiptNo: `REC-${enrollSuccessData.student.rollNo}-01`,
+                      amount: Number(enrollSuccessData.student.totalPaid),
+                      date: enrollSuccessData.student.admissionDate || new Date().toISOString().split('T')[0],
+                      paymentMode: enrollSuccessData.student.paymentMode || 'Cash',
+                      referenceNo: enrollSuccessData.student.referenceNo || enrollSuccessData.student.upiId || ''
+                    };
+                    handleTriggerPrintReceipt(p, enrollSuccessData.student);
+                  }}
+                  className="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-2xs"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>🖨️ Print Admission Fee Receipt Slip (₹{Number(enrollSuccessData.student.totalPaid).toLocaleString('en-IN')})</span>
+                </button>
+              </div>
+            )}
 
             {/* Quick Action Navigation */}
             <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
@@ -3698,8 +3800,9 @@ export default function VocationalCoursesManager({
                     <Plus className="w-3.5 h-3.5 text-indigo-600" />
                     <span>Collect / Deposit New Fee Installment Now (₹)</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
                     <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1">Deposit Amount (₹)</label>
                       <input
                         type="number"
                         min={0}
@@ -3710,6 +3813,7 @@ export default function VocationalCoursesManager({
                       />
                     </div>
                     <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1">Payment Mode</label>
                       <select
                         value={editStudentForm.paymentMode}
                         onChange={(e) => setEditStudentForm({ ...editStudentForm, paymentMode: e.target.value })}
@@ -3722,6 +3826,17 @@ export default function VocationalCoursesManager({
                       </select>
                     </div>
                     <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1">UPI Ref / UTR / Txn ID</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 408221987654"
+                        value={editStudentForm.upiId || ''}
+                        onChange={(e) => setEditStudentForm({ ...editStudentForm, upiId: e.target.value })}
+                        className={`w-full p-2 bg-slate-50 border rounded-lg font-mono font-bold text-xs focus:bg-white focus:outline-none ${editStudentForm.paymentMode?.toLowerCase().includes('upi') ? 'border-amber-400 bg-amber-50/40 ring-1 ring-amber-300' : 'border-slate-200'}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1">Payment Remark</label>
                       <input
                         type="text"
                         placeholder="Remark (e.g. 2nd Installment)"
@@ -3732,8 +3847,103 @@ export default function VocationalCoursesManager({
                     </div>
                   </div>
                   <span className="text-[10px] text-slate-400 block">
-                    Entering an amount here will automatically add it to student's Total Paid, decrement remaining due, and save an entry in fee transaction records.
+                    Entering an amount here will automatically add it to student's Total Paid, decrement remaining due, and save an entry in fee transaction records with a printable receipt slip.
                   </span>
+                </div>
+
+                {/* Fee Payment History & Printable Receipts Ledger */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+                      <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Fee Payment History & Printable Receipts</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-semibold">
+                      Total Transactions: {((editingStudent.feeHistory?.length) || (Number(editingStudent.totalPaid || 0) > 0 ? 1 : 0))}
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const payments = (Array.isArray(editingStudent.feeHistory) && editingStudent.feeHistory.length > 0)
+                      ? editingStudent.feeHistory
+                      : (Number(editingStudent.totalPaid || 0) > 0 ? [{
+                          id: `FEE-INIT-${editingStudent.id || editingStudent.rollNo}`,
+                          receiptNo: `REC-${editingStudent.rollNo || '0001'}-01`,
+                          date: editingStudent.admissionDate || editingStudent.createdAt || new Date().toISOString().split('T')[0],
+                          amount: Number(editingStudent.totalPaid),
+                          paymentMode: editingStudent.paymentMode || 'Cash',
+                          referenceNo: editingStudent.referenceNo || editingStudent.upiId || editingStudent.utrNo || '',
+                          purpose: 'Admission & Course Fee',
+                          remark: 'Initial fee payment at admission'
+                        }] : []);
+
+                    if (payments.length === 0) {
+                      return (
+                        <div className="p-4 text-center bg-white rounded-lg border border-dashed border-slate-300 text-slate-400 text-xs">
+                          No fee payments recorded yet for this student. Add an installment above to record and print receipts.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs">
+                        <table className="w-full text-[11px] text-left">
+                          <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
+                            <tr>
+                              <th className="p-2">Receipt #</th>
+                              <th className="p-2">Date</th>
+                              <th className="p-2">Amount</th>
+                              <th className="p-2">Mode & UTR Ref</th>
+                              <th className="p-2">Remark / Purpose</th>
+                              <th className="p-2 text-center">Receipt Slip</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium">
+                            {payments.map((p, idx) => {
+                              const upiVal = p.referenceNo || p.upiId || p.utrNo;
+                              return (
+                                <tr key={p.id || idx} className="hover:bg-indigo-50/30 transition-colors">
+                                  <td className="p-2 font-mono font-bold text-indigo-700 whitespace-nowrap">
+                                    {p.receiptNo || `REC-${editingStudent.rollNo || '0001'}-${String(idx + 1).padStart(2, '0')}`}
+                                  </td>
+                                  <td className="p-2 text-slate-600 whitespace-nowrap">
+                                    {p.date ? new Date(p.date).toLocaleDateString('en-IN') : '-'}
+                                  </td>
+                                  <td className="p-2 font-mono font-black text-emerald-700 whitespace-nowrap">
+                                    ₹{Number(p.amount || 0).toLocaleString('en-IN')}
+                                  </td>
+                                  <td className="p-2">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="font-semibold text-slate-800">{p.paymentMode || 'Cash'}</span>
+                                      {upiVal && (
+                                        <span className="font-mono text-[9px] text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 truncate max-w-[130px]" title={upiVal}>
+                                          UTR: {upiVal}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="p-2 text-slate-600 truncate max-w-[150px]" title={p.purpose || p.remark}>
+                                    {p.purpose || p.remark || 'Course Fee Payment'}
+                                  </td>
+                                  <td className="p-2 text-center whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTriggerPrintReceipt(p, editingStudent)}
+                                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                      title="Print Official Fee Receipt Slip"
+                                    >
+                                      <Printer className="w-3 h-3" />
+                                      <span>Print Slip</span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -3989,6 +4199,16 @@ export default function VocationalCoursesManager({
           </div>
         </div>,
         document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: OFFICIAL FEE RECEIPT PRINT VOUCHER */}
+      {/* ========================================================================= */}
+      {receiptToPrint && (
+        <PrintFeeReceipt 
+          receipt={receiptToPrint} 
+          onClose={() => setReceiptToPrint(null)} 
+        />
       )}
 
     </div>

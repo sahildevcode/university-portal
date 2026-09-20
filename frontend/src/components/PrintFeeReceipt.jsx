@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { School, Printer, X, CheckCircle2, ArrowLeft } from 'lucide-react';
 import StudentTermsAndConditions from './StudentTermsAndConditions';
 
@@ -17,9 +18,9 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
     window.print();
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
+      className="fixed inset-0 z-[10001] bg-slate-950/85 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start sm:items-center"
       onClick={onClose}
     >
       <div 
@@ -226,6 +227,7 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

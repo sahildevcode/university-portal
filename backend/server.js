@@ -5432,6 +5432,8 @@ app.post('/api/vocational-students', (req, res) => {
     const paidVal = Number(initialPaid) || 0;
     const dueVal = Math.max(0, feeVal - paidVal);
 
+    const upiRef = (req.body.upiId || req.body.referenceNo || req.body.utrNo || '').trim();
+
     const newStudent = {
       id: `std-voc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       rollNo,
@@ -5482,18 +5484,51 @@ app.post('/api/vocational-students', (req, res) => {
       feeHistory: paidVal > 0 ? [
         {
           id: `FEE-VOC-${Date.now()}`,
+          receiptNo: `REC-${rollNo}-01`,
           date: admissionDate || new Date().toISOString().split('T')[0],
           amount: paidVal,
           purpose: 'Admission & Course Fee',
           paymentMode: paymentMode || 'Cash',
+          referenceNo: upiRef,
+          upiId: upiRef,
+          utrNo: upiRef,
           receivedBy: 'Admin Desk',
-          remark: 'Initial fee payment at admission'
+          remark: remark || (upiRef ? `UPI Ref: ${upiRef}` : 'Initial fee payment at admission')
         }
       ] : []
     };
 
     // Push into db.students at top - instantly incrementing student count from 718 -> 719, 720, etc.!
     db.students.unshift(newStudent);
+
+    // Also register in central fee_payments if initial payment was made
+    if (paidVal > 0) {
+      if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+      const initHist = newStudent.feeHistory[0];
+      db.fee_payments.unshift({
+        id: initHist.id,
+        receiptNo: initHist.receiptNo,
+        rollNo,
+        studentId: newStudent.id,
+        studentName: name,
+        collegeName: targetParentCenter,
+        universityName: targetInstName,
+        courseName: newStudent.courseName,
+        branch: newStudent.branch,
+        currentSemester: 1,
+        currentClass: newStudent.duration || 'Vocational Program',
+        amountPaid: paidVal,
+        paymentMode: paymentMode || 'Cash',
+        feeType: 'Vocational Course Fee',
+        purpose: 'Admission & Course Fee',
+        refNo: upiRef,
+        upiId: upiRef,
+        paymentDate: initHist.date,
+        remainingDues: dueVal,
+        remark: initHist.remark,
+        receivedBy: 'Admin Desk'
+      });
+    }
 
     // Ensure PKC Institute is in db.colleges
     if (!Array.isArray(db.colleges)) db.colleges = [];
@@ -5605,14 +5640,52 @@ app.put('/api/vocational-students/:id', (req, res) => {
     if (installment > 0) {
       paidVal += installment;
       if (!Array.isArray(existing.feeHistory)) existing.feeHistory = [];
-      existing.feeHistory.push({
+      const histCount = existing.feeHistory.length + 1;
+      const receiptNo = `REC-${existing.rollNo || Date.now().toString().slice(-4)}-${String(histCount).padStart(2, '0')}`;
+      const pDate = body.paymentDate || new Date().toISOString().split('T')[0];
+      const pMode = body.paymentMode || 'Cash';
+      const upiRef = (body.upiId || body.referenceNo || body.utrNo || '').trim();
+      const pRemark = body.paymentRemark || (upiRef ? `UPI Ref: ${upiRef}` : `Installment #${histCount}`);
+
+      const newFeeItem = {
         id: `FEE-VOC-${Date.now()}`,
-        date: body.paymentDate || new Date().toISOString().split('T')[0],
+        receiptNo,
+        date: pDate,
         amount: installment,
-        purpose: body.paymentPurpose || 'Fee Installment',
-        paymentMode: body.paymentMode || 'Cash',
+        purpose: body.paymentPurpose || pRemark,
+        paymentMode: pMode,
+        referenceNo: upiRef,
+        upiId: upiRef,
+        utrNo: upiRef,
         receivedBy: 'Admin Desk',
-        remark: body.paymentRemark || 'Fee payment added via student edit'
+        remark: pRemark
+      };
+      existing.feeHistory.unshift(newFeeItem);
+
+      // Record in central db.fee_payments
+      if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+      db.fee_payments.unshift({
+        id: newFeeItem.id,
+        receiptNo,
+        rollNo: existing.rollNo,
+        studentId: existing.id,
+        studentName: name,
+        collegeName: existing.collegeName || existing.parentCenter || 'PKC Institute',
+        universityName: existing.universityName || existing.instituteName || 'Maharishi Dayanand Vocational Training Institute',
+        courseName: existing.courseName,
+        branch: existing.branch || 'Vocational Skills',
+        currentSemester: 1,
+        currentClass: existing.duration || 'Vocational Program',
+        amountPaid: installment,
+        paymentMode: pMode,
+        feeType: 'Vocational Course Fee',
+        purpose: newFeeItem.purpose,
+        refNo: upiRef,
+        upiId: upiRef,
+        paymentDate: pDate,
+        remainingDues: Math.max(0, feeVal - paidVal),
+        remark: pRemark,
+        receivedBy: 'Admin Desk'
       });
     }
 
