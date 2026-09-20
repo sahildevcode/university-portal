@@ -257,6 +257,11 @@ export default function VocationalCoursesManager({
   // Student Status Filter: 'active' | 'cancelled' | 'all'
   const [studentStatusFilter, setStudentStatusFilter] = useState('active');
 
+  // Student List Filter States (Session / Satra / Course)
+  const [filterSession, setFilterSession] = useState('all');
+  const [filterSatra, setFilterSatra] = useState('all');
+  const [filterCourse, setFilterCourse] = useState('all');
+
   // Dedicated Vocational Student Fee Desk Modal state (StudentList Parity)
   const [feeDeskStudent, setFeeDeskStudent] = useState(null);
   const [feeDeskMode, setFeeDeskMode] = useState('receive'); // 'receive' | 'set_fee'
@@ -1700,6 +1705,24 @@ export default function VocationalCoursesManager({
       if (studentStatusFilter === 'active' && isCancelled) return false;
       if (studentStatusFilter === 'cancelled' && !isCancelled) return false;
 
+      // Session filter
+      if (filterSession !== 'all') {
+        const sSession = s.admissionSession || s.currentSession || '';
+        if (sSession !== filterSession) return false;
+      }
+
+      // Satra filter
+      if (filterSatra !== 'all') {
+        const sSatra = (s.satra || s.semester || '').toLowerCase();
+        const fSatra = filterSatra.toLowerCase();
+        if (!sSatra.includes(fSatra)) return false;
+      }
+
+      // Course filter
+      if (filterCourse !== 'all') {
+        if ((s.courseName || '') !== filterCourse) return false;
+      }
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -1714,7 +1737,7 @@ export default function VocationalCoursesManager({
       }
       return true;
     });
-  }, [vocationalStudents, selectedInstituteFilter, studentStatusFilter, searchQuery]);
+  }, [vocationalStudents, selectedInstituteFilter, studentStatusFilter, filterSession, filterSatra, filterCourse, searchQuery]);
 
   // Dynamic sector & course list extracted purely from actual courses entered by user
   const actualSectors = useMemo(() => {
@@ -2481,6 +2504,173 @@ export default function VocationalCoursesManager({
       {/* ========================================================================= */}
       {activeMainTab === 'students' && (
         <div className="space-y-4">
+
+          {/* ── Filter Bar (Session / Satra / Institute / Course / Search) ── */}
+          <div className="bg-[#f0f7f9] p-3.5 rounded-xl border border-[#bce0ee] shadow-sm space-y-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 items-end">
+              {/* Session */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
+                  Select Session:
+                </label>
+                <select
+                  value={filterSession}
+                  onChange={(e) => setFilterSession(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
+                >
+                  <option value="all">All Sessions</option>
+                  {Array.from(new Set([
+                    '2020-2021','2021-2022','2022-2023','2023-2024','2024-2025',
+                    '2025-2026','2026-2027','2027-2028','2028-2029','2029-2030',
+                    ...vocationalStudents.map(s => s.admissionSession || s.currentSession).filter(Boolean)
+                  ])).sort().map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Satra */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
+                  Select Satra (July/Jan):
+                </label>
+                <select
+                  value={filterSatra}
+                  onChange={(e) => setFilterSatra(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
+                >
+                  <option value="all">All Satras</option>
+                  <option value="July">July</option>
+                  <option value="January">January</option>
+                </select>
+              </div>
+
+              {/* Institute */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
+                  Select Institute:
+                </label>
+                <select
+                  value={selectedInstituteFilter}
+                  onChange={(e) => { setSelectedInstituteFilter(e.target.value); setFilterCourse('all'); }}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-bold text-indigo-900 cursor-pointer shadow-xs"
+                >
+                  <option value="all">Select Institute (All)</option>
+                  {institutes.map(inst => (
+                    <option key={inst.id} value={inst.id}>{inst.shortName || inst.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Course */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="truncate">Select Course:</span>
+                  {filterCourse !== 'all' && (
+                    <span className="text-[10px] text-emerald-700 font-bold ml-1">✓</span>
+                  )}
+                </label>
+                <select
+                  value={filterCourse}
+                  onChange={(e) => setFilterCourse(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer shadow-xs"
+                >
+                  <option value="all">Select Course (All)</option>
+                  {Array.from(new Set(
+                    courses
+                      .filter(c => selectedInstituteFilter === 'all' || c.instituteId === selectedInstituteFilter)
+                      .map(c => c.courseName)
+                      .filter(Boolean)
+                  )).sort().map(cn => (
+                    <option key={cn} value={cn}>{cn}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="truncate">Search Student:</span>
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="text-[10px] text-rose-600 hover:text-rose-800 font-bold cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Name, Roll, Course, Aadhaar..."
+                    className="w-full pl-7 pr-6 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium shadow-xs"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2 pointer-events-none" />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-1.5 top-1.5 p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Reset button — shows only when any filter is active */}
+            {(filterSession !== 'all' || filterSatra !== 'all' || selectedInstituteFilter !== 'all' || filterCourse !== 'all' || searchQuery) && (
+              <div className="pt-0.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setFilterSession('all'); setFilterSatra('all'); setSelectedInstituteFilter('all'); setFilterCourse('all'); setSearchQuery(''); }}
+                  className="bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-bold py-1.5 px-3.5 rounded-lg text-xs cursor-pointer transition-colors whitespace-nowrap flex items-center gap-1.5 shadow-xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset All Filters</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Active Filter Status Strip */}
+          <div className="bg-[#0b1f33] text-white py-2 px-3 sm:px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs font-bold items-center">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 font-normal">Session:</span>
+              <span className="text-emerald-400 font-mono tracking-wide truncate">{filterSession === 'all' ? 'All Sessions' : filterSession}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 font-normal">Satra:</span>
+              <span className="text-cyan-300 tracking-wide truncate">{filterSatra === 'all' ? 'All Satras' : filterSatra}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 font-normal">Institute:</span>
+              <span className="text-amber-300 truncate max-w-[170px]">
+                {selectedInstituteFilter === 'all' ? 'All Institutes' : (institutes.find(i => i.id === selectedInstituteFilter)?.shortName || selectedInstituteFilter)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 font-normal">Course:</span>
+              <span className="text-pink-300 truncate max-w-[170px]">{filterCourse === 'all' ? 'All Courses' : filterCourse}</span>
+            </div>
+            <div className="flex items-center gap-1.5 lg:justify-end">
+              <span className="text-slate-400 font-normal">Search:</span>
+              {searchQuery ? (
+                <span className="text-emerald-300 truncate max-w-[130px] flex items-center gap-1 font-mono">
+                  <span>"{searchQuery}"</span>
+                  <button type="button" onClick={() => setSearchQuery('')} className="text-rose-400 hover:text-rose-200 ml-1 cursor-pointer font-bold" title="Clear Search">✕</button>
+                </span>
+              ) : (
+                <span className="text-slate-400 font-normal">All Students</span>
+              )}
+            </div>
+          </div>
+
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs text-slate-500 px-1">
             <div>
               <div className="flex items-center gap-2 flex-wrap">

@@ -5185,6 +5185,9 @@ export default function StudentList({
                       rows={3}
                       value={cancelOtherReason}
                       onChange={(e) => setCancelOtherReason(e.target.value)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
                       placeholder="यहाँ कारण लिखें... (e.g. Student moved to another city, long illness, etc.)"
                       className="w-full p-2.5 bg-white border-2 border-rose-400 rounded-xl font-medium text-slate-800 text-[12px] focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none placeholder:text-slate-400"
                     />
