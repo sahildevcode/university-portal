@@ -41,22 +41,7 @@ import {
 import * as XLSX from 'xlsx';
 import { fireCelebration } from '../utils/confetti';
 
-const SECTOR_OPTIONS = [
-  'Electrical & Electronics',
-  'IT & Computer Software',
-  'Beauty & Wellness',
-  'Solar & Renewable Energy',
-  'Accounting & Finance',
-  'Electronics & Mobile Tech',
-  'Early Childhood & Teachers Training',
-  'Apparel & Fashion',
-  'Healthcare & Paramedical',
-  'Automobile & Mechanical',
-  'Construction & Plumbing',
-  'Hospitality & Tourism',
-  'Agriculture & Dairy Tech',
-  'General Vocational'
-];
+const SECTOR_OPTIONS = [];
 
 const DURATION_OPTIONS = [
   '1 Month',
@@ -120,8 +105,8 @@ export default function VocationalCoursesManager({
 }) {
   const isHindi = lang === 'hi';
 
-  // Primary Workspace View: 'courses' | 'institutes' | 'students'
-  const [activeMainTab, setActiveMainTab] = useState('courses');
+  // Primary Workspace View: 'institutes' | 'courses' | 'students'
+  const [activeMainTab, setActiveMainTab] = useState('institutes');
 
   // Institutes State
   const [institutes, setInstitutes] = useState(() => {
@@ -181,7 +166,7 @@ export default function VocationalCoursesManager({
     instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     courseName: '',
     courseCode: '',
-    sector: SECTOR_OPTIONS[0],
+    sector: '',
     duration: '6 Months',
     eligibility: '10th Pass (High School)',
     fee: 10000,
@@ -340,7 +325,7 @@ export default function VocationalCoursesManager({
       instituteName: inst.name,
       courseName: '',
       courseCode: `VOC-${Date.now().toString().slice(-4)}`,
-      sector: SECTOR_OPTIONS[0],
+      sector: '',
       duration: '6 Months',
       eligibility: '10th Pass (High School)',
       fee: 10000,
@@ -359,7 +344,7 @@ export default function VocationalCoursesManager({
       instituteName: course.instituteName || 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
       courseName: course.courseName || '',
       courseCode: course.courseCode || '',
-      sector: course.sector || SECTOR_OPTIONS[0],
+      sector: course.sector || '',
       duration: course.duration || '6 Months',
       eligibility: course.eligibility || '10th Pass (High School)',
       fee: course.fee !== undefined ? course.fee : 10000,
@@ -821,8 +806,13 @@ export default function VocationalCoursesManager({
         const cInstId = c.instituteId || (c.instituteName?.toLowerCase().includes('teacher') || c.instituteName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
         if (cInstId !== selectedInstituteFilter) return false;
       }
-      // Sector filter
-      if (selectedSector !== 'all' && c.sector !== selectedSector) return false;
+      // Sector / Course filter
+      if (selectedSector !== 'all') {
+        const sel = selectedSector.toLowerCase();
+        const matchSector = (c.sector || '').toLowerCase() === sel;
+        const matchName = (c.courseName || '').toLowerCase() === sel;
+        if (!matchSector && !matchName) return false;
+      }
       // Duration filter
       if (selectedDuration !== 'all' && c.duration !== selectedDuration) return false;
       // Search
@@ -861,10 +851,14 @@ export default function VocationalCoursesManager({
     });
   }, [vocationalStudents, selectedInstituteFilter, searchQuery]);
 
-  // Sector list from actual courses
+  // Dynamic sector & course list extracted purely from actual courses entered by user
   const actualSectors = useMemo(() => {
-    const s = new Set(courses.map(c => c.sector).filter(Boolean));
-    return Array.from(s);
+    const list = new Set();
+    courses.forEach(c => {
+      if (c.sector && c.sector.trim()) list.add(c.sector.trim());
+      if (c.courseName && c.courseName.trim()) list.add(c.courseName.trim());
+    });
+    return Array.from(list);
   }, [courses]);
 
   return (
@@ -959,24 +953,10 @@ export default function VocationalCoursesManager({
           </div>
         </div>
 
-        {/* THREE PRIMARY VIEW TABS: COURSES | INSTITUTES | ENROLLED STUDENTS */}
+        {/* THREE PRIMARY VIEW TABS: INSTITUTES | COURSES | ENROLLED STUDENTS */}
         <div className="mt-6 pt-5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Tab 1: View Courses */}
-            <button
-              type="button"
-              onClick={() => setActiveMainTab('courses')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
-                activeMainTab === 'courses'
-                  ? 'bg-amber-400 text-slate-950 shadow-lg scale-105 ring-2 ring-amber-300'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>📚 View Courses ({courses.length})</span>
-            </button>
-
-            {/* Tab 2: View Institutes */}
+            {/* Tab 1: View Institutes */}
             <button
               type="button"
               onClick={() => setActiveMainTab('institutes')}
@@ -988,6 +968,20 @@ export default function VocationalCoursesManager({
             >
               <Building2 className="w-4 h-4" />
               <span>🏛️ View Institutes ({institutes.length})</span>
+            </button>
+
+            {/* Tab 2: View Courses */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab('courses')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                activeMainTab === 'courses'
+                  ? 'bg-amber-400 text-slate-950 shadow-lg scale-105 ring-2 ring-amber-300'
+                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-750 hover:text-white border border-slate-700'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>📚 View Courses ({courses.length})</span>
             </button>
 
             {/* Tab 3: View Enrolled Students */}
@@ -1170,8 +1164,10 @@ export default function VocationalCoursesManager({
               onChange={(e) => setSelectedSector(e.target.value)}
               className="p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none"
             >
-              <option value="all">All Industry Sectors</option>
-              {SECTOR_OPTIONS.map(sec => (
+              <option value="all">
+                {actualSectors.length > 0 ? 'All Industry Sectors / Courses' : 'All Industry Sectors'}
+              </option>
+              {actualSectors.map(sec => (
                 <option key={sec} value={sec}>{sec}</option>
               ))}
             </select>
@@ -1207,7 +1203,171 @@ export default function VocationalCoursesManager({
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 1: VIEW COURSES (COURSES DESK) */}
+      {/* SECTION 1: VIEW INSTITUTES (INSTITUTES DESK) */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'institutes' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+            <span>
+              Configured Vocational & Teacher Training Institutes (
+              <strong className="text-slate-900 font-bold">{institutes.length}</strong>)
+            </span>
+            <button
+              type="button"
+              onClick={handleOpenAddInstitute}
+              className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold text-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Another Institute</span>
+            </button>
+          </div>
+
+          {/* Big Cards for each Institute */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {institutes.map((inst, index) => {
+              const instCourses = courses.filter(c => c.instituteId === inst.id || (!c.instituteId && index === 0));
+              const instStudents = vocationalStudents.filter(s => s.instituteId === inst.id || s.universityName?.includes(inst.shortName));
+              const isTeachers = inst.name.toLowerCase().includes('teacher') || inst.name.includes('टीचर्स') || inst.type.toLowerCase().includes('teacher');
+
+              return (
+                <div
+                  key={inst.id}
+                  className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-slate-200 hover:border-amber-400 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between space-y-6 group"
+                >
+                  <div className="space-y-4">
+                    {/* Header: Badge & Code */}
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
+                        isTeachers
+                          ? 'bg-teal-50 text-teal-800 border-teal-200'
+                          : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}>
+                        {isTeachers ? '👩‍🏫 Teachers Training & Education' : '🛠️ Vocational & Technical Trades'}
+                      </span>
+                      <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">
+                        {inst.code || inst.shortName}
+                      </span>
+                    </div>
+
+                    {/* Institute Name */}
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900 group-hover:text-amber-600 transition-colors leading-tight">
+                        {inst.name}
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        {inst.description || 'Affiliated center providing government-recognized skill diplomas and professional certifications.'}
+                      </p>
+                    </div>
+
+                    {/* Associated Study Center Box (PKC Institute by default, editable!) */}
+                    <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0">
+                          <School className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
+                            Affiliated Study Center / College
+                          </span>
+                          <span className="text-xs font-black text-slate-900">
+                            {inst.parentCenter || 'PKC Institute'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditInstitute(inst)}
+                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                        title="Edit Study Center"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+
+                    {/* Stats Pill Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-indigo-50/60 rounded-2xl p-3 border border-indigo-100 flex items-center gap-3">
+                        <BookOpen className="w-5 h-5 text-indigo-600 shrink-0" />
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block">Active Courses</span>
+                          <span className="text-base font-black text-slate-900">{instCourses.length} Programs</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-emerald-50/60 rounded-2xl p-3 border border-emerald-100 flex items-center gap-3">
+                        <GraduationCap className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold block">Enrolled Students</span>
+                          <span className="text-base font-black text-emerald-700">{instStudents.length} Students</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions for this Institute */}
+                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* 1. Upload Excel specifically for this Institute */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTargetExcelInstituteId(inst.id);
+                          setExcelFile(null);
+                          setExcelParsedRows([]);
+                          setShowExcelModal(true);
+                        }}
+                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                        title="Upload courses for this institute"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Upload Excel Courses</span>
+                      </button>
+
+                      {/* 2. Add Course for this institute */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddCourse(inst)}
+                        className="flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-3 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
+                        title="Add course to this institute"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Add Course</span>
+                      </button>
+
+                      {/* 3. Enroll Student for this institute */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEnrollStudent(inst.id)}
+                        className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
+                        title="Enroll student in this institute"
+                      >
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        <span>Enroll Student</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditInstitute(inst)}
+                        className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
+                        title="Edit Institute Details"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SECTION 2: VIEW COURSES (COURSES DESK) */}
       {/* ========================================================================= */}
       {activeMainTab === 'courses' && (
         <div className="space-y-4">
@@ -1434,170 +1594,6 @@ export default function VocationalCoursesManager({
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SECTION 2: VIEW INSTITUTES (INSTITUTES DESK) */}
-      {/* ========================================================================= */}
-      {activeMainTab === 'institutes' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>
-              Configured Vocational & Teacher Training Institutes (
-              <strong className="text-slate-900 font-bold">{institutes.length}</strong>)
-            </span>
-            <button
-              type="button"
-              onClick={handleOpenAddInstitute}
-              className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-bold text-xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Another Institute</span>
-            </button>
-          </div>
-
-          {/* Big Cards for each Institute */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {institutes.map((inst, index) => {
-              const instCourses = courses.filter(c => c.instituteId === inst.id || (!c.instituteId && index === 0));
-              const instStudents = vocationalStudents.filter(s => s.instituteId === inst.id || s.universityName?.includes(inst.shortName));
-              const isTeachers = inst.name.toLowerCase().includes('teacher') || inst.name.includes('टीचर्स') || inst.type.toLowerCase().includes('teacher');
-
-              return (
-                <div
-                  key={inst.id}
-                  className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-slate-200 hover:border-amber-400 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col justify-between space-y-6 group"
-                >
-                  <div className="space-y-4">
-                    {/* Header: Badge & Code */}
-                    <div className="flex items-center justify-between gap-3">
-                      <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
-                        isTeachers
-                          ? 'bg-teal-50 text-teal-800 border-teal-200'
-                          : 'bg-amber-50 text-amber-800 border-amber-200'
-                      }`}>
-                        {isTeachers ? '👩‍🏫 Teachers Training & Education' : '🛠️ Vocational & Technical Trades'}
-                      </span>
-                      <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">
-                        {inst.code || inst.shortName}
-                      </span>
-                    </div>
-
-                    {/* Institute Name */}
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-black text-slate-900 group-hover:text-amber-600 transition-colors leading-tight">
-                        {inst.name}
-                      </h2>
-                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                        {inst.description || 'Affiliated center providing government-recognized skill diplomas and professional certifications.'}
-                      </p>
-                    </div>
-
-                    {/* Associated Study Center Box (PKC Institute by default, editable!) */}
-                    <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0">
-                          <School className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
-                            Affiliated Study Center / College
-                          </span>
-                          <span className="text-xs font-black text-slate-900">
-                            {inst.parentCenter || 'PKC Institute'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditInstitute(inst)}
-                        className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Edit Study Center"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        <span>Edit</span>
-                      </button>
-                    </div>
-
-                    {/* Stats Pill Row */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-indigo-50/60 rounded-2xl p-3 border border-indigo-100 flex items-center gap-3">
-                        <BookOpen className="w-5 h-5 text-indigo-600 shrink-0" />
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold block">Active Courses</span>
-                          <span className="text-base font-black text-slate-900">{instCourses.length} Programs</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-emerald-50/60 rounded-2xl p-3 border border-emerald-100 flex items-center gap-3">
-                        <GraduationCap className="w-5 h-5 text-emerald-600 shrink-0" />
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold block">Enrolled Students</span>
-                          <span className="text-base font-black text-emerald-700">{instStudents.length} Students</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions for this Institute */}
-                  <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* 1. Upload Excel specifically for this Institute */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTargetExcelInstituteId(inst.id);
-                          setExcelFile(null);
-                          setExcelParsedRows([]);
-                          setShowExcelModal(true);
-                        }}
-                        className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-                        title="Upload courses for this institute"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Upload Excel Courses</span>
-                      </button>
-
-                      {/* 2. Add Course for this institute */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAddCourse(inst)}
-                        className="flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-3 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
-                        title="Add course to this institute"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>+ Add Course</span>
-                      </button>
-
-                      {/* 3. Enroll Student for this institute */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEnrollStudent(inst.id)}
-                        className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-2 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
-                        title="Enroll student in this institute"
-                      >
-                        <GraduationCap className="w-3.5 h-3.5" />
-                        <span>Enroll Student</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditInstitute(inst)}
-                        className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
-                        title="Edit Institute Details"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -2509,16 +2505,20 @@ export default function VocationalCoursesManager({
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Industry Sector</label>
-                  <select
+                  <label className="font-bold text-slate-700 block mb-1">Industry Sector / Category</label>
+                  <input
+                    type="text"
                     value={courseFormData.sector}
                     onChange={(e) => setCourseFormData({ ...courseFormData, sector: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none"
-                  >
-                    {SECTOR_OPTIONS.map(s => (
-                      <option key={s} value={s}>{s}</option>
+                    placeholder="e.g. Electrical, Computer, Teaching..."
+                    list="course-sectors-datalist"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                  <datalist id="course-sectors-datalist">
+                    {actualSectors.map(item => (
+                      <option key={item} value={item} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
