@@ -294,15 +294,31 @@ export default function VocationalCoursesManager({
     instituteName: 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
     parentCenter: 'PKC Institute',
     courseName: '',
+    courseId: '',
+    sector: '',
     branch: '',
     duration: '1 Year',
     totalFee: 0,
     totalPaid: 0,
+    initialPaid: 0,
     newPaymentAmount: '',
     paymentMode: 'Cash',
     upiId: '',
     paymentRemark: '',
-    status: 'Active'
+    admissionDate: new Date().toISOString().split('T')[0],
+    admissionSession: '2024-2025',
+    address: '',
+    category: 'General',
+    status: 'Active',
+    documents: {
+      marksheet10: null,
+      marksheet12: null,
+      graduation: null,
+      aadhaar: null,
+      abcId: null,
+      photo: null,
+      signature: null,
+    }
   });
   const [editStudentSubmitting, setEditStudentSubmitting] = useState(false);
 
@@ -614,15 +630,31 @@ export default function VocationalCoursesManager({
       instituteName: student.instituteName || student.universityName || 'Maharishi Dayanand Vocational Training Institute (MDVTI)',
       parentCenter: student.parentCenter || student.collegeName || 'PKC Institute',
       courseName: student.courseName || '',
+      courseId: student.courseId || '',
+      sector: student.sector || '',
       branch: student.branch || '',
       duration: student.duration || '1 Year',
       totalFee: feeVal,
       totalPaid: paidVal,
+      initialPaid: 0,
       newPaymentAmount: '',
-      paymentMode: 'Cash',
+      paymentMode: student.paymentMode || 'Cash',
       upiId: student.upiId || '',
       paymentRemark: '',
-      status: student.status || 'Active'
+      admissionDate: student.admissionDate || new Date().toISOString().split('T')[0],
+      admissionSession: student.admissionSession || '2024-2025',
+      address: student.address || '',
+      category: student.category || 'General',
+      status: student.status || 'Active',
+      documents: {
+        marksheet10: student.documents?.marksheet10 || null,
+        marksheet12: student.documents?.marksheet12 || null,
+        graduation: student.documents?.graduation || null,
+        aadhaar: student.documents?.aadhaar || null,
+        abcId: student.documents?.abcId || null,
+        photo: student.documents?.photo || null,
+        signature: student.documents?.signature || null,
+      }
     });
   };
 
@@ -1227,6 +1259,22 @@ export default function VocationalCoursesManager({
     const reader = new FileReader();
     reader.onload = (e) => {
       setEnrollForm(prev => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          [key]: { name: file.name, url: e.target.result, type: file.type }
+        }
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle document upload for Edit Student form
+  const handleEditDocUpload = (key, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setEditStudentForm(prev => ({
         ...prev,
         documents: {
           ...prev.documents,
@@ -2576,7 +2624,12 @@ export default function VocationalCoursesManager({
                           <tr className={`hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-indigo-50/60' : ''}`}>
                             {/* Roll No */}
                             <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/40">
-                              {st.rollNo || st.registrationNo}
+                              {(st.rollNo && st.rollNo !== '0' && st.rollNo !== 0)
+                                ? <span>{st.rollNo}</span>
+                                : st.registrationNo
+                                  ? <span>{st.registrationNo}</span>
+                                  : <span className="text-slate-300 font-normal">—</span>
+                              }
                             </td>
 
                             {/* Student Name + Phone */}
@@ -4118,140 +4171,148 @@ export default function VocationalCoursesManager({
       {/* ========================================================================= */}
       {editingStudent && createPortal(
         <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
-          <form 
+          <form
             onSubmit={handleSaveEditStudent}
-            className="bg-white w-full max-w-2xl max-h-[88vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden"
+            className="bg-white w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border-2 border-indigo-400 overflow-hidden"
           >
-            {/* Header (Pinned at top) */}
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 shrink-0 bg-white">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-t-3xl">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center font-black shadow-md shrink-0">
                   <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-base sm:text-lg text-slate-900">
-                    Edit Vocational Student & Fees
+                  <h3 className="font-black text-base sm:text-lg text-white">
+                    Edit Vocational Student
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Roll: <span className="font-mono font-bold text-indigo-700">{editingStudent.rollNo || editingStudent.registrationNo}</span> • {editingStudent.fullName || editingStudent.studentName}
+                  <p className="text-xs text-indigo-100">
+                    {editingStudent.rollNo || editingStudent.registrationNo
+                      ? <>Roll: <span className="font-mono font-bold text-white">{editingStudent.rollNo || editingStudent.registrationNo}</span> • </>
+                      : null}
+                    {editingStudent.fullName || editingStudent.studentName}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingStudent(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
+            {/* ── Scrollable Body ── */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
+
               {/* Row 1: Student Name & Father Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Student Full Name *
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Student Full Name *</label>
                   <input
                     type="text"
                     required
                     value={editStudentForm.studentName}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, studentName: e.target.value })}
+                    placeholder="e.g. Ramesh Kumar Patel"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Father's Name *
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Father's Name *</label>
                   <input
                     type="text"
                     required
                     value={editStudentForm.fatherName}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, fatherName: e.target.value })}
+                    placeholder="e.g. Shri Mohan Lal Patel"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
                 </div>
               </div>
 
-              {/* Row 2: Mother Name & Contact Phone */}
+              {/* Row 2: Mother Name & Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Mother's Name
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Mother's Name</label>
                   <input
                     type="text"
                     value={editStudentForm.motherName}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, motherName: e.target.value })}
+                    placeholder="e.g. Shanti Devi"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Contact / Mobile Number
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Mobile / Contact Number</label>
                   <input
                     type="tel"
                     value={editStudentForm.phone}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, phone: e.target.value })}
                     maxLength={10}
+                    placeholder="e.g. 9876543210"
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Row 3: Aadhaar Card, ABC ID & Enrollment Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-indigo-50/50 p-3.5 rounded-2xl border border-indigo-200">
+              {/* Row 3: Aadhaar & ABC ID amber box */}
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-indigo-950 block mb-1">
-                    Aadhaar Card <span className="text-[10px] text-slate-500 font-normal">(Optional)</span>
+                  <label className="font-bold text-amber-900 block mb-1">
+                    Aadhaar Card Number <span className="text-[10px] font-normal text-amber-600">(Optional)</span>
                   </label>
                   <input
                     type="text"
                     value={editStudentForm.aadhaarNo}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, aadhaarNo: e.target.value.replace(/\D/g, '').slice(0, 12) })}
-                    placeholder="12 digit Aadhaar"
+                    placeholder="12 digit Aadhaar number (optional)"
                     maxLength={12}
-                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
-                  <span className="text-[10px] text-indigo-700 mt-0.5 block">Can be added/edited anytime</span>
+                  <span className="text-[10px] text-amber-700 mt-0.5 block">Optional: Can be entered now or updated later via Edit.</span>
                 </div>
                 <div>
-                  <label className="font-bold text-indigo-950 block mb-1">
-                    ABC ID
-                  </label>
+                  <label className="font-bold text-amber-900 block mb-1">ABC ID (Academic Bank of Credits)</label>
                   <input
                     type="text"
                     value={editStudentForm.abcId}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, abcId: e.target.value.replace(/\D/g, '').slice(0, 12) })}
-                    placeholder="12 digit ABC ID"
+                    placeholder="12 digit ABC ID (if available)"
                     maxLength={12}
-                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
                   />
-                </div>
-                <div>
-                  <label className="font-bold text-indigo-950 block mb-1">
-                    Official Enrollment No
-                  </label>
-                  <input
-                    type="text"
-                    value={editStudentForm.enrollmentNo}
-                    onChange={(e) => setEditStudentForm({ ...editStudentForm, enrollmentNo: e.target.value.toUpperCase() })}
-                    placeholder="e.g. ENR-2024-001"
-                    className="w-full p-2.5 bg-white border border-indigo-200 rounded-xl font-mono font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  />
+                  <span className="text-[10px] text-amber-700 mt-0.5 block">Academic Bank of Credits identification</span>
                 </div>
               </div>
 
-              {/* Row 4: Institute & Course */}
+              {/* Row: Enrollment Number */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <span>Enrollment Number</span>
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full">Optional</span>
+                  </label>
+                  <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                    Default: Blank (Admin can set later)
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={editStudentForm.enrollmentNo}
+                  onChange={(e) => setEditStudentForm({ ...editStudentForm, enrollmentNo: e.target.value.toUpperCase() })}
+                  placeholder="Leave blank to assign later (by default empty)"
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  By default left blank. Admin can fill it now or assign / update it later from the Enrolled Students list.
+                </span>
+              </div>
+
+              {/* Row 4: Institute & Study Center */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Vocational Institute
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Select Institute *</label>
                   <select
                     value={editStudentForm.instituteId}
                     onChange={(e) => {
@@ -4259,34 +4320,187 @@ export default function VocationalCoursesManager({
                       setEditStudentForm({
                         ...editStudentForm,
                         instituteId: e.target.value,
-                        instituteName: inst?.name || editStudentForm.instituteName
+                        instituteName: inst?.name || editStudentForm.instituteName,
+                        parentCenter: inst?.parentCenter || editStudentForm.parentCenter,
                       });
                     }}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   >
                     {institutes.map(inst => (
                       <option key={inst.id} value={inst.id}>
-                        {inst.shortName}: {inst.name.slice(0, 45)}...
+                        {inst.shortName}: {inst.name.slice(0, 40)}...
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    Course / Trade Name
-                  </label>
+                  <label className="font-bold text-slate-700 block mb-1">Affiliated Study Center *</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.parentCenter}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, parentCenter: e.target.value })}
+                    placeholder="PKC Institute"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Pre-filled with PKC Institute (editable)</span>
+                </div>
+              </div>
+
+              {/* Row 5: Course & Session + Admission Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Vocational Course / Trade *</label>
                   <input
                     type="text"
                     value={editStudentForm.courseName}
                     onChange={(e) => setEditStudentForm({ ...editStudentForm, courseName: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none"
+                    placeholder="e.g. Vocational Skill Program"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-indigo-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Session & Admission Date</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={editStudentForm.admissionSession}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, admissionSession: e.target.value })}
+                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none"
+                    >
+                      <option value="2024-2025">2024-2025</option>
+                      <option value="2025-2026">2025-2026</option>
+                      <option value="2026-2027">2026-2027</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={editStudentForm.admissionDate}
+                      onChange={(e) => setEditStudentForm({ ...editStudentForm, admissionDate: e.target.value })}
+                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 6: Fee Details */}
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Total Course Fee (₹) *</label>
+                  <input
+                    type="number"
+                    value={editStudentForm.totalFee === 0 ? '' : editStudentForm.totalFee}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, totalFee: Number(e.target.value) || 0 })}
+                    placeholder="Enter agreed fee"
+                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Admin decides fee per student</span>
+                </div>
+                <div>
+                  <label className="font-bold text-emerald-800 block mb-1">New Payment (₹)</label>
+                  <input
+                    type="number"
+                    value={editStudentForm.newPaymentAmount}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, newPaymentAmount: e.target.value })}
+                    placeholder="0 (leave blank if none)"
+                    className="w-full p-2 bg-white border border-emerald-300 rounded-xl font-black text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Leave blank if no new payment today</span>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Payment Mode</label>
+                  <select
+                    value={editStudentForm.paymentMode}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, paymentMode: e.target.value })}
+                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-semibold focus:outline-none"
+                  >
+                    <option value="Cash">Cash</option>
+                    <option value="UPI / Online">UPI / QR Code</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                  </select>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Transaction method</span>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">UPI Ref / UTR / Txn ID</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.upiId || ''}
+                    onChange={(e) => setEditStudentForm({ ...editStudentForm, upiId: e.target.value })}
+                    placeholder="e.g. 408221987654"
+                    className={`w-full p-2 bg-white border rounded-xl font-mono text-xs focus:outline-none ${editStudentForm.paymentMode?.toLowerCase().includes('upi') ? 'border-amber-400 ring-2 ring-amber-200' : 'border-slate-300'}`}
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">For UPI / Bank tracking</span>
+                </div>
+              </div>
+
+              {/* Row 7: Address */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Address / City</label>
+                <input
+                  type="text"
+                  value={editStudentForm.address}
+                  onChange={(e) => setEditStudentForm({ ...editStudentForm, address: e.target.value })}
+                  placeholder="e.g. Civil Lines, Damoh / Bhopal (M.P)"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Row 8: Document Upload Section */}
+              <div className="bg-white border-2 border-dashed border-amber-300 rounded-2xl p-3.5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1 bg-amber-200" />
+                  <span className="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-300 px-3 py-1 rounded-full">
+                    📎 DOCUMENTS FOR ADMISSION
+                  </span>
+                  <div className="h-px flex-1 bg-amber-200" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'marksheet10', label: '10th Marksheet',    icon: '📄' },
+                    { key: 'marksheet12', label: '12th Marksheet',    icon: '📄' },
+                    { key: 'graduation',  label: 'Graduation Cert.',  icon: '🎓' },
+                    { key: 'aadhaar',     label: 'Aadhaar Card',      icon: '🪪' },
+                    { key: 'abcId',       label: 'ABC ID Card',       icon: '🆔' },
+                    { key: 'photo',       label: 'Student Photo',     icon: '🖼️' },
+                    { key: 'signature',   label: 'Student Signature', icon: '✍️' },
+                  ].map(({ key, label, icon }) => {
+                    const doc = (editStudentForm.documents || {})[key];
+                    const isImage = doc && doc.type && doc.type.startsWith('image/');
+                    return (
+                      <div key={key} className="relative bg-slate-50 border-2 border-dashed border-slate-200 hover:border-amber-400 rounded-xl p-2.5 transition-all group">
+                        {/* Status badge */}
+                        <div className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${doc ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                          {doc ? '✓' : 'Optional'}
+                        </div>
+                        {/* Preview */}
+                        <div className="flex flex-col items-center gap-1 mb-1.5">
+                          {doc && isImage ? (
+                            <img src={doc.url} alt={label} className="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-xs" />
+                          ) : (
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${doc ? 'bg-indigo-50 border border-indigo-200' : 'bg-white border border-slate-200'}`}>
+                              {icon}
+                            </div>
+                          )}
+                          <span className="text-[10px] font-bold text-slate-700 text-center leading-tight">{label}</span>
+                          {doc ? (
+                            <span className="text-[9px] text-slate-400 truncate max-w-full px-1">{doc.name}</span>
+                          ) : (
+                            <span className="text-[9px] text-slate-400">Click to upload</span>
+                          )}
+                        </div>
+                        {/* Invisible file input overlay */}
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          onChange={(e) => handleEditDocUpload(key, e.target.files[0])}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
             </div>
 
-            {/* Footer (Pinned at bottom) */}
+            {/* ── Footer ── */}
             <div className="flex justify-end gap-2.5 p-3.5 sm:p-4 border-t border-slate-200 shrink-0 bg-slate-50 rounded-b-3xl">
               <button
                 type="button"
@@ -4308,6 +4522,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: CANCEL VOCATIONAL ADMISSION (MOVES TO CANCELLED HUB) */}
