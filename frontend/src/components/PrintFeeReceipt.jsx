@@ -105,11 +105,28 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
             </div>
             <div>
               <span className="text-slate-500 font-medium block text-[10px]">Payment Method:</span>
-              <p className="font-bold text-indigo-900 uppercase">{receipt.paymentMode}</p>
+              <p className="font-bold text-indigo-900 uppercase">
+                {receipt.paymentMode?.toLowerCase().includes('upi') || receipt.paymentMode?.toLowerCase().includes('online')
+                  ? 'UPI / ONLINE'
+                  : (receipt.paymentMode?.toLowerCase().includes('cash') ? 'CASH (नकद)' : (receipt.paymentMode || 'CASH'))}
+              </p>
             </div>
             <div>
-              <span className="text-slate-500 font-medium block text-[10px]">Transaction / Ref ID:</span>
-              <p className="font-mono font-bold text-slate-900">{receipt.transactionRef || 'CASH-COUNTER'}</p>
+              {(receipt.paymentMode?.toLowerCase().includes('upi') || receipt.paymentMode?.toLowerCase().includes('online') || receipt.paymentMode?.toLowerCase().includes('bank')) ? (
+                <>
+                  <span className="text-slate-500 font-medium block text-[10px]">UPI UTR / Reference No:</span>
+                  <p className="font-mono font-black text-slate-900">
+                    {(receipt.transactionRef && receipt.transactionRef !== 'CASH-COUNTER') ? receipt.transactionRef : (receipt.refNo || receipt.upiId || receipt.utrNo || '-')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="text-slate-500 font-medium block text-[10px]">Payment Channel:</span>
+                  <p className="font-bold text-slate-900">
+                    Direct Cash Counter
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
@@ -168,9 +185,20 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
                 <tr>
                   <td className="p-2.5 border border-slate-300 font-medium">
                     <span className="font-bold text-slate-900 block">{receipt.feeType || 'Tuition / Semester Fee'}</span>
-                    <span className="text-[11px] text-slate-500">{receipt.paidFor || 'Fee Installment'}</span>
+                    <span className="text-[11px] text-slate-600 block mt-0.5">
+                      {receipt.paidFor || 'Fee Installment'}
+                      {((receipt.paymentMode?.toLowerCase().includes('upi') || receipt.paymentMode?.toLowerCase().includes('online')) && (receipt.transactionRef || receipt.refNo || receipt.upiId) && receipt.transactionRef !== 'CASH-COUNTER') ? (
+                        <span className="ml-1 text-amber-900 font-mono font-bold bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                          UTR Ref: {receipt.transactionRef || receipt.refNo || receipt.upiId}
+                        </span>
+                      ) : (
+                        <span className="ml-1 text-slate-500">
+                          (Direct Cash Deposit)
+                        </span>
+                      )}
+                    </span>
                   </td>
-                  <td className="p-2.5 border border-slate-300 font-bold text-right text-slate-900">
+                  <td className="p-2.5 border border-slate-300 font-black text-right text-slate-900 font-mono">
                     ₹{Number(receipt.amountPaid).toLocaleString('en-IN')}.00
                   </td>
                 </tr>

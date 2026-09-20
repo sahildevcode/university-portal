@@ -2662,6 +2662,10 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
   db.fee_payments.unshift(receipt);
 
+  // Keep student.feeHistory in sync
+  if (!Array.isArray(student.feeHistory)) student.feeHistory = [];
+  student.feeHistory.unshift(receipt);
+
   writeDB(db);
 
   // Return all payments for this student so frontend can update immediately
@@ -2704,6 +2708,11 @@ app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
   student.totalPaid = Math.max(0, (Number(student.totalPaid) || 0) - removedAmt);
   const totalFee = Number(student.totalFee) || 0;
   student.balanceDue = Math.max(0, totalFee - student.totalPaid);
+  
+  if (Array.isArray(student.feeHistory)) {
+    student.feeHistory = student.feeHistory.filter(p => p.id !== paymentId && p.receiptNo !== paymentId);
+  }
+
   student.updatedAt = new Date().toISOString();
 
   writeDB(db);
