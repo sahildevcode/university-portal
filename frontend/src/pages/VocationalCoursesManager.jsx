@@ -5017,43 +5017,6 @@ export default function VocationalCoursesManager({
                     </div>
                   </div>
 
-                  {/* 3 Summary Metrics: Course Fee | Paid Fee | Remaining Due */}
-                  {(() => {
-                    const tot = Number(feeDeskTotalFee !== '' && feeDeskTotalFee !== null ? feeDeskTotalFee : (feeDeskStudent.totalFee !== undefined ? feeDeskStudent.totalFee : (feeDeskStudent.academicFee || 0)));
-                    const paid = Number(feeDeskStudent.totalPaid || 0);
-                    const rem = Math.max(0, tot - paid);
-
-                    return (
-                      <div className="space-y-2 pt-2">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                          <div className="bg-sky-50/80 border border-sky-300 rounded-xl p-3 shadow-2xs">
-                            <div className="text-[10px] text-sky-700 uppercase font-bold">Total Course Fee</div>
-                            <div className="text-base font-black text-sky-950 font-mono mt-0.5">
-                              ₹{tot.toLocaleString('en-IN')}/-
-                            </div>
-                          </div>
-
-                          <div className="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 shadow-2xs">
-                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee (Total Deposited)</div>
-                            <div className="text-base font-black text-emerald-800 font-mono mt-0.5">
-                              ₹{paid.toLocaleString('en-IN')}/-
-                            </div>
-                          </div>
-
-                          <div className={`rounded-xl p-3 border shadow-2xs ${
-                            rem === 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50/80 border-rose-300'
-                          }`}>
-                            <div className={`text-[10px] uppercase font-bold ${rem === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                              Remaining Fee (Due)
-                            </div>
-                            <div className={`text-base font-black font-mono mt-0.5 ${rem === 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                              ₹{rem.toLocaleString('en-IN')}/-
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </form>
               )}
 
