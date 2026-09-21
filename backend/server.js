@@ -5928,9 +5928,29 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ─── Serve React Frontend (for local client deployment) ──────────────────────
+// This serves the built React app from frontend/dist at the same port (5000)
+// so the client only needs to run ONE server and open http://localhost:5000
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // For React Router — any non-API route serves index.html
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    }
+  });
+  console.log(`🌐 Frontend served from: ${frontendDist}`);
+} else {
+  console.log(`⚠️  Frontend dist not found. Run 'npm run build' in frontend/ first.`);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`🎓 University Management API running on port ${PORT}`);
+  console.log(`🌐 Portal URL: http://localhost:${PORT}`);
   console.log(`📁 Uploads available at: http://localhost:${PORT}/uploads`);
+  console.log(`💾 Database: backend/data/database.json (all data permanent)`);
   console.log(`====================================================`);
 });
