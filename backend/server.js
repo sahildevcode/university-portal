@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB } from './db_mongo.js';
+import { connectMongoDB, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
