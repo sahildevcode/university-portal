@@ -19,8 +19,8 @@ export default function AdminLoginScreen({
   const [activeRole, setActiveRole] = useState(initialTab || 'admin');
 
   // Admin Credentials
-  const [adminUsername, setAdminUsername] = useState('admin');
-  const [adminPassword, setAdminPassword] = useState('admin123');
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPass, setShowAdminPass] = useState(false);
 
   // Staff Credentials
@@ -225,7 +225,7 @@ export default function AdminLoginScreen({
         {/* FORM 1: ADMIN LOGIN */}
         {/* ========================================================================= */}
         {activeRole === 'admin' && (
-          <form onSubmit={handleAdminSubmit} className="px-6 sm:px-8 pb-8 space-y-4.5 text-xs text-slate-900">
+          <form onSubmit={handleAdminSubmit} autoComplete="off" className="px-6 sm:px-8 pb-8 space-y-4.5 text-xs text-slate-900">
             
             <div className="bg-amber-50/70 border border-amber-200/80 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-[11px]">
               <Shield className="w-4 h-4 text-amber-600 shrink-0" />
@@ -246,6 +246,7 @@ export default function AdminLoginScreen({
                   value={adminUsername}
                   onChange={(e) => setAdminUsername(e.target.value)}
                   placeholder="Enter Admin ID"
+                  autoComplete="off"
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
                   required
                   autoFocus
@@ -265,6 +266,7 @@ export default function AdminLoginScreen({
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   placeholder="Enter Admin Password"
+                  autoComplete="new-password"
                   className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
                   required
                 />
