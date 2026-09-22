@@ -3851,8 +3851,12 @@ app.delete('/api/event-photos/:id', (req, res) => {
 // ACADEMIC COURSES CMS & CATALOG APIS
 // ====================================================
 // Get all academic courses
-app.get('/api/courses', (req, res) => {
+app.get('/api/courses', async (req, res) => {
   try {
+    if (process.env.MONGODB_URI) {
+      const courses = await CourseModel.find({}).sort({ createdAt: -1 });
+      return res.json({ success: true, courses });
+    }
     const db = readDB();
     res.json({ success: true, courses: db.courses || [] });
   } catch (err) {
@@ -3861,13 +3865,16 @@ app.get('/api/courses', (req, res) => {
 });
 
 // Add new academic course
-app.post('/api/courses', (req, res) => {
+app.post('/api/courses', async (req, res) => {
   try {
-    const db = readDB();
     const { 
       name, 
       code, 
       department, 
+      category,
+      duration,
+      imageUrl,
+      badge,
       universityName, 
       collegeName, 
       durationYears, 
@@ -3882,32 +3889,34 @@ app.post('/api/courses', (req, res) => {
       return res.status(400).json({ success: false, message: 'Course Name is required.' });
     }
 
-    if (!db.courses) db.courses = [];
     const courseCode = (code || name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)).toUpperCase();
-    const baseSlug = (code || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `crs-${Date.now()}`;
-
-    let finalId = baseSlug;
-    let counter = 1;
-    while (db.courses.some(c => c.id === finalId)) {
-      finalId = `${baseSlug}-${counter++}`;
-    }
+    const finalId = `crs-${Date.now()}`;
 
     const newCourse = {
       id: finalId,
       name: name.trim(),
       code: courseCode,
-      department: department || 'School of General Studies',
+      category: category || 'Computer',
+      duration: duration || (durationYears ? `${durationYears} Years` : '3 Years'),
+      imageUrl: imageUrl || '',
+      badge: badge || 'NEW PROGRAM',
+      department: department || 'School of Academic Studies',
       universityName: universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
       collegeName: collegeName || 'PKC Education Learning Institute & Consultancy',
       durationYears: Number(durationYears) || 3,
       totalSemesters: Number(totalSemesters) || (Number(durationYears) ? Number(durationYears) * 2 : 6),
       totalFee: Number(totalFee) || 0,
       feePerSemester: Number(feePerSemester) || 0,
-      eligibility: eligibility || '10+2 or equivalent recognized qualification',
-      description: description || `${name} - Approved Academic Program offered with comprehensive curriculum.`,
+      eligibility: eligibility || '10+2 or recognized qualification',
+      description: description || `${name} - Approved Academic Program with full curriculum.`,
       createdAt: new Date().toISOString()
     };
 
+    if (process.env.MONGODB_URI) {
+      await CourseModel.create(newCourse);
+    }
+    const db = readDB();
+    if (!db.courses) db.courses = [];
     db.courses.push(newCourse);
     writeDB(db);
 
@@ -3922,35 +3931,40 @@ app.post('/api/courses', (req, res) => {
 });
 
 // Update academic course
-app.put('/api/courses/:id', (req, res) => {
+app.put('/api/courses/:id', async (req, res) => {
   try {
-    const db = readDB();
     const { id } = req.params;
+    let updatedCourse = null;
+
+    if (process.env.MONGODB_URI) {
+      updatedCourse = await CourseModel.findOneAndUpdate(
+        { $or: [{ id }, { code: id }] },
+        { ...req.body, updatedAt: new Date().toISOString() },
+        { new: true }
+      );
+    }
+
+    const db = readDB();
     if (!db.courses) db.courses = [];
     const index = db.courses.findIndex(c => c.id === id || c.code === id);
-    if (index === -1) {
+    if (index !== -1) {
+      db.courses[index] = {
+        ...db.courses[index],
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      };
+      writeDB(db);
+      if (!updatedCourse) updatedCourse = db.courses[index];
+    }
+
+    if (!updatedCourse) {
       return res.status(404).json({ success: false, message: 'Course not found.' });
     }
 
-    const current = db.courses[index];
-    const updated = {
-      ...current,
-      ...req.body,
-      id: current.id, // preserve immutable ID
-      durationYears: req.body.durationYears !== undefined ? Number(req.body.durationYears) : current.durationYears,
-      totalSemesters: req.body.totalSemesters !== undefined ? Number(req.body.totalSemesters) : current.totalSemesters,
-      totalFee: req.body.totalFee !== undefined ? Number(req.body.totalFee) : current.totalFee,
-      feePerSemester: req.body.feePerSemester !== undefined ? Number(req.body.feePerSemester) : current.feePerSemester,
-      updatedAt: new Date().toISOString()
-    };
-
-    db.courses[index] = updated;
-    writeDB(db);
-
     res.json({ 
       success: true, 
-      message: `Course "${updated.name}" updated successfully!`, 
-      course: updated 
+      message: `Course updated successfully!`, 
+      course: updatedCourse 
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -3958,28 +3972,23 @@ app.put('/api/courses/:id', (req, res) => {
 });
 
 // Delete academic course
-app.delete('/api/courses/:id', (req, res) => {
+app.delete('/api/courses/:id', async (req, res) => {
   try {
-    const db = readDB();
     const { id } = req.params;
-    if (!db.courses) db.courses = [];
-    const index = db.courses.findIndex(c => c.id === id || c.code === id);
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: 'Course not found.' });
+    if (process.env.MONGODB_URI) {
+      await CourseModel.deleteOne({ $or: [{ id }, { code: id }] });
     }
-
-    const deleted = db.courses.splice(index, 1);
-    writeDB(db);
-
-    res.json({ 
-      success: true, 
-      message: `Course "${deleted[0].name}" deleted successfully.`, 
-      course: deleted[0] 
-    });
+    const db = readDB();
+    if (db.courses) {
+      db.courses = db.courses.filter(c => c.id !== id && c.code !== id);
+      writeDB(db);
+    }
+    res.json({ success: true, message: 'Course deleted successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 // ====================================================
 // 8. UNIVERSITY PAID & SETTLEMENT MANAGEMENT (COUNSELOR LEDGER)
