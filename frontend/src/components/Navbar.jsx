@@ -121,17 +121,7 @@ export default function Navbar({
               </button>
             )}
 
-            <span className="text-slate-700">|</span>
 
-            {/* Admin Panel Direct Link */}
-            <a
-              href="/admin"
-              className="text-amber-300 hover:text-white font-bold transition-colors flex items-center gap-1 bg-amber-400/10 hover:bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400/30 text-[11px]"
-              title="Admin Panel Login & Desks"
-            >
-              <Shield className="w-3 h-3 text-amber-400" />
-              <span>Admin Panel</span>
-            </a>
 
             <span className="text-slate-700">|</span>
 
@@ -312,13 +302,7 @@ export default function Navbar({
               >
                 APPLY NOW
               </button>
-              <a
-                href="/admin"
-                className="w-full bg-slate-900 hover:bg-slate-800 text-amber-300 font-black text-xs uppercase tracking-wider py-3 rounded-md shadow-sm text-center flex items-center justify-center gap-2 border border-amber-400/40"
-              >
-                <Shield className="w-4 h-4 text-amber-400" />
-                <span>🛡️ Open Admin Panel</span>
-              </a>
+
             </div>
           </div>
         )}
