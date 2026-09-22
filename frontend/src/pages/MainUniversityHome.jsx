@@ -56,9 +56,10 @@ export default function MainUniversityHome({
   // Program Category Filter State
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  // 62 Courses — Search + Category Filter State
+  // 62 Courses — Search + Category Filter + Grid/Table View Mode
   const [courseSearch, setCourseSearch] = useState('');
   const [courseCategory, setCourseCategory] = useState('all');
+  const [courseViewMode, setCourseViewMode] = useState('grid');
 
   // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
   const [cardsInView, setCardsInView] = useState(false);
@@ -631,40 +632,169 @@ export default function MainUniversityHome({
             })}
           </div>
 
-          {/* Results Count */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              {filteredCourses.length} {lang === 'hi' ? 'पाठ्यक्रम मिले' : 'courses found'}
-            </span>
-            {(courseSearch || courseCategory !== 'all') && (
+          {/* Results Count & View Switcher */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#071530] uppercase tracking-wider bg-slate-200/70 px-3 py-1 rounded-lg">
+                {filteredCourses.length} {lang === 'hi' ? 'पाठ्यक्रम उपलब्ध' : 'courses available'}
+              </span>
+              {(courseSearch || courseCategory !== 'all') && (
+                <button
+                  onClick={() => { setCourseSearch(''); setCourseCategory('all'); }}
+                  className="text-xs font-bold text-[#C59B27] hover:text-amber-600 cursor-pointer underline"
+                >
+                  {lang === 'hi' ? 'फ़िल्टर हटाएं' : 'Clear filters'}
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Switcher (Grid Cards vs Table) */}
+            <div className="flex items-center bg-slate-200/80 p-1 rounded-xl border border-slate-300/60 text-xs font-bold">
               <button
-                onClick={() => { setCourseSearch(''); setCourseCategory('all'); }}
-                className="text-xs font-bold text-[#C59B27] hover:text-amber-600 cursor-pointer underline"
+                onClick={() => setCourseViewMode('grid')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  courseViewMode === 'grid'
+                    ? 'bg-[#071530] text-[#C59B27] shadow-sm font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                {lang === 'hi' ? 'फ़िल्टर हटाएं' : 'Clear filters'}
+                <span>🎴 Grid Cards</span>
               </button>
-            )}
+              <button
+                onClick={() => setCourseViewMode('table')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  courseViewMode === 'table'
+                    ? 'bg-[#071530] text-[#C59B27] shadow-sm font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>📋 Table List</span>
+              </button>
+            </div>
           </div>
 
-          {/* Course Table */}
+          {/* 62 Courses — Cards Grid / Table Container */}
           {filteredCourses.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
-              <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium">
-                {lang === 'hi' ? 'कोई कोर्स नहीं मिला' : 'No courses found. Try a different search.'}
+            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40 text-[#C59B27]" />
+              <p className="text-sm font-bold text-slate-700">
+                {lang === 'hi' ? 'कोई कोर्स नहीं मिला' : 'No courses found. Try a different search term or category.'}
               </p>
             </div>
+          ) : courseViewMode === 'grid' ? (
+            /* ================= GRID CARDS VIEW ================= */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCourses.map(course => {
+                const catImages = {
+                  Arts:     'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80',
+                  Science:  'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=600&q=80',
+                  Commerce: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
+                  Computer: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80',
+                  Law:      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+                  Research: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80',
+                };
+                const catBadgeStyles = {
+                  Arts:     'bg-purple-900/80 text-purple-200 border-purple-500/40',
+                  Science:  'bg-emerald-900/80 text-emerald-200 border-emerald-500/40',
+                  Commerce: 'bg-blue-900/80 text-blue-200 border-blue-500/40',
+                  Computer: 'bg-cyan-900/80 text-cyan-200 border-cyan-500/40',
+                  Law:      'bg-red-900/80 text-red-200 border-red-500/40',
+                  Research: 'bg-amber-900/80 text-amber-200 border-amber-500/40',
+                };
+
+                const getCourseDesc = (name, cat) => {
+                  if (name.includes('Ph.D.')) return 'Doctorate degree program with research dissertation, thesis guidance, and academic publications.';
+                  if (name.includes('MBA') || name.includes('M.B.A.')) return 'Master degree in Business Administration, leadership, finance, marketing and corporate strategy.';
+                  if (name.includes('BCA') || name.includes('B.C.A.')) return 'Software development, web technologies, DSA, database applications, and Python programming.';
+                  if (name.includes('MCA') || name.includes('M.C.A.')) return 'Postgraduate computing degree specializing in cloud systems, AI, and enterprise software engineering.';
+                  if (name.includes('DCA') || name.includes('D.C.A.')) return 'Govt recognized 1-year diploma in computer fundamentals, MS Office, internet tools, and Tally.';
+                  if (name.includes('PGDCA') || name.includes('P.G.D.C.A.')) return 'Postgraduate diploma in computer applications, programming, database systems, and IT management.';
+                  if (name.includes('B.Tech') || name.includes('M.Tech')) return 'Professional engineering degree covering core technical DSA, AI, and software systems.';
+                  if (name.includes('Pharm')) return 'Pharmaceutical sciences, drug formulation, clinical pharmacy, and healthcare regulations.';
+                  if (name.includes('Agri')) return 'Modern agricultural science, soil fertility, crop pathology, agronomy, and farming technology.';
+                  if (name.includes('LLB') || name.includes('LLM')) return 'Legal education covering constitutional law, judiciary, advocacy, and court litigation.';
+                  if (cat === 'Science') return 'Scientific curriculum with laboratory practicals, research methodologies, and foundation theory.';
+                  if (cat === 'Commerce') return 'Accounting, business economics, corporate taxation, auditing, and financial management.';
+                  if (cat === 'Computer') return 'Software development, database administration, web development, and IT systems.';
+                  if (cat === 'Law') return 'Legal education, jurisprudence, corporate laws, and judicial preparation.';
+                  if (cat === 'Research') return 'Higher academic research, thesis publication, and specialized subject mastery.';
+                  return 'Authorized university degree program with full syllabus scheme, exam support, and career counseling.';
+                };
+
+                return (
+                  <div
+                    key={course.id}
+                    onClick={() => {
+                      fireCelebration({ x: 0.5, y: 0.5 });
+                      setActiveTab('inquiry');
+                    }}
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 overflow-hidden flex flex-col cursor-pointer group relative transition-all duration-300"
+                  >
+                    {/* Top Image Banner */}
+                    <div className="relative h-36 overflow-hidden bg-slate-900">
+                      <img
+                        src={catImages[course.category] || catImages.Arts}
+                        alt={course.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+                      {/* Shimmer Light sweep effect */}
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+
+                      {/* Category Badge Top Left */}
+                      <span className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-sm ${catBadgeStyles[course.category]}`}>
+                        {course.category}
+                      </span>
+
+                      {/* Duration Tag Top Right */}
+                      <span className="absolute top-2.5 right-2.5 bg-[#C59B27] text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
+                        {course.duration}
+                      </span>
+
+                      {/* Icon overlay bottom left */}
+                      <div className="absolute -bottom-3 left-3">
+                        <div className="w-8 h-8 rounded-xl bg-[#071530] border-2 border-white text-[#C59B27] flex items-center justify-center shadow-md group-hover:rotate-12 transition-transform">
+                          <BookOpen className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Content Body */}
+                    <div className="p-4 pt-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-[10.5px] font-bold uppercase tracking-wider mb-1">
+                          <span>Program #{course.id}</span>
+                        </div>
+                        <h3 className="font-serif-academic font-extrabold text-base text-[#071530] leading-snug group-hover:text-amber-600 transition-colors">
+                          {course.name}
+                        </h3>
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed font-normal">
+                          {getCourseDesc(course.name, course.category)}
+                        </p>
+                      </div>
+
+                      {/* Footer Action Button */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
+                        <span className="uppercase tracking-wider text-[11px] font-black">APPLY / INQUIRE NOW</span>
+                        <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-[#C59B27] text-slate-700 group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
+            /* ================= TABLE VIEW ================= */
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Table Header */}
               <div className="grid grid-cols-12 px-5 py-3 bg-[#071530] text-[#C59B27] text-[11px] font-black uppercase tracking-widest">
                 <div className="col-span-1">#</div>
                 <div className="col-span-6 sm:col-span-7">Course Name</div>
                 <div className="col-span-3 sm:col-span-2 text-center">Category</div>
                 <div className="col-span-2 text-right">Duration</div>
               </div>
-
-              {/* Table Rows */}
               <div className="divide-y divide-slate-100">
                 {filteredCourses.map((course, idx) => {
                   const rowCatBadge = {
@@ -678,24 +808,21 @@ export default function MainUniversityHome({
                   return (
                     <div
                       key={course.id}
-                      className={`grid grid-cols-12 px-5 py-3.5 items-center text-sm transition-colors hover:bg-slate-50 ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}
+                      onClick={() => {
+                        fireCelebration({ x: 0.5, y: 0.5 });
+                        setActiveTab('inquiry');
+                      }}
+                      className={`grid grid-cols-12 px-5 py-3.5 items-center text-sm transition-colors hover:bg-amber-50/40 cursor-pointer ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}
                     >
-                      {/* S.No */}
                       <div className="col-span-1 text-xs font-bold text-slate-400">{course.id}</div>
-
-                      {/* Course Name */}
-                      <div className="col-span-6 sm:col-span-7 font-semibold text-[#071530] text-sm leading-snug">
+                      <div className="col-span-6 sm:col-span-7 font-bold text-[#071530] text-sm leading-snug">
                         {course.name}
                       </div>
-
-                      {/* Category Badge */}
                       <div className="col-span-3 sm:col-span-2 flex justify-center">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${rowCatBadge[course.category] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${rowCatBadge[course.category] || 'bg-slate-50 text-slate-500 border-slate-200'}`}>
                           {course.category}
                         </span>
                       </div>
-
-                      {/* Duration */}
                       <div className="col-span-2 text-right">
                         <span className="text-xs font-bold text-[#C59B27] bg-[#C59B27]/10 px-2 py-0.5 rounded-lg">
                           {course.duration}
