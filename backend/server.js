@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -7,6 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import { PDFParse } from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
+import { connectMongoDB } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -5946,11 +5949,16 @@ if (fs.existsSync(frontendDist)) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`====================================================`);
   console.log(`🎓 University Management API running on port ${PORT}`);
   console.log(`🌐 Portal URL: http://localhost:${PORT}`);
   console.log(`📁 Uploads available at: http://localhost:${PORT}/uploads`);
-  console.log(`💾 Database: backend/data/database.json (all data permanent)`);
+  if (process.env.MONGODB_URI) {
+    await connectMongoDB(process.env.MONGODB_URI);
+    console.log(`💾 Database Mode: MONGODB ATLAS CLOUD DATABASE (Permanent)`);
+  } else {
+    console.log(`💾 Database Mode: LOCAL JSON FILE (backend/data/database.json)`);
+  }
   console.log(`====================================================`);
 });
