@@ -60,6 +60,19 @@ export default function MainUniversityHome({
   const [courseSearch, setCourseSearch] = useState('');
   const [courseCategory, setCourseCategory] = useState('all');
   const [courseViewMode, setCourseViewMode] = useState('grid');
+  const [dbCourses, setDbCourses] = useState([]);
+
+  useEffect(() => {
+    const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://pkc-university-api.onrender.com';
+    fetch(`${apiBase}/api/courses`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.courses) && data.courses.length > 0) {
+          setDbCourses(data.courses);
+        }
+      })
+      .catch(err => console.log('Live courses fetch:', err));
+  }, []);
 
   // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
   const [cardsInView, setCardsInView] = useState(false);
@@ -186,9 +199,11 @@ export default function MainUniversityHome({
 
   const courseCategories = ['all', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
 
-  const filteredCourses = allCourses.filter(c => {
+  const activeCourseCatalog = dbCourses.length > 0 ? dbCourses : allCourses;
+
+  const filteredCourses = activeCourseCatalog.filter(c => {
     const matchCat = courseCategory === 'all' || c.category === courseCategory;
-    const matchSearch = c.name.toLowerCase().includes(courseSearch.toLowerCase());
+    const matchSearch = (c.name || '').toLowerCase().includes(courseSearch.toLowerCase());
     return matchCat && matchSearch;
   });
 
