@@ -7,7 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
-import { PDFParse } from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
 import { connectMongoDB } from './db_mongo.js';
 
@@ -683,7 +683,7 @@ app.post('/api/students/parse-pdf', memUpload.single('file'), async (req, res) =
   try {
     let text = '';
     if (req.file) {
-      const data = await PDFParse(req.file.buffer);
+      const data = await pdfParse(req.file.buffer);
       text = data.text || '';
     } else if (req.body.rawText) {
       text = req.body.rawText;
@@ -4871,10 +4871,8 @@ app.post('/api/colleges/:id/courses/upload', collegeCoursesUpload.single('file')
     } else if (ext === '.pdf') {
       try {
         const fileBuffer = fs.readFileSync(req.file.path);
-        const parser = new PDFParse({ data: fileBuffer });
-        await parser.load();
-        const textResult = await parser.getText();
-        const text = textResult?.text || '';
+        const data = await pdfParse(fileBuffer);
+        const text = data?.text || '';
 
         // Extract lines matching common degree courses
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
