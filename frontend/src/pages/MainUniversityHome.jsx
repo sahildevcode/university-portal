@@ -38,6 +38,30 @@ export default function MainUniversityHome({
 }) {
   const t = translations[lang] || translations.en;
 
+  // Dynamic Home CMS State (Syncs live when updated by Admin in CMS)
+  const [homeCms, setHomeCms] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkc_home_cms');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+
+  useEffect(() => {
+    const checkCms = () => {
+      try {
+        const saved = localStorage.getItem('pkc_home_cms');
+        if (saved) setHomeCms(JSON.parse(saved));
+      } catch {}
+    };
+
+    window.addEventListener('storage', checkCms);
+    const interval = setInterval(checkCms, 1500);
+    return () => {
+      window.removeEventListener('storage', checkCms);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Dynamic rotating headlines in Hero
   const dynamicPhrases = [
     lang === 'hi' ? 'उज्ज्वल भविष्य और सम्मान।' : 'A Future of Impact.',
@@ -410,9 +434,9 @@ export default function MainUniversityHome({
         {/* Campus Background Image with Deep Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop" 
+            src={homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"} 
             alt="University Campus" 
-            className="w-full h-full object-cover object-center opacity-30 scale-105"
+            className="w-full h-full object-cover object-center opacity-40 scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#071530] via-[#071530]/95 to-[#071530]/80" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#071530] via-transparent to-black/50" />
@@ -436,7 +460,7 @@ export default function MainUniversityHome({
               </div>
 
               <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
-                A Legacy of Excellence. <br />
+                {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
                 <span className="relative inline-block mt-1.5 py-1">
                   <span 
                     key={currentPhraseIdx}
@@ -453,8 +477,8 @@ export default function MainUniversityHome({
 
               <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed mx-auto lg:mx-0">
                 {lang === 'hi' 
-                  ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।'
-                  : 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.'
+                  ? (homeCms?.heroTaglineHi || 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।')
+                  : (homeCms?.heroTaglineEn || 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.')
                 }
               </p>
 
