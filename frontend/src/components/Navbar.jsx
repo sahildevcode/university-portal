@@ -16,7 +16,8 @@ import {
   X,
   Compass,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Briefcase
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { fireCelebration } from '../utils/confetti';
