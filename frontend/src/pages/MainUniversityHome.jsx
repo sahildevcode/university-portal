@@ -222,6 +222,105 @@ export default function MainUniversityHome({
     );
   };
 
+  // 8 Dedicated Scholarship Benefit Programs (Exact 8 courses requested by user)
+  const scholarship8Programs = [
+    {
+      id: 'sc-1',
+      name: 'MBA',
+      fullName: 'Master of Business Administration',
+      duration: '2 Years (4 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'HIGH SALARY & CORPORATE',
+      fieldBest: lang === 'hi' ? 'कॉरपोरेट मैनेजमेंट, फाइनेंस, मार्केटिंग व बैंकिंग क्षेत्र' : 'Best for: Corporate Leadership, Finance & Banking',
+      marketDemand: lang === 'hi' ? '⚡ जॉब मार्केट में 95%+ अत्यधिक मांग (Top Corporate Package)' : '⚡ Job Demand: 95%+ Top Corporate Salary Package',
+      image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Corporate Management', 'Fintech & HR', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-2',
+      name: 'BFD',
+      fullName: 'Bachelor of Fashion Design',
+      duration: '3 Years (6 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'FASHION & MEDIA',
+      fieldBest: lang === 'hi' ? 'फैशन डिजाइनिंग, गारमेंट टेक्नोलॉजी व टेक्सटाइल इंडस्ट्री' : 'Best for: Fashion Brands, Garment Tech & Export Houses',
+      marketDemand: lang === 'hi' ? '⚡ जॉब मार्केट में 90%+ मांग (Apparel & Media Houses)' : '⚡ Job Demand: 90%+ Apparel & Export Industry',
+      image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Apparel Technology', 'Fashion Merchandising', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-3',
+      name: 'B.Tech',
+      fullName: 'Bachelor of Technology (Engineering)',
+      duration: '4 Years (8 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'TOP IT & SOFTWARE',
+      fieldBest: lang === 'hi' ? 'सॉफ्टवेयर डेवलपमेंट, आईटी सेक्टर व सरकारी पीएसयू इंजीनियरिंग' : 'Best for: Software Engineering, Cloud & Govt PSU Jobs',
+      marketDemand: lang === 'hi' ? '⚡ जॉब मार्केट में 98%+ सबसे ज्यादा मांग (Highest IT Hiring)' : '⚡ Job Demand: 98%+ Highest IT & Software Demand',
+      image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Full Stack & Cloud', 'Core Tech Systems', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-4',
+      name: 'B.Sc Ag',
+      fullName: 'B.Sc. (Hons) Agriculture',
+      duration: '4 Years (8 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'GOVT AGRI OFFICER',
+      fieldBest: lang === 'hi' ? 'कृषि विज्ञान, एग्रीबिजनेस व कृषि अधिकारी (ADO) सरकारी नौकरी' : 'Best for: Agri-Officer (ADO), Agronomy & Agribusiness',
+      marketDemand: lang === 'hi' ? '⚡ सरकारी नौकरियों व एग्री सेक्टर में 92%+ मांग' : '⚡ Job Demand: 92%+ Govt Agriculture Officer Scope',
+      image: 'https://images.unsplash.com/photo-1595838788320-b087796d11f9?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Agronomy & Crops', 'Agribusiness Tech', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-5',
+      name: 'M.Tech',
+      fullName: 'Master of Technology (Advanced Engg)',
+      duration: '2 Years (4 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'AI & SENIOR TECH LEAD',
+      fieldBest: lang === 'hi' ? 'एडवांस्ड सॉफ्टवेयर रिसर्च, एआई व यूनिवर्सिटी प्रोफेसर/फैकल्टी' : 'Best for: Senior Tech Architect, AI R&D & University Faculty',
+      marketDemand: lang === 'hi' ? '⚡ रिसर्च व सीनियर इंजीनियरिंग में 90%+ मांग' : '⚡ Job Demand: 90%+ Senior Engineering Roles',
+      image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop',
+      highlights: ['AI & Neural Nets', 'Advanced Systems', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-6',
+      name: 'DCA',
+      fullName: 'Diploma in Computer Application',
+      duration: '1 Year (2 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'GOVT JOB MANDATORY',
+      fieldBest: lang === 'hi' ? 'मध्य प्रदेश सरकारी नौकरियों, एमपी ऑनलाइन व डेटा एंट्री ऑपरेटर' : 'Best for: MP Govt Jobs, MP Online & Data Operator',
+      marketDemand: lang === 'hi' ? '⚡ सभी सरकारी भर्ती हेतु 100% अनिवार्य डिप्लोमा' : '⚡ Job Demand: 100% Mandatory for Govt Jobs',
+      highlights: ['MS Office & Tally', 'MP Govt Approved', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-7',
+      name: 'BBA',
+      fullName: 'Bachelor of Business Administration',
+      duration: '3 Years (6 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'BUSINESS & STARTUPS',
+      fieldBest: lang === 'hi' ? 'बिजनेस ऑपरेशन्स, मार्केटिंग मैनेजमेंट व खुद का स्टार्टअप' : 'Best for: Corporate Operations, Marketing & Startups',
+      marketDemand: lang === 'hi' ? '⚡ कॉरपोरेट जॉब्स व एमबीए हेतु 91%+ मांग' : '⚡ Job Demand: 91%+ Entry to Corporate Management',
+      image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Corporate Strategy', 'Marketing & Sales', '100% MPTASS/NSP Scholarship']
+    },
+    {
+      id: 'sc-8',
+      name: 'BCA',
+      fullName: 'Bachelor of Computer Applications',
+      duration: '3 Years (6 Sem)',
+      category: 'Scholarship Benefit',
+      badge: 'HIGH IT HIRING',
+      fieldBest: lang === 'hi' ? 'वेब डेवलपमेंट, सॉफ्टवेयर इंजीनियरिंग व आईटी जॉब्स' : 'Best for: Web Engineering, Full Stack & IT Sector',
+      marketDemand: lang === 'hi' ? '⚡ आईटी सेक्टर व सॉफ्टवेयर डेवलपमेंट में 96%+ मांग' : '⚡ Job Demand: 96%+ High Software Hiring',
+      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop',
+      highlights: ['Full Stack Dev', 'Java / Python / SQL', '100% MPTASS/NSP Scholarship']
+    }
+  ];
+
   const filteredCourses = activeCourseCatalog.filter(c => {
     let matchCat = false;
     if (courseCategory === 'all') {
@@ -559,6 +658,98 @@ export default function MainUniversityHome({
               <p className="text-sm font-bold text-slate-700">
                 {lang === 'hi' ? 'कोई कोर्स नहीं मिला' : 'No courses found. Try a different search term or category.'}
               </p>
+            </div>
+          ) : courseCategory === 'Scholarship Benefit' ? (
+            /* ================= DEDICATED 8 SCHOLARSHIP BENEFIT CARDS (4 COLUMNS PER ROW) ================= */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeIn">
+              {scholarship8Programs.map((prog) => (
+                <div
+                  key={prog.id}
+                  onClick={() => {
+                    fireCelebration({ x: 0.5, y: 0.5 });
+                    setActiveTab('inquiry');
+                  }}
+                  className="bg-white rounded-2xl border-2 border-amber-400/60 shadow-md hover:shadow-2xl hover:-translate-y-2 overflow-hidden flex flex-col cursor-pointer group relative transition-all duration-300"
+                >
+                  {/* Top Image Banner */}
+                  <div className="relative h-44 overflow-hidden bg-slate-900">
+                    <img
+                      src={prog.image}
+                      alt={prog.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                    
+                    {/* Shimmer Light sweep */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+
+                    {/* Badge Top Left */}
+                    <span className="absolute top-2.5 left-2.5 bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[9.5px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-amber-300 shadow-md">
+                      🎓 {prog.badge}
+                    </span>
+
+                    {/* Duration Tag Top Right */}
+                    <span className="absolute top-2.5 right-2.5 bg-[#C59B27] text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
+                      {prog.duration}
+                    </span>
+
+                    {/* Program Code bottom overlay */}
+                    <div className="absolute bottom-2.5 left-3 text-white">
+                      <span className="text-[10px] font-mono font-bold tracking-widest bg-black/60 px-2 py-0.5 rounded text-amber-300 border border-amber-400/30">
+                        #{prog.code}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card Body Details */}
+                  <div className="p-4 pt-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-2">
+                      <div>
+                        <h3 className="font-serif-academic font-black text-xl text-[#071530] leading-none group-hover:text-amber-600 transition-colors">
+                          {prog.name}
+                        </h3>
+                        <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                          {prog.fullName}
+                        </p>
+                      </div>
+
+                      {/* 100% Scholarship Tag */}
+                      <div className="bg-emerald-50 border border-emerald-300/80 p-2 rounded-xl text-[10.5px] font-bold text-emerald-900 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>100% Govt Scholarship Benefit (MPTASS/NSP)</span>
+                      </div>
+
+                      {/* Best For Field */}
+                      <div className="space-y-1 text-xs">
+                        <p className="text-[11.5px] font-bold text-slate-700 leading-snug">
+                          {prog.fieldBest}
+                        </p>
+                        <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200">
+                          {prog.marketDemand}
+                        </p>
+                      </div>
+
+                      {/* Highlights */}
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {prog.highlights.map((h, i) => (
+                          <span key={i} className="text-[9.5px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
+                            • {h}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
+                      <span className="uppercase tracking-wider text-[11px] font-black">APPLY / INQUIRE NOW</span>
+                      <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-[#C59B27] text-slate-700 group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              ))}
             </div>
           ) : courseViewMode === 'grid' ? (
             /* ================= GRID CARDS VIEW ================= */
