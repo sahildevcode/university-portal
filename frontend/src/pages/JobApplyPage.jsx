@@ -23,9 +23,9 @@ export default function JobApplyPage({ lang = 'en' }) {
     fullName: '',
     phone: '',
     email: '',
-    role: 'Academic Counselor',
-    qualification: 'Graduate',
-    experience: 'Fresher',
+    role: '',
+    qualification: '',
+    experience: '',
     city: '',
     coverNote: ''
   });
@@ -266,18 +266,14 @@ export default function JobApplyPage({ lang = 'en' }) {
                       <Briefcase className="w-3.5 h-3.5 text-purple-600" />
                       <span>Position / Role Applied For *</span>
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Academic Counselor, Computer Faculty, Manager..."
                       value={formData.role}
                       onChange={e => setFormData({ ...formData, role: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
-                    >
-                      <option value="Academic Counselor">Academic Counselor / Admission Executive</option>
-                      <option value="Computer Faculty / Trainer">Computer Faculty / IT Trainer (DCA/PGDCA/Python)</option>
-                      <option value="Office Administrator">Office Administrator / Desk Executive</option>
-                      <option value="Digital Marketing Executive">Digital Marketing &amp; Telecalling Executive</option>
-                      <option value="Accounts & Cash Counter">Accounts &amp; Cash Counter Executive</option>
-                      <option value="Other">Other Role</option>
-                    </select>
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
+                    />
                   </div>
 
                   {/* Highest Qualification */}
@@ -286,35 +282,30 @@ export default function JobApplyPage({ lang = 'en' }) {
                       <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
                       <span>Highest Qualification *</span>
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. B.Tech, MBA, BCA, DCA, M.Com..."
                       value={formData.qualification}
                       onChange={e => setFormData({ ...formData, qualification: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
-                    >
-                      <option value="Graduate">Graduate (BA, B.Sc, B.Com, BBA, BCA, B.Tech)</option>
-                      <option value="Postgraduate">Postgraduate (MA, M.Sc, M.Com, MBA, MCA, M.Tech)</option>
-                      <option value="Diploma Holder">Computer Diploma (DCA / PGDCA)</option>
-                      <option value="Ph.D / Doctorate">Ph.D / Doctorate</option>
-                      <option value="12th Passed">12th Standard Passed</option>
-                    </select>
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
+                    />
                   </div>
 
                   {/* Total Work Experience */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                       <Award className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Total Work Experience</span>
+                      <span>Total Work Experience *</span>
                     </label>
-                    <select
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Fresher, 2 Years, 5+ Years..."
                       value={formData.experience}
                       onChange={e => setFormData({ ...formData, experience: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
-                    >
-                      <option value="Fresher">Fresher (0 Years)</option>
-                      <option value="1-2 Years">1 to 2 Years</option>
-                      <option value="3-5 Years">3 to 5 Years</option>
-                      <option value="5+ Years Experience">5+ Years Experience</option>
-                    </select>
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
+                    />
                   </div>
                 </div>
 
