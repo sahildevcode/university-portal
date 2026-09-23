@@ -105,7 +105,7 @@ export default function App() {
     }
   }, [lang]);
 
-  // Sync activeView and publicTab to localStorage and keep URL clean
+  // Sync activeView and publicTab to localStorage, keep URL clean, and update Browser Tab Title dynamically
   useEffect(() => {
     try {
       localStorage.setItem('pkc_active_view', activeView);
@@ -120,6 +120,28 @@ export default function App() {
         window.history.replaceState({}, '', '/staff');
       } else if (activeView === 'public' && (p.startsWith('/admin') || p.startsWith('/staff'))) {
         window.history.replaceState({}, '', '/');
+      }
+    }
+
+    if (typeof document !== 'undefined') {
+      if (activeView === 'admin') {
+        document.title = 'PKC Admin - Official Student Records & Management Portal';
+      } else if (activeView === 'staff') {
+        document.title = 'PKC Staff Desk - Cash Counter & Admissions';
+      } else {
+        if (publicTab === 'courses') {
+          document.title = 'Academic Courses Catalog | PKC Education Learning Institute';
+        } else if (publicTab === 'about') {
+          document.title = 'About Us | PKC Education Learning Institute';
+        } else if (publicTab === 'inquiry') {
+          document.title = 'Admission Inquiry | PKC Education Learning Institute';
+        } else if (publicTab === 'job-apply') {
+          document.title = 'Job Application | PKC Education Learning Institute';
+        } else if (publicTab === 'gallery') {
+          document.title = 'Campus Gallery | PKC Education Learning Institute';
+        } else {
+          document.title = 'PKC Education Learning Institute & Consultancy | Official Student Portal';
+        }
       }
     }
   }, [activeView, publicTab]);
