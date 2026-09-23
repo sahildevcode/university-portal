@@ -999,8 +999,8 @@ export default function MainUniversityHome({
                 <div
                   key={prog.id}
                   onClick={() => {
-                    fireCelebration({ x: 0.5, y: 0.5 });
-                    setActiveTab('inquiry');
+                    setSelectedCourseModal(prog);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="bg-white rounded-2xl border-2 border-amber-400/60 shadow-md hover:shadow-2xl hover:-translate-y-2 overflow-hidden flex flex-col cursor-pointer group relative transition-all duration-300"
                 >
@@ -1053,18 +1053,27 @@ export default function MainUniversityHome({
                       </div>
                     </div>
 
-                    {/* Action Button: VIEW COURSE DETAILS */}
-                    <div 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCourseModal(prog);
-                      }}
-                      className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]"
-                    >
-                      <span className="uppercase tracking-wider text-[11px] font-black">VIEW COURSE DETAILS</span>
-                      <div className="w-7 h-7 rounded-full bg-[#071530] text-amber-400 group-hover:bg-[#C59B27] group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    {/* Action Area: Details link + Dedicated Inquire Button */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-[#071530] group-hover:text-[#C59B27]">
+                        <span className="uppercase tracking-wider text-[10.5px] font-black">DETAILS</span>
+                        <div className="w-6 h-6 rounded-full bg-[#071530] text-amber-400 flex items-center justify-center text-[10px]">
+                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fireCelebration({ x: 0.5, y: 0.5 });
+                          setActiveTab('inquiry');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-[10.5px] uppercase tracking-wider px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <Sparkles className="w-3 h-3 text-slate-950" />
+                        <span>INQUIRE NOW</span>
+                      </button>
                     </div>
 
                   </div>
@@ -1115,8 +1124,8 @@ export default function MainUniversityHome({
                   <div
                     key={course.id}
                     onClick={() => {
-                      fireCelebration({ x: 0.5, y: 0.5 });
-                      setActiveTab('inquiry');
+                      setSelectedCourseModal(course);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-2 overflow-hidden flex flex-col cursor-pointer group relative transition-all duration-300"
                   >
@@ -1169,12 +1178,27 @@ export default function MainUniversityHome({
                         </p>
                       </div>
 
-                      {/* Footer Action Button */}
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
-                        <span className="uppercase tracking-wider text-[11px] font-black">APPLY / INQUIRE NOW</span>
-                        <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-[#C59B27] text-slate-700 group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      {/* Footer Action Bar: Details + Inquire Now Button */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-black text-[#071530] group-hover:text-[#C59B27]">
+                          <span className="uppercase tracking-wider text-[10.5px] font-black">DETAILS</span>
+                          <div className="w-6 h-6 rounded-full bg-slate-100 group-hover:bg-[#C59B27] text-slate-700 group-hover:text-slate-950 flex items-center justify-center text-[10px]">
+                            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                          </div>
                         </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fireCelebration({ x: 0.5, y: 0.5 });
+                            setActiveTab('inquiry');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="bg-[#071530] hover:bg-[#0a1f44] text-white font-black text-[10.5px] uppercase tracking-wider px-3 py-1.5 rounded-xl border border-amber-400/40 shadow-xs flex items-center gap-1 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                        >
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          <span className="text-amber-300">INQUIRE NOW</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1186,9 +1210,9 @@ export default function MainUniversityHome({
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="grid grid-cols-12 px-5 py-3 bg-[#071530] text-[#C59B27] text-[11px] font-black uppercase tracking-widest">
                 <div className="col-span-1">#</div>
-                <div className="col-span-6 sm:col-span-7">Course Name</div>
+                <div className="col-span-5 sm:col-span-6">Course Name</div>
                 <div className="col-span-3 sm:col-span-2 text-center">Category</div>
-                <div className="col-span-2 text-right">Duration</div>
+                <div className="col-span-3 sm:col-span-3 text-right">Actions</div>
               </div>
               <div className="divide-y divide-slate-100">
                 {filteredCourses.map((course, idx) => {
@@ -1204,13 +1228,13 @@ export default function MainUniversityHome({
                     <div
                       key={course.id}
                       onClick={() => {
-                        fireCelebration({ x: 0.5, y: 0.5 });
-                        setActiveTab('inquiry');
+                        setSelectedCourseModal(course);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className={`grid grid-cols-12 px-5 py-3.5 items-center text-sm transition-colors hover:bg-amber-50/40 cursor-pointer ${idx % 2 === 0 ? '' : 'bg-slate-50/40'}`}
                     >
                       <div className="col-span-1 text-xs font-bold text-slate-400">{course.id}</div>
-                      <div className="col-span-6 sm:col-span-7 font-bold text-[#071530] text-sm leading-snug">
+                      <div className="col-span-5 sm:col-span-6 font-bold text-[#071530] text-sm leading-snug">
                         {course.name}
                       </div>
                       <div className="col-span-3 sm:col-span-2 flex justify-center">
@@ -1218,10 +1242,21 @@ export default function MainUniversityHome({
                           {course.category}
                         </span>
                       </div>
-                      <div className="col-span-2 text-right">
-                        <span className="text-xs font-bold text-[#C59B27] bg-[#C59B27]/10 px-2 py-0.5 rounded-lg">
+                      <div className="col-span-3 sm:col-span-3 flex items-center justify-end gap-2">
+                        <span className="text-xs font-bold text-[#C59B27] bg-[#C59B27]/10 px-2 py-0.5 rounded-lg hidden sm:inline-block">
                           {course.duration}
                         </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fireCelebration({ x: 0.5, y: 0.5 });
+                            setActiveTab('inquiry');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-[10px] uppercase px-2.5 py-1 rounded-md shadow-xs cursor-pointer"
+                        >
+                          Inquire
+                        </button>
                       </div>
                     </div>
                   );
