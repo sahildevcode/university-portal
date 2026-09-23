@@ -61,6 +61,7 @@ export default function MainUniversityHome({
   const [courseCategory, setCourseCategory] = useState('all');
   const [courseViewMode, setCourseViewMode] = useState('grid');
   const [dbCourses, setDbCourses] = useState([]);
+  const [selectedCourseModal, setSelectedCourseModal] = useState(null);
 
   useEffect(() => {
     const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://pkc-university-api.onrender.com';

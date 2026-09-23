@@ -41,13 +41,7 @@ export default function App() {
   const [activeView, setActiveView] = useState(getInitialView);
 
   // Active Sub-Tab in Public Portal: 'home' | 'about' | 'courses' | 'inquiry'
-  const [publicTab, setPublicTab] = useState(() => {
-    try {
-      return localStorage.getItem('pkc_public_tab') || 'home';
-    } catch {
-      return 'home';
-    }
-  });
+  const [publicTab, setPublicTab] = useState('home');
 
   // Language state: 'en' (English default) | 'hi' (Hindi)
   const [lang, setLang] = useState(() => {
