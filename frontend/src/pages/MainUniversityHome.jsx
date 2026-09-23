@@ -705,10 +705,10 @@ export default function MainUniversityHome({
                   <div className="p-4 pt-4 flex-1 flex flex-col justify-between space-y-3">
                     <div className="space-y-2">
                       <div>
-                        <h3 className="font-serif-academic font-black text-xl text-[#071530] leading-none group-hover:text-amber-600 transition-colors">
+                        <h3 className="font-serif-academic font-black text-2xl text-[#071530] leading-none group-hover:text-amber-600 transition-colors">
                           {prog.name}
                         </h3>
-                        <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                        <p className="text-xs font-bold text-slate-500 mt-1">
                           {prog.fullName}
                         </p>
                       </div>
@@ -718,31 +718,18 @@ export default function MainUniversityHome({
                         <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span>100% Govt Scholarship Benefit (MPTASS/NSP)</span>
                       </div>
-
-                      {/* Best For Field */}
-                      <div className="space-y-1 text-xs">
-                        <p className="text-[11.5px] font-bold text-slate-700 leading-snug">
-                          {prog.fieldBest}
-                        </p>
-                        <p className="text-[11px] font-semibold text-amber-700 bg-amber-50/80 px-2 py-1 rounded-lg border border-amber-200">
-                          {prog.marketDemand}
-                        </p>
-                      </div>
-
-                      {/* Highlights */}
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {prog.highlights.map((h, i) => (
-                          <span key={i} className="text-[9.5px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">
-                            • {h}
-                          </span>
-                        ))}
-                      </div>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]">
-                      <span className="uppercase tracking-wider text-[11px] font-black">APPLY / INQUIRE NOW</span>
-                      <div className="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-[#C59B27] text-slate-700 group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
+                    {/* Action Button: VIEW COURSE DETAILS */}
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCourseModal(prog);
+                      }}
+                      className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#071530] group-hover:text-[#C59B27]"
+                    >
+                      <span className="uppercase tracking-wider text-[11px] font-black">VIEW COURSE DETAILS</span>
+                      <div className="w-7 h-7 rounded-full bg-[#071530] text-amber-400 group-hover:bg-[#C59B27] group-hover:text-slate-950 flex items-center justify-center transition-all shadow-xs">
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </div>
                     </div>
@@ -1195,6 +1182,129 @@ export default function MainUniversityHome({
 
         </div>
       </section>
+
+      {/* ========================================================================= */}
+      {/* COURSE DETAILS MODAL POPUP */}
+      {/* ========================================================================= */}
+      {selectedCourseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-scaleUp max-h-[90vh] flex flex-col">
+            
+            {/* Top Banner Image */}
+            <div className="relative h-44 sm:h-52 bg-slate-900 shrink-0">
+              <img 
+                src={selectedCourseModal.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop'} 
+                alt={selectedCourseModal.name} 
+                className="w-full h-full object-cover opacity-85"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedCourseModal(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/70 text-white hover:bg-rose-600 flex items-center justify-center font-bold text-lg transition-colors cursor-pointer border border-white/20 shadow-md"
+              >
+                ✕
+              </button>
+
+              <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
+                <span className="bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider shadow-sm">
+                  🎓 {selectedCourseModal.badge || selectedCourseModal.category}
+                </span>
+                <h2 className="font-serif-academic text-3xl font-black text-white leading-none">
+                  {selectedCourseModal.name}
+                </h2>
+                <p className="text-xs font-bold text-amber-300">
+                  {selectedCourseModal.fullName || selectedCourseModal.name} • {selectedCourseModal.duration}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-6 sm:p-8 space-y-5 text-slate-800 text-xs overflow-y-auto flex-1">
+              
+              {/* 100% Scholarship Banner */}
+              <div className="bg-emerald-50 border border-emerald-300/90 p-4 rounded-2xl flex items-center gap-3 text-emerald-950 shadow-xs">
+                <Sparkles className="w-5 h-5 text-emerald-600 shrink-0 animate-spin-slow" />
+                <div>
+                  <strong className="block text-sm font-black text-emerald-900">100% Govt Scholarship Benefit (MPTASS &amp; NSP Eligible)</strong>
+                  <span className="text-xs text-emerald-700 leading-relaxed block mt-0.5">
+                    SC / ST / OBC category students receive 100% tuition fee reimbursement &amp; hostel allowance.
+                  </span>
+                </div>
+              </div>
+
+              {/* Best For Field & Job Scope */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🎯 Best For Field / Career</span>
+                  <p className="text-xs font-black text-[#071530] leading-snug">
+                    {selectedCourseModal.fieldBest || selectedCourseModal.description || 'Authorized university degree program with full syllabus scheme and exam support.'}
+                  </p>
+                </div>
+
+                <div className="bg-amber-50/80 p-4 rounded-2xl border border-amber-200 space-y-1">
+                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">⚡ Job Market Scope &amp; Demand</span>
+                  <p className="text-xs font-black text-amber-950 leading-snug">
+                    {selectedCourseModal.marketDemand || '⚡ 95%+ High Industry Hiring & Placement Scope'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Key Highlights */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Key Highlights &amp; Specializations</span>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedCourseModal.highlights || ['UGC Approved University', '100% Exam Assistance', 'Govt Scholarship Benefit', 'Regular / Distance Mode']).map((h, i) => (
+                    <span key={i} className="bg-slate-100 text-slate-800 font-bold px-3 py-1.5 rounded-xl border border-slate-200 text-xs flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{h}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Program Duration & Semesters */}
+              <div className="bg-[#071530] text-white p-4 rounded-2xl border border-[#C59B27]/40 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-[#C59B27] uppercase tracking-widest block">Program Duration</span>
+                  <strong className="text-sm font-black text-white">{selectedCourseModal.duration}</strong>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Admission Status</span>
+                  <span className="text-xs font-black text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-500/30">
+                    🟢 ADMISSIONS OPEN 2026-27
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons inside Modal */}
+              <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
+                <button
+                  onClick={() => setSelectedCourseModal(null)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 text-xs cursor-pointer border border-slate-200 transition-colors"
+                >
+                  Close Details
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCourseModal(null);
+                    fireCelebration();
+                    setActiveTab('inquiry');
+                  }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-[#071530] via-[#0A1931] to-indigo-950 hover:from-[#0a1f44] hover:to-indigo-900 text-white font-black px-7 py-3.5 rounded-xl shadow-xl text-xs cursor-pointer flex items-center justify-center gap-2 border border-amber-400/50 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>APPLY FOR ADMISSION NOW (इनक्वायरी करें)</span>
+                  <ArrowRight className="w-4 h-4 text-amber-400" />
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
