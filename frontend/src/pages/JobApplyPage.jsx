@@ -12,7 +12,9 @@ import {
   FileText, 
   Building2,
   Award,
-  Check
+  UploadCloud,
+  X,
+  FileCheck
 } from 'lucide-react';
 import { fireCelebration } from '../utils/confetti';
 
@@ -28,19 +30,85 @@ export default function JobApplyPage({ lang = 'en' }) {
     coverNote: ''
   });
 
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeBase64, setResumeBase64] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check size limit (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit. Please upload a smaller file.');
+      return;
+    }
+
+    setResumeFile({
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + ' KB',
+      type: file.type
+    });
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setResumeBase64(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = () => {
+    setResumeFile(null);
+    setResumeBase64('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone) return;
 
     setLoading(true);
+
+    const newApp = {
+      id: `app-${Date.now()}`,
+      ...formData,
+      resumeFileName: resumeFile?.name || '',
+      resumeFileSize: resumeFile?.size || '',
+      resumeBase64: resumeBase64 || '',
+      date: new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })
+    };
+
+    // Save locally
+    try {
+      const saved = localStorage.getItem('pkc_job_applications');
+      const list = saved ? JSON.parse(saved) : [];
+      list.unshift(newApp);
+      localStorage.setItem('pkc_job_applications', JSON.stringify(list));
+    } catch (err) {
+      console.error('Error saving local application:', err);
+    }
+
+    // Try posting to backend API
+    try {
+      const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+      await fetch(`${apiBase}/api/job-applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp)
+      });
+    } catch (err) {
+      console.log('Backend sync notice (saved locally):', err);
+    }
+
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
       fireCelebration({ x: 0.5, y: 0.5 });
-    }, 800);
+    }, 600);
   };
 
   return (
@@ -118,7 +186,7 @@ export default function JobApplyPage({ lang = 'en' }) {
                   Application Submitted Successfully!
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                  Thank you <strong>{formData.fullName}</strong>. Your application for <strong>{formData.role}</strong> has been registered with PKC Education HR desk. We will review your profile and contact you soon.
+                  Thank you <strong>{formData.fullName}</strong>. Your application for <strong>{formData.role}</strong> and uploaded resume have been registered with PKC Education HR desk. We will review your profile and contact you soon.
                 </p>
                 <button
                   onClick={() => {
@@ -133,6 +201,7 @@ export default function JobApplyPage({ lang = 'en' }) {
                       city: '',
                       coverNote: ''
                     });
+                    removeFile();
                   }}
                   className="mt-4 px-6 py-2.5 bg-[#071530] text-[#C59B27] font-bold text-xs rounded-xl hover:bg-[#0a1f44] transition-all cursor-pointer"
                 >
@@ -244,7 +313,7 @@ export default function JobApplyPage({ lang = 'en' }) {
                       <option value="Fresher">Fresher (0 Years)</option>
                       <option value="1-2 Years">1 to 2 Years</option>
                       <option value="3-5 Years">3 to 5 Years</option>
-                      <option value="5+ Years">5+ Years Experience</option>
+                      <option value="5+ Years Experience">5+ Years Experience</option>
                     </select>
                   </div>
                 </div>
@@ -272,13 +341,64 @@ export default function JobApplyPage({ lang = 'en' }) {
                     <span>Skills / Profile Summary &amp; Experience Details *</span>
                   </label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     required
                     placeholder="Briefly describe your work experience, computer skills, communication abilities, or previous job background..."
                     value={formData.coverNote}
                     onChange={e => setFormData({ ...formData, coverNote: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#C59B27]/40 focus:border-[#C59B27]"
                   />
+                </div>
+
+                {/* RESUME UPLOAD SECTION */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <UploadCloud className="w-4 h-4 text-[#C59B27]" />
+                      <span>Upload Resume / CV (PDF, DOC, DOCX, Image) *</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">Max file size: 10MB</span>
+                  </label>
+
+                  {resumeFile ? (
+                    <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 flex items-center justify-between gap-3 animate-fadeIn">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <FileCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <strong className="text-xs font-bold text-emerald-950 block">{resumeFile.name}</strong>
+                          <span className="text-[10.5px] text-emerald-700 font-semibold">{resumeFile.size} • Ready for upload</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeFile}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="Remove file"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-amber-300 hover:border-[#C59B27] bg-amber-50/40 hover:bg-amber-50 rounded-2xl p-6 text-center flex flex-col items-center justify-center cursor-pointer transition-all group">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <div className="w-12 h-12 rounded-2xl bg-[#071530] text-[#C59B27] flex items-center justify-center mb-2 shadow-md group-hover:scale-110 transition-transform">
+                        <UploadCloud className="w-6 h-6" />
+                      </div>
+                      <span className="text-xs font-bold text-[#071530] block">
+                        Click here to upload your Resume / CV file
+                      </span>
+                      <span className="text-[10.5px] text-slate-500 mt-1">
+                        Supports PDF, Word Documents (.doc, .docx) &amp; Images
+                      </span>
+                    </label>
+                  )}
                 </div>
 
                 {/* Submit Button */}
@@ -288,7 +408,7 @@ export default function JobApplyPage({ lang = 'en' }) {
                   className="w-full bg-gradient-to-r from-[#071530] via-[#0A1931] to-indigo-950 hover:from-[#0a1f44] hover:to-indigo-900 text-white font-black py-4 rounded-2xl shadow-xl text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 border border-amber-400/40 hover:scale-[1.01] active:scale-[0.99] transition-all"
                 >
                   {loading ? (
-                    <span>SUBMITTING APPLICATION...</span>
+                    <span>SUBMITTING APPLICATION &amp; RESUME...</span>
                   ) : (
                     <>
                       <Send className="w-4 h-4 text-amber-400" />

@@ -109,6 +109,45 @@ const syllabusStorage = multer.diskStorage({
   }
 });
 
+const resumesUploadDir = path.join(__dirname, 'uploads', 'resumes');
+if (!fs.existsSync(resumesUploadDir)) {
+  fs.mkdirSync(resumesUploadDir, { recursive: true });
+}
+app.use('/uploads/resumes', express.static(resumesUploadDir));
+
+// Job Applications Endpoints
+app.get('/api/job-applications', (req, res) => {
+  const db = readDB();
+  res.json({
+    success: true,
+    applications: db.jobApplications || []
+  });
+});
+
+app.post('/api/job-applications', (req, res) => {
+  const db = readDB();
+  if (!Array.isArray(db.jobApplications)) {
+    db.jobApplications = [];
+  }
+  const appData = req.body;
+  db.jobApplications.unshift(appData);
+  writeDB(db);
+  res.json({
+    success: true,
+    message: 'Job application registered successfully.',
+    application: appData
+  });
+});
+
+app.delete('/api/job-applications/:id', (req, res) => {
+  const db = readDB();
+  if (Array.isArray(db.jobApplications)) {
+    db.jobApplications = db.jobApplications.filter(a => a.id !== req.params.id);
+    writeDB(db);
+  }
+  res.json({ success: true, message: 'Job application deleted.' });
+});
+
 const syllabusUpload = multer({
   storage: syllabusStorage,
   limits: { fileSize: 30 * 1024 * 1024 }

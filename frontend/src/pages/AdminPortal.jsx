@@ -17,6 +17,7 @@ import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import SavePersonalDocuments from './SavePersonalDocuments';
 import PromoteStudentsManager from './PromoteStudentsManager';
 import VocationalCoursesManager from './VocationalCoursesManager';
+import JobApplicationsManager from './JobApplicationsManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -443,6 +444,16 @@ export default function AdminPortal({
       icon: Briefcase, 
       color: 'text-amber-500',
       badge: 'Vocational'
+    },
+    { 
+      id: 'recruitment', 
+      label: 'Job Applications & Resumes', 
+      fullName: 'Recruitment & Job Applications Desk',
+      sub: 'View candidate job applications, details & download uploaded resumes',
+      shortDesc: 'Recruitment Desk & Candidate Resumes',
+      icon: Briefcase, 
+      color: 'text-[#C59B27]',
+      badge: 'Resumes & HR'
     }
   ];
 
@@ -1054,6 +1065,11 @@ export default function AdminPortal({
           onNavigateToCancelled={() => setActiveTab('cancelled')}
           onRefreshCourses={onRefreshCourses}
         />
+      )}
+
+      {/* TAB 13: RECRUITMENT & JOB APPLICATIONS DESK */}
+      {activeTab === 'recruitment' && (
+        <JobApplicationsManager lang={lang} />
       )}
 
       </main>
