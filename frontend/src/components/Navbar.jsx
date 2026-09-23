@@ -232,13 +232,14 @@ export default function Navbar({
             {/* 5. JOB APPLY */}
             <button
               onClick={() => handleNavClick('job-apply')}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer rounded-lg flex items-center gap-1.5 border ${
                 activeView === 'public' && publicTab === 'job-apply'
-                  ? 'text-[#071530] border-amber-500 font-extrabold'
-                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
+                  ? 'bg-[#071530] text-amber-400 border-amber-500 shadow-sm'
+                  : 'bg-amber-400/10 text-amber-800 hover:bg-amber-400/20 border-amber-400/40'
               }`}
             >
-              JOB APPLY
+              <Briefcase className="w-3.5 h-3.5 text-amber-600" />
+              <span>JOB APPLY</span>
             </button>
 
             {/* 6. GALLERY */}
@@ -256,18 +257,18 @@ export default function Navbar({
           </nav>
 
           {/* ========================================================================= */}
-          {/* RIGHT: Classic Gold "APPLY NOW" CTA Button (Northfield Style) */}
+          {/* RIGHT: Highlighted Gold "JOB APPLY" CTA Button */}
           {/* ========================================================================= */}
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={() => {
                 fireCelebration({ x: 0.9, y: 0.1 });
-                handleNavClick('inquiry');
+                handleNavClick('job-apply');
               }}
               className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 group relative overflow-hidden"
             >
-              <Sparkles className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-12 transition-transform" />
-              <span>APPLY NOW</span>
+              <Briefcase className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-12 transition-transform" />
+              <span>JOB APPLY</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
@@ -337,12 +338,16 @@ export default function Navbar({
             </button>
             <div className="pt-2 space-y-2">
               <button
-                onClick={() => handleNavClick('inquiry')}
-                className="w-full bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-md shadow-sm text-center cursor-pointer"
+                onClick={() => {
+                  fireCelebration({ x: 0.5, y: 0.5 });
+                  handleNavClick('job-apply');
+                }}
+                className="w-full bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-md shadow-sm text-center cursor-pointer flex items-center justify-center gap-2"
               >
-                APPLY NOW
+                <Briefcase className="w-4 h-4 text-slate-950" />
+                <span>JOB APPLY</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
               </button>
-
             </div>
           </div>
         )}
