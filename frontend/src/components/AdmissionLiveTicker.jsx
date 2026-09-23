@@ -6,7 +6,7 @@ export default function AdmissionLiveTicker({ onAction, lang = 'en' }) {
   const tickerItems = [
     {
       id: 1,
-      badge: lang === 'hi' ? 'प्रवेश प्रारंभ 2024-25' : 'Admissions 2024-25',
+      badge: lang === 'hi' ? 'प्रवेश प्रारंभ 2026-27' : 'Admissions 2026-27',
       text: lang === 'hi' 
         ? 'यूजीसी मान्यता प्राप्त विश्वविद्यालयों में B.Tech, MBA, BCA, B.Sc, DCA, PGDCA में सीधी प्रवेश सहायता उपलब्ध।' 
         : 'Direct admissions open in B.Tech, MBA, BCA, B.Sc, DCA, PGDCA with recognized UGC Universities.',

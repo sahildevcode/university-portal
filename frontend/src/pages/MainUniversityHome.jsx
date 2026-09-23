@@ -751,12 +751,16 @@ export default function MainUniversityHome({
                 </span>
               </div>
 
-              <h1 className="font-serif-academic text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
                 A Legacy of Excellence. <br />
-                <span className="relative inline-block mt-1">
+                <span className="relative inline-block mt-1.5 py-1">
                   <span 
                     key={currentPhraseIdx}
-                    className="text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic font-bold block animate-fadeIn"
+                    className={`font-bold block animate-fadeIn py-1 ${
+                      lang === 'hi'
+                        ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl'
+                        : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic'
+                    }`}
                   >
                     {dynamicPhrases[currentPhraseIdx]}
                   </span>
