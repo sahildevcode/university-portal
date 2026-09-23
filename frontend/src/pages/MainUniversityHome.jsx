@@ -384,6 +384,338 @@ export default function MainUniversityHome({
     }
   ];
 
+  // DEDICATED FULL PAGE VIEW FOR COURSE DETAILS (Redirected View)
+  if (selectedCourseModal) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20 animate-fadeIn">
+        
+        {/* Top Header / Sticky Navigation Bar */}
+        <div className="bg-[#071530] text-white border-b border-[#C59B27]/30 sticky top-0 z-40 shadow-md">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+            <button
+              onClick={() => {
+                setSelectedCourseModal(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl transition-all cursor-pointer border border-amber-400/30"
+            >
+              <ArrowRight className="w-4 h-4 rotate-180 text-amber-400" />
+              <span>← Back to All Courses &amp; Homepage</span>
+            </button>
+
+            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-300 font-medium">
+              <span>Home</span>
+              <span>/</span>
+              <span>Academic Courses</span>
+              <span>/</span>
+              <span className="text-amber-400 font-bold">{selectedCourseModal.name}</span>
+            </div>
+
+            <button
+              onClick={() => {
+                setSelectedCourseModal(null);
+                fireCelebration();
+                setActiveTab('inquiry');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider px-4 py-2 rounded-xl shadow-md hover:scale-105 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+              <span>ADMISSION INQUIRY</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Hero Banner Section */}
+        <div className="relative bg-slate-950 text-white overflow-hidden py-12 sm:py-16">
+          <img 
+            src={selectedCourseModal.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'} 
+            alt={selectedCourseModal.name} 
+            className="absolute inset-0 w-full h-full object-cover opacity-25"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+          
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 space-y-4 text-center sm:text-left z-10">
+            <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+              <span className="bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-xs font-black uppercase px-3 py-1 rounded-md tracking-wider shadow-sm">
+                🎓 {selectedCourseModal.badge || selectedCourseModal.category}
+              </span>
+              <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold px-3 py-1 rounded-md">
+                ⏱️ Duration: {selectedCourseModal.duration}
+              </span>
+              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1 rounded-md">
+                🟢 ADMISSIONS OPEN 2026-27
+              </span>
+            </div>
+
+            <h1 className="font-serif-academic text-3xl sm:text-5xl font-black text-white leading-tight">
+              {selectedCourseModal.name === 'MBA' ? 'Master of Business Administration (MBA)' : selectedCourseModal.name}
+            </h1>
+            <p className="text-sm sm:text-base font-medium text-slate-300 max-w-3xl">
+              {selectedCourseModal.name === 'MBA' 
+                ? 'Complete Career & Course Guide • Authorized UGC Recognized University Degree Program' 
+                : (selectedCourseModal.fullName || selectedCourseModal.description || 'Authorized university degree program with full syllabus scheme and exam support.')}
+            </p>
+            <p className="text-xs text-amber-400 font-bold uppercase tracking-wider">
+              PKC Education Learning Institute &amp; Consultancy • Head Office: Chhatarpur (M.P.)
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
+
+          {/* 100% Scholarship Banner */}
+          <div className="bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-teal-50 border-2 border-emerald-400 p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 text-emerald-950 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Sparkles className="w-6 h-6 text-white animate-spin-slow" />
+            </div>
+            <div className="text-center sm:text-left space-y-1">
+              <strong className="block text-base font-black text-emerald-950">100% Govt Scholarship Scheme (MPTASS &amp; NSP Eligible)</strong>
+              <p className="text-xs sm:text-sm text-emerald-800 font-medium leading-relaxed">
+                SC / ST / OBC category students receive 100% tuition fee reimbursement &amp; hostel allowance scheme guidance at PKC Education Institute.
+              </p>
+            </div>
+          </div>
+
+          {/* MBA Detailed Guide Content OR Generic Course Guide */}
+          {(selectedCourseModal.name === 'MBA' || selectedCourseModal.code === 'MBA') ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-8">
+              
+              {/* Overview */}
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-lg font-black text-[#071530] flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-amber-500" />
+                  <span>MBA Course Overview &amp; Introduction</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                  MBA (Master of Business Administration) ek 2-saal ka professional postgraduate degree program hai. Yeh course students ko <strong>leadership, management, problem-solving</strong> aur <strong>strategic business operations</strong> ki professional training deta hai. MBA ka main target candidate ko standard corporate leadership, management roles aur entrepreneurship (startup) ke liye fully prepare karna hota hai.
+                </p>
+              </div>
+
+              {/* 1. MBA Duration Formats */}
+              <div className="space-y-4">
+                <h3 className="text-base font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#071530] text-amber-400 text-xs flex items-center justify-center font-bold">1</span>
+                  <span>MBA Duration (Padhai Kitne Saal Ki Hoti Hai?)</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-blue-50/80 p-5 rounded-2xl border border-blue-200 space-y-1.5 shadow-xs">
+                    <span className="text-xs font-black uppercase text-blue-700 block">Full-Time Regular MBA</span>
+                    <strong className="text-sm text-blue-950 font-bold block">2 Years (4 Semesters)</strong>
+                    <p className="text-xs text-blue-900/80 leading-relaxed">Sabse popular aur highly demanded standard campus format.</p>
+                  </div>
+
+                  <div className="bg-purple-50/80 p-5 rounded-2xl border border-purple-200 space-y-1.5 shadow-xs">
+                    <span className="text-xs font-black uppercase text-purple-700 block">Executive MBA (EMBA)</span>
+                    <strong className="text-sm text-purple-950 font-bold block">1 to 2 Years</strong>
+                    <p className="text-xs text-purple-900/80 leading-relaxed">Working professionals ke liye (min 3–5 yrs experience needed).</p>
+                  </div>
+
+                  <div className="bg-emerald-50/80 p-5 rounded-2xl border border-emerald-200 space-y-1.5 shadow-xs">
+                    <span className="text-xs font-black uppercase text-emerald-700 block">Part-Time / Distance MBA</span>
+                    <strong className="text-sm text-emerald-950 font-bold block">2 to 3 Years</strong>
+                    <p className="text-xs text-emerald-900/80 leading-relaxed">Job ya business ke saath flexible degree option.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Who Should Pursue MBA? */}
+              <div className="space-y-4">
+                <h3 className="text-base font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#071530] text-amber-400 text-xs flex items-center justify-center font-bold">2</span>
+                  <span>MBA Kiske Liye Best Hai? (Who Should Pursue MBA?)</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { title: 'Career Growth / Leadership Role', desc: 'Agar aap company mein Manager, VP, ya Director Level par jana chahte hain.' },
+                    { title: 'Salary Hike & Higher CTC', desc: 'Non-MBA roles ke mukable MBA graduates ko high starting package milta hai.' },
+                    { title: 'Field Change (Career Switch)', desc: 'Engineering, B.Sc, ya Arts field se Management sector mein shift hone ke liye.' },
+                    { title: 'Entrepreneurship / Business Mindset', desc: 'Apna khud ka Startup launch ya Family Business expand karne ke liye.' },
+                    { title: 'Global Professional Networking', desc: 'Top Industry experts, alumni aur business leaders ke saath connection banane ke liye.' }
+                  ].map((item, idx) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-sm font-bold text-slate-900 block">{item.title}</strong>
+                        <span className="text-xs text-slate-600 leading-relaxed block mt-1">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Major Specializations */}
+              <div className="space-y-4">
+                <h3 className="text-base font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#071530] text-amber-400 text-xs flex items-center justify-center font-bold">3</span>
+                  <span>Major Specializations (Aap Kis Stream Mein MBA Kar Sakte Hain?)</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-1">
+                    <strong className="text-sm font-bold text-amber-950 block">💼 MBA in Finance</strong>
+                    <p className="text-xs text-amber-900/90">Stock market, investment banking, corporate finance aur risk management.</p>
+                  </div>
+                  <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200 space-y-1">
+                    <strong className="text-sm font-bold text-blue-950 block">🚀 MBA in Marketing</strong>
+                    <p className="text-xs text-blue-900/90">Brand management, digital marketing, market research aur sales strategy.</p>
+                  </div>
+                  <div className="bg-rose-50/70 p-4 rounded-2xl border border-rose-200 space-y-1">
+                    <strong className="text-sm font-bold text-rose-950 block">👥 MBA in Human Resource (HR)</strong>
+                    <p className="text-xs text-rose-900/90">Talent acquisition, corporate policies aur employee management.</p>
+                  </div>
+                  <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-200 space-y-1">
+                    <strong className="text-sm font-bold text-indigo-950 block">🤖 MBA in Business Analytics &amp; AI</strong>
+                    <p className="text-xs text-indigo-900/90">Data analysis, business intelligence aur AI decision-making (Highest Demand).</p>
+                  </div>
+                  <div className="bg-teal-50/70 p-4 rounded-2xl border border-teal-200 sm:col-span-2 space-y-1">
+                    <strong className="text-sm font-bold text-teal-950 block">📦 MBA in Operations &amp; Supply Chain</strong>
+                    <p className="text-xs text-teal-900/90">Logistics, inventory control, ecommerce operations aur manufacturing management.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Current Market Demand & Salary Table */}
+              <div className="space-y-4">
+                <h3 className="text-base font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-[#071530] text-amber-400 text-xs flex items-center justify-center font-bold">4</span>
+                  <span>Current Market Demand &amp; High Paying Job Roles (Salary Scope)</span>
+                </h3>
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[#071530] text-white text-xs font-black uppercase tracking-wider">
+                        <th className="p-4">Job Role</th>
+                        <th className="p-4">Top Recruiting Companies</th>
+                        <th className="p-4">Average Starting Package (CTC)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-xs sm:text-sm font-medium text-slate-800 bg-white">
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Management Consultant</td>
+                        <td className="p-4 text-slate-600">McKinsey, BCG, Deloitte, PwC</td>
+                        <td className="p-4 font-bold text-emerald-700">₹15 – 40 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Investment Banker</td>
+                        <td className="p-4 text-slate-600">Goldman Sachs, JP Morgan, Morgan Stanley</td>
+                        <td className="p-4 font-bold text-emerald-700">₹12 – 35 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Product Manager</td>
+                        <td className="p-4 text-slate-600">Google, Amazon, Flipkart, Microsoft</td>
+                        <td className="p-4 font-bold text-emerald-700">₹14 – 30 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Business Analytics Manager</td>
+                        <td className="p-4 text-slate-600">Accenture, TCS, Wipro, KPMG</td>
+                        <td className="p-4 font-bold text-emerald-700">₹8 – 22 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Marketing Head / Brand Manager</td>
+                        <td className="p-4 text-slate-600">HUL, P&amp;G, Reliance, Nestlé</td>
+                        <td className="p-4 font-bold text-emerald-700">₹10 – 25 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">HR Manager / Talent Lead</td>
+                        <td className="p-4 text-slate-600">Infosys, Cognizant, IBM, Tech Mahindra</td>
+                        <td className="p-4 font-bold text-emerald-700">₹6 – 18 LPA</td>
+                      </tr>
+                      <tr className="hover:bg-amber-50/40">
+                        <td className="p-4 font-bold text-[#071530]">Financial Controller / Risk Manager</td>
+                        <td className="p-4 text-slate-600">HDFC Bank, ICICI Bank, Axis Bank</td>
+                        <td className="p-4 font-bold text-emerald-700">₹10 – 28 LPA</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 5. Eligibility & Key Benefits */}
+              <div className="bg-amber-50/80 p-6 rounded-2xl border border-amber-200 space-y-3">
+                <strong className="text-sm font-black text-amber-950 uppercase tracking-wider block">
+                  🎓 Eligibility &amp; Admission Key Benefits at PKC Education Institute
+                </strong>
+                <ul className="text-xs sm:text-sm text-amber-900 space-y-2 list-disc pl-5 font-medium">
+                  <li><strong>Eligibility:</strong> Minimum Graduate Degree (BA, B.Com, B.Sc, B.Tech, BBA, BCA etc.) with 50% aggregate marks (45% for SC/ST).</li>
+                  <li><strong>Govt Scholarship:</strong> Complete MPTASS &amp; NSP Scholarship portal assistance for SC/ST/OBC category students.</li>
+                  <li><strong>Exam &amp; Study Material Support:</strong> 100% university exam pattern guidance, syllabus, previous papers &amp; degree verification.</li>
+                </ul>
+              </div>
+
+            </div>
+          ) : (
+            /* GENERIC ENHANCED FULL PAGE FOR OTHER COURSES */
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">🎯 Best For Field / Career</span>
+                  <p className="text-sm font-black text-[#071530] leading-snug">
+                    {selectedCourseModal.fieldBest || selectedCourseModal.description || 'Authorized university degree program with full syllabus scheme and exam support.'}
+                  </p>
+                </div>
+
+                <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200 space-y-2">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider block">⚡ Job Market Scope &amp; Demand</span>
+                  <p className="text-sm font-black text-amber-950 leading-snug">
+                    {selectedCourseModal.marketDemand || '⚡ High Industry Hiring & Govt Job Eligibility'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Key Highlights &amp; Features</span>
+                <div className="flex flex-wrap gap-2.5">
+                  {(selectedCourseModal.highlights || ['UGC Approved University', '100% Exam Assistance', 'Govt Scholarship Benefit', 'Regular / Distance Mode']).map((h, i) => (
+                    <span key={i} className="bg-slate-100 text-slate-800 font-bold px-3.5 py-2 rounded-xl border border-slate-200 text-xs flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{h}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Navigation & Action Bar */}
+          <div className="bg-[#071530] text-white p-6 rounded-3xl border border-[#C59B27]/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+            <div className="space-y-1 text-center sm:text-left">
+              <strong className="text-base sm:text-lg font-black text-white block">Ready to start your admission process?</strong>
+              <p className="text-xs text-slate-300">Helpline: +91 7000212637 • Head Office: Chhatarpur (M.P.)</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => {
+                  setSelectedCourseModal(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 text-xs cursor-pointer border border-slate-700 transition-colors"
+              >
+                ← Back to Courses
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedCourseModal(null);
+                  fireCelebration();
+                  setActiveTab('inquiry');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full sm:w-auto bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black px-8 py-3.5 rounded-xl shadow-xl text-xs cursor-pointer flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>APPLY FOR ADMISSION NOW</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-slate-900 text-slate-900 font-sans">
       
@@ -1183,296 +1515,6 @@ export default function MainUniversityHome({
 
         </div>
       </section>
-
-      {/* ========================================================================= */}
-      {/* COURSE DETAILS MODAL POPUP */}
-      {/* ========================================================================= */}
-      {selectedCourseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 animate-scaleUp max-h-[92vh] flex flex-col">
-            
-            {/* Top Banner Image */}
-            <div className="relative h-44 sm:h-52 bg-slate-900 shrink-0">
-              <img 
-                src={selectedCourseModal.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop'} 
-                alt={selectedCourseModal.name} 
-                className="w-full h-full object-cover opacity-85"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-              
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedCourseModal(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/70 text-white hover:bg-rose-600 flex items-center justify-center font-bold text-lg transition-colors cursor-pointer border border-white/20 shadow-md z-10"
-              >
-                ✕
-              </button>
-
-              <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
-                <span className="bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider shadow-sm inline-block">
-                  🎓 {selectedCourseModal.badge || selectedCourseModal.category}
-                </span>
-                <h2 className="font-serif-academic text-2xl sm:text-3xl font-black text-white leading-none">
-                  {selectedCourseModal.name === 'MBA' ? 'Master of Business Administration (MBA)' : selectedCourseModal.name}
-                </h2>
-                <p className="text-xs font-bold text-amber-300">
-                  {selectedCourseModal.name === 'MBA' ? 'Complete Career & Course Guide' : (selectedCourseModal.fullName || selectedCourseModal.name)} • {selectedCourseModal.duration}
-                </p>
-              </div>
-            </div>
-
-            {/* Modal Scrollable Body */}
-            <div className="p-5 sm:p-7 space-y-6 text-slate-800 text-xs overflow-y-auto flex-1 custom-scrollbar">
-              
-              {/* 100% Scholarship Banner */}
-              <div className="bg-gradient-to-r from-emerald-50 via-emerald-100/50 to-teal-50 border border-emerald-300 p-4 rounded-2xl flex items-center gap-3.5 text-emerald-950 shadow-xs">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                  <Sparkles className="w-5 h-5 text-white animate-spin-slow" />
-                </div>
-                <div>
-                  <strong className="block text-xs sm:text-sm font-black text-emerald-900">100% Govt Scholarship Benefit (MPTASS &amp; NSP Eligible)</strong>
-                  <span className="text-[11px] sm:text-xs text-emerald-800 leading-relaxed block mt-0.5 font-medium">
-                    SC / ST / OBC category students receive 100% tuition fee reimbursement &amp; hostel allowance scheme guidance at PKC Education Institute.
-                  </span>
-                </div>
-              </div>
-
-              {/* SPECIAL MBA CUSTOM DETAILED GUIDE */}
-              {(selectedCourseModal.name === 'MBA' || selectedCourseModal.code === 'MBA') ? (
-                <div className="space-y-6">
-                  
-                  {/* MBA Overview & Introduction */}
-                  <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-2">
-                    <h3 className="text-sm font-black text-[#071530] flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-amber-500" />
-                      <span>MBA Course Overview &amp; Introduction</span>
-                    </h3>
-                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                      MBA (Master of Business Administration) ek 2-saal ka professional postgraduate degree program hai. Yeh course students ko <strong>leadership, management, problem-solving</strong> aur <strong>strategic business operations</strong> ki professional training deta hai. MBA ka main target candidate ko standard corporate leadership, management roles aur entrepreneurship (startup) ke liye fully prepare karna hota hai.
-                    </p>
-                  </div>
-
-                  {/* 1. MBA Duration Formats */}
-                  <div className="space-y-2.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                      <span>1. MBA Duration (Padhai Kitne Saal Ki Hoti Hai?)</span>
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="bg-blue-50/80 p-3.5 rounded-xl border border-blue-200">
-                        <span className="text-[10px] font-black uppercase text-blue-700 block">Full-Time Regular MBA</span>
-                        <strong className="text-xs text-blue-950 font-bold block mt-0.5">2 Years (4 Semesters)</strong>
-                        <p className="text-[11px] text-blue-900/80 mt-1 leading-tight">Sabse popular aur highly demanded standard campus format.</p>
-                      </div>
-
-                      <div className="bg-purple-50/80 p-3.5 rounded-xl border border-purple-200">
-                        <span className="text-[10px] font-black uppercase text-purple-700 block">Executive MBA (EMBA)</span>
-                        <strong className="text-xs text-purple-950 font-bold block mt-0.5">1 to 2 Years</strong>
-                        <p className="text-[11px] text-purple-900/80 mt-1 leading-tight">Working professionals ke liye (min 3–5 yrs experience needed).</p>
-                      </div>
-
-                      <div className="bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200">
-                        <span className="text-[10px] font-black uppercase text-emerald-700 block">Part-Time / Distance MBA</span>
-                        <strong className="text-xs text-emerald-950 font-bold block mt-0.5">2 to 3 Years</strong>
-                        <p className="text-[11px] text-emerald-900/80 mt-1 leading-tight">Job ya business ke saath flexible degree option.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Who Should Pursue MBA? */}
-                  <div className="space-y-2.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                      2. MBA Kiske Liye Best Hai? (Who Should Pursue MBA?)
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {[
-                        { title: 'Career Growth / Leadership Role', desc: 'Agar aap company mein Manager, VP, ya Director Level par jana chahte hain.' },
-                        { title: 'Salary Hike & Higher CTC', desc: 'Non-MBA roles ke mukable MBA graduates ko high starting package milta hai.' },
-                        { title: 'Field Change (Career Switch)', desc: 'Engineering, B.Sc, ya Arts field se Management sector mein shift hone ke liye.' },
-                        { title: 'Entrepreneurship / Business Mindset', desc: 'Apna khud ka Startup launch ya Family Business expand karne ke liye.' },
-                        { title: 'Global Professional Networking', desc: 'Top Industry experts, alumni aur business leaders ke saath connection banane ke liye.' }
-                      ].map((item, idx) => (
-                        <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-start gap-2.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                          <div>
-                            <strong className="text-xs font-bold text-slate-900 block">{item.title}</strong>
-                            <span className="text-[11px] text-slate-600 leading-tight block mt-0.5">{item.desc}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. MBA Major Specializations */}
-                  <div className="space-y-2.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                      3. Major Specializations (Aap Kis Stream Mein MBA Kar Sakte Hain?)
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200 space-y-1">
-                        <strong className="text-xs font-bold text-amber-950 block">💼 MBA in Finance</strong>
-                        <p className="text-[11px] text-amber-900/90">Stock market, investment banking, corporate finance aur risk management.</p>
-                      </div>
-                      <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-200 space-y-1">
-                        <strong className="text-xs font-bold text-blue-950 block">🚀 MBA in Marketing</strong>
-                        <p className="text-[11px] text-blue-900/90">Brand management, digital marketing, market research aur sales strategy.</p>
-                      </div>
-                      <div className="bg-rose-50/60 p-3 rounded-xl border border-rose-200 space-y-1">
-                        <strong className="text-xs font-bold text-rose-950 block">👥 MBA in Human Resource (HR)</strong>
-                        <p className="text-[11px] text-rose-900/90">Talent acquisition, corporate policies aur employee management.</p>
-                      </div>
-                      <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-200 space-y-1">
-                        <strong className="text-xs font-bold text-indigo-950 block">🤖 MBA in Business Analytics &amp; AI</strong>
-                        <p className="text-[11px] text-indigo-900/90">Data analysis, business intelligence aur AI decision-making (Highest Demand).</p>
-                      </div>
-                      <div className="bg-teal-50/60 p-3 rounded-xl border border-teal-200 sm:col-span-2 space-y-1">
-                        <strong className="text-xs font-bold text-teal-950 block">📦 MBA in Operations &amp; Supply Chain</strong>
-                        <p className="text-[11px] text-teal-900/90">Logistics, inventory control, ecommerce operations aur manufacturing management.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Current Market Demand & Salary Table */}
-                  <div className="space-y-2.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
-                      4. Current Market Demand &amp; High Paying Job Roles (Salary Scope)
-                    </h4>
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-[#071530] text-white text-[10px] font-black uppercase tracking-wider">
-                            <th className="p-3">Job Role</th>
-                            <th className="p-3">Top Recruiting Companies</th>
-                            <th className="p-3">Average Starting Package (CTC)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 text-[11px] font-medium text-slate-800 bg-white">
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Management Consultant</td>
-                            <td className="p-3 text-slate-600">McKinsey, BCG, Deloitte, PwC</td>
-                            <td className="p-3 font-bold text-emerald-700">₹15 – 40 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Investment Banker</td>
-                            <td className="p-3 text-slate-600">Goldman Sachs, JP Morgan, Morgan Stanley</td>
-                            <td className="p-3 font-bold text-emerald-700">₹12 – 35 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Product Manager</td>
-                            <td className="p-3 text-slate-600">Google, Amazon, Flipkart, Microsoft</td>
-                            <td className="p-3 font-bold text-emerald-700">₹14 – 30 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Business Analytics Manager</td>
-                            <td className="p-3 text-slate-600">Accenture, TCS, Wipro, KPMG</td>
-                            <td className="p-3 font-bold text-emerald-700">₹8 – 22 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Marketing Head / Brand Manager</td>
-                            <td className="p-3 text-slate-600">HUL, P&amp;G, Reliance, Nestlé</td>
-                            <td className="p-3 font-bold text-emerald-700">₹10 – 25 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">HR Manager / Talent Lead</td>
-                            <td className="p-3 text-slate-600">Infosys, Cognizant, IBM, Tech Mahindra</td>
-                            <td className="p-3 font-bold text-emerald-700">₹6 – 18 LPA</td>
-                          </tr>
-                          <tr className="hover:bg-amber-50/40">
-                            <td className="p-3 font-bold text-[#071530]">Financial Controller / Risk Manager</td>
-                            <td className="p-3 text-slate-600">HDFC Bank, ICICI Bank, Axis Bank</td>
-                            <td className="p-3 font-bold text-emerald-700">₹10 – 28 LPA</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* 5. Eligibility & Key Benefits */}
-                  <div className="bg-amber-50/80 p-4 rounded-2xl border border-amber-200/90 space-y-2">
-                    <strong className="text-xs font-black text-amber-950 uppercase tracking-wider block">
-                      🎓 Eligibility &amp; Admission Key Benefits at PKC Education Institute
-                    </strong>
-                    <ul className="text-xs text-amber-900 space-y-1.5 list-disc pl-4 font-medium">
-                      <li><strong>Eligibility:</strong> Minimum Graduate Degree (BA, B.Com, B.Sc, B.Tech, BBA, BCA etc.) with 50% aggregate marks (45% for SC/ST).</li>
-                      <li><strong>Govt Scholarship:</strong> Complete MPTASS &amp; NSP Scholarship portal assistance for SC/ST/OBC category students.</li>
-                      <li><strong>Exam &amp; Study Material Support:</strong> 100% university exam pattern guidance, syllabus, previous papers &amp; degree verification.</li>
-                    </ul>
-                  </div>
-
-                </div>
-              ) : (
-                /* GENERIC ENHANCED COURSE MODAL FOR ALL OTHER COURSES */
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🎯 Best For Field / Career</span>
-                      <p className="text-xs font-black text-[#071530] leading-snug">
-                        {selectedCourseModal.fieldBest || selectedCourseModal.description || 'Authorized university degree program with full syllabus scheme and exam support.'}
-                      </p>
-                    </div>
-
-                    <div className="bg-amber-50/80 p-4 rounded-2xl border border-amber-200 space-y-1">
-                      <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">⚡ Job Market Scope &amp; Demand</span>
-                      <p className="text-xs font-black text-amber-950 leading-snug">
-                        {selectedCourseModal.marketDemand || '⚡ High Industry Hiring & Govt Job Eligibility'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Key Highlights &amp; Features</span>
-                    <div className="flex flex-wrap gap-2">
-                      {(selectedCourseModal.highlights || ['UGC Approved University', '100% Exam Assistance', 'Govt Scholarship Benefit', 'Regular / Distance Mode']).map((h, i) => (
-                        <span key={i} className="bg-slate-100 text-slate-800 font-bold px-3 py-1.5 rounded-xl border border-slate-200 text-xs flex items-center gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>{h}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Program Duration & Semesters */}
-              <div className="bg-[#071530] text-white p-4 rounded-2xl border border-[#C59B27]/40 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-[#C59B27] uppercase tracking-widest block">Program Duration</span>
-                  <strong className="text-sm font-black text-white">{selectedCourseModal.duration}</strong>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Admission Status</span>
-                  <span className="text-xs font-black text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-500/30 inline-block">
-                    🟢 ADMISSIONS OPEN 2026-27
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons inside Modal */}
-              <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  onClick={() => setSelectedCourseModal(null)}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 text-xs cursor-pointer border border-slate-200 transition-colors"
-                >
-                  Close Details
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedCourseModal(null);
-                    fireCelebration();
-                    setActiveTab('inquiry');
-                  }}
-                  className="w-full sm:w-auto bg-gradient-to-r from-[#071530] via-[#0A1931] to-indigo-950 hover:from-[#0a1f44] hover:to-indigo-900 text-white font-black px-7 py-3.5 rounded-xl shadow-xl text-xs cursor-pointer flex items-center justify-center gap-2 border border-amber-400/50 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>APPLY FOR ADMISSION NOW (इनक्वायरी करें)</span>
-                  <ArrowRight className="w-4 h-4 text-amber-400" />
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );
