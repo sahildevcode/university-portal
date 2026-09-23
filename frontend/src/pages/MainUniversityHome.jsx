@@ -553,7 +553,198 @@ export default function MainUniversityHome({
 
 
       {/* ========================================================================= */}
-      {/* SECTION 2B: ALL 62 COURSES — SEARCHABLE LIST */}
+      {/* SECTION 2: ABOUT US — CAMPUS EXPERIENCE & ABOUT PKC INSTITUTE */}
+      {/* ========================================================================= */}
+      <section className="bg-white text-slate-900 py-16 sm:py-24 border-b border-slate-200 overflow-hidden">
+        <div ref={experienceRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            {/* Left: Campus Slider - Slides in from Left with Fade-In */}
+            <div className={`lg:col-span-6 relative transition-all duration-1000 ease-out ${
+              experienceInView 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 -translate-x-12 sm:-translate-x-20 pointer-events-none'
+            }`}>
+              <CampusEventSlider lang={lang} />
+            </div>
+
+            {/* Right: Details & Highlights - More Than a Degree, About PKC (Slides in from Right with Fade-In) */}
+            <div className={`lg:col-span-6 space-y-6 transition-all duration-1000 ease-out delay-150 ${
+              experienceInView 
+                ? 'opacity-100 translate-x-0' 
+                : 'opacity-0 translate-x-12 sm:translate-x-20 pointer-events-none'
+            }`}>
+              <div>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C59B27] block mb-1">
+                  LIFE AT PKC INSTITUTE
+                </span>
+                <h2 className="font-serif-academic text-3xl sm:text-4xl font-bold text-[#071530] leading-snug">
+                  More Than a Degree, <br />It's an Academic Experience
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
+                  From personalized counseling to verified degree completion, scholarship processing, and computer lab practice, we provide complete end-to-end guidance.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
+                    <Users className="w-4 h-4 text-[#C59B27]" />
+                    <span>Vibrant Student Care</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Dedicated counselors for admissions &amp; exams.</p>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
+                    <Compass className="w-4 h-4 text-[#C59B27]" />
+                    <span>University Tie-ups</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Direct enrollments into 28+ universities.</p>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
+                    <Laptop className="w-4 h-4 text-[#C59B27]" />
+                    <span>Practical Computer Labs</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Hands-on practice for DCA, PGDCA &amp; CPCT.</p>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
+                    <ShieldCheck className="w-4 h-4 text-[#C59B27]" />
+                    <span>Scholarship Desk</span>
+                  </div>
+                  <p className="text-xs text-slate-500">MPTASS &amp; NSP government scholarship assistance.</p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveTab('about')}
+                  className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  <span>ABOUT PKC INSTITUTE</span>
+                  <ArrowRight className="w-4 h-4 text-[#C59B27]" />
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ACCREDITATIONS & KEY STATISTICS */}
+      <section className="bg-[#071530] text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
+        {/* Ambient Light */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#C59B27]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-center relative z-10">
+          
+          <div className="max-w-3xl mx-auto space-y-3">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3 py-1 rounded-full border border-[#C59B27]/30 inline-block">
+              TRUST &amp; RECOGNITIONS
+            </span>
+            <h2 className="font-serif-academic text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
+              Academic Milestones &amp; Institutional Trust
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Empowering students across Central India since 2011 with verified government and university accreditations.
+            </p>
+          </div>
+
+          {/* 5 Animated Counters */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-[#0A1931]/80 p-6 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl backdrop-blur-sm">
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
+              <div className="flex justify-center text-[#C59B27] mb-1">
+                <GraduationCap className="w-8 h-8 animate-badge-bounce" />
+              </div>
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={18500} suffix="+" />
+              </strong>
+              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+                Students Guided
+              </span>
+            </div>
+
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
+              <div className="flex justify-center text-[#C59B27] mb-1">
+                <Building2 className="w-8 h-8 animate-badge-bounce" />
+              </div>
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={28} suffix="+" />
+              </strong>
+              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+                University Affiliations
+              </span>
+            </div>
+
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
+              <div className="flex justify-center text-[#C59B27] mb-1">
+                <BookOpen className="w-8 h-8 animate-badge-bounce" />
+              </div>
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={50} suffix="+" />
+              </strong>
+              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+                Degree &amp; Diplomas
+              </span>
+            </div>
+
+            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
+              <div className="flex justify-center text-[#C59B27] mb-1">
+                <Award className="w-8 h-8 animate-badge-bounce" />
+              </div>
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={15} suffix="+" />
+              </strong>
+              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+                Years of Excellence
+              </span>
+            </div>
+
+            <div className="space-y-2 pt-4 md:pt-0 col-span-2 md:col-span-1 hover:scale-105 transition-transform duration-300">
+              <div className="flex justify-center text-[#C59B27] mb-1">
+                <Star className="w-8 h-8 animate-badge-bounce" />
+              </div>
+              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+                <AnimatedCounter end={95} suffix="%" />
+              </strong>
+              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+                Career Guidance Rate
+              </span>
+            </div>
+          </div>
+
+          {/* Accreditations Banner */}
+          <div className="bg-[#0A1931] border border-[#C59B27]/40 rounded-2xl p-5 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-semibold text-slate-300">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>UGC Approved Universities</span>
+            </div>
+            <div className="flex items-center gap-2 text-[#C59B27]">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>MP Higher Education Department</span>
+            </div>
+            <div className="flex items-center gap-2 text-blue-400">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Society Reg. 06/03/01/12345/18</span>
+            </div>
+            <div className="flex items-center gap-2 text-amber-300">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>100% Marksheet &amp; Degree Verification</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: COURSES — ALL 62 COURSES & SCHOLARSHIP BENEFIT CARDS */}
       {/* ========================================================================= */}
       <section className="bg-slate-50 py-14 sm:py-20 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -957,200 +1148,7 @@ export default function MainUniversityHome({
       </section>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: ACCREDITATIONS & KEY STATISTICS */}
-      {/* ========================================================================= */}
-      <section className="bg-[#071530] text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
-        {/* Ambient Light */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#C59B27]/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-center relative z-10">
-          
-          <div className="max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3 py-1 rounded-full border border-[#C59B27]/30 inline-block">
-              TRUST &amp; RECOGNITIONS
-            </span>
-            <h2 className="font-serif-academic text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
-              Academic Milestones &amp; Institutional Trust
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Empowering students across Central India since 2011 with verified government and university accreditations.
-            </p>
-          </div>
-
-          {/* 5 Animated Counters */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-[#0A1931]/80 p-6 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl backdrop-blur-sm">
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <GraduationCap className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
-                <AnimatedCounter end={18500} suffix="+" />
-              </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Students Guided
-              </span>
-            </div>
-
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Building2 className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
-                <AnimatedCounter end={28} suffix="+" />
-              </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                University Affiliations
-              </span>
-            </div>
-
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <BookOpen className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
-                <AnimatedCounter end={50} suffix="+" />
-              </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Degree &amp; Diplomas
-              </span>
-            </div>
-
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Award className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
-                <AnimatedCounter end={15} suffix="+" />
-              </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Years of Excellence
-              </span>
-            </div>
-
-            <div className="space-y-2 pt-4 md:pt-0 col-span-2 md:col-span-1 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Star className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
-                <AnimatedCounter end={95} suffix="%" />
-              </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Career Guidance Rate
-              </span>
-            </div>
-          </div>
-
-          {/* Accreditations Banner */}
-          <div className="bg-[#0A1931] border border-[#C59B27]/40 rounded-2xl p-5 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-semibold text-slate-300">
-            <div className="flex items-center gap-2 text-emerald-400">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>UGC Approved Universities</span>
-            </div>
-            <div className="flex items-center gap-2 text-[#C59B27]">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>MP Higher Education Department</span>
-            </div>
-            <div className="flex items-center gap-2 text-blue-400">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Society Reg. 06/03/01/12345/18</span>
-            </div>
-            <div className="flex items-center gap-2 text-amber-300">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>100% Marksheet &amp; Degree Verification</span>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: CAMPUS EXPERIENCE & EVENTS */}
-      {/* ========================================================================= */}
-      <section className="bg-white text-slate-900 py-16 sm:py-24 border-b border-slate-200 overflow-hidden">
-        <div ref={experienceRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
-            {/* Left: Campus Slider - Slides in from Left with Fade-In */}
-            <div className={`lg:col-span-6 relative transition-all duration-1000 ease-out ${
-              experienceInView 
-                ? 'opacity-100 translate-x-0' 
-                : 'opacity-0 -translate-x-12 sm:-translate-x-20 pointer-events-none'
-            }`}>
-              <CampusEventSlider lang={lang} />
-            </div>
-
-            {/* Right: Details & Highlights - More Than a Degree, About PKC (Slides in from Right with Fade-In) */}
-            <div className={`lg:col-span-6 space-y-6 transition-all duration-1000 ease-out delay-150 ${
-              experienceInView 
-                ? 'opacity-100 translate-x-0' 
-                : 'opacity-0 translate-x-12 sm:translate-x-20 pointer-events-none'
-            }`}>
-              <div>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C59B27] block mb-1">
-                  LIFE AT PKC INSTITUTE
-                </span>
-                <h2 className="font-serif-academic text-3xl sm:text-4xl font-bold text-[#071530] leading-snug">
-                  More Than a Degree, <br />It's an Academic Experience
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
-                  From personalized counseling to verified degree completion, scholarship processing, and computer lab practice, we provide complete end-to-end guidance.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
-                    <Users className="w-4 h-4 text-[#C59B27]" />
-                    <span>Vibrant Student Care</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Dedicated counselors for admissions &amp; exams.</p>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
-                    <Compass className="w-4 h-4 text-[#C59B27]" />
-                    <span>University Tie-ups</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Direct enrollments into 28+ universities.</p>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
-                    <Laptop className="w-4 h-4 text-[#C59B27]" />
-                    <span>Practical Computer Labs</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Hands-on practice for DCA, PGDCA &amp; CPCT.</p>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex items-center gap-2 text-[#071530] font-bold text-xs">
-                    <ShieldCheck className="w-4 h-4 text-[#C59B27]" />
-                    <span>Scholarship Desk</span>
-                  </div>
-                  <p className="text-xs text-slate-500">MPTASS &amp; NSP government scholarship assistance.</p>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={() => setActiveTab('about')}
-                  className="bg-[#071530] hover:bg-[#0a1f44] text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-2"
-                >
-                  <span>ABOUT PKC INSTITUTE</span>
-                  <ArrowRight className="w-4 h-4 text-[#C59B27]" />
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SECTION 5: STAY CONNECTED & DIRECT ADMISSION DESK */}
+      {/* SECTION 4: ADMISSION INQUIRY — STAY CONNECTED & DIRECT ADMISSION DESK */}
       {/* ========================================================================= */}
       <section className="bg-white text-slate-900 py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
