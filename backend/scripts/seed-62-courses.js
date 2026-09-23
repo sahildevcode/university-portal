@@ -64,6 +64,7 @@ const default62Courses = [
   { id: 'c-60', name: 'Ph.D. (Commerce / Management)',           duration: '3 Years', category: 'Research',  code: 'PHD-COM',   description: 'Doctorate in corporate finance, business strategy, economics, and marketing research.' },
   { id: 'c-61', name: 'Ph.D. (Law)',                            duration: '3 Years', category: 'Research',  code: 'PHD-LAW',   description: 'Doctoral research in constitutional law, jurisprudence, and international legal frameworks.' },
   { id: 'c-62', name: 'Ph.D. (Engineering)',                    duration: '3 Years', category: 'Research',  code: 'PHD-ENG',   description: 'Doctorate in engineering, computer science, technical research, and patent development.' },
+  { id: 'c-63', name: 'BFD (Fashion Design)',                   duration: '3 Years', category: 'Scholarship Benefit', code: 'BFD', description: 'Bachelor of Fashion Design & Garment Technology with 100% MPTASS/NSP Scholarship Benefit.' },
 ];
 
 async function seed() {

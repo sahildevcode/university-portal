@@ -195,14 +195,42 @@ export default function MainUniversityHome({
     { id: 60, name: 'Ph.D. (Commerce / Management)',           duration: '3 Years', category: 'Research' },
     { id: 61, name: 'Ph.D. (Law)',                            duration: '3 Years', category: 'Research' },
     { id: 62, name: 'Ph.D. (Engineering)',                    duration: '3 Years', category: 'Research' },
+    { id: 63, name: 'BFD (Fashion Design)',                   duration: '3 Years', category: 'Scholarship Benefit', isScholarship: true },
   ];
 
-  const courseCategories = ['all', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
+  const courseCategories = ['all', 'Scholarship Benefit', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
 
   const activeCourseCatalog = dbCourses.length > 0 ? dbCourses : allCourses;
 
+  const isScholarshipCourse = (course) => {
+    if (!course) return false;
+    if (course.category === 'Scholarship Benefit' || course.isScholarship) return true;
+    const n = (course.name || '').toLowerCase();
+    return (
+      n.includes('mba') ||
+      n.includes('bfd') ||
+      n.includes('b.tech') ||
+      n.includes('m.tech') ||
+      n.includes('bsc ag') ||
+      n.includes('agriculture') ||
+      n.includes('d.c.a.') ||
+      n.includes('dca') ||
+      n.includes('b.b.a.') ||
+      n.includes('bba') ||
+      n.includes('b.c.a.') ||
+      n.includes('bca')
+    );
+  };
+
   const filteredCourses = activeCourseCatalog.filter(c => {
-    const matchCat = courseCategory === 'all' || c.category === courseCategory;
+    let matchCat = false;
+    if (courseCategory === 'all') {
+      matchCat = true;
+    } else if (courseCategory === 'Scholarship Benefit') {
+      matchCat = isScholarshipCourse(c);
+    } else {
+      matchCat = c.category === courseCategory;
+    }
     const matchSearch = (c.name || '').toLowerCase().includes(courseSearch.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -448,6 +476,7 @@ export default function MainUniversityHome({
             {courseCategories.map(cat => {
               const catLabels = {
                 all: `All (${allCourses.length})`,
+                'Scholarship Benefit': '🎓 Scholarship Benefit',
                 Arts: 'Arts',
                 Science: 'Science',
                 Commerce: 'Commerce',
@@ -456,6 +485,7 @@ export default function MainUniversityHome({
                 Research: 'Research / Ph.D.'
               };
               const catColors = {
+                'Scholarship Benefit': 'bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 text-white border-amber-300 font-extrabold shadow-md scale-105',
                 Arts:     'bg-purple-100 text-purple-700 border-purple-300',
                 Science:  'bg-green-100 text-green-700 border-green-300',
                 Commerce: 'bg-blue-100 text-blue-700 border-blue-300',
@@ -618,6 +648,11 @@ export default function MainUniversityHome({
                         <h3 className="font-serif-academic font-extrabold text-base text-[#071530] leading-snug group-hover:text-amber-600 transition-colors">
                           {course.name}
                         </h3>
+                        {isScholarshipCourse(course) && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300/80 px-2 py-0.5 rounded-md w-fit">
+                            <span>🎓 100% Scholarship Benefit (MPTASS/NSP)</span>
+                          </div>
+                        )}
                         <p className="text-xs text-slate-500 line-clamp-2 mt-2 leading-relaxed font-normal">
                           {getCourseDesc(course.name, course.category)}
                         </p>
