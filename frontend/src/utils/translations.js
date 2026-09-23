@@ -12,7 +12,7 @@ export const translations = {
     trustHindi: 'P.K.C. Shiksha Prasar Evam Jan Kalyan Samiti, Chhatarpur',
     home: 'Home',
     about: 'About Us',
-    courses: 'Academic Courses',
+    courses: 'Courses',
     inquiry: 'Admission Inquiry',
     student: 'Student Portal',
     admin: 'Admin Panel',

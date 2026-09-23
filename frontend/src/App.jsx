@@ -9,6 +9,8 @@ import MainUniversityHome from './pages/MainUniversityHome';
 import AboutPage from './pages/AboutPage';
 import PublicCourseCatalog from './pages/PublicCourseCatalog';
 import InquiryPage from './pages/InquiryPage';
+import JobApplyPage from './pages/JobApplyPage';
+import GalleryPage from './pages/GalleryPage';
 import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
@@ -299,12 +301,25 @@ export default function App() {
                 studentUser={studentUser}
                 onOpenStudentAuth={handleOpenStudentAuth}
                 lang={lang}
+                onNavigateTab={setPublicTab}
               />
             )}
 
             {publicTab === 'inquiry' && (
               <InquiryPage 
                 courses={courses}
+                lang={lang}
+              />
+            )}
+
+            {publicTab === 'job-apply' && (
+              <JobApplyPage 
+                lang={lang}
+              />
+            )}
+
+            {publicTab === 'gallery' && (
+              <GalleryPage 
                 lang={lang}
               />
             )}

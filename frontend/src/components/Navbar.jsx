@@ -205,28 +205,52 @@ export default function Navbar({
               {t.about}
             </button>
 
-            {/* 3. ACADEMICS / COURSES & SYLLABI */}
+            {/* 3. COURSES */}
             <button
               onClick={() => handleNavClick('courses')}
-              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'courses'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
               }`}
             >
-              {t.courses}
+              COURSES
             </button>
 
             {/* 4. ADMISSION INQUIRY */}
             <button
               onClick={() => handleNavClick('inquiry')}
-              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'inquiry'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
               }`}
             >
               {t.inquiry}
+            </button>
+
+            {/* 5. JOB APPLY */}
+            <button
+              onClick={() => handleNavClick('job-apply')}
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+                activeView === 'public' && publicTab === 'job-apply'
+                  ? 'text-[#071530] border-amber-500 font-extrabold'
+                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
+              }`}
+            >
+              JOB APPLY
+            </button>
+
+            {/* 6. GALLERY */}
+            <button
+              onClick={() => handleNavClick('gallery')}
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+                activeView === 'public' && publicTab === 'gallery'
+                  ? 'text-[#071530] border-amber-500 font-extrabold'
+                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
+              }`}
+            >
+              GALLERY
             </button>
 
           </nav>
@@ -285,7 +309,7 @@ export default function Navbar({
                 publicTab === 'courses' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
-              {t.courses}
+              COURSES
             </button>
             <button
               onClick={() => handleNavClick('inquiry')}
@@ -294,6 +318,22 @@ export default function Navbar({
               }`}
             >
               {t.inquiry}
+            </button>
+            <button
+              onClick={() => handleNavClick('job-apply')}
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                publicTab === 'job-apply' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              JOB APPLY
+            </button>
+            <button
+              onClick={() => handleNavClick('gallery')}
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                publicTab === 'gallery' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              GALLERY
             </button>
             <div className="pt-2 space-y-2">
               <button
