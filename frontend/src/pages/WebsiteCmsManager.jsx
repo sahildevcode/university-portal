@@ -8,7 +8,7 @@ import {
   Trash2, 
   CheckCircle2, 
   AlertCircle, 
-  Image, 
+  Image as ImageIcon, 
   Star, 
   Award, 
   MessageSquare, 
@@ -37,6 +37,70 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import JobApplicationsManager from './JobApplicationsManager';
+
+// Reusable Direct Image File Upload Component (NO URL typing needed!)
+function ImageUploadField({ label, value, onChange, placeholder = "Click to upload image file from device" }) {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please select a smaller photo.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onChange(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <UploadCloud className="w-3.5 h-3.5 text-[#C59B27]" />
+          <span>{label} *</span>
+        </span>
+        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">Direct Device Upload</span>
+      </label>
+
+      {value ? (
+        <div className="bg-white border-2 border-emerald-300 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <img src={value} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 shadow-xs" />
+            <div className="truncate">
+              <strong className="text-xs font-bold text-slate-900 block truncate">{label} Photo</strong>
+              <span className="text-[10.5px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" /> Image File Ready &amp; Saved
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-[#C59B27] text-xs font-bold rounded-xl cursor-pointer shadow-xs">
+              <span>Change Photo</span>
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            </label>
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+              title="Remove photo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="border-2 border-dashed border-amber-300 hover:border-[#C59B27] bg-amber-50/40 hover:bg-amber-50 rounded-2xl p-5 text-center flex flex-col items-center justify-center cursor-pointer transition-all group">
+          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          <UploadCloud className="w-7 h-7 text-[#C59B27] mb-1 group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-bold text-[#071530]">{placeholder}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5">Supports JPG, PNG, WEBP &amp; GIF photos</span>
+        </label>
+      )}
+    </div>
+  );
+}
 
 export default function WebsiteCmsManager({ 
   lang: propLang, 
@@ -131,7 +195,6 @@ export default function WebsiteCmsManager({
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseSearch, setCourseSearch] = useState('');
-  const [courseDeptFilter, setCourseDeptFilter] = useState('all');
 
   const defaultCourseForm = {
     name: '',
@@ -146,7 +209,8 @@ export default function WebsiteCmsManager({
     totalFee: 0,
     feePerSemester: 0,
     eligibility: '10+2 in any stream (Min 50%)',
-    description: 'Approved Academic Program offered with comprehensive UGC curriculum and career guidance.'
+    description: 'Approved Academic Program offered with comprehensive UGC curriculum and career guidance.',
+    catImage: ''
   };
 
   const [courseForm, setCourseForm] = useState(defaultCourseForm);
@@ -198,7 +262,7 @@ export default function WebsiteCmsManager({
     setSavingHomeCms(true);
     try {
       localStorage.setItem('pkc_home_cms', JSON.stringify(homeCms));
-      setSuccessMsg('Home Page Content & Statistics updated live across public website!');
+      setSuccessMsg('Home Page Content & Photos updated live across public website!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setErrorMsg('Failed to save Home CMS settings.');
@@ -213,14 +277,13 @@ export default function WebsiteCmsManager({
     setSavingAbout(true);
     setErrorMsg(null);
     try {
-      const res = await fetch('/api/about', {
+      await fetch('/api/about', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(aboutForm)
       });
-      const data = await res.json();
       localStorage.setItem('pkc_about_data', JSON.stringify(aboutForm));
-      setSuccessMsg('About Us page details & legacy statistics updated live on website!');
+      setSuccessMsg('About Us page details & Director photo updated live on website!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setErrorMsg(err.message);
@@ -251,7 +314,8 @@ export default function WebsiteCmsManager({
       totalFee: course.totalFee || 0,
       feePerSemester: course.feePerSemester || 0,
       eligibility: course.eligibility || '10+2 with minimum 50% aggregate marks',
-      description: course.description || ''
+      description: course.description || '',
+      catImage: course.catImage || course.imageUrl || ''
     });
     setShowCourseModal(true);
   };
@@ -306,7 +370,7 @@ export default function WebsiteCmsManager({
       category: 'Annual Function',
       date: '2024',
       description: '',
-      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop',
+      imageUrl: '',
       active: true
     });
     setShowEventPhotoModal(true);
@@ -329,7 +393,7 @@ export default function WebsiteCmsManager({
   const handleSaveEventPhoto = async (e) => {
     e.preventDefault();
     if (!eventPhotoForm.title || !eventPhotoForm.imageUrl) {
-      setErrorMsg('Event Title and Photo Image URL are required.');
+      setErrorMsg('Event Title and Photo Image are required. Please upload an image file.');
       return;
     }
 
@@ -393,7 +457,7 @@ export default function WebsiteCmsManager({
   };
 
   return (
-    <div className="space-y-8 text-slate-900 animate-fadeIn">
+    <div className="space-y-8 text-slate-900 animate-fadeIn font-sans">
       
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#071530] via-[#0A1931] to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-[#C59B27]/40">
@@ -407,10 +471,10 @@ export default function WebsiteCmsManager({
                 ULTIMATE PUBLIC WEBSITE CONTENT SUITE
               </span>
               <h1 className="text-xl sm:text-2xl font-black mt-1 text-white">
-                Website CMS &amp; Navbar Section Manager
+                Website CMS &amp; Section Manager
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                Full power to edit every single text, image, icon, date, course, hero banner, statistics counter &amp; student inquiry across all website pages.
+                Direct image upload support enabled everywhere! Full power to edit headlines, uploaded photos, courses &amp; inquiries.
               </p>
             </div>
           </div>
@@ -531,8 +595,8 @@ export default function WebsiteCmsManager({
           
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
-              <h2 className="text-xl font-bold font-serif-academic text-[#071530]">Home Page Content &amp; Hero Editor</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Edit hero text, campus background image, rotating phrases, live ticker ribbon &amp; animated counters.</p>
+              <h2 className="text-xl font-bold font-serif-academic text-[#071530]">Home Page Content &amp; Hero Photo Editor</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Upload hero campus photo directly from device, edit headlines, live ticker &amp; stats counters.</p>
             </div>
             <button
               type="submit"
@@ -573,15 +637,13 @@ export default function WebsiteCmsManager({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Campus Background Image URL</label>
-                <input
-                  type="text"
-                  value={homeCms.campusBgImage}
-                  onChange={e => setHomeCms({ ...homeCms, campusBgImage: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-800"
-                />
-              </div>
+              {/* Direct Image File Upload for Campus Background */}
+              <ImageUploadField
+                label="Campus Background Banner Photo"
+                value={homeCms.campusBgImage}
+                onChange={val => setHomeCms({ ...homeCms, campusBgImage: val })}
+                placeholder="Click to upload Campus Background Photo from computer / phone"
+              />
             </div>
 
             {/* Live Ticker & Floating Badge */}
@@ -706,7 +768,7 @@ export default function WebsiteCmsManager({
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-xl font-bold font-serif-academic text-[#071530]">About Us &amp; Institutional Legacy Editor</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Edit institution history, founding year, director message &amp; accreditation highlights.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Edit institution history, founding year, director photo &amp; message.</p>
             </div>
             <button
               type="submit"
@@ -736,6 +798,16 @@ export default function WebsiteCmsManager({
                 value={aboutForm.establishedYear}
                 onChange={e => setAboutForm({ ...aboutForm, establishedYear: Number(e.target.value) })}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold"
+              />
+            </div>
+
+            {/* Direct Image File Upload for Director Photo */}
+            <div className="md:col-span-2">
+              <ImageUploadField
+                label="Director / Founder Photo"
+                value={aboutForm.directorPhoto}
+                onChange={val => setAboutForm({ ...aboutForm, directorPhoto: val })}
+                placeholder="Click to upload Director Photo from device"
               />
             </div>
 
@@ -780,7 +852,7 @@ export default function WebsiteCmsManager({
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold font-serif-academic text-[#071530]">Academic Programs &amp; 62 Courses Catalog</h2>
-              <p className="text-xs text-slate-500">Manage all degree courses, duration, eligibility, category &amp; scholarship benefit tags.</p>
+              <p className="text-xs text-slate-500">Manage all degree courses, duration, eligibility, category &amp; banner photos.</p>
             </div>
             <button
               onClick={handleOpenAddCourse}
@@ -1022,6 +1094,14 @@ export default function WebsiteCmsManager({
                 </div>
               </div>
 
+              {/* Direct Image File Upload for Course Banner */}
+              <ImageUploadField
+                label="Course Banner / Category Photo"
+                value={courseForm.catImage}
+                onChange={val => setCourseForm({ ...courseForm, catImage: val, imageUrl: val })}
+                placeholder="Click to upload Course Banner Photo from computer / phone"
+              />
+
               <div className="space-y-1">
                 <label className="font-bold text-slate-700">Eligibility Criteria</label>
                 <input
@@ -1071,16 +1151,13 @@ export default function WebsiteCmsManager({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Image URL *</label>
-                <input
-                  type="text"
-                  required
-                  value={eventPhotoForm.imageUrl}
-                  onChange={e => setEventPhotoForm({ ...eventPhotoForm, imageUrl: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-mono text-[11px]"
-                />
-              </div>
+              {/* Direct Image File Upload for Campus Function Photo */}
+              <ImageUploadField
+                label="Campus Event / Function Photo"
+                value={eventPhotoForm.imageUrl}
+                onChange={val => setEventPhotoForm({ ...eventPhotoForm, imageUrl: val })}
+                placeholder="Click to upload Campus Event Photo from device"
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
