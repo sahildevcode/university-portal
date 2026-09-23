@@ -315,7 +315,7 @@ export default function MainUniversityHome({
               <div className="inline-flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5 animate-pulse">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{lang === 'hi' ? 'बुंदेलखंड एवं मध्य भारत का प्रतिष्ठित संस्थान' : 'SHAPING MINDS. INSPIRING FUTURES.'}</span>
+                  <span>{lang === 'hi' ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी' : 'PKC EDUCATION LEARNING INSTITUTE & CONSULTANCY'}</span>
                 </span>
               </div>
 
