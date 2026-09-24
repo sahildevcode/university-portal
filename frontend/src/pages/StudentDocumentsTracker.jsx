@@ -1502,10 +1502,10 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                 </div>
               )}
 
-              <div className="bg-amber-50/70 border border-amber-200 p-3.5 rounded-2xl flex items-center gap-2.5 text-amber-900">
-                <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="bg-indigo-50/70 border border-indigo-200 p-3.5 rounded-2xl flex items-center gap-2.5 text-indigo-900">
+                <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 <span>
-                  <strong>Dual Receipt System:</strong> You can mark each document as <strong>Manually Received (Physical Hardcopy)</strong> at the campus counter, or directly <strong>Upload the PDF/File</strong>. All documents are optional and can be received in phases.
+                  Directly upload student documents (PDF / Image). You can view, download, or delete uploaded documents anytime.
                 </span>
               </div>
 
@@ -1522,22 +1522,11 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                     >
                       <div className="space-y-0.5">
                         <strong className="font-bold text-slate-800 text-xs block">{docName}</strong>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400">Current Status:</span>
-                          {state.mode === 'PDF' ? (
+                        {state.fileUrl ? (
+                          <div className="flex items-center gap-2">
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                              <Check className="w-3 h-3 text-emerald-600" /> PDF File On Record
+                              <Check className="w-3 h-3 text-emerald-600" /> Uploaded
                             </span>
-                          ) : state.mode === 'Manually' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">
-                              <Check className="w-3 h-3 text-blue-600" /> Physical Hardcopy Received
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                              Pending (लंबित)
-                            </span>
-                          )}
-                          {state.fileUrl && (
                             <button
                               type="button"
                               onClick={() => setPreviewDocFile({
@@ -1546,15 +1535,15 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                                 studentName: selectedStudent.fullName,
                                 rollNo: selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo || selectedStudent.id
                               })}
-                              className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 text-[10px] ml-1 cursor-pointer"
+                              className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 text-[10px] cursor-pointer"
                             >
                               <Eye className="w-3 h-3" /> View / Download PDF
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        ) : null}
                       </div>
 
-                      {/* Actions: Download, Delete, Upload / Replace, Hardcopy */}
+                      {/* Actions: Download, Delete, Upload / Replace */}
                       <div className="flex flex-wrap items-center gap-2">
                         {/* Download Document */}
                         {state.fileUrl && (
@@ -1607,20 +1596,6 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                             className="hidden"
                           />
                         </label>
-
-                        {/* Physical Hardcopy toggle */}
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange(docName, state.mode === 'Manually' ? 'Pending' : 'Manually')}
-                          className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border ' + (
-                            state.mode === 'Manually' 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          )}
-                          title="Mark Physical Hardcopy received at counter"
-                        >
-                          {state.mode === 'Manually' ? '✓ Hardcopy' : '+ Hardcopy'}
-                        </button>
                       </div>
                     </div>
                   );
