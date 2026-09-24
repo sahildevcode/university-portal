@@ -784,6 +784,10 @@ app.post('/api/students/bulk-import', (req, res) => {
     const generatedReceipts = [];
     const timestamp = new Date().toISOString();
 
+    // Attach import batch metadata
+    const batchId = req.body.batchId || `batch-${Date.now()}`;
+    const fileName = req.body.fileName || 'Uploaded_Excel_File.xlsx';
+
     for (let i = 0; i < rawStudents.length; i++) {
       const row = normalizeStudentRow(rawStudents[i], i);
       const studentIdx = db.students.length + 1;
@@ -816,6 +820,8 @@ app.post('/api/students/bulk-import', (req, res) => {
 
       const newStudent = {
         id: `std-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
+        importBatchId: batchId,
+        excelFileName: fileName,
         rollNo: finalRoll,
         registrationNo: regNo,
         studentName: row.studentName || `Student ${studentIdx}`,
@@ -925,6 +931,8 @@ app.post('/api/students/bulk-import', (req, res) => {
         const receiptNo = String(getNextReceiptNumber(db));
         const receipt = {
           id: `pay-leg-${Date.now()}-${i}-${Math.floor(100 + Math.random() * 900)}`,
+          importBatchId: batchId,
+          excelFileName: fileName,
           receiptNo: receiptNo,
           studentId: existingIndex !== -1 ? db.students[existingIndex].id : newStudent.id,
           rollNo: newStudent.rollNo,
@@ -948,11 +956,24 @@ app.post('/api/students/bulk-import', (req, res) => {
       }
     }
 
+    // Register import batch record
+    if (!Array.isArray(db.import_batches)) db.import_batches = [];
+    const newBatchRecord = {
+      id: batchId,
+      fileName: fileName || 'Uploaded_Excel_File.xlsx',
+      importedCount: importedStudents.length,
+      receiptsCount: generatedReceipts.length,
+      importedAt: timestamp,
+      operatorName
+    };
+    db.import_batches.unshift(newBatchRecord);
+
     writeDB(db);
 
     res.json({
       success: true,
       message: `Successfully imported ${importedStudents.length} student records and generated ${generatedReceipts.length} payment ledger entries.`,
+      batch: newBatchRecord,
       importedCount: importedStudents.length,
       receiptsCount: generatedReceipts.length
     });
@@ -980,6 +1001,7 @@ app.post('/api/students/reset-demo-data', (req, res) => {
 
     db.students = [];
     db.fee_payments = [];
+    db.import_batches = [];
     if (db.university_payments) db.university_payments = [];
 
     writeDB(db);
@@ -992,6 +1014,97 @@ app.post('/api/students/reset-demo-data', (req, res) => {
   } catch (err) {
     console.error('Error resetting demo data:', err);
     res.status(500).json({ success: false, message: 'Failed to reset demo data: ' + err.message });
+  }
+});
+
+// GET all imported Excel batches with live student counts
+app.get('/api/students/import-batches', (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.import_batches)) db.import_batches = [];
+
+    const legacyStudents = (db.students || []).filter(s => s.admissionType === 'Bulk Legacy Import' || s.importBatchId || s.reference === 'Legacy Session Archive');
+    if (db.import_batches.length === 0 && legacyStudents.length > 0) {
+      const batchesMap = {};
+      legacyStudents.forEach(s => {
+        const bId = s.importBatchId || 'batch-legacy-default';
+        const bName = s.excelFileName || 'PKC_100_Students_Data.xlsx';
+        if (!batchesMap[bId]) {
+          batchesMap[bId] = {
+            id: bId,
+            fileName: bName,
+            importedCount: 0,
+            receiptsCount: 0,
+            importedAt: s.admissionTimestamp || s.createdAt || new Date().toISOString(),
+            operatorName: s.feeCollectedBy || 'Admin'
+          };
+        }
+        batchesMap[bId].importedCount++;
+      });
+      db.import_batches = Object.values(batchesMap);
+      writeDB(db);
+    }
+
+    const batches = db.import_batches.map(b => {
+      const activeCount = (db.students || []).filter(s =>
+        s.importBatchId === b.id ||
+        (b.id === 'batch-legacy-default' && (s.admissionType === 'Bulk Legacy Import' || s.reference === 'Legacy Session Archive'))
+      ).length;
+      return {
+        ...b,
+        activeStudentCount: activeCount
+      };
+    });
+
+    res.json({ success: true, batches });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE an entire uploaded Excel import batch (deletes all student & fee records of that batch at once!)
+app.delete('/api/students/import-batches/:batchId', (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const db = readDB();
+
+    if (!Array.isArray(db.students)) db.students = [];
+    if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+    if (!Array.isArray(db.import_batches)) db.import_batches = [];
+
+    const targetBatch = db.import_batches.find(b => b.id === batchId);
+
+    const initialStudentsCount = db.students.length;
+    const initialPaymentsCount = db.fee_payments.length;
+
+    db.students = db.students.filter(s => {
+      if (s.importBatchId === batchId) return false;
+      if (batchId === 'batch-legacy-default' && (!s.importBatchId) && (s.admissionType === 'Bulk Legacy Import' || s.reference === 'Legacy Session Archive')) return false;
+      return true;
+    });
+
+    db.fee_payments = db.fee_payments.filter(p => {
+      if (p.importBatchId === batchId) return false;
+      if (batchId === 'batch-legacy-default' && (!p.importBatchId) && (p.transactionRef?.includes('LEG-IMP') || p.feeType === 'Past Session Legacy Fee Deposit')) return false;
+      return true;
+    });
+
+    const deletedStudentsCount = initialStudentsCount - db.students.length;
+    const deletedPaymentsCount = initialPaymentsCount - db.fee_payments.length;
+
+    db.import_batches = db.import_batches.filter(b => b.id !== batchId);
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `🎉 Batch "${targetBatch?.fileName || batchId}" aur uske saare ${deletedStudentsCount} student records website se safalta-purvak delete ho gaye!`,
+      deletedStudentsCount,
+      deletedPaymentsCount
+    });
+  } catch (err) {
+    console.error('Error deleting import batch:', err);
+    res.status(500).json({ success: false, message: 'Import batch delete fail ho gaya: ' + err.message });
   }
 });
 

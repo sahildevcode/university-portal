@@ -22,7 +22,7 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
     }
   };
 
-  const [activeTab, setActiveTab] = useState('excel'); // 'excel' | 'pdf' | 'reset'
+  const [activeTab, setActiveTab] = useState('excel'); // 'excel' | 'pdf' | 'history' | 'reset'
   const [file, setFile] = useState(null);
   const [pdfRawText, setPdfRawText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,12 +35,74 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
   const [searchFilter, setSearchFilter] = useState('');
   const [clearExisting, setClearExisting] = useState(false);
 
+  // Uploaded Excel Batches & History state
+  const [importBatches, setImportBatches] = useState([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+  const [deletingBatchId, setDeletingBatchId] = useState(null);
+  const [batchSearch, setBatchSearch] = useState('');
+
   // Reset demo data state
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
   const fileInputRef = useRef(null);
   const pdfInputRef = useRef(null);
+
+  const fetchImportBatches = async () => {
+    setLoadingBatches(true);
+    try {
+      const res = await fetch('/api/students/import-batches');
+      const data = await parseResponseJson(res, 'Import batches fetch fail ho gaya.');
+      if (res.ok && data.success) {
+        setImportBatches(data.batches || []);
+      }
+    } catch (err) {
+      console.warn('Error fetching import batches:', err);
+    } finally {
+      setLoadingBatches(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchImportBatches();
+    }
+  }, [isOpen]);
+
+  const handleDeleteBatch = async (batch) => {
+    const confirmMsg = `⚠️ KYA AAP SURE HAIN?\n\nExcel File: "${batch.fileName}"\nIs Excel file me se total ${batch.activeStudentCount || batch.importedCount} student records upload hue the.\n\nIs Delete button par click karne se is Excel file ka SAARA DATA (student profile & fee transactions) website se EK SAATH HATA DIYA JAAYEGA.\n\nKripya confirm karne ke liye "DELETE" type karein:`;
+    const userInput = prompt(confirmMsg);
+    if (userInput !== 'DELETE') {
+      if (userInput !== null) {
+        alert('Deletion cancelled. Aapko confirmation ke liye "DELETE" type karna zaroori hai.');
+      }
+      return;
+    }
+
+    setDeletingBatchId(batch.id);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await fetch(`/api/students/import-batches/${batch.id}`, {
+        method: 'DELETE'
+      });
+      const data = await parseResponseJson(res, 'Batch delete fail ho gaya.');
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Batch delete fail ho gaya.');
+      }
+
+      setSuccessMsg(data.message);
+      fetchImportBatches();
+      if (onImportSuccess) {
+        onImportSuccess(data);
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Batch delete karne me samasya aayi.');
+    } finally {
+      setDeletingBatchId(null);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -243,7 +305,9 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
         body: JSON.stringify({
           students: selectedRows,
           clearExisting,
-          operatorName
+          operatorName,
+          fileName: file ? file.name : (activeTab === 'pdf' ? 'PDF_Import_Register.pdf' : 'Excel_Import_File.xlsx'),
+          batchId: 'batch-' + Date.now()
         })
       });
 
@@ -257,6 +321,8 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
       setParsedStudents([]);
       setFile(null);
       setPdfRawText('');
+
+      fetchImportBatches();
 
       if (onImportSuccess) {
         onImportSuccess(data);
@@ -395,6 +461,18 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
             </button>
 
             <button
+              onClick={() => { setActiveTab('history'); setErrorMsg(null); setSuccessMsg(null); fetchImportBatches(); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'history'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-white text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>3. Uploaded Excel Files & Delete Data ({importBatches.length})</span>
+            </button>
+
+            <button
               onClick={() => { setActiveTab('reset'); setErrorMsg(null); setSuccessMsg(null); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'reset'
@@ -403,7 +481,7 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
               }`}
             >
               <Trash2 className="w-4 h-4" />
-              <span>3. Reset Demo Data</span>
+              <span>4. Reset Demo Data</span>
             </button>
           </div>
 
@@ -647,7 +725,116 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
             </div>
           )}
 
-          {/* TAB 3: RESET DEMO DATA */}
+          {/* TAB 3: UPLOADED EXCEL BATCHES HISTORY & DELETE */}
+          {activeTab === 'history' && (
+            <div className="space-y-5">
+              <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-950 text-white p-5 rounded-3xl shadow-md flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+                    Uploaded Batch Records
+                  </span>
+                  <h3 className="text-lg font-extrabold text-white mt-1 flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+                    <span>Upload Ki Gayi Excel Files Ka Record & 1-Click Delete</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Niche aap un sabhi Excel files ki list dekh sakte hain jo upload ki gayi hain. Ek click me poore Excel file ka data delete karein.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchImportBatches}
+                  disabled={loadingBatches}
+                  className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingBatches ? 'animate-spin' : ''}`} />
+                  <span>Refresh Batches</span>
+                </button>
+              </div>
+
+              {/* Filter / Search Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-700">
+                  Total Uploaded Excel Files: <strong className="text-indigo-600 font-extrabold">{importBatches.length}</strong>
+                </span>
+                <input
+                  type="text"
+                  value={batchSearch}
+                  onChange={(e) => setBatchSearch(e.target.value)}
+                  placeholder="Search Excel file name or operator..."
+                  className="w-full sm:w-72 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-amber-500 font-medium text-slate-900"
+                />
+              </div>
+
+              {/* Batches Table */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-900 text-white font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">#</th>
+                      <th className="p-3">Uploaded Excel File Name</th>
+                      <th className="p-3">Upload Date & Time</th>
+                      <th className="p-3 text-center">Total Students</th>
+                      <th className="p-3 text-center">Operator</th>
+                      <th className="p-3 text-right">Delete Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {importBatches
+                      .filter(b => (b.fileName || '').toLowerCase().includes(batchSearch.toLowerCase()) || (b.operatorName || '').toLowerCase().includes(batchSearch.toLowerCase()))
+                      .map((batch, idx) => (
+                        <tr key={batch.id || idx} className="hover:bg-amber-50/40 transition-colors">
+                          <td className="p-3 font-bold text-slate-500">{idx + 1}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2 font-bold text-slate-900">
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>{batch.fileName}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono">ID: {batch.id}</span>
+                          </td>
+                          <td className="p-3 text-slate-600 font-medium">
+                            {batch.importedAt ? new Date(batch.importedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Earlier Session'}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              {batch.activeStudentCount !== undefined ? batch.activeStudentCount : batch.importedCount} Students
+                            </span>
+                          </td>
+                          <td className="p-3 text-center text-slate-700 font-medium">
+                            {batch.operatorName || 'Admin'}
+                          </td>
+                          <td className="p-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBatch(batch)}
+                              disabled={deletingBatchId === batch.id}
+                              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 ml-auto disabled:opacity-50"
+                              title="Delete all data of this Excel file from website"
+                            >
+                              {deletingBatchId === batch.id ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                              <span>Delete Excel Data</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {importBatches.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-slate-500 text-xs font-medium">
+                          Abhi tak koi Excel file upload nahi hui hai ya saara data delete ho chuka hai.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: RESET DEMO DATA */}
           {activeTab === 'reset' && (
             <div className="bg-rose-50/70 border-2 border-rose-200 rounded-3xl p-6 space-y-4 max-w-2xl mx-auto">
               <div className="flex items-center gap-3 text-rose-950">
