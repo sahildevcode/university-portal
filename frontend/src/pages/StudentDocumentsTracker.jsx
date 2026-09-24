@@ -750,7 +750,10 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                           <div className="relative inline-block text-left">
                             <button
                               type="button"
-                              onClick={() => setOpenDropdownRoll(openDropdownRoll === std.rollNo ? null : std.rollNo)}
+                              onClick={() => {
+                                const key = std.id || std.rollNo || std.registrationNo;
+                                setOpenDropdownRoll(openDropdownRoll === key ? null : key);
+                              }}
                               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
                             >
                               <FolderCheck className="w-3.5 h-3.5" />
@@ -758,7 +761,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                               <ChevronDown className="w-3.5 h-3.5" />
                             </button>
 
-                            {openDropdownRoll === std.rollNo && (
+                            {openDropdownRoll === (std.id || std.rollNo || std.registrationNo) && (
                               <>
                                 <div 
                                   className="fixed inset-0 z-30 cursor-default" 
@@ -767,7 +770,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                                 <div className="absolute right-0 mt-1.5 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-40 py-2 text-left animate-fadeIn text-xs">
                                   <div className="px-3.5 py-1.5 border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400 font-extrabold flex justify-between items-center">
                                     <span>Options for {std.fullName?.split(' ')[0]}</span>
-                                    <span className="font-mono text-indigo-700">{std.rollNo}</span>
+                                    <span className="font-mono text-indigo-700">{std.rollNo || std.registrationNo || std.enrollmentNo || 'ID: ' + std.id}</span>
                                   </div>
 
                                   {/* Option 1: Single Document View & Copy */}
