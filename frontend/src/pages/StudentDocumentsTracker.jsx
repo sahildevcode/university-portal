@@ -279,6 +279,41 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
     }
   };
 
+    const handleDeleteDocForSingle = async (student, docName) => {
+    if (!student) return;
+    if (!window.confirm(`Are you sure you want to delete / remove "${docName}"?`)) return;
+
+    const studentKey = student.id || student.rollNo || student.registrationNo || student.enrollmentNo;
+    if (!studentKey) {
+      alert('Student identifier not found.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(studentKey)}/documents/${encodeURIComponent(docName)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to delete document');
+
+      // Update local state of selectedStudentForSingleDocs
+      setSelectedStudentForSingleDocs(prev => {
+        if (!prev) return prev;
+        const newStatus = { ...(prev.documentsStatus || {}) };
+        delete newStatus[docName];
+        return {
+          ...prev,
+          documentsStatus: newStatus,
+          documentSubmit: (prev.documentSubmit || []).filter(d => d !== docName)
+        };
+      });
+
+      fetchStudents();
+    } catch (err) {
+      alert('Error deleting document: ' + err.message);
+    }
+  };
+
   const handleDeleteDoc = async (docName) => {
     if (!selectedStudent) return;
     if (!window.confirm(`Are you sure you want to delete / remove "${docName}"?`)) return;
@@ -806,23 +841,6 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                                     </div>
                                   </button>
 
-                                  {/* Option 3: Receive & Update Documents */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenDropdownRoll(null);
-                                      handleOpenDocModal(std);
-                                    }}
-                                    className="w-full px-3.5 py-2.5 hover:bg-indigo-50 text-indigo-950 font-bold flex items-center gap-2.5 transition-colors cursor-pointer text-left border-t border-slate-100"
-                                  >
-                                    <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700">
-                                      <Upload className="w-4 h-4" />
-                                    </div>
-                                    <div>
-                                      <span className="block text-xs font-bold">3. Receive / Update Documents</span>
-                                      <span className="text-[10px] text-slate-500 font-normal">नया दस्तावेज़ जमा करें या PDF अपलोड करें</span>
-                                    </div>
-                                  </button>
                                 </div>
                               </>
                             )}
@@ -971,7 +989,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                       {/* Single Document Actions */}
                       <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-2">
                         {isPdf && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {/* View / Open PDF */}
                             <button
                               type="button"
@@ -979,12 +997,12 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                                 title: docName,
                                 url: fileUrl,
                                 studentName: selectedStudentForSingleDocs.fullName,
-                                rollNo: selectedStudentForSingleDocs.rollNo
+                                rollNo: selectedStudentForSingleDocs.rollNo || selectedStudentForSingleDocs.registrationNo || selectedStudentForSingleDocs.id
                               })}
                               className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-xl font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>View / देखें</span>
+                              <span>View</span>
                             </button>
 
                             {/* Download PDF Copy */}
@@ -993,18 +1011,29 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                               onClick={() => {
                                 const ext = fileUrl.endsWith('.png') ? '.png' : (fileUrl.endsWith('.jpg') || fileUrl.endsWith('.jpeg') ? '.jpg' : '.pdf');
                                 const clean = docName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '_');
-                                handleDownloadFile(fileUrl, `${selectedStudentForSingleDocs.rollNo}_${clean}${ext}`);
+                                handleDownloadFile(fileUrl, `${selectedStudentForSingleDocs.rollNo || selectedStudentForSingleDocs.fullName}_${clean}${ext}`);
                               }}
                               className="flex items-center gap-1 bg-white hover:bg-purple-50 text-purple-900 border border-purple-300 px-3 py-1.5 rounded-xl font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>Download PDF</span>
                             </button>
+
+                            {/* Delete Document */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocForSingle(selectedStudentForSingleDocs, docName)}
+                              className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
+                              title="Delete this document"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         )}
 
                         {isManual && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {/* Print Physical Slip */}
                             <button
                               type="button"
@@ -1016,25 +1045,25 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                               className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
                             >
                               <Printer className="w-3.5 h-3.5" />
-                              <span>Print Hardcopy Slip (पावती)</span>
+                              <span>Print Hardcopy Slip</span>
+                            </button>
+
+                            {/* Delete Document */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocForSingle(selectedStudentForSingleDocs, docName)}
+                              className="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl font-bold text-[11px] shadow-2xs transition-colors cursor-pointer"
+                              title="Delete this document"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Delete</span>
                             </button>
                           </div>
                         )}
 
                         {isPending && (
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-[11px] text-slate-400 italic">Not submitted at desk</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const std = selectedStudentForSingleDocs;
-                                setSelectedStudentForSingleDocs(null);
-                                handleOpenDocModal(std);
-                              }}
-                              className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer"
-                            >
-                              + Receive Now →
-                            </button>
+                            <span className="text-[11px] text-slate-400 italic">Not submitted</span>
                           </div>
                         )}
                       </div>
@@ -1454,215 +1483,6 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 5: RECEIVE / UPDATE DOCUMENTS (Existing Enhanced Modal) */}
-      {/* ========================================================================= */}
-      {selectedStudent && (
-        <div 
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start"
-          onClick={() => setSelectedStudent(null)}
-        >
-          <div 
-            className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden my-auto border border-slate-200 flex flex-col max-h-[92vh] animate-fadeIn text-slate-900"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-5 flex items-center justify-between shrink-0 border-b border-indigo-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold text-amber-300">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold">
-                    Receive &amp; Update Student Documents (दस्तावेज़ जमा / अपडेट)
-                  </h3>
-                  <p className="text-xs text-indigo-200">
-                    <strong className="text-white uppercase">{selectedStudent.fullName}</strong> ({selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo || 'ID: ' + selectedStudent.id}) • {selectedStudent.collegeName}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSelectedStudent(null)}
-                className="text-slate-300 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
-              {saveMessage && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl flex items-center gap-2 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{saveMessage}</span>
-                </div>
-              )}
-
-              <div className="bg-amber-50/70 border border-amber-200 p-3.5 rounded-2xl flex items-center gap-2.5 text-amber-900">
-                <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
-                <span>
-                  <strong>Dual Receipt System:</strong> You can mark each document as <strong>Manually Received (Physical Hardcopy)</strong> at the campus counter, or directly <strong>Upload the PDF/File</strong>. All documents are optional and can be received in phases.
-                </span>
-              </div>
-
-              {/* Document rows */}
-              <div className="space-y-3">
-                {standardDocuments.map(docName => {
-                  const state = activeDocState[docName] || { mode: 'Pending', status: 'pending' };
-                  const isUploading = uploadingDoc === docName;
-
-                  return (
-                    <div 
-                      key={docName}
-                      className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                    >
-                      <div className="space-y-0.5">
-                        <strong className="font-bold text-slate-800 text-xs block">{docName}</strong>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400">Current Status:</span>
-                          {state.mode === 'PDF' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                              <Check className="w-3 h-3 text-emerald-600" /> PDF File On Record
-                            </span>
-                          ) : state.mode === 'Manually' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">
-                              <Check className="w-3 h-3 text-blue-600" /> Physical Hardcopy Received
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                              Pending (लंबित)
-                            </span>
-                          )}
-                          {state.fileUrl && (
-                            <button
-                              type="button"
-                              onClick={() => setPreviewDocFile({
-                                title: docName,
-                                url: state.fileUrl,
-                                studentName: selectedStudent.fullName,
-                                rollNo: selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo || selectedStudent.id
-                              })}
-                              className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 text-[10px] ml-1 cursor-pointer"
-                            >
-                              <Eye className="w-3 h-3" /> View / Download PDF
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions: Download, Delete, Upload / Replace, Hardcopy */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        {/* Download Document */}
-                        {state.fileUrl && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const ext = state.fileUrl.endsWith('.png') ? '.png' : (state.fileUrl.endsWith('.jpg') || state.fileUrl.endsWith('.jpeg') ? '.jpg' : '.pdf');
-                              const cleanDocName = docName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '_');
-                              handleDownloadFile(state.fileUrl, `${selectedStudent.rollNo || selectedStudent.fullName}_${cleanDocName}${ext}`);
-                            }}
-                            className="px-3 py-1.5 rounded-xl font-bold text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
-                            title="Download document file"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download</span>
-                          </button>
-                        )}
-
-                        {/* Delete Document */}
-                        {(state.fileUrl || state.status !== 'pending' || state.mode !== 'Pending') && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDoc(docName)}
-                            className="px-3 py-1.5 rounded-xl font-bold text-[11px] bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
-                            title="Delete this document"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                            <span>Delete</span>
-                          </button>
-                        )}
-
-                        {/* Upload / Replace PDF or File */}
-                        <label className={'px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border inline-flex items-center gap-1.5 shadow-2xs ' + (
-                          state.fileUrl 
-                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' 
-                            : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                        )}>
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>{isUploading ? 'Uploading...' : (state.fileUrl ? 'Replace' : 'Upload PDF')}</span>
-                          <input
-                            type="file"
-                            accept=".pdf,image/*"
-                            disabled={isUploading}
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                handleFileUpload(docName, e.target.files[0]);
-                                e.target.value = '';
-                              }
-                            }}
-                            className="hidden"
-                          />
-                        </label>
-
-                        {/* Physical Hardcopy toggle */}
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange(docName, state.mode === 'Manually' ? 'Pending' : 'Manually')}
-                          className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border ' + (
-                            state.mode === 'Manually' 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          )}
-                          title="Mark Physical Hardcopy received at counter"
-                        >
-                          {state.mode === 'Manually' ? '✓ Hardcopy' : '+ Hardcopy'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Desk Remarks */}
-              <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Desk Verification Remarks / Notes
-                </label>
-                <input
-                  type="text"
-                  value={docRemarks}
-                  onChange={(e) => setDocRemarks(e.target.value)}
-                  placeholder="e.g. Original marksheets verified by admission desk; TC physical copy received."
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
-              <button
-                type="button"
-                onClick={() => setSelectedStudent(null)}
-                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-100 cursor-pointer"
-              >
-                Close
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveAllDocs}
-                disabled={saveLoading}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
-              >
-                {saveLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                <span>Save All Document Records</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
