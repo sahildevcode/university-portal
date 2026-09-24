@@ -1062,6 +1062,63 @@ app.get('/api/students/import-batches', (req, res) => {
   }
 });
 
+// Download Excel file of a specific import batch
+app.get('/api/students/import-batches/:batchId/download', (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const db = readDB();
+
+    const batch = (db.import_batches || []).find(b => b.id === batchId);
+    
+    // Filter students belonging to this batch
+    const students = (db.students || []).filter(s => 
+      s.importBatchId === batchId || 
+      (batchId === 'batch-legacy-default' && (s.admissionType === 'Bulk Legacy Import' || s.reference === 'Legacy Session Archive'))
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ success: false, message: 'Is batch me koi student data nahi mila.' });
+    }
+
+    const exportData = students.map((s, idx) => ({
+      'S.No': idx + 1,
+      'Student Name': s.fullName || s.studentName || '',
+      'Father Name': s.fatherName || '',
+      'Mother Name': s.motherName || '',
+      'Roll No': s.rollNo || '',
+      'Enrollment No': s.enrollmentNo || '',
+      'Course Name': s.courseName || '',
+      'Branch': s.branch || 'General',
+      'Admission Session': s.admissionSession || '',
+      'Current Class / Sem': s.currentClass || `SEM-${s.currentSemester || 1}`,
+      'University Name': s.universityName || '',
+      'College Name': s.collegeName || '',
+      'Total Fee': s.totalFee || 0,
+      'Scholarship Amount': s.scholarshipAmount || 0,
+      'Total Paid': s.totalPaid || 0,
+      'Balance Due': s.balanceDue || 0,
+      'Phone': s.phone || s.contact || '',
+      'Aadhaar No': s.aadhaarNo || '',
+      'Status': s.status || 'Active',
+      'Admission Date': s.admissionDate || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Student_Records');
+
+    const fileName = ((batch?.fileName || `Import_Batch_${batchId}`).replace(/\.[^/.]+$/, "")) + '_Export.xlsx';
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error downloading batch Excel:', err);
+    res.status(500).json({ success: false, message: 'Excel download fail ho gaya: ' + err.message });
+  }
+});
+
 // DELETE an entire uploaded Excel import batch (deletes all student & fee records of that batch at once!)
 app.delete('/api/students/import-batches/:batchId', (req, res) => {
   try {

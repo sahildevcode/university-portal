@@ -104,6 +104,15 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
     }
   };
 
+  const handleDownloadBatchExcel = (batch) => {
+    const link = document.createElement('a');
+    link.href = `/api/students/import-batches/${batch.id}/download`;
+    link.download = (batch.fileName || 'Imported_Excel_Data.xlsx').replace(/\.[^/.]+$/, "") + '_Export.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!isOpen) return null;
 
   // Handle template download (Direct Static Download, 0ms lag, no server dependency)
@@ -488,32 +497,11 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleDownloadTemplate}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              title="Download PKC Official Student Bulk Import Blank Template"
+              onClick={() => { setActiveTab('history'); setErrorMsg(null); setSuccessMsg(null); fetchImportBatches(); }}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>📥 Blank Template (.xlsx)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownloadDemoData}
-              className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              title="Download 100 Students Demo Excel File"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>⭐ 100 Students Excel (.xlsx)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownload100Pdf}
-              className="flex items-center gap-1.5 bg-indigo-700 hover:bg-indigo-800 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
-              title="Download 100 Students Demo Admission Register PDF"
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-300" />
-              <span>📄 100 Students PDF (.pdf)</span>
+              <FileSpreadsheet className="w-4 h-4 text-slate-950" />
+              <span>📋 Uploaded Excel History ({importBatches.length})</span>
             </button>
           </div>
         </div>
@@ -804,20 +792,31 @@ export default function BulkImportModal({ isOpen, onClose, onImportSuccess, oper
                             {batch.operatorName || 'Admin'}
                           </td>
                           <td className="p-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteBatch(batch)}
-                              disabled={deletingBatchId === batch.id}
-                              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 ml-auto disabled:opacity-50"
-                              title="Delete all data of this Excel file from website"
-                            >
-                              {deletingBatchId === batch.id ? (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3.5 h-3.5" />
-                              )}
-                              <span>Delete Excel Data</span>
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadBatchExcel(batch)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                                title="Download all student records of this Excel file in .xlsx format"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download Excel</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBatch(batch)}
+                                disabled={deletingBatchId === batch.id}
+                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                title="Delete all data of this Excel file from website"
+                              >
+                                {deletingBatchId === batch.id ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                                <span>Delete Data</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
