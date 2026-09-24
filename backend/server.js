@@ -3655,6 +3655,41 @@ app.put('/api/students/:rollNo/documents', upload.fields([
 
     if (!student.documentsStatus) student.documentsStatus = {};
 
+    // Handle delete action
+    if (mode === 'Delete' || req.body.action === 'delete' || status === 'deleted') {
+      const oldFile = student.documentsStatus[docName]?.fileUrl;
+      if (oldFile && oldFile.startsWith('/uploads/documents/')) {
+        const filePath = path.join(__dirname, oldFile);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to unlink document:', e); }
+        }
+      }
+      student.documentsStatus[docName] = {
+        docName,
+        status: 'pending',
+        mode: 'Not Submitted',
+        fileUrl: '',
+        remarks: '',
+        updatedAt: new Date().toISOString()
+      };
+      if (student.documentSubmit) {
+        student.documentSubmit = student.documentSubmit.filter(d => d !== docName);
+      }
+      if (student.documents) {
+        if (docName.includes('10th')) { student.documents.doc10th = ''; student.doc10thUrl = ''; }
+        if (docName.includes('12th')) { student.documents.doc12th = ''; student.doc12thUrl = ''; }
+        if (docName.includes('Aadhaar')) { student.documents.aadhar = ''; student.aadharUrl = ''; }
+        if (docName.includes('Photo')) { student.documents.photo = ''; student.photoUrl = ''; }
+      }
+      writeDB(db);
+      return res.json({
+        success: true,
+        message: `Document "${docName}" deleted successfully!`,
+        student,
+        documentsStatus: student.documentsStatus
+      });
+    }
+
     let fileUrl = student.documentsStatus[docName]?.fileUrl || '';
     if (req.files?.document_file) {
       fileUrl = `/uploads/documents/${req.files.document_file[0].filename}`;
@@ -3703,6 +3738,65 @@ app.put('/api/students/:rollNo/documents', upload.fields([
   } catch (err) {
     console.error('Error updating document:', err);
     res.status(500).json({ success: false, message: 'Error updating document: ' + err.message });
+  }
+});
+
+// Delete Student Document
+app.delete('/api/students/:rollNo/documents/:docName', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student "${rawKey}" not found.` });
+    }
+
+    const docName = decodeURIComponent(req.params.docName || '').trim();
+    if (!docName) {
+      return res.status(400).json({ success: false, message: 'Document name is required.' });
+    }
+
+    if (!student.documentsStatus) student.documentsStatus = {};
+
+    const oldFile = student.documentsStatus[docName]?.fileUrl;
+    if (oldFile && oldFile.startsWith('/uploads/documents/')) {
+      const filePath = path.join(__dirname, oldFile);
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to unlink document:', e); }
+      }
+    }
+
+    student.documentsStatus[docName] = {
+      docName,
+      status: 'pending',
+      mode: 'Not Submitted',
+      fileUrl: '',
+      remarks: '',
+      updatedAt: new Date().toISOString()
+    };
+
+    if (student.documentSubmit) {
+      student.documentSubmit = student.documentSubmit.filter(d => d !== docName);
+    }
+    if (student.documents) {
+      if (docName.includes('10th')) { student.documents.doc10th = ''; student.doc10thUrl = ''; }
+      if (docName.includes('12th')) { student.documents.doc12th = ''; student.doc12thUrl = ''; }
+      if (docName.includes('Aadhaar')) { student.documents.aadhar = ''; student.aadharUrl = ''; }
+      if (docName.includes('Photo')) { student.documents.photo = ''; student.photoUrl = ''; }
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Document "${docName}" deleted successfully!`,
+      student,
+      documentsStatus: student.documentsStatus
+    });
+  } catch (err) {
+    console.error('Error deleting document:', err);
+    res.status(500).json({ success: false, message: 'Error deleting document: ' + err.message });
   }
 });
 

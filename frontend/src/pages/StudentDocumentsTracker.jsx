@@ -3,7 +3,7 @@ import {
   FileText, CheckCircle2, AlertCircle, Upload, Search, Filter, 
   Printer, ExternalLink, ShieldCheck, Clock, User, Check, X,
   Building, ArrowLeft, RefreshCw, FolderCheck, Download, Eye,
-  FileCheck, ChevronDown, DownloadCloud, FileDown, Layers
+  FileCheck, ChevronDown, DownloadCloud, FileDown, Layers, Trash2
 } from 'lucide-react';
 
 export default function StudentDocumentsTracker({ isAdmin = false, staffUser, courses = [] }) {
@@ -237,6 +237,11 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
 
   const handleFileUpload = async (docName, file) => {
     if (!file || !selectedStudent) return;
+    const studentKey = selectedStudent.id || selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo;
+    if (!studentKey) {
+      alert('Student identifier not found.');
+      return;
+    }
     setUploadingDoc(docName);
     try {
       const formData = new FormData();
@@ -246,19 +251,21 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
       formData.append('document_file', file);
       formData.append('verifiedBy', staffUser?.name || 'Administrator');
 
-      const res = await fetch('/api/students/' + selectedStudent.rollNo + '/documents', {
+      const res = await fetch('/api/students/' + encodeURIComponent(studentKey) + '/documents', {
         method: 'PUT',
         body: formData
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
 
+      const updatedFileUrl = data.documentsStatus?.[docName]?.fileUrl || data.student?.documentsStatus?.[docName]?.fileUrl || '';
+
       setActiveDocState(prev => ({
         ...prev,
         [docName]: {
           mode: 'PDF',
           status: 'submitted_pdf',
-          fileUrl: data.documentsStatus?.[docName]?.fileUrl || '',
+          fileUrl: updatedFileUrl,
           remarks: 'PDF document uploaded'
         }
       }));
@@ -272,12 +279,51 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
     }
   };
 
+  const handleDeleteDoc = async (docName) => {
+    if (!selectedStudent) return;
+    if (!window.confirm(`Are you sure you want to delete / remove "${docName}"?`)) return;
+
+    const studentKey = selectedStudent.id || selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo;
+    if (!studentKey) {
+      alert('Student identifier not found.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(studentKey)}/documents/${encodeURIComponent(docName)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to delete document');
+
+      setActiveDocState(prev => ({
+        ...prev,
+        [docName]: {
+          mode: 'Pending',
+          status: 'pending',
+          fileUrl: '',
+          remarks: ''
+        }
+      }));
+      setSaveMessage(`Document "${docName}" deleted successfully!`);
+      setTimeout(() => setSaveMessage(null), 3000);
+      fetchStudents();
+    } catch (err) {
+      alert('Error deleting document: ' + err.message);
+    }
+  };
+
   const handleSaveAllDocs = async () => {
     if (!selectedStudent) return;
+    const studentKey = selectedStudent.id || selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo;
+    if (!studentKey) {
+      alert('Student identifier not found.');
+      return;
+    }
     setSaveLoading(true);
     try {
       // Send as batch update
-      const res = await fetch('/api/students/' + selectedStudent.rollNo + '/documents', {
+      const res = await fetch('/api/students/' + encodeURIComponent(studentKey) + '/documents', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1430,7 +1476,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                     Receive &amp; Update Student Documents (दस्तावेज़ जमा / अपडेट)
                   </h3>
                   <p className="text-xs text-indigo-200">
-                    <strong className="text-white uppercase">{selectedStudent.fullName}</strong> ({selectedStudent.rollNo}) • {selectedStudent.collegeName}
+                    <strong className="text-white uppercase">{selectedStudent.fullName}</strong> ({selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo || 'ID: ' + selectedStudent.id}) • {selectedStudent.collegeName}
                   </p>
                 </div>
               </div>
@@ -1495,7 +1541,7 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                                 title: docName,
                                 url: state.fileUrl,
                                 studentName: selectedStudent.fullName,
-                                rollNo: selectedStudent.rollNo
+                                rollNo: selectedStudent.rollNo || selectedStudent.registrationNo || selectedStudent.enrollmentNo || selectedStudent.id
                               })}
                               className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 text-[10px] ml-1 cursor-pointer"
                             >
@@ -1505,53 +1551,73 @@ export default function StudentDocumentsTracker({ isAdmin = false, staffUser, co
                         </div>
                       </div>
 
-                      {/* 2 Receiving Options + Pending */}
+                      {/* Actions: Download, Delete, Upload / Replace, Hardcopy */}
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Option 1: Pending */}
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange(docName, 'Pending')}
-                          className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border ' + (
-                            state.mode === 'Pending' 
-                              ? 'bg-rose-100 text-rose-800 border-rose-300 shadow-2xs' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          )}
-                        >
-                          Pending (बाद में)
-                        </button>
+                        {/* Download Document */}
+                        {state.fileUrl && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const ext = state.fileUrl.endsWith('.png') ? '.png' : (state.fileUrl.endsWith('.jpg') || state.fileUrl.endsWith('.jpeg') ? '.jpg' : '.pdf');
+                              const cleanDocName = docName.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '_');
+                              handleDownloadFile(state.fileUrl, `${selectedStudent.rollNo || selectedStudent.fullName}_${cleanDocName}${ext}`);
+                            }}
+                            className="px-3 py-1.5 rounded-xl font-bold text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                            title="Download document file"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download</span>
+                          </button>
+                        )}
 
-                        {/* Option 2: Manually / Physical Hardcopy */}
-                        <button
-                          type="button"
-                          onClick={() => handleModeChange(docName, 'Manually')}
-                          className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border ' + (
-                            state.mode === 'Manually' 
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
-                              : 'bg-white text-blue-800 border-blue-200 hover:bg-blue-50'
-                          )}
-                        >
-                          ✓ Manually (Hardcopy जमा)
-                        </button>
+                        {/* Delete Document */}
+                        {(state.fileUrl || state.status !== 'pending' || state.mode !== 'Pending') && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDoc(docName)}
+                            className="px-3 py-1.5 rounded-xl font-bold text-[11px] bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                            title="Delete this document"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Delete</span>
+                          </button>
+                        )}
 
-                        {/* Option 3: PDF / File Upload */}
-                        <label className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border inline-flex items-center gap-1.5 ' + (
-                          state.mode === 'PDF' 
-                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' 
-                            : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
+                        {/* Upload / Replace PDF or File */}
+                        <label className={'px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border inline-flex items-center gap-1.5 shadow-2xs ' + (
+                          state.fileUrl 
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100' 
+                            : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                         )}>
-                          <Upload className="w-3 h-3" />
-                          <span>{isUploading ? 'Uploading...' : (state.fileUrl ? 'Replace PDF' : 'Upload PDF')}</span>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{isUploading ? 'Uploading...' : (state.fileUrl ? 'Replace' : 'Upload PDF')}</span>
                           <input
                             type="file"
                             accept=".pdf,image/*"
+                            disabled={isUploading}
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
                                 handleFileUpload(docName, e.target.files[0]);
+                                e.target.value = '';
                               }
                             }}
                             className="hidden"
                           />
                         </label>
+
+                        {/* Physical Hardcopy toggle */}
+                        <button
+                          type="button"
+                          onClick={() => handleModeChange(docName, state.mode === 'Manually' ? 'Pending' : 'Manually')}
+                          className={'px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer border ' + (
+                            state.mode === 'Manually' 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                          )}
+                          title="Mark Physical Hardcopy received at counter"
+                        >
+                          {state.mode === 'Manually' ? '✓ Hardcopy' : '+ Hardcopy'}
+                        </button>
                       </div>
                     </div>
                   );
