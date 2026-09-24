@@ -59,6 +59,14 @@ try {
           dbChanged = true;
         }
       });
+      if (!Array.isArray(s.documentSubmit)) {
+        if (typeof s.documentSubmit === 'string' && s.documentSubmit.trim()) {
+          s.documentSubmit = s.documentSubmit.split(/[,;|]+/).map(x => x.trim()).filter(Boolean);
+        } else {
+          s.documentSubmit = [];
+        }
+        dbChanged = true;
+      }
     });
   }
   if (dbChanged) {
@@ -3596,6 +3604,17 @@ app.put('/api/fees/student/:rollNo/adjust', (req, res) => {
   }
 });
 
+function ensureDocSubmitArray(student) {
+  if (!student) return;
+  if (!Array.isArray(student.documentSubmit)) {
+    if (typeof student.documentSubmit === 'string' && student.documentSubmit.trim()) {
+      student.documentSubmit = student.documentSubmit.split(/[,;|]+/).map(s => s.trim()).filter(Boolean);
+    } else {
+      student.documentSubmit = [];
+    }
+  }
+}
+
 // Update Student Document Submission Status (Supports PDF Upload and Manually / Physical Hardcopy)
 app.put('/api/students/:rollNo/documents', upload.fields([
   { name: 'document_file', maxCount: 1 }
@@ -3608,6 +3627,7 @@ app.put('/api/students/:rollNo/documents', upload.fields([
     if (!student) {
       return res.status(404).json({ success: false, message: `Student "${rawKey}" not found.` });
     }
+    ensureDocSubmitArray(student);
 
     const { docName, mode, status, remarks, verifiedBy, documentsStatus } = req.body;
     // mode: 'PDF' | 'Manually' | 'Pending'
@@ -3751,6 +3771,7 @@ app.delete('/api/students/:rollNo/documents/:docName', (req, res) => {
     if (!student) {
       return res.status(404).json({ success: false, message: `Student "${rawKey}" not found.` });
     }
+    ensureDocSubmitArray(student);
 
     const docName = decodeURIComponent(req.params.docName || '').trim();
     if (!docName) {
