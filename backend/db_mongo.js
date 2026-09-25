@@ -202,14 +202,43 @@ let previousDbState = null;
 let isSyncing = false;
 let pendingDb = null;
 
-export async function connectMongoDB(uri) {
+function sanitizeMongoUri(rawUri) {
+  if (!rawUri) return rawUri;
+  let uri = String(rawUri).trim();
+  if ((uri.startsWith('"') && uri.endsWith('"')) || (uri.startsWith("'") && uri.endsWith("'"))) {
+    uri = uri.slice(1, -1).trim();
+  }
+  try {
+    const parsed = new URL(uri);
+    const seen = new Set();
+    const cleanParams = [];
+    for (const [key, val] of parsed.searchParams.entries()) {
+      const lower = key.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        cleanParams.push(`${key}=${val}`);
+      }
+    }
+    parsed.search = cleanParams.length ? '?' + cleanParams.join('&') : '';
+    return parsed.toString();
+  } catch (e) {
+    return uri;
+  }
+}
+
+export function isMongoConnected() {
+  return mongoose.connection.readyState === 1;
+}
+
+export async function connectMongoDB(rawUri) {
   if (mongoose.connection.readyState === 1) {
     return true;
   }
-  if (!uri) {
+  if (!rawUri) {
     console.warn('⚠️ MONGODB_URI not provided. Falling back to local JSON database.');
     return false;
   }
+  const uri = sanitizeMongoUri(rawUri);
   try {
     try {
       dns.setServers(['8.8.8.8', '8.8.4.4']);

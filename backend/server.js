@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -6472,9 +6472,15 @@ app.listen(PORT, async () => {
   console.log(`🎓 University Management API running on port ${PORT}`);
   console.log(`🌐 Portal URL: http://localhost:${PORT}`);
   console.log(`📁 Uploads available at: http://localhost:${PORT}/uploads`);
-  if (process.env.MONGODB_URI) {
-    await connectMongoDB(process.env.MONGODB_URI);
-    console.log(`💾 Database Mode: MONGODB ATLAS CLOUD DATABASE (Permanent)`);
+  if (isMongoConnected()) {
+    console.log(`💾 Database Mode: MONGODB ATLAS CLOUD DATABASE (Permanent & Active)`);
+  } else if (process.env.MONGODB_URI) {
+    const ok = await connectMongoDB(process.env.MONGODB_URI);
+    if (ok) {
+      console.log(`💾 Database Mode: MONGODB ATLAS CLOUD DATABASE (Permanent & Active)`);
+    } else {
+      console.log(`💾 Database Mode: LOCAL JSON FILE (backend/data/database.json)`);
+    }
   } else {
     console.log(`💾 Database Mode: LOCAL JSON FILE (backend/data/database.json)`);
   }
