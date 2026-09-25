@@ -5459,7 +5459,7 @@ export default function VocationalCoursesManager({
                       </div>
 
                       <div className="bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 shadow-2xs">
-                        <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee (Total Deposited)</div>
+                        <div className="text-[10px] text-emerald-700 uppercase font-bold">Receive Fees (Total Deposited)</div>
                         <div className="text-base font-black text-emerald-800 font-mono mt-0.5">
                           ₹{paid.toLocaleString('en-IN')}/-
                         </div>

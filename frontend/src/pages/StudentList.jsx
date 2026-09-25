@@ -2312,7 +2312,7 @@ export default function StudentList({
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
-                    {feeDeskMode === 'receive' && 'Receive Student Fee (छात्र शुल्क प्राप्त करें)'}
+                    {feeDeskMode === 'receive' && 'Receive Fees (छात्र शुल्क प्राप्त करें)'}
                     {feeDeskMode === 'set_fee' && 'Set Student Academic Fee (Center Fee)'}
                     {feeDeskMode === 'set_scholarship' && 'Set Student Scholarship (छात्रवृत्ति निर्धारण)'}
                   </h3>
@@ -2459,7 +2459,7 @@ export default function StudentList({
                     <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                       <button type="submit" disabled={feeDeskLoading} onClick={(e) => handleFeeDeskSubmit(e, 'add')} className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" title="Add new fee installment entry">
                         <PlusCircle className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Saving...' : 'Add Payment'}</span>
+                        <span>{feeDeskLoading ? 'Saving...' : 'Receive Fees (Add Payment)'}</span>
                       </button>
                     </div>
                   </>
@@ -2894,7 +2894,7 @@ export default function StudentList({
                             <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
                           </div>
                           <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
-                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Received Fee</div>
+                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Receive Fees</div>
                             <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
                           </div>
                           <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
