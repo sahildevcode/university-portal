@@ -2540,6 +2540,28 @@ export default function StudentList({
                         <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
                       </div>
 
+                      {/* Total Academic / Center Fee Banner (Full width across all 4 columns) */}
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-blue-700">Total Academic / Center Fee</span>
+                          <div className="text-base font-black text-blue-950 font-mono">
+                            ₹{Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)).toLocaleString('en-IN')}/-
+                          </div>
+                        </div>
+                        {Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+                            {feeDeskStudent.academicFeeHistory.map((h, i) => (
+                              <span key={h.id || i} className="px-2.5 py-1 bg-white border border-blue-300 shadow-2xs rounded-lg text-[11px] font-bold text-blue-950 flex items-center gap-1">
+                                <span className="text-blue-700 font-semibold">{h.purpose || 'Center Fee'}:</span>
+                                <span className="font-mono font-extrabold text-blue-900">₹{Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0)).toLocaleString('en-IN')}/-</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold shrink-0 self-start sm:self-center">Active Setting</span>
+                      </div>
+
+                      {/* 4 Input Fields in 1 Clean Balanced Row (4 columns) */}
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Fee_Date* :</label>
                         <input
@@ -2550,6 +2572,7 @@ export default function StudentList({
                           className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
                         />
                       </div>
+
                       <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer">
@@ -2631,26 +2654,6 @@ export default function StudentList({
                             </button>
                           </div>
                         )}
-                      </div>
-
-                      <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase text-blue-700">Total Academic / Center Fee</span>
-                          <div className="text-base font-black text-blue-950 font-mono">
-                            ₹{Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)).toLocaleString('en-IN')}/-
-                          </div>
-                        </div>
-                        {Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1.5 max-w-full">
-                            {feeDeskStudent.academicFeeHistory.map((h, i) => (
-                              <span key={h.id || i} className="px-2.5 py-1 bg-white border border-blue-300 shadow-2xs rounded-lg text-[11px] font-bold text-blue-950 flex items-center gap-1">
-                                <span className="text-blue-700 font-semibold">{h.purpose || 'Center Fee'}:</span>
-                                <span className="font-mono font-extrabold text-blue-900">₹{Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0)).toLocaleString('en-IN')}/-</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-[10px] font-bold shrink-0">Active Setting</span>
                       </div>
 
                       <div>
