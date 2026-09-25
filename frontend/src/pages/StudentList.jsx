@@ -3281,7 +3281,15 @@ export default function StudentList({
                                             universityName: p.universityName || feeDeskStudent.universityName,
                                             courseName: p.courseName || feeDeskStudent.courseName,
                                             currentClass: p.currentClass || feeDeskStudent.currentClass,
-                                            transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER'
+                                            transactionRef: p.transactionRef || p.refNo || 'CASH-COUNTER',
+                                            totalFee: p.totalFee || tot,
+                                            totalPaidToDate: p.totalPaidToDate || paid,
+                                            balanceRemaining: p.balanceRemaining !== undefined ? p.balanceRemaining : (p.remainingDues !== undefined ? p.remainingDues : rem),
+                                            academicFee: acad,
+                                            studentFee: acad,
+                                            scholarshipAmount: sch,
+                                            totalPaid: paid,
+                                            balanceDue: rem
                                           });
                                         }}
                                         className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
@@ -3419,7 +3427,15 @@ export default function StudentList({
                                             transactionRef: c.refNo || 'ACADEMIC-CENTER-FEE',
                                             feeType: 'Center Fee (Academic Fee)',
                                             paidFor: c.purpose || 'Center Fee',
-                                            amountPaid: cAmt
+                                            amountPaid: cAmt,
+                                            totalFee: currentAcad + Number(feeDeskStudent.scholarshipAmount || 0),
+                                            totalPaidToDate: Number(feeDeskStudent.totalPaid || 0),
+                                            balanceRemaining: Math.max(0, currentAcad + Number(feeDeskStudent.scholarshipAmount || 0) - Number(feeDeskStudent.totalPaid || 0)),
+                                            academicFee: currentAcad,
+                                            studentFee: currentAcad,
+                                            scholarshipAmount: Number(feeDeskStudent.scholarshipAmount || 0),
+                                            totalPaid: Number(feeDeskStudent.totalPaid || 0),
+                                            balanceDue: Math.max(0, currentAcad + Number(feeDeskStudent.scholarshipAmount || 0) - Number(feeDeskStudent.totalPaid || 0))
                                           });
                                         }}
                                         className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
@@ -3639,7 +3655,15 @@ export default function StudentList({
                                             transactionRef: sEntry.refNo || 'SCHOLARSHIP-GRANT',
                                             feeType: 'Scholarship Grant',
                                             paidFor: sEntry.purpose || sEntry.yearLabel || 'Scholarship Grant',
-                                            amountPaid: sAmt
+                                            amountPaid: sAmt,
+                                            totalFee: totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
+                                            totalPaidToDate: Number(feeDeskStudent.totalPaid || 0),
+                                            balanceRemaining: Math.max(0, (totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0)),
+                                            academicFee: Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
+                                            studentFee: Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
+                                            scholarshipAmount: totalSch,
+                                            totalPaid: Number(feeDeskStudent.totalPaid || 0),
+                                            balanceDue: Math.max(0, (totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0))
                                           });
                                         }}
                                         className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
@@ -3695,24 +3719,6 @@ export default function StudentList({
                   </div>
                 );
               })()}
-
-              {/* नियम एवं शर्तें (Terms & Conditions Undertaking) */}
-              <div className="mt-4 pt-2 border-t border-slate-200">
-                <details className="bg-amber-50/70 border border-amber-300 rounded-xl p-3 text-xs group cursor-pointer">
-                  <summary className="font-bold text-amber-950 flex items-center justify-between select-none">
-                    <span className="flex items-center gap-2">
-                      <span>📜</span>
-                      <span>छात्र शुल्क नियम एवं शर्तें (Student Fee Terms &amp; Conditions)</span>
-                    </span>
-                    <span className="text-[10px] bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full font-bold">
-                      View Rules (8) ▼
-                    </span>
-                  </summary>
-                  <div className="mt-3 pt-2.5 border-t border-amber-200">
-                    <StudentTermsAndConditions compact={true} showSignatures={false} title="" />
-                  </div>
-                </details>
-              </div>
             </div>
 
             {/* Bottom Action Buttons */}

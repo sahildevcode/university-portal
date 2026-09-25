@@ -2801,9 +2801,11 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     student.paidYear2 = py2;
     student.paidYear3 = py3;
     student.paidYear4 = py4;
-    const newTotalPaid = py1 + py2 + py3 + py4;
+    const acadPart = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : (student.totalPackageFee || student.courseFee || student.totalFee || 0)));
+    const schPart = Number(student.scholarshipAmount || (py1 + py2 + py3 + py4) || 0);
+    const totalFee = acadPart + schPart;
+    student.totalFee = totalFee;
     student.totalPaid = newTotalPaid;
-    const totalFee = Number(student.totalFee) || 0;
     student.balanceDue = Math.max(0, totalFee - newTotalPaid);
     if (currentClass) student.currentClass = currentClass;
     if (remark !== undefined) student.remark = remark;
@@ -2844,7 +2846,13 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
       paidYear3: py3,
       paidYear4: py4,
       totalPaid: newTotalPaid,
+      totalPaidToDate: newTotalPaid,
+      totalFee: totalFee,
+      academicFee: acadPart,
+      scholarshipAmount: schPart,
       balanceDue: student.balanceDue,
+      balanceRemaining: student.balanceDue,
+      remainingDues: student.balanceDue,
       paymentDate: new Date(pDate).toISOString(),
       feeDate: pDate,
       refNo: refNo || '',
@@ -2961,9 +2969,12 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
 
   // Otherwise: Add new payment entry to ledger
   const newTotalPaid = (Number(student.totalPaid) || 0) + payAmt;
-  const totalFee = Number(student.totalFee) || 0;
+  const acadPart = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : (student.totalPackageFee || student.courseFee || student.totalFee || 0)));
+  const schPart = Number(student.scholarshipAmount || ((Number(student.scholarshipYear1) || 0) + (Number(student.scholarshipYear2) || 0) + (Number(student.scholarshipYear3) || 0) + (Number(student.scholarshipYear4) || 0)) || 0);
+  const totalFee = acadPart + schPart;
   const newBalance = Math.max(0, totalFee - newTotalPaid);
 
+  student.totalFee = totalFee;
   student.totalPaid = newTotalPaid;
   student.balanceDue = newBalance;
   if (currentClass) {
@@ -2999,7 +3010,14 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     purpose: purpose || 'Tuition Fee',
     refNo: refNo || '',
     paymentDate: pDate,
+    totalFee: totalFee,
+    totalPaidToDate: newTotalPaid,
+    totalPaid: newTotalPaid,
+    academicFee: acadPart,
+    scholarshipAmount: schPart,
     remainingDues: newBalance,
+    balanceRemaining: newBalance,
+    balanceDue: newBalance,
     remark: remark || '',
     receivedBy: receivedBy || 'Admin Desk'
   };

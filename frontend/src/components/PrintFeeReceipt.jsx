@@ -1,10 +1,33 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { School, Printer, X, CheckCircle2, ArrowLeft } from 'lucide-react';
-import StudentTermsAndConditions from './StudentTermsAndConditions';
 
 export default function PrintFeeReceipt({ receipt, onClose }) {
   if (!receipt) return null;
+
+  const totalCourseFee = Number(
+    receipt.totalFee !== undefined && receipt.totalFee !== null && Number(receipt.totalFee) > 0
+      ? receipt.totalFee
+      : (receipt.academicFee || receipt.studentFee || receipt.totalPackageFee || receipt.courseFee || 0)
+  );
+
+  const totalPaidTillDate = Number(
+    receipt.totalPaidToDate !== undefined && receipt.totalPaidToDate !== null && Number(receipt.totalPaidToDate) > 0
+      ? receipt.totalPaidToDate
+      : (receipt.totalPaid !== undefined && receipt.totalPaid !== null && Number(receipt.totalPaid) > 0
+          ? receipt.totalPaid
+          : (receipt.paidFee || receipt.amountPaid || receipt.amount || 0))
+  );
+
+  const remainingDueBalance = Number(
+    receipt.balanceRemaining !== undefined && receipt.balanceRemaining !== null
+      ? receipt.balanceRemaining
+      : (receipt.remainingDues !== undefined && receipt.remainingDues !== null
+          ? receipt.remainingDues
+          : (receipt.balanceDue !== undefined && receipt.balanceDue !== null
+              ? receipt.balanceDue
+              : Math.max(0, totalCourseFee - totalPaidTillDate)))
+  );
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -216,23 +239,52 @@ export default function PrintFeeReceipt({ receipt, onClose }) {
           <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center text-xs mb-6">
             <div className="border-r border-slate-200 pr-2">
               <span className="text-slate-500 block text-[10px]">Total Course Fee</span>
-              <span className="font-bold text-slate-800">₹{Number(receipt.totalFee || 0).toLocaleString('en-IN')}</span>
+              <span className="font-bold text-slate-800">₹{totalCourseFee.toLocaleString('en-IN')}</span>
             </div>
             <div className="border-r border-slate-200 pr-2">
               <span className="text-slate-500 block text-[10px]">Total Paid Till Date</span>
-              <span className="font-bold text-emerald-700">₹{Number(receipt.totalPaidToDate || 0).toLocaleString('en-IN')}</span>
+              <span className="font-bold text-emerald-700">₹{totalPaidTillDate.toLocaleString('en-IN')}</span>
             </div>
             <div>
               <span className="text-slate-500 block text-[10px]">Remaining Due Balance</span>
-              <span className="font-bold text-rose-700">₹{Number(receipt.balanceRemaining || 0).toLocaleString('en-IN')}</span>
+              <span className="font-bold text-rose-700">₹{remainingDueBalance.toLocaleString('en-IN')}</span>
             </div>
           </div>
 
-          {/* Official Terms & Conditions (नियम एवं शर्तें) & Signatures */}
-          <StudentTermsAndConditions
-            compact={true}
-            showSignatures={true}
-          />
+          {/* Official Signatures & Seal (Terms removed as requested) */}
+          <div className="pt-6 mt-4 border-t border-slate-300 grid grid-cols-3 gap-4 text-center break-inside-avoid print:break-inside-avoid">
+            {/* 1. विद्यार्थी हस्ताक्षर */}
+            <div className="flex flex-col items-center justify-end">
+              <div className="h-9 w-32 sm:w-36 border-b border-slate-700 mb-1 flex items-end justify-center">
+                {receipt.studentSignature && (
+                  <img src={receipt.studentSignature} alt="Student Signature" className="h-7 max-w-full object-contain mb-0.5" />
+                )}
+              </div>
+              <p className="font-black text-[10.5px] sm:text-[11px] text-slate-900 whitespace-nowrap">
+                विद्यार्थी हस्ताक्षर
+              </p>
+            </div>
+
+            {/* 2. अधिकृत लिपिक */}
+            <div className="flex flex-col items-center justify-end">
+              <div className="h-9 w-32 sm:w-36 border-b border-slate-700 mb-1 flex items-end justify-center"></div>
+              <p className="font-black text-[10.5px] sm:text-[11px] text-slate-900 whitespace-nowrap">
+                हस्ताक्षर (प्राप्तकर्ता)
+              </p>
+            </div>
+
+            {/* 3. संस्था संचालक हस्ताक्षर */}
+            <div className="flex flex-col items-center justify-end">
+              <div className="h-9 w-36 sm:w-44 border-b border-slate-700 mb-1 flex items-end justify-center">
+                <span className="font-serif-univ font-bold text-indigo-950 text-[9px] opacity-80 mb-0.5">
+                  PKC ACADEMY SEAL
+                </span>
+              </div>
+              <p className="font-black text-[10.5px] sm:text-[11px] text-slate-900 whitespace-nowrap">
+                संस्था संचालक हस्ताक्षर
+              </p>
+            </div>
+          </div>
 
         </div>
 
