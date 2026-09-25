@@ -2878,8 +2878,71 @@ export default function StudentList({
                     const paid = Number(feeDeskStudent.totalPaid || 0);
                     const rem = Math.max(0, tot - paid);
 
+                    // Compute Year-wise Breakdown (1st Year, 2nd Year, 3rd Year, 4th Year)
+                    let acadY1 = 0, acadY2 = 0, acadY3 = 0, acadY4 = 0;
+                    if (Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0) {
+                      feeDeskStudent.academicFeeHistory.forEach(entry => {
+                        const cls = (entry.currentClass || '').toUpperCase();
+                        const amt = Number(entry.amount || entry.fee || 0);
+                        if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+                          acadY1 += amt;
+                        } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+                          acadY2 += amt;
+                        } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+                          acadY3 += amt;
+                        } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+                          acadY4 += amt;
+                        } else {
+                          acadY1 += amt;
+                        }
+                      });
+                    } else {
+                      acadY1 = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
+                    }
+
+                    const schY1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
+                    const schY2 = Number(feeDeskStudent.scholarshipYear2 || 0);
+                    const schY3 = Number(feeDeskStudent.scholarshipYear3 || 0);
+                    const schY4 = Number(feeDeskStudent.scholarshipYear4 || 0);
+
+                    let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
+                    const payList = Array.isArray(feeDeskPayments) && feeDeskPayments.length > 0 ? feeDeskPayments : (feeDeskStudent.feeHistory || []);
+                    if (payList.length > 0) {
+                      payList.forEach(p => {
+                        const cls = (p.currentClass || p.year || '').toUpperCase();
+                        const amt = Number(p.amountPaid || p.amount || 0);
+                        if (cls.includes('YEAR1') || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+                          recY1 += amt;
+                        } else if (cls.includes('YEAR2') || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+                          recY2 += amt;
+                        } else if (cls.includes('YEAR3') || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+                          recY3 += amt;
+                        } else if (cls.includes('YEAR4') || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+                          recY4 += amt;
+                        } else {
+                          recY1 += amt;
+                        }
+                      });
+                    }
+                    if (feeDeskStudent.paidYear1 !== undefined) recY1 = Math.max(recY1, Number(feeDeskStudent.paidYear1 || 0));
+                    if (feeDeskStudent.paidYear2 !== undefined) recY2 = Math.max(recY2, Number(feeDeskStudent.paidYear2 || 0));
+                    if (feeDeskStudent.paidYear3 !== undefined) recY3 = Math.max(recY3, Number(feeDeskStudent.paidYear3 || 0));
+                    if (feeDeskStudent.paidYear4 !== undefined) recY4 = Math.max(recY4, Number(feeDeskStudent.paidYear4 || 0));
+                    if (feeDeskStudent.totalPaid && (recY1 + recY2 + recY3 + recY4 < Number(feeDeskStudent.totalPaid))) {
+                      recY1 += (Number(feeDeskStudent.totalPaid) - (recY1 + recY2 + recY3 + recY4));
+                    }
+
+                    const yearRows = [
+                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: acadY1 + schY1, rec: recY1, due: Math.max(0, (acadY1 + schY1) - recY1) },
+                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: acadY2 + schY2, rec: recY2, due: Math.max(0, (acadY2 + schY2) - recY2) },
+                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: acadY3 + schY3, rec: recY3, due: Math.max(0, (acadY3 + schY3) - recY3) },
+                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: acadY4 + schY4, rec: recY4, due: Math.max(0, (acadY4 + schY4) - recY4) }
+                    ];
+                    const visibleYearRows = yearRows.filter((r, idx) => idx < 2 || r.total > 0 || r.rec > 0 || r.due > 0);
+
                     return (
-                      <div className="space-y-2 pt-2">
+                      <div className="space-y-4 pt-2">
+                        {/* 5 Summary Cards */}
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
                           <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5 shadow-2xs">
                             <div className="text-[10px] text-slate-500 uppercase font-bold">Center_fee</div>
@@ -2900,6 +2963,97 @@ export default function StudentList({
                           <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
                             <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
                             <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
+                          </div>
+                        </div>
+
+                        {/* Year-Wise Fee & Dues Summary Table (सालाना फीस व बकाया विवरण) */}
+                        <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-indigo-200 rounded-2xl p-3.5 space-y-2.5 shadow-2xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                                <Sparkles className="w-3 h-3" />
+                              </span>
+                              <div>
+                                <h4 className="font-black text-slate-900 text-xs uppercase tracking-wide">
+                                  Year-Wise Fee & Dues Summary (सालाना फीस व बकाया विवरण)
+                                </h4>
+                                <p className="text-[10px] text-slate-500 font-medium">
+                                  Har saal ki banti fee, scholarship, receive fee aur bacha hua balance
+                                </p>
+                              </div>
+                            </div>
+                            <div className="bg-indigo-900 text-white px-3 py-1 rounded-xl text-[11px] font-black font-mono self-start sm:self-auto shadow-xs">
+                              Total Balance Due: ₹{rem.toLocaleString('en-IN')}/-
+                            </div>
+                          </div>
+
+                          <div className="border border-indigo-200/90 rounded-xl overflow-x-auto bg-white shadow-2xs">
+                            <table className="w-full text-left border-collapse text-[11px] min-w-[560px]">
+                              <thead>
+                                <tr className="bg-slate-800 text-white font-extrabold text-[10px] uppercase tracking-wider">
+                                  <th className="py-2 px-3 border-r border-slate-700">Year / Semester</th>
+                                  <th className="py-2 px-3 border-r border-slate-700 text-right">Center / Acad Fee</th>
+                                  <th className="py-2 px-3 border-r border-slate-700 text-right">Scholarship</th>
+                                  <th className="py-2 px-3 border-r border-slate-700 text-right">Total Fee</th>
+                                  <th className="py-2 px-3 border-r border-slate-700 text-right text-emerald-300">Receive Fees</th>
+                                  <th className="py-2 px-3 text-right text-amber-200">Balance Due</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200 font-semibold">
+                                {visibleYearRows.map((yr, idx) => (
+                                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/50 hover:bg-slate-100/60'}>
+                                    <td className="py-2 px-3 border-r border-slate-200 font-bold text-slate-900">
+                                      <span>{yr.label}</span>
+                                      <span className="text-[10px] text-slate-500 font-normal ml-1.5 font-mono">({yr.sub})</span>
+                                    </td>
+                                    <td className="py-2 px-3 border-r border-slate-200 text-right font-mono text-slate-800">
+                                      ₹{yr.acad.toLocaleString('en-IN')}/-
+                                    </td>
+                                    <td className="py-2 px-3 border-r border-slate-200 text-right font-mono text-purple-700">
+                                      {yr.sch > 0 ? `₹${yr.sch.toLocaleString('en-IN')}/-` : '-'}
+                                    </td>
+                                    <td className="py-2 px-3 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                                      ₹{yr.total.toLocaleString('en-IN')}/-
+                                    </td>
+                                    <td className="py-2 px-3 border-r border-slate-200 text-right font-mono font-bold text-emerald-700 bg-emerald-50/30">
+                                      ₹{yr.rec.toLocaleString('en-IN')}/-
+                                    </td>
+                                    <td className="py-2 px-3 text-right font-mono font-black">
+                                      {yr.due > 0 ? (
+                                        <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 inline-block">
+                                          ₹{yr.due.toLocaleString('en-IN')}/- Due
+                                        </span>
+                                      ) : (
+                                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[10px] inline-block font-bold">
+                                          ✓ Cleared
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                                {/* Overall Summary Footer Row */}
+                                <tr className="bg-slate-900 text-white font-black text-xs">
+                                  <td className="py-2.5 px-3 border-r border-slate-700 uppercase">
+                                    Total Course Dues
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-700 text-right font-mono">
+                                    ₹{acad.toLocaleString('en-IN')}/-
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-700 text-right font-mono text-purple-300">
+                                    ₹{sch.toLocaleString('en-IN')}/-
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-700 text-right font-mono">
+                                    ₹{tot.toLocaleString('en-IN')}/-
+                                  </td>
+                                  <td className="py-2.5 px-3 border-r border-slate-700 text-right font-mono text-emerald-300">
+                                    ₹{paid.toLocaleString('en-IN')}/-
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-mono text-amber-300 font-extrabold">
+                                    ₹{rem.toLocaleString('en-IN')}/-
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>
