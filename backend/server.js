@@ -2789,7 +2789,101 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo, action, totalFee: reqTotalFee } = req.body;
+  const { amount, paymentMode, receiptNo, remark, receivedBy, feeDate, purpose, currentClass, refNo, action, totalFee: reqTotalFee, paidYear1, paidYear2, paidYear3, paidYear4, year, yearLabel } = req.body;
+
+  // If multi-year paid fees were submitted (matching multi-year scholarship desk pattern)
+  if (paidYear1 !== undefined || paidYear2 !== undefined || paidYear3 !== undefined || paidYear4 !== undefined || action === 'set_years_paid') {
+    const py1 = Math.max(0, Number(paidYear1) || 0);
+    const py2 = Math.max(0, Number(paidYear2) || 0);
+    const py3 = Math.max(0, Number(paidYear3) || 0);
+    const py4 = Math.max(0, Number(paidYear4) || 0);
+    student.paidYear1 = py1;
+    student.paidYear2 = py2;
+    student.paidYear3 = py3;
+    student.paidYear4 = py4;
+    const newTotalPaid = py1 + py2 + py3 + py4;
+    student.totalPaid = newTotalPaid;
+    const totalFee = Number(student.totalFee) || 0;
+    student.balanceDue = Math.max(0, totalFee - newTotalPaid);
+    if (currentClass) student.currentClass = currentClass;
+    if (remark !== undefined) student.remark = remark;
+    student.updatedAt = new Date().toISOString();
+
+    const rNo = receiptNo && String(receiptNo).trim() 
+      ? String(receiptNo).trim() 
+      : String(getNextReceiptNumber(db));
+
+    const pDate = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
+
+    const activeYear = year || 'year1';
+    const activeYearAmt = activeYear === 'year1' ? py1 : activeYear === 'year2' ? py2 : activeYear === 'year3' ? py3 : py4;
+    const activeYearLabel = yearLabel || (activeYear === 'year1' ? 'First Year Paid Fee' : activeYear === 'year2' ? 'Second Year Paid Fee' : activeYear === 'year3' ? 'Third Year Paid Fee' : 'Fourth Year Paid Fee');
+
+    const receipt = {
+      id: `pay-${Date.now()}`,
+      receiptNo: rNo,
+      rollNo: student.rollNo || student.enrollmentNo || student.id,
+      studentId: student.id,
+      studentName: student.fullName || student.studentName,
+      fatherName: student.fatherName || '',
+      collegeName: student.collegeName || 'PKC Institute',
+      universityName: student.universityName || 'PKC University',
+      courseName: student.courseName,
+      branch: student.branch || 'General',
+      currentSemester: student.currentSemester || 1,
+      currentClass: currentClass || student.currentClass || 'SEM-1',
+      feeType: purpose || 'Tuition Fee',
+      purpose: purpose || activeYearLabel,
+      year: activeYear,
+      yearLabel: activeYearLabel,
+      paymentMode: paymentMode || 'Cash',
+      amount: activeYearAmt > 0 ? activeYearAmt : newTotalPaid,
+      amountPaid: activeYearAmt > 0 ? activeYearAmt : newTotalPaid,
+      paidYear1: py1,
+      paidYear2: py2,
+      paidYear3: py3,
+      paidYear4: py4,
+      totalPaid: newTotalPaid,
+      balanceDue: student.balanceDue,
+      paymentDate: new Date(pDate).toISOString(),
+      feeDate: pDate,
+      refNo: refNo || '',
+      receivedBy: receivedBy || 'Admin Desk',
+      remark: remark || 'Annual Paid Fee updated'
+    };
+
+    if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
+    if (!Array.isArray(student.feeHistory)) student.feeHistory = [];
+
+    if (newTotalPaid > 0) {
+      db.fee_payments.unshift(receipt);
+      student.feeHistory.unshift(receipt);
+    } else {
+      const sRollStr = (student.rollNo || '').toUpperCase();
+      const sIdStr = student.id || '';
+      db.fee_payments = db.fee_payments.filter(p => {
+        const match = (sRollStr && p.rollNo && p.rollNo.toUpperCase() === sRollStr) ||
+                      (sIdStr && p.studentId && p.studentId === sIdStr);
+        return !match;
+      });
+      student.feeHistory = [];
+    }
+
+    writeDB(db);
+
+    const studentPayments = (db.fee_payments || []).filter(p => 
+      ((student.rollNo || '').toUpperCase() && p.rollNo && p.rollNo.toUpperCase() === (student.rollNo || '').toUpperCase()) ||
+      (student.id && p.studentId && p.studentId === student.id)
+    );
+
+    return res.json({
+      success: true,
+      message: `Paid fee for ${student.fullName || student.rollNo || 'Student'} updated to ₹${newTotalPaid.toLocaleString('en-IN')}`,
+      student,
+      receipt: newTotalPaid > 0 ? receipt : null,
+      payments: studentPayments
+    });
+  }
 
   // If totalFee or totalCourseFee is provided, update student's course fee
   if (reqTotalFee !== undefined && reqTotalFee !== null && reqTotalFee !== '') {
@@ -2959,6 +3053,21 @@ app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
   student.totalPaid = Math.max(0, (Number(student.totalPaid) || 0) - removedAmt);
   const totalFee = Number(student.totalFee) || 0;
   student.balanceDue = Math.max(0, totalFee - student.totalPaid);
+
+  if (removed.year === 'year1' || removed.year === '1') {
+    student.paidYear1 = Math.max(0, (Number(student.paidYear1) || 0) - removedAmt);
+  } else if (removed.year === 'year2' || removed.year === '2') {
+    student.paidYear2 = Math.max(0, (Number(student.paidYear2) || 0) - removedAmt);
+  } else if (removed.year === 'year3' || removed.year === '3') {
+    student.paidYear3 = Math.max(0, (Number(student.paidYear3) || 0) - removedAmt);
+  } else if (removed.year === 'year4' || removed.year === '4') {
+    student.paidYear4 = Math.max(0, (Number(student.paidYear4) || 0) - removedAmt);
+  } else if (student.totalPaid === 0) {
+    student.paidYear1 = 0;
+    student.paidYear2 = 0;
+    student.paidYear3 = 0;
+    student.paidYear4 = 0;
+  }
   
   if (Array.isArray(student.feeHistory)) {
     student.feeHistory = student.feeHistory.filter(p => p.id !== paymentId && p.receiptNo !== paymentId);
