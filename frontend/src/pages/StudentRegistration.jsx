@@ -1338,7 +1338,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 text-slate-900">
+    <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 text-slate-900">
       
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900 flex flex-col sm:flex-row items-center justify-between gap-6">
