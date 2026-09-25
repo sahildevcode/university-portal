@@ -92,13 +92,6 @@ export default function StudentList({
   const [scholarshipYear4, setScholarshipYear4] = useState('');
   const [scholarshipActiveYear, setScholarshipActiveYear] = useState('year1'); // 'year1' | 'year2' | 'year3' | 'year4'
 
-  // Multi-Year Paid Fee State for Fee Desk (1st, 2nd, 3rd, 4th Year)
-  const [paidYear1, setPaidYear1] = useState('');
-  const [paidYear2, setPaidYear2] = useState('');
-  const [paidYear3, setPaidYear3] = useState('');
-  const [paidYear4, setPaidYear4] = useState('');
-  const [paidActiveYear, setPaidActiveYear] = useState('year1'); // 'year1' | 'year2' | 'year3' | 'year4'
-
   // Fee Receipt & Fee Card Print Modals
   const [printReceiptData, setPrintReceiptData] = useState(null);
   const [printFeeCardStudent, setPrintFeeCardStudent] = useState(null);
@@ -367,16 +360,6 @@ export default function StudentList({
     setScholarshipYear4(String(y4 || 0));
     setScholarshipActiveYear('year1');
 
-    const py1 = Number(student.paidYear1 !== undefined && student.paidYear1 !== null ? student.paidYear1 : (!student.paidYear2 && !student.paidYear3 && !student.paidYear4 ? (student.totalPaid || 0) : 0));
-    const py2 = Number(student.paidYear2 || 0);
-    const py3 = Number(student.paidYear3 || 0);
-    const py4 = Number(student.paidYear4 || 0);
-    setPaidYear1(String(py1 || 0));
-    setPaidYear2(String(py2 || 0));
-    setPaidYear3(String(py3 || 0));
-    setPaidYear4(String(py4 || 0));
-    setPaidActiveYear('year1');
-
     const acadFee = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : 0));
     const sch = Number(student.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
     const tot = acadFee + sch;
@@ -411,15 +394,6 @@ export default function StudentList({
           setScholarshipYear2(String(sy2 || 0));
           setScholarshipYear3(String(sy3 || 0));
           setScholarshipYear4(String(sy4 || 0));
-
-          const spy1 = Number(data.student.paidYear1 !== undefined && data.student.paidYear1 !== null ? data.student.paidYear1 : (!data.student.paidYear2 && !data.student.paidYear3 && !data.student.paidYear4 ? (data.student.totalPaid || 0) : 0));
-          const spy2 = Number(data.student.paidYear2 || 0);
-          const spy3 = Number(data.student.paidYear3 || 0);
-          const spy4 = Number(data.student.paidYear4 || 0);
-          setPaidYear1(String(spy1 || 0));
-          setPaidYear2(String(spy2 || 0));
-          setPaidYear3(String(spy3 || 0));
-          setPaidYear4(String(spy4 || 0));
 
           if (initialMode === 'set_fee') {
             setFeeDeskAmount('');
@@ -484,28 +458,22 @@ export default function StudentList({
 
     try {
       if (feeDeskMode === 'receive') {
-        const py1Val = (paidYear1 === '' || paidYear1 === null || paidYear1 === undefined) ? 0 : Math.max(0, Number(paidYear1) || 0);
-        const py2Val = (paidYear2 === '' || paidYear2 === null || paidYear2 === undefined) ? 0 : Math.max(0, Number(paidYear2) || 0);
-        const py3Val = (paidYear3 === '' || paidYear3 === null || paidYear3 === undefined) ? 0 : Math.max(0, Number(paidYear3) || 0);
-        const py4Val = (paidYear4 === '' || paidYear4 === null || paidYear4 === undefined) ? 0 : Math.max(0, Number(paidYear4) || 0);
-        const totalPaidYears = py1Val + py2Val + py3Val + py4Val;
+        const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
+        if (isNaN(amt) || amt < 0) {
+          throw new Error('Please enter a valid amount (0 or more).');
+        }
+
+        const isSetPaid = actionOverride === 'set_paid' || amt === 0;
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/receive-fee`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            paidYear1: py1Val,
-            paidYear2: py2Val,
-            paidYear3: py3Val,
-            paidYear4: py4Val,
-            amount: totalPaidYears,
-            totalPaid: totalPaidYears,
-            action: 'set_years_paid',
-            year: paidActiveYear,
-            yearLabel: feeDeskPurpose || (paidActiveYear === 'year1' ? 'First Year Paid Fee' : paidActiveYear === 'year2' ? 'Second Year Paid Fee' : paidActiveYear === 'year3' ? 'Third Year Paid Fee' : 'Fourth Year Paid Fee'),
+            amount: amt,
+            action: isSetPaid ? 'set_paid' : 'add',
             paymentMode: feeDeskModePayment,
             feeDate: feeDeskDate,
-            purpose: feeDeskPurpose || (paidActiveYear === 'year1' ? 'First Year Paid Fee' : paidActiveYear === 'year2' ? 'Second Year Paid Fee' : paidActiveYear === 'year3' ? 'Third Year Paid Fee' : 'Fourth Year Paid Fee'),
+            purpose: feeDeskPurpose,
             currentClass: feeDeskClass,
             refNo: feeDeskRefNo,
             receivedBy: feeDeskReceivedBy,
@@ -526,16 +494,8 @@ export default function StudentList({
         }
 
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-        const upy1 = Number(updatedStudent.paidYear1 !== undefined ? updatedStudent.paidYear1 : py1Val);
-        const upy2 = Number(updatedStudent.paidYear2 !== undefined ? updatedStudent.paidYear2 : py2Val);
-        const upy3 = Number(updatedStudent.paidYear3 !== undefined ? updatedStudent.paidYear3 : py3Val);
-        const upy4 = Number(updatedStudent.paidYear4 !== undefined ? updatedStudent.paidYear4 : py4Val);
-        setPaidYear1(String(upy1));
-        setPaidYear2(String(upy2));
-        setPaidYear3(String(upy3));
-        setPaidYear4(String(upy4));
-        setFeeDeskSuccess(`Paid fee updated successfully! Total Paid: ₹${totalPaidYears.toLocaleString('en-IN')} (1st: ₹${py1Val.toLocaleString('en-IN')}, 2nd: ₹${py2Val.toLocaleString('en-IN')}, 3rd: ₹${py3Val.toLocaleString('en-IN')}, 4th: ₹${py4Val.toLocaleString('en-IN')})`);
-
+        setFeeDeskAmount('');
+        setFeeDeskSuccess(isSetPaid ? `Total receive fee updated to ₹${amt.toLocaleString('en-IN')} successfully!` : `Payment of ₹${amt.toLocaleString('en-IN')} received successfully! Receipt #${data.receipt?.receiptNo || 'Saved'}`);
         setFeeDeskRefNo('');
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
@@ -670,14 +630,6 @@ export default function StudentList({
       setFeeDeskStudent(updatedStudent);
       setFeeDeskPayments(data.payments || []);
       setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-      const upy1 = Number(updatedStudent.paidYear1 !== undefined ? updatedStudent.paidYear1 : 0);
-      const upy2 = Number(updatedStudent.paidYear2 !== undefined ? updatedStudent.paidYear2 : 0);
-      const upy3 = Number(updatedStudent.paidYear3 !== undefined ? updatedStudent.paidYear3 : 0);
-      const upy4 = Number(updatedStudent.paidYear4 !== undefined ? updatedStudent.paidYear4 : 0);
-      setPaidYear1(String(upy1));
-      setPaidYear2(String(upy2));
-      setPaidYear3(String(upy3));
-      setPaidYear4(String(upy4));
       setFeeDeskSuccess(`Payment entry of ₹${Number(amountPaid || 0).toLocaleString('en-IN')} deleted successfully!`);
       fetchStudents();
       if (onFeeReceived) onFeeReceived();
@@ -1777,9 +1729,9 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">4th_Yr_Schol</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-300">Total_Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
@@ -1799,9 +1751,9 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Paid_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
@@ -2360,7 +2312,7 @@ export default function StudentList({
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
-                    {feeDeskMode === 'receive' && 'Paid Student Fee (छात्र शुल्क भुगतान)'}
+                    {feeDeskMode === 'receive' && 'Receive Student Fee (छात्र शुल्क प्राप्त करें)'}
                     {feeDeskMode === 'set_fee' && 'Set Student Academic Fee (Center Fee)'}
                     {feeDeskMode === 'set_scholarship' && 'Set Student Scholarship (छात्रवृत्ति निर्धारण)'}
                   </h3>
@@ -2473,150 +2425,41 @@ export default function StudentList({
                         </select>
                       </div>
 
-                      <div className="sm:col-span-2">
+                      <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Ref_No:</label>
                         <input type="text" value={feeDeskRefNo} onChange={(e) => setFeeDeskRefNo(e.target.value)} placeholder="UTR / Cheque No / Txn ID" className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
                       </div>
 
-                      <div className="sm:col-span-2">
+                      <div>
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Received_By:</label>
                         <input type="text" value={feeDeskReceivedBy} onChange={(e) => setFeeDeskReceivedBy(e.target.value)} placeholder="Admin Desk" className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
                       </div>
 
-                      {/* Multi-Year Paid Fee Desk (Exact match to Scholarship Desk in media_1790319622830.png) */}
-                      <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-br from-emerald-50/90 to-teal-50/50 border-2 border-emerald-300 rounded-2xl p-4 space-y-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200/80 pb-3">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                                <Sparkles className="w-3.5 h-3.5" />
-                              </span>
-                              <h4 className="text-sm font-black text-emerald-950 uppercase tracking-tight">
-                                Multi-Year Paid Fee Desk (सालाना फीस भुगतान प्रबंधन)
-                              </h4>
-                            </div>
-                            <p className="text-[11px] text-emerald-700 font-medium">
-                              Set paid fee year-by-year (First Year, Second Year, Third Year, Fourth Year). Total is auto-calculated.
-                            </p>
-                          </div>
-                          <div className="bg-emerald-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-2.5 shadow-sm shrink-0">
-                            <span className="text-emerald-200">Total Paid Fee:</span>
-                            <span className="text-amber-300 font-mono text-base font-extrabold">
-                              ₹{((Number(paidYear1) || 0) + (Number(paidYear2) || 0) + (Number(paidYear3) || 0) + (Number(paidYear4) || 0)).toLocaleString('en-IN')}/-
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 4 Years Inputs Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                          {/* 1st Year */}
-                          <div className={`p-3 rounded-xl border-2 transition-all ${paidActiveYear === 'year1' ? 'bg-white border-emerald-600 shadow-md ring-2 ring-emerald-300' : 'bg-white/90 border-emerald-200 hover:border-emerald-300'}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">1</span>
-                                First Year Paid Fee
-                              </label>
-                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">1st Year</span>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-2 text-xs font-bold text-emerald-500">₹</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={paidYear1}
-                                onFocus={() => setPaidActiveYear('year1')}
-                                onChange={(e) => setPaidYear1(e.target.value)}
-                                placeholder="0"
-                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-emerald-200 rounded-lg text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
-                              />
-                            </div>
-                          </div>
-
-                          {/* 2nd Year */}
-                          <div className={`p-3 rounded-xl border-2 transition-all ${paidActiveYear === 'year2' ? 'bg-white border-emerald-600 shadow-md ring-2 ring-emerald-300' : 'bg-white/90 border-emerald-200 hover:border-emerald-300'}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">2</span>
-                                Second Year Paid Fee
-                              </label>
-                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">2nd Year</span>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-2 text-xs font-bold text-emerald-500">₹</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={paidYear2}
-                                onFocus={() => setPaidActiveYear('year2')}
-                                onChange={(e) => setPaidYear2(e.target.value)}
-                                placeholder="0"
-                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-emerald-200 rounded-lg text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
-                              />
-                            </div>
-                          </div>
-
-                          {/* 3rd Year */}
-                          <div className={`p-3 rounded-xl border-2 transition-all ${paidActiveYear === 'year3' ? 'bg-white border-emerald-600 shadow-md ring-2 ring-emerald-300' : 'bg-white/90 border-emerald-200 hover:border-emerald-300'}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">3</span>
-                                Third Year Paid Fee
-                              </label>
-                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">3rd Year</span>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-2 text-xs font-bold text-emerald-500">₹</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={paidYear3}
-                                onFocus={() => setPaidActiveYear('year3')}
-                                onChange={(e) => setPaidYear3(e.target.value)}
-                                placeholder="0"
-                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-emerald-200 rounded-lg text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
-                              />
-                            </div>
-                          </div>
-
-                          {/* 4th Year */}
-                          <div className={`p-3 rounded-xl border-2 transition-all ${paidActiveYear === 'year4' ? 'bg-white border-emerald-600 shadow-md ring-2 ring-emerald-300' : 'bg-white/90 border-emerald-200 hover:border-emerald-300'}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <label className="text-[11px] font-black text-emerald-950 flex items-center gap-1.5">
-                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">4</span>
-                                Fourth Year Paid Fee
-                              </label>
-                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">4th Year</span>
-                            </div>
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-2 text-xs font-bold text-emerald-500">₹</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={paidYear4}
-                                onFocus={() => setPaidActiveYear('year4')}
-                                onChange={(e) => setPaidYear4(e.target.value)}
-                                placeholder="0"
-                                className="w-full pl-6 pr-2 py-1.5 text-xs font-black font-mono border border-emerald-200 rounded-lg text-emerald-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
-                              />
-                            </div>
-                          </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-900 mb-1">Enter_Fee_Amount* :</label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min="0" step="1" value={feeDeskAmount} onChange={(e) => setFeeDeskAmount(e.target.value)} placeholder="0" className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-emerald-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono" />
+                          <button type="button" onClick={() => {
+                            const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
+                            const sch = Number(feeDeskStudent.scholarshipAmount || 0);
+                            const tot = acad + sch;
+                            const paid = Number(feeDeskStudent.totalPaid || 0);
+                            const rem = Math.max(0, tot - paid);
+                            setFeeDeskAmount(String(rem));
+                          }} className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" title="Auto fill full balance remaining">
+                            Full Due
+                          </button>
+                          <button type="button" onClick={() => setFeeDeskAmount('0')} className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] font-bold whitespace-nowrap cursor-pointer transition-colors" title="Set amount to 0">
+                            Set 0
+                          </button>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-                      <button 
-                        type="submit" 
-                        disabled={feeDeskLoading} 
-                        className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" 
-                        title="Save multi-year paid fee entries"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Saving...' : 'Set Paid Fee (Save Years)'}</span>
+                      <button type="submit" disabled={feeDeskLoading} onClick={(e) => handleFeeDeskSubmit(e, 'add')} className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" title="Add new fee installment entry">
+                        <PlusCircle className="w-4 h-4" />
+                        <span>{feeDeskLoading ? 'Saving...' : 'Add Payment'}</span>
                       </button>
                     </div>
                   </>
@@ -3051,7 +2894,7 @@ export default function StudentList({
                             <div className="text-sm font-black text-indigo-950 font-mono">₹{tot.toLocaleString('en-IN')}/-</div>
                           </div>
                           <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
-                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Paid Fee</div>
+                            <div className="text-[10px] text-emerald-700 uppercase font-bold">Received Fee</div>
                             <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
                           </div>
                           <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
@@ -3063,7 +2906,7 @@ export default function StudentList({
                     );
                   })()}
 
-                  {/* Payment History Ledger Table - ONLY rendered for Paid Fee desk */}
+                  {/* Payment History Ledger Table - ONLY rendered for Receive Fee desk */}
                   <div className="space-y-2 pt-2">
                     <div className="flex items-center justify-between">
                       <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">

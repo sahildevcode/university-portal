@@ -3211,6 +3211,29 @@ app.get('/api/fees/stats', (req, res) => {
   });
 });
 
+// Helper for checking if date falls within a specific timeframe
+function isDateInTimeframe(d, tf, now = new Date()) {
+  if (!d || isNaN(d.getTime())) return false;
+  if (!tf || tf === 'all') return true;
+  if (tf === 'week') {
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return d >= oneWeekAgo && d <= now;
+  }
+  if (tf === 'this_month') {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  if (tf === 'last_month') {
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    return d.getFullYear() === lastMonthYear && d.getMonth() === lastMonth;
+  }
+  if (tf === 'year') {
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+    return d >= oneYearAgo && d <= now;
+  }
+  return true;
+}
+
 // Helper for parsing payment date reliably
 function parsePaymentDate(p) {
   if (p.paymentDate) {
@@ -6360,6 +6383,35 @@ app.get('/api/vocational-courses/template', (req, res) => {
     res.send(buffer);
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to generate template: ' + err.message });
+  }
+});
+
+// ─── Database Backup & Export / Restore APIs ─────────────────────────────────
+app.get('/api/database/export', (req, res) => {
+  try {
+    const db = readDB();
+    const fileName = `pkc_database_export_${Date.now()}.json`;
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.json(db);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Database export failed: ' + err.message });
+  }
+});
+
+app.post('/api/database/restore', (req, res) => {
+  try {
+    const incomingDb = req.body;
+    if (!incomingDb || !Array.isArray(incomingDb.students)) {
+      return res.status(400).json({ success: false, message: 'Invalid database payload: missing students array' });
+    }
+    writeDB(incomingDb);
+    res.json({
+      success: true,
+      message: `Database restored successfully with ${incomingDb.students.length} students!`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Database restore failed: ' + err.message });
   }
 });
 
