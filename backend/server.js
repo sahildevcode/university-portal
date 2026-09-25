@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +23,14 @@ const memUpload = multer({
 });
 
 initDB();
+
+// If MONGODB_URI is set, connect and hydrate from MongoDB Atlas Cloud
+if (process.env.MONGODB_URI) {
+  const mongoConnected = await connectMongoDB(process.env.MONGODB_URI);
+  if (mongoConnected) {
+    await hydrateFromMongo();
+  }
+}
 
 // Sanitize student records (dual enrollment linkages, N/A strings, legacy remarks)
 try {

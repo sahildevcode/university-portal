@@ -377,6 +377,9 @@ export function readDB() {
 export function writeDB(data) {
   try {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    if (typeof global.__scheduleMongoSync === 'function') {
+      global.__scheduleMongoSync(data);
+    }
     return true;
   } catch (err) {
     console.error('Error writing to database file:', err);
