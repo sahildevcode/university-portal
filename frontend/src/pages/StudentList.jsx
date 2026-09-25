@@ -75,6 +75,7 @@ export default function StudentList({
   const [feeDeskClass, setFeeDeskClass] = useState('SEM-1');
   const [feeDeskDate, setFeeDeskDate] = useState(new Date().toISOString().split('T')[0]);
   const [feeDeskPurpose, setFeeDeskPurpose] = useState('Tuition Fee');
+  const [isCustomPurpose, setIsCustomPurpose] = useState(false);
   const [feeDeskModePayment, setFeeDeskModePayment] = useState('Cash');
   const [feeDeskRefNo, setFeeDeskRefNo] = useState('');
   const [feeDeskReceivedBy, setFeeDeskReceivedBy] = useState('Admin Desk');
@@ -366,6 +367,7 @@ export default function StudentList({
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
 
+    setIsCustomPurpose(false);
     if (initialMode === 'receive') {
       setFeeDeskPurpose('Tuition Fee');
       setFeeDeskAmount(rem > 0 ? String(rem) : '');
@@ -414,6 +416,7 @@ export default function StudentList({
     setFeeDeskMode(newMode);
     setFeeDeskError(null);
     setFeeDeskSuccess(null);
+    setIsCustomPurpose(false);
 
     const acadFee = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
     const y1 = Number(scholarshipYear1) || 0;
@@ -2400,18 +2403,69 @@ export default function StudentList({
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose* :</label>
-                        <select value={feeDeskPurpose} onChange={(e) => setFeeDeskPurpose(e.target.value)} className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
-                          <option value="Tuition Fee">Tuition Fee</option>
-                          <option value="Admission Fee">Admission Fee</option>
-                          <option value="Examination Fee">Examination Fee</option>
-                          <option value="Registration Fee">Registration Fee</option>
-                          <option value="Registration Fees">Registration Fees</option>
-                          <option value="Caution Money">Caution Money Deposit</option>
-                          <option value="Library Fee">Library / Lab Fee</option>
-                          <option value="Scholarship">Scholarship</option>
-                          <option value="Other Fee">Other Academic Dues</option>
-                        </select>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-bold text-slate-700">Purpose* :</label>
+                          {isCustomPurpose && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomPurpose(false);
+                                setFeeDeskPurpose('Tuition Fee');
+                              }}
+                              className="text-[10px] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer"
+                            >
+                              Choose from list
+                            </button>
+                          )}
+                        </div>
+                        {!isCustomPurpose ? (
+                          <select
+                            value={feeDeskPurpose}
+                            onChange={(e) => {
+                              if (e.target.value === '__OTHER__') {
+                                setIsCustomPurpose(true);
+                                setFeeDeskPurpose('');
+                              } else {
+                                setFeeDeskPurpose(e.target.value);
+                              }
+                            }}
+                            className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer"
+                          >
+                            <option value="Tuition Fee">Tuition Fee</option>
+                            <option value="Admission Fee">Admission Fee</option>
+                            <option value="Examination Fee">Examination Fee</option>
+                            <option value="Registration Fee">Registration Fee</option>
+                            <option value="Registration Fees">Registration Fees</option>
+                            <option value="Caution Money">Caution Money Deposit</option>
+                            <option value="Library Fee">Library / Lab Fee</option>
+                            <option value="Scholarship">Scholarship</option>
+                            <option value="Other Fee">Other Academic Dues</option>
+                            <option value="__OTHER__">Other (Type custom purpose... / अन्य शुल्क)</option>
+                          </select>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              required
+                              value={feeDeskPurpose}
+                              onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                              placeholder="Type custom fee purpose (e.g. Uniform, Fine, ID Card...)"
+                              autoFocus
+                              className="w-full pl-3 pr-8 py-2 text-xs font-bold border-2 border-emerald-500 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomPurpose(false);
+                                setFeeDeskPurpose('Tuition Fee');
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
+                              title="Back to dropdown"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div>
@@ -2514,22 +2568,69 @@ export default function StudentList({
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Purpose* :</label>
-                        <select
-                          value={feeDeskPurpose}
-                          onChange={(e) => setFeeDeskPurpose(e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
-                        >
-                          <option value="Center Fee">Center Fee</option>
-                          <option value="Academic Fee">Academic Fee</option>
-                          <option value="Tuition Fee">Tuition Fee</option>
-                          <option value="Annual Course Fee">Annual Course Fee</option>
-                          <option value="Admission Fee">Admission Fee</option>
-                          <option value="Registration Fee">Registration Fee</option>
-                          <option value="Registration Fees">Registration Fees</option>
-                          <option value="Examination Fee">Examination Fee</option>
-                          <option value="Other Fee">Other Fee</option>
-                        </select>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-bold text-slate-700">Purpose* :</label>
+                          {isCustomPurpose && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomPurpose(false);
+                                setFeeDeskPurpose('Center Fee');
+                              }}
+                              className="text-[10px] text-sky-700 hover:text-sky-900 font-semibold underline cursor-pointer"
+                            >
+                              Choose from list
+                            </button>
+                          )}
+                        </div>
+                        {!isCustomPurpose ? (
+                          <select
+                            value={feeDeskPurpose}
+                            onChange={(e) => {
+                              if (e.target.value === '__OTHER__') {
+                                setIsCustomPurpose(true);
+                                setFeeDeskPurpose('');
+                              } else {
+                                setFeeDeskPurpose(e.target.value);
+                              }
+                            }}
+                            className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                          >
+                            <option value="Center Fee">Center Fee</option>
+                            <option value="Academic Fee">Academic Fee</option>
+                            <option value="Tuition Fee">Tuition Fee</option>
+                            <option value="Annual Course Fee">Annual Course Fee</option>
+                            <option value="Admission Fee">Admission Fee</option>
+                            <option value="Registration Fee">Registration Fee</option>
+                            <option value="Registration Fees">Registration Fees</option>
+                            <option value="Examination Fee">Examination Fee</option>
+                            <option value="Other Fee">Other Fee</option>
+                            <option value="__OTHER__">Other (Type custom purpose... / अन्य शुल्क)</option>
+                          </select>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              required
+                              value={feeDeskPurpose}
+                              onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                              placeholder="Type custom fee purpose (e.g. Uniform, Practical, Caution...)"
+                              autoFocus
+                              className="w-full pl-3 pr-8 py-2 text-xs font-bold border-2 border-sky-500 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCustomPurpose(false);
+                                setFeeDeskPurpose('Center Fee');
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
+                              title="Back to dropdown"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -2579,26 +2680,78 @@ export default function StudentList({
                             Entry #{rIdx + 2}
                           </span>
                           <div className="flex-1 w-full sm:w-auto">
-                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Purpose* :</label>
-                            <select
-                              value={row.purpose}
-                              onChange={(e) => {
-                                const newRows = [...extraFeeRows];
-                                newRows[rIdx].purpose = e.target.value;
-                                setExtraFeeRows(newRows);
-                              }}
-                              className="w-full px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
-                            >
-                              <option value="Center Fee">Center Fee</option>
-                              <option value="Academic Fee">Academic Fee</option>
-                              <option value="Tuition Fee">Tuition Fee</option>
-                              <option value="Annual Course Fee">Annual Course Fee</option>
-                              <option value="Admission Fee">Admission Fee</option>
-                              <option value="Registration Fee">Registration Fee</option>
-                              <option value="Registration Fees">Registration Fees</option>
-                              <option value="Examination Fee">Examination Fee</option>
-                              <option value="Other Fee">Other Fee</option>
-                            </select>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="block text-[10px] font-bold text-slate-700">Purpose* :</label>
+                              {row.isCustom && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newRows = [...extraFeeRows];
+                                    newRows[rIdx].isCustom = false;
+                                    newRows[rIdx].purpose = 'Academic Fee';
+                                    setExtraFeeRows(newRows);
+                                  }}
+                                  className="text-[9px] text-sky-700 hover:text-sky-900 font-semibold underline cursor-pointer"
+                                >
+                                  Choose from list
+                                </button>
+                              )}
+                            </div>
+                            {!row.isCustom ? (
+                              <select
+                                value={row.purpose}
+                                onChange={(e) => {
+                                  const newRows = [...extraFeeRows];
+                                  if (e.target.value === '__OTHER__') {
+                                    newRows[rIdx].isCustom = true;
+                                    newRows[rIdx].purpose = '';
+                                  } else {
+                                    newRows[rIdx].purpose = e.target.value;
+                                  }
+                                  setExtraFeeRows(newRows);
+                                }}
+                                className="w-full px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
+                              >
+                                <option value="Center Fee">Center Fee</option>
+                                <option value="Academic Fee">Academic Fee</option>
+                                <option value="Tuition Fee">Tuition Fee</option>
+                                <option value="Annual Course Fee">Annual Course Fee</option>
+                                <option value="Admission Fee">Admission Fee</option>
+                                <option value="Registration Fee">Registration Fee</option>
+                                <option value="Registration Fees">Registration Fees</option>
+                                <option value="Examination Fee">Examination Fee</option>
+                                <option value="Other Fee">Other Fee</option>
+                                <option value="__OTHER__">Other (Type custom... / अन्य शुल्क)</option>
+                              </select>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={row.purpose}
+                                  onChange={(e) => {
+                                    const newRows = [...extraFeeRows];
+                                    newRows[rIdx].purpose = e.target.value;
+                                    setExtraFeeRows(newRows);
+                                  }}
+                                  placeholder="Type custom purpose..."
+                                  autoFocus
+                                  className="w-full pl-2.5 pr-7 py-1.5 text-xs font-semibold border-2 border-sky-500 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newRows = [...extraFeeRows];
+                                    newRows[rIdx].isCustom = false;
+                                    newRows[rIdx].purpose = 'Academic Fee';
+                                    setExtraFeeRows(newRows);
+                                  }}
+                                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold p-1 cursor-pointer"
+                                  title="Back to dropdown"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
                           </div>
                           <div className="w-full sm:w-56">
                             <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Fee Amount (₹)* :</label>
@@ -2938,7 +3091,6 @@ export default function StudentList({
                       { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: acadY3 + schY3, rec: recY3, due: Math.max(0, (acadY3 + schY3) - recY3) },
                       { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: acadY4 + schY4, rec: recY4, due: Math.max(0, (acadY4 + schY4) - recY4) }
                     ];
-                    const visibleYearRows = yearRows.filter((r, idx) => idx < 2 || r.total > 0 || r.rec > 0 || r.due > 0);
 
                     return (
                       <div className="space-y-4 pt-2">
@@ -3000,7 +3152,7 @@ export default function StudentList({
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-200 font-semibold">
-                                {visibleYearRows.map((yr, idx) => (
+                                {yearRows.map((yr, idx) => (
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80' : 'bg-slate-50/50 hover:bg-slate-100/60'}>
                                     <td className="py-2 px-3 border-r border-slate-200 font-bold text-slate-900">
                                       <span>{yr.label}</span>
