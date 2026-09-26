@@ -14,8 +14,9 @@ import {
 export default function GalleryPage({ lang = 'en' }) {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [previewImage, setPreviewImage] = useState(null);
+  const [photos, setPhotos] = useState([]);
 
-  const galleryItems = [
+  const defaultGalleryItems = [
     {
       id: 1,
       title: 'University Convocation & Degree Distribution Ceremony',
@@ -73,6 +74,30 @@ export default function GalleryPage({ lang = 'en' }) {
       desc: 'Technical project exhibitions showcasing software development and AI prototypes.'
     }
   ];
+
+  React.useEffect(() => {
+    fetch('/api/event-photos')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.eventPhotos) && data.eventPhotos.length > 0) {
+          const activeOnly = data.eventPhotos.filter(p => p.active !== false);
+          if (activeOnly.length > 0) {
+            setPhotos(activeOnly.map(p => ({
+              id: p.id,
+              title: p.title,
+              category: p.category || 'Events & Seminars',
+              image: p.imageUrl,
+              desc: p.description
+            })));
+            return;
+          }
+        }
+        setPhotos(defaultGalleryItems);
+      })
+      .catch(() => setPhotos(defaultGalleryItems));
+  }, []);
+
+  const galleryItems = photos.length > 0 ? photos : defaultGalleryItems;
 
   const categories = ['all', 'Campus & Labs', 'Graduation', 'Events & Seminars', 'Celebrations'];
 
