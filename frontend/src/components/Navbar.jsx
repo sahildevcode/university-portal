@@ -218,6 +218,26 @@ export default function Navbar({
               COURSES
             </button>
 
+            {/* 3.5 TESTIMONIALS */}
+            <button
+              onClick={() => {
+                setActiveView('public');
+                setPublicTab('home');
+                setMobileMenuOpen(false);
+                setTimeout(() => {
+                  const el = document.getElementById('testimonials-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+                activeView === 'public' && publicTab === 'testimonials'
+                  ? 'text-[#071530] border-amber-500 font-extrabold'
+                  : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
+              }`}
+            >
+              {lang === 'hi' ? 'सफलता गाथा' : 'TESTIMONIALS'}
+            </button>
+
             {/* 4. ADMISSION INQUIRY */}
             <button
               onClick={() => handleNavClick('inquiry')}
@@ -312,6 +332,22 @@ export default function Navbar({
               }`}
             >
               COURSES
+            </button>
+            <button
+              onClick={() => {
+                setActiveView('public');
+                setPublicTab('home');
+                setMobileMenuOpen(false);
+                setTimeout(() => {
+                  const el = document.getElementById('testimonials-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                publicTab === 'testimonials' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              {lang === 'hi' ? 'सफलता गाथा (TESTIMONIALS)' : 'TESTIMONIALS'}
             </button>
             <button
               onClick={() => handleNavClick('inquiry')}

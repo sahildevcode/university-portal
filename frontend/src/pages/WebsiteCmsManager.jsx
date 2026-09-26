@@ -456,6 +456,102 @@ export default function WebsiteCmsManager({
     }
   };
 
+  // Testimonial Handlers
+  const handleOpenAddTst = () => {
+    setEditingTst(null);
+    setTstForm({
+      studentName: '',
+      course: '',
+      title: 'Student Success Story',
+      review: '',
+      badge: 'Placed / Top Ranker',
+      imageUrl: '',
+      rating: 5,
+      active: true
+    });
+    setShowTstModal(true);
+  };
+
+  const handleOpenEditTst = (tst) => {
+    setEditingTst(tst);
+    setTstForm({
+      studentName: tst.studentName || '',
+      course: tst.course || '',
+      title: tst.title || 'Student Success Story',
+      review: tst.review || '',
+      badge: tst.badge || '',
+      imageUrl: tst.imageUrl || '',
+      rating: tst.rating || 5,
+      active: tst.active !== false
+    });
+    setShowTstModal(true);
+  };
+
+  const handleSaveTst = async (e) => {
+    e.preventDefault();
+    if (!tstForm.studentName || !tstForm.studentName.trim()) {
+      setErrorMsg('Student Name is required.');
+      return;
+    }
+    if (!tstForm.imageUrl) {
+      setErrorMsg('Student Photo Image is required. Please upload or provide a photo.');
+      return;
+    }
+
+    try {
+      const url = editingTst ? `/api/testimonials/${editingTst.id}` : '/api/testimonials';
+      const method = editingTst ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tstForm)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to save testimonial');
+
+      setSuccessMsg(editingTst ? 'Testimonial updated successfully!' : 'New testimonial added successfully!');
+      setShowTstModal(false);
+      setEditingTst(null);
+      loadData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleDeleteTst = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete testimonial of "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to delete');
+      setSuccessMsg('Testimonial removed successfully.');
+      loadData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleToggleTstActive = async (tst) => {
+    try {
+      const newStatus = !tst.active;
+      const res = await fetch(`/api/testimonials/${tst.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg(`Testimonial is now ${newStatus ? 'Active & Visible' : 'Hidden'}.`);
+        loadData();
+        setTimeout(() => setSuccessMsg(null), 3000);
+      }
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
   return (
     <div className="space-y-8 text-slate-900 animate-fadeIn font-sans">
       
@@ -569,6 +665,18 @@ export default function WebsiteCmsManager({
         >
           <Camera className="w-4 h-4 text-rose-500" />
           <span>📸 6. Campus Gallery ({eventPhotos.length})</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveSubTab('testimonials'); setErrorMsg(null); setSuccessMsg(null); }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
+            activeSubTab === 'testimonials'
+              ? 'bg-[#071530] text-[#C59B27] shadow-md font-black'
+              : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span>🌟 7. Testimonials &amp; Success Stories ({testimonials.length})</span>
         </button>
       </div>
 
@@ -1054,6 +1162,143 @@ export default function WebsiteCmsManager({
         </div>
       )}
 
+      {/* ========================================================================= */}
+      {/* TAB 7: 🌟 TESTIMONIALS & REVIEWS MANAGER (100% WIDTH WEBSITE SLIDER) */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'testimonials' && (
+        <div className="space-y-6 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <h2 className="text-xl font-bold font-serif-academic text-[#071530]">
+                  Student Testimonials &amp; Success Stories (100% Width Slider)
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Upload student photos, placement packages, ratings, and quotes. Any number of photos/reviews (4, 6, 10, or more) can be added with NO LIMIT!
+              </p>
+            </div>
+
+            <button
+              onClick={handleOpenAddTst}
+              className="bg-[#071530] hover:bg-[#0a1f44] text-[#C59B27] px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add New Testimonial</span>
+            </button>
+          </div>
+
+          {/* Testimonials Grid Cards */}
+          {testimonials.length === 0 ? (
+            <div className="text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+              <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-3 opacity-60" />
+              <p className="text-sm font-bold text-slate-600">No testimonials yet.</p>
+              <p className="text-xs text-slate-400 mt-1">Click "+ Add New Testimonial" to showcase your student success stories.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {testimonials.map(tst => (
+                <div 
+                  key={tst.id} 
+                  className={`bg-white rounded-2xl border transition-all shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden ${
+                    tst.active !== false ? 'border-slate-200' : 'border-slate-200 opacity-60 bg-slate-50'
+                  }`}
+                >
+                  {/* Card Top: Photo + Badges */}
+                  <div className="p-5 pb-3">
+                    <div className="flex items-start gap-4">
+                      {/* Photo Thumbnail */}
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-900 border-2 border-amber-400/40 shrink-0 shadow-sm">
+                        <img 
+                          src={tst.imageUrl} 
+                          alt={tst.studentName} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                          }}
+                        />
+                      </div>
+
+                      {/* Name, Course & Rating */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="font-bold text-sm text-[#071530] truncate">{tst.studentName}</h4>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                            tst.active !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            {tst.active !== false ? 'Active' : 'Hidden'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{tst.course}</p>
+                        
+                        <div className="flex items-center gap-1 mt-1 text-amber-500">
+                          {Array.from({ length: tst.rating || 5 }).map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badge Pill */}
+                    {tst.badge && (
+                      <div className="mt-3">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <Award className="w-3 h-3 text-emerald-600" />
+                          <span className="truncate">{tst.badge}</span>
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Headline & Review Snippet */}
+                    <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-800 line-clamp-1 italic">"{tst.title || 'Student Success Story'}"</p>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed font-normal">
+                        {tst.review}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card Actions Bottom */}
+                  <div className="px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      onClick={() => handleToggleTstActive(tst)}
+                      className={`text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+                        tst.active !== false ? 'text-emerald-700 hover:text-emerald-900' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                      title={tst.active !== false ? 'Hide from Website' : 'Show on Website'}
+                    >
+                      {tst.active !== false ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+                      <span>{tst.active !== false ? 'Visible' : 'Hidden'}</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditTst(tst)}
+                        className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Testimonial"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTst(tst.id, tst.studentName)}
+                        className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Testimonial"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+      )}
+
       {/* Course Modal */}
       {showCourseModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1193,6 +1438,146 @@ export default function WebsiteCmsManager({
                   className="px-5 py-2 bg-[#071530] text-[#C59B27] font-bold rounded-xl hover:bg-[#0a1f44] cursor-pointer"
                 >
                   Save Photo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Testimonial Add / Edit Modal (Unlimited Testimonials Support) */}
+      {showTstModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-[#071530] flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                  <span>{editingTst ? 'Edit Student Testimonial' : 'Add New Student Testimonial'}</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Direct image upload supported. No limit on total testimonials (4, 6, 10 or more)!
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowTstModal(false); setEditingTst(null); }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTst} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Student Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Vishwakarma"
+                    value={tstForm.studentName}
+                    onChange={e => setTstForm({ ...tstForm, studentName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Course / Degree *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. BCA, MBA, B.Tech CSE"
+                    value={tstForm.course}
+                    onChange={e => setTstForm({ ...tstForm, course: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Placement Badge / Achievement</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Placed at TCS (₹4.2 LPA)"
+                    value={tstForm.badge}
+                    onChange={e => setTstForm({ ...tstForm, badge: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Star Rating (1 to 5)</label>
+                  <select
+                    value={tstForm.rating}
+                    onChange={e => setTstForm({ ...tstForm, rating: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐ (5.0 Excellent)</option>
+                    <option value={4}>⭐⭐⭐⭐ (4.0 Very Good)</option>
+                    <option value={3}>⭐⭐⭐ (3.0 Good)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Success Headline / Catchphrase</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 100% Placement & Practical Learning"
+                  value={tstForm.title}
+                  onChange={e => setTstForm({ ...tstForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                />
+              </div>
+
+              {/* Direct Photo Upload */}
+              <ImageUploadField
+                label="Student Photo (Upload from device or paste image URL) *"
+                value={tstForm.imageUrl}
+                onChange={val => setTstForm({ ...tstForm, imageUrl: val })}
+                placeholder="Click to upload student photo from computer / phone"
+              />
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Student Review / Feedback Quote *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Write the student's review, how PKC Institute helped them, exam preparation experience, etc..."
+                  value={tstForm.review}
+                  onChange={e => setTstForm({ ...tstForm, review: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:border-[#C59B27] outline-hidden bg-slate-50/50"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="tstActive"
+                  checked={tstForm.active !== false}
+                  onChange={e => setTstForm({ ...tstForm, active: e.target.checked })}
+                  className="w-4 h-4 rounded text-[#C59B27] focus:ring-[#C59B27] cursor-pointer"
+                />
+                <label htmlFor="tstActive" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  Display this testimonial actively on the public website slider
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowTstModal(false); setEditingTst(null); }}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#071530] hover:bg-[#0a1f44] text-[#C59B27] text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{editingTst ? 'Update Testimonial' : 'Save Testimonial'}</span>
                 </button>
               </div>
             </form>

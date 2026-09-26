@@ -28,6 +28,7 @@ import AnimatedCounter from '../components/AnimatedCounter';
 import AdmissionLiveTicker from '../components/AdmissionLiveTicker';
 import { fireCelebration } from '../utils/confetti';
 import CourseDetailGuide from '../components/CourseDetailGuide';
+import TestimonialSlider from '../components/TestimonialSlider';
 
 export default function MainUniversityHome({ 
   setActiveTab, 
@@ -1170,6 +1171,11 @@ export default function MainUniversityHome({
 
         </div>
       </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION: 100% WIDTH AUTO-SLIDING TESTIMONIALS & STUDENT SUCCESS STORIES */}
+      {/* ========================================================================= */}
+      <TestimonialSlider lang={lang} />
 
       {/* ========================================================================= */}
       {/* SECTION 4: ADMISSION INQUIRY — STAY CONNECTED & DIRECT ADMISSION DESK */}
