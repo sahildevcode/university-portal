@@ -489,14 +489,18 @@ export default function WebsiteCmsManager({
 
   const handleSaveTst = async (e) => {
     e.preventDefault();
-    if (!tstForm.studentName || !tstForm.studentName.trim()) {
-      setErrorMsg('Student Name is required.');
-      return;
-    }
     if (!tstForm.imageUrl) {
-      setErrorMsg('Student Photo Image is required. Please upload or provide a photo.');
+      setErrorMsg('Banner Image is required. Please upload a photo from your computer/phone or enter an image URL.');
       return;
     }
+
+    const payload = {
+      ...tstForm,
+      studentName: tstForm.studentName?.trim() || tstForm.title?.trim() || 'Testimonial Banner',
+      title: tstForm.title?.trim() || tstForm.studentName?.trim() || 'Testimonial Banner',
+      course: tstForm.course?.trim() || 'PKC Achievement',
+      review: tstForm.review?.trim() || ''
+    };
 
     try {
       const url = editingTst ? `/api/testimonials/${editingTst.id}` : '/api/testimonials';
@@ -504,12 +508,12 @@ export default function WebsiteCmsManager({
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tstForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to save testimonial');
 
-      setSuccessMsg(editingTst ? 'Testimonial updated successfully!' : 'New testimonial added successfully!');
+      setSuccessMsg(editingTst ? 'Testimonial banner updated successfully!' : 'New testimonial banner added successfully to website slider!');
       setShowTstModal(false);
       setEditingTst(null);
       loadData();
@@ -1173,11 +1177,11 @@ export default function WebsiteCmsManager({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
                 <h2 className="text-xl font-bold font-serif-academic text-[#071530]">
-                  Student Testimonials &amp; Success Stories (100% Width Slider)
+                  Testimonial &amp; Achievement Banners (100% Full-Image Auto-Slider)
                 </h2>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Upload student photos, placement packages, ratings, and quotes. Any number of photos/reviews (4, 6, 10, or more) can be added with NO LIMIT!
+                Upload pure banner images. You can add 4, 6, 10, 20 or any number of images with NO LIMIT! The website displays 100% full-box images that auto-rotate smoothly.
               </p>
             </div>
 
@@ -1186,7 +1190,7 @@ export default function WebsiteCmsManager({
               className="bg-[#071530] hover:bg-[#0a1f44] text-[#C59B27] px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New Testimonial</span>
+              <span>+ Add New Banner</span>
             </button>
           </div>
 
@@ -1194,74 +1198,51 @@ export default function WebsiteCmsManager({
           {testimonials.length === 0 ? (
             <div className="text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
               <Sparkles className="w-10 h-10 text-amber-400 mx-auto mb-3 opacity-60" />
-              <p className="text-sm font-bold text-slate-600">No testimonials yet.</p>
-              <p className="text-xs text-slate-400 mt-1">Click "+ Add New Testimonial" to showcase your student success stories.</p>
+              <p className="text-sm font-bold text-slate-600">No testimonial banners yet.</p>
+              <p className="text-xs text-slate-400 mt-1">Click "+ Add New Banner" to upload your student success or achievement banners.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {testimonials.map(tst => (
+              {testimonials.map((tst, idx) => (
                 <div 
                   key={tst.id} 
                   className={`bg-white rounded-2xl border transition-all shadow-sm hover:shadow-md flex flex-col justify-between overflow-hidden ${
                     tst.active !== false ? 'border-slate-200' : 'border-slate-200 opacity-60 bg-slate-50'
                   }`}
                 >
-                  {/* Card Top: Photo + Badges */}
-                  <div className="p-5 pb-3">
-                    <div className="flex items-start gap-4">
-                      {/* Photo Thumbnail */}
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-900 border-2 border-amber-400/40 shrink-0 shadow-sm">
-                        <img 
-                          src={tst.imageUrl} 
-                          alt={tst.studentName} 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
-                          }}
-                        />
+                  {/* Card Top: 100% Full Image Banner Preview */}
+                  <div className="p-3.5">
+                    <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-slate-950 border border-slate-200 shadow-inner group">
+                      <img 
+                        src={tst.imageUrl} 
+                        alt={tst.studentName || tst.title} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1600&auto=format&fit=crop';
+                        }}
+                      />
+                      <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-xs text-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-md shadow-xs">
+                        Banner #{idx + 1}
                       </div>
-
-                      {/* Name, Course & Rating */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="font-bold text-sm text-[#071530] truncate">{tst.studentName}</h4>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
-                            tst.active !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
-                          }`}>
-                            {tst.active !== false ? 'Active' : 'Hidden'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{tst.course}</p>
-                        
-                        <div className="flex items-center gap-1 mt-1 text-amber-500">
-                          {Array.from({ length: tst.rating || 5 }).map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          ))}
-                        </div>
-                      </div>
+                      <span className={`absolute top-2.5 right-2.5 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${
+                        tst.active !== false ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-200'
+                      }`}>
+                        {tst.active !== false ? 'Active' : 'Hidden'}
+                      </span>
                     </div>
 
-                    {/* Badge Pill */}
-                    {tst.badge && (
-                      <div className="mt-3">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <Award className="w-3 h-3 text-emerald-600" />
-                          <span className="truncate">{tst.badge}</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Headline & Review Snippet */}
-                    <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <p className="text-xs font-bold text-slate-800 line-clamp-1 italic">"{tst.title || 'Student Success Story'}"</p>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed font-normal">
-                        {tst.review}
-                      </p>
+                    <div className="mt-3 px-1">
+                      <h4 className="font-bold text-sm text-[#071530] truncate">
+                        {tst.studentName || tst.title || `Testimonial Banner #${idx + 1}`}
+                      </h4>
+                      {tst.course && (
+                        <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{tst.course}</p>
+                      )}
                     </div>
                   </div>
 
                   {/* Card Actions Bottom */}
-                  <div className="px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+                  <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
                     <button
                       onClick={() => handleToggleTstActive(tst)}
                       className={`text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
@@ -1270,21 +1251,21 @@ export default function WebsiteCmsManager({
                       title={tst.active !== false ? 'Hide from Website' : 'Show on Website'}
                     >
                       {tst.active !== false ? <Eye className="w-4 h-4 text-emerald-600" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
-                      <span>{tst.active !== false ? 'Visible' : 'Hidden'}</span>
+                      <span>{tst.active !== false ? 'Visible on Website' : 'Hidden'}</span>
                     </button>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenEditTst(tst)}
                         className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Testimonial"
+                        title="Edit Banner"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteTst(tst.id, tst.studentName)}
+                        onClick={() => handleDeleteTst(tst.id, tst.studentName || tst.title)}
                         className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Testimonial"
+                        title="Delete Banner"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1453,10 +1434,10 @@ export default function WebsiteCmsManager({
               <div>
                 <h3 className="text-lg font-bold text-[#071530] flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                  <span>{editingTst ? 'Edit Student Testimonial' : 'Add New Student Testimonial'}</span>
+                  <span>{editingTst ? 'Edit Testimonial Banner' : 'Add New Testimonial Banner'}</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Direct image upload supported. No limit on total testimonials (4, 6, 10 or more)!
+                  Direct image upload supported. The website displays 100% full-box image with auto-rotation (NO LIMIT on images).
                 </p>
               </div>
               <button
@@ -1468,25 +1449,32 @@ export default function WebsiteCmsManager({
             </div>
 
             <form onSubmit={handleSaveTst} className="space-y-4">
+              
+              {/* Direct Banner Image Upload (Required) */}
+              <ImageUploadField
+                label="Banner / Testimonial Image (Upload from Computer/Phone or Paste Image URL) *"
+                value={tstForm.imageUrl}
+                onChange={val => setTstForm({ ...tstForm, imageUrl: val })}
+                placeholder="Click to choose image file from device or paste image URL"
+              />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Student Full Name *</label>
+                  <label className="text-xs font-bold text-slate-700">Banner Title / Student Name (Optional)</label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. Rahul Vishwakarma"
+                    placeholder="e.g. Convocation Ceremony / Rahul Vishwakarma"
                     value={tstForm.studentName}
-                    onChange={e => setTstForm({ ...tstForm, studentName: e.target.value })}
+                    onChange={e => setTstForm({ ...tstForm, studentName: e.target.value, title: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Course / Degree *</label>
+                  <label className="text-xs font-bold text-slate-700">Tag / Category (Optional)</label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. BCA, MBA, B.Tech CSE"
+                    placeholder="e.g. BCA / Degree / Placement"
                     value={tstForm.course}
                     onChange={e => setTstForm({ ...tstForm, course: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
@@ -1494,64 +1482,7 @@ export default function WebsiteCmsManager({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Placement Badge / Achievement</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Placed at TCS (₹4.2 LPA)"
-                    value={tstForm.badge}
-                    onChange={e => setTstForm({ ...tstForm, badge: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Star Rating (1 to 5)</label>
-                  <select
-                    value={tstForm.rating}
-                    onChange={e => setTstForm({ ...tstForm, rating: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
-                  >
-                    <option value={5}>⭐⭐⭐⭐⭐ (5.0 Excellent)</option>
-                    <option value={4}>⭐⭐⭐⭐ (4.0 Very Good)</option>
-                    <option value={3}>⭐⭐⭐ (3.0 Good)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Success Headline / Catchphrase</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 100% Placement & Practical Learning"
-                  value={tstForm.title}
-                  onChange={e => setTstForm({ ...tstForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:border-[#C59B27] outline-hidden bg-slate-50/50"
-                />
-              </div>
-
-              {/* Direct Photo Upload */}
-              <ImageUploadField
-                label="Student Photo (Upload from device or paste image URL) *"
-                value={tstForm.imageUrl}
-                onChange={val => setTstForm({ ...tstForm, imageUrl: val })}
-                placeholder="Click to upload student photo from computer / phone"
-              />
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">Student Review / Feedback Quote *</label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Write the student's review, how PKC Institute helped them, exam preparation experience, etc..."
-                  value={tstForm.review}
-                  onChange={e => setTstForm({ ...tstForm, review: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:border-[#C59B27] outline-hidden bg-slate-50/50"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
                 <input
                   type="checkbox"
                   id="tstActive"
@@ -1560,7 +1491,7 @@ export default function WebsiteCmsManager({
                   className="w-4 h-4 rounded text-[#C59B27] focus:ring-[#C59B27] cursor-pointer"
                 />
                 <label htmlFor="tstActive" className="text-xs font-bold text-slate-700 cursor-pointer">
-                  Display this testimonial actively on the public website slider
+                  Display this banner actively on the public website 100% full-image slider
                 </label>
               </div>
 
@@ -1577,7 +1508,7 @@ export default function WebsiteCmsManager({
                   className="px-6 py-2.5 bg-[#071530] hover:bg-[#0a1f44] text-[#C59B27] text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{editingTst ? 'Update Testimonial' : 'Save Testimonial'}</span>
+                  <span>{editingTst ? 'Update Banner' : 'Save Banner'}</span>
                 </button>
               </div>
             </form>

@@ -1,77 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star, Quote, Award, Sparkles, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TestimonialSlider({ lang = 'en' }) {
   const [slides, setSlides] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // 6 Rich Default Demo Slides with realistic student achievements & crisp portraits
+  // 6 Rich Default Demo Banners (Wide High-Resolution Images)
   const defaultSlides = [
     {
       id: 'tst-1',
-      title: '100% Placement & Practical Learning',
-      studentName: 'Rahul Vishwakarma',
-      course: 'Bachelor of Computer Applications (BCA)',
-      review: 'PKC Institute helped me secure admission and prepare for IT placements with top software companies. The lab guidance, live web projects, and exam support were exceptional!',
-      badge: 'Placed at TCS (₹4.2 LPA)',
-      imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'Annual Convocation & Degree Distribution Ceremony',
+      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1600&auto=format&fit=crop',
       active: true
     },
     {
       id: 'tst-2',
-      title: 'Best Counseling for Master Degrees',
-      studentName: 'Pooja Tiwari',
-      course: 'Master of Business Administration (MBA)',
-      review: 'From university selection to scholarship forms (MPTASS) and semester syllabus guidance, the PKC team gave full support throughout my 2-year MBA program.',
-      badge: 'University Merit Holder',
-      imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'Computer Lab Practical Training & Web Tech',
+      imageUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1600&auto=format&fit=crop',
       active: true
     },
     {
       id: 'tst-3',
-      title: 'Empowering District & Rural Students',
-      studentName: 'Amit Sen',
-      course: 'Diploma in Computer Applications (DCA)',
-      review: 'PKC Chhatarpur is the most trusted institute for computer education. The practical computer classes helped me crack the CPCT exam and get a government computer operator job.',
-      badge: 'Govt Certified IT Diploma',
-      imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'State Merit Felicitation & Scholarship Awards',
+      imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1600&auto=format&fit=crop',
       active: true
     },
     {
       id: 'tst-4',
-      title: 'Engineering Dreams Turned Reality',
-      studentName: 'Priya Kushwaha',
-      course: 'B.Tech - Computer Science & Engineering',
-      review: 'Securing an engineering seat with full government scholarship guidance was made simple by Er. P.K. Chaurasia sir. Today I am working as a Software Engineer at Infosys.',
-      badge: 'Software Engineer at Infosys (₹5.5 LPA)',
-      imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'Campus Career Guidance & Counseling Desk',
+      imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop',
       active: true
     },
     {
       id: 'tst-5',
-      title: '100% Scholarship Benefit Support',
-      studentName: 'Deepak Ahirwar',
-      course: 'B.Sc (Hons) Computer Science',
-      review: 'I received complete fee scholarship support via MPTASS portal without paying a single extra rupee. Excellent teachers, exam guidance, and official university degrees.',
-      badge: '100% MPTASS Scholarship Scholar',
-      imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'University Campus & Higher Education Learning',
+      imageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1600&auto=format&fit=crop',
       active: true
     },
     {
       id: 'tst-6',
-      title: 'Professional Growth & IT Career',
-      studentName: 'Neha Sharma',
-      course: 'Post Graduate Diploma in Computer Applications (PGDCA)',
-      review: 'After graduation, I enrolled in PGDCA at PKC. The faculty provided great coaching in Tally, Database, and Office Automation which helped me secure a Banking Specialist role.',
-      badge: 'Banking & IT Specialist',
-      imageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=80',
-      rating: 5,
+      title: 'Youth Academic Success & Degree Placement',
+      imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1600&auto=format&fit=crop',
       active: true
     }
   ];
@@ -82,7 +52,7 @@ export default function TestimonialSlider({ lang = 'en' }) {
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
-          const activeOnly = data.testimonials.filter(t => t.active !== false);
+          const activeOnly = data.testimonials.filter(t => t.active !== false && t.imageUrl);
           setSlides(activeOnly.length > 0 ? activeOnly : defaultSlides);
         } else {
           setSlides(defaultSlides);
@@ -93,7 +63,7 @@ export default function TestimonialSlider({ lang = 'en' }) {
 
   const activeSlides = slides.length > 0 ? slides : defaultSlides;
 
-  // Auto-slide effect every 4.5 seconds (supports any number of images/testimonials with NO LIMIT)
+  // Auto-slide effect every 4.5 seconds (supports any number of images with NO LIMIT)
   useEffect(() => {
     if (isHovered || activeSlides.length <= 1) return;
 
@@ -117,166 +87,65 @@ export default function TestimonialSlider({ lang = 'en' }) {
   return (
     <section 
       id="testimonials-section"
-      className="w-full bg-gradient-to-b from-[#071530] via-[#0A1931] to-[#071530] text-white py-16 sm:py-20 relative overflow-hidden border-y border-[#C59B27]/40 scroll-mt-20"
+      className="w-full bg-[#071530] py-8 sm:py-12 relative overflow-hidden border-y border-[#C59B27]/40 scroll-mt-20"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Background Decorative Glow Accents */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2"></div>
-      <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none translate-y-1/3"></div>
-      
-      {/* Subtle Pattern Grid */}
-      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#C59B27_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-wider mb-3 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{lang === 'hi' ? 'सफलता की कहानियां एवं छात्र अनुभव' : 'STUDENT VOICES & SUCCESS STORIES'}</span>
-          </div>
+        {/* PURE IMAGE BOX: The entire box is filled 100% only with the image set by admin */}
+        <div className="relative w-full h-[260px] sm:h-[380px] md:h-[460px] lg:h-[540px] rounded-3xl overflow-hidden shadow-2xl border-2 border-[#C59B27]/50 bg-slate-950 group">
           
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-serif-academic text-white tracking-tight leading-tight">
-            {lang === 'hi' ? 'छात्रों की सफलता, हमारा गौरव' : 'Empowering Careers, Celebrating Student Success'}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 mt-2 font-medium">
-            {lang === 'hi' 
-              ? 'पी.के.सी. संस्थान द्वारा मार्गदर्शित विभिन्न डिग्री एवं तकनीकी पाठ्यक्रमों के सफल छात्र-छात्राओं के वास्तविक अनुभव।' 
-              : 'Real stories from our students and alumni who built their careers with certified UGC degrees and guidance at PKC Institute.'}
-          </p>
-        </div>
+          {/* Active Image (fills 100% of the entire box with zero obstructing text) */}
+          <img 
+            key={current.id || currentIndex}
+            src={current.imageUrl} 
+            alt={current.title || 'PKC Testimonial Banner'}
+            className="w-full h-full object-cover object-center transition-all duration-700"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1600&auto=format&fit=crop';
+            }}
+          />
 
-        {/* 100% Width Testimonial Showcase Box */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-10 lg:p-14 shadow-2xl relative">
-          
-          {/* Top Status & Slide Counter */}
-          <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                {lang === 'hi' ? 'सत्यापित पूर्व छात्र' : 'Verified Alumni Story'}
-              </span>
-            </div>
-            
-            <div className="text-xs font-black text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
-              {currentIndex + 1} / {activeSlides.length}
-            </div>
+          {/* Top-Right Counter Badge */}
+          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/20 text-amber-300 text-xs font-black px-3.5 py-1.5 rounded-full shadow-lg">
+            {currentIndex + 1} / {activeSlides.length}
           </div>
 
-          {/* Main Slide Body: Grid Left Content, Right Image */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center min-h-[280px]">
-            
-            {/* Left: Testimonial Details (7 Columns) */}
-            <div className="lg:col-span-7 space-y-5">
-              
-              {/* Stars & Badge */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1 bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20">
-                  {Array.from({ length: current.rating || 5 }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                  <span className="text-xs font-black text-amber-400 ml-1">5.0</span>
-                </div>
+          {/* Left Arrow Button */}
+          <button
+            onClick={handlePrev}
+            className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-black/50 hover:bg-[#C59B27] text-white hover:text-slate-950 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xl opacity-80 hover:opacity-100 hover:scale-110 active:scale-95"
+            title="Previous Image"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
 
-                {current.badge && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs">
-                    <Award className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{current.badge}</span>
-                  </span>
-                )}
-              </div>
+          {/* Right Arrow Button */}
+          <button
+            onClick={handleNext}
+            className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-black/50 hover:bg-[#C59B27] text-white hover:text-slate-950 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xl opacity-80 hover:opacity-100 hover:scale-110 active:scale-95"
+            title="Next Image"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
 
-              {/* Title / Headline */}
-              <h3 className="text-xl sm:text-2xl font-black text-white font-serif-academic leading-snug">
-                "{current.title || 'Student Success Story'}"
-              </h3>
-
-              {/* Review Text */}
-              <blockquote className="relative text-sm sm:text-base text-slate-200 font-medium leading-relaxed italic border-l-4 border-amber-400 pl-4 py-1">
-                <Quote className="w-8 h-8 text-amber-400/20 absolute -top-4 -left-3 -z-10" />
-                {current.review}
-              </blockquote>
-
-              {/* Student Info */}
-              <div className="pt-2">
-                <h4 className="text-lg sm:text-xl font-black text-amber-400 tracking-wide">
-                  {current.studentName}
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-300 font-semibold flex items-center gap-1.5 mt-0.5">
-                  <GraduationCap className="w-4 h-4 text-indigo-400" />
-                  <span>{current.course}</span>
-                </p>
-              </div>
-
-            </div>
-
-            {/* Right: Prominent Student Image (5 Columns) */}
-            <div className="lg:col-span-5 flex justify-center lg:justify-end">
-              <div className="relative group">
-                {/* Glow ring */}
-                <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-amber-400 via-indigo-500 to-amber-300 opacity-60 blur-md group-hover:opacity-90 transition-opacity duration-500"></div>
-                
-                {/* Image Card Container */}
-                <div className="relative w-56 h-64 sm:w-64 sm:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 bg-slate-900">
-                  <img 
-                    src={current.imageUrl} 
-                    alt={current.studentName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
-                    }}
-                  />
-                  
-                  {/* Bottom overlay badge */}
-                  <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent">
-                    <p className="text-[11px] font-black text-amber-400 truncate">{current.studentName}</p>
-                    <p className="text-[10px] text-slate-300 truncate">{current.badge || current.course}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Controls: Dots & Navigation Arrows */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-8 mt-8 border-t border-white/10">
-            
-            {/* Dots Indicator (Dynamically handles 4, 6, 10 or ANY number of testimonials with NO LIMIT) */}
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Bottom Floating Navigation Dots (Supports 4, 6, 10 or ANY number of images with NO LIMIT) */}
+          <div className="absolute bottom-4 inset-x-0 flex justify-center items-center pointer-events-auto">
+            <div className="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 flex items-center gap-2 max-w-[90%] overflow-x-auto">
               {activeSlides.map((slide, idx) => (
                 <button
                   key={slide.id || idx}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                  className={`h-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
                     currentIndex === idx 
-                      ? 'w-10 bg-amber-400 shadow-md shadow-amber-400/40' 
-                      : 'w-2.5 bg-white/25 hover:bg-white/50'
+                      ? 'w-8 bg-amber-400 shadow-md shadow-amber-400/50' 
+                      : 'w-2.5 bg-white/40 hover:bg-white/70'
                   }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  title={slide.studentName || `Slide ${idx + 1}`}
+                  aria-label={`Go to image ${idx + 1}`}
                 />
               ))}
             </div>
-
-            {/* Prev / Next Buttons */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handlePrev}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white transition-all cursor-pointer border border-white/20 flex items-center justify-center shadow-md active:scale-90"
-                title="Previous Testimonial"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-amber-400 hover:text-slate-950 text-white transition-all cursor-pointer border border-white/20 flex items-center justify-center shadow-md active:scale-90"
-                title="Next Testimonial"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
           </div>
 
         </div>
