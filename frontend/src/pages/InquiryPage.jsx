@@ -283,7 +283,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 </div>
                 <div>
                   <strong className="block text-white font-semibold">Direct Helpline:</strong>
-                  <span className="text-[#C59B27] font-bold">1800-120-8899 / +91 98765 43210</span>
+                  <span className="text-[#C59B27] font-bold">+91 7000212637</span>
                 </div>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
             {/* Action Buttons: WhatsApp & Call */}
             <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-3">
               <a
-                href="https://wa.me/919876543210?text=Hello%20PKC%20Institute%2C%20I%20want%20to%20inquire%20about%20university%20admission"
+                href="https://wa.me/917000212637?text=Hello%20PKC%20Institute%2C%20I%20want%20to%20inquire%20about%20university%20admission"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-md text-xs shadow-xs transition-colors"
@@ -301,7 +301,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
               </a>
 
               <a
-                href="tel:9876543210"
+                href="tel:+917000212637"
                 className="flex items-center justify-center gap-1.5 bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black py-2.5 px-3 rounded-md text-xs shadow-xs transition-colors"
               >
                 <PhoneCall className="w-3.5 h-3.5" />

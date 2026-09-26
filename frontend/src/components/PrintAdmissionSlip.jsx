@@ -76,7 +76,7 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
                   PKC Education Learning Institute & Consultancy
                 </p>
                 <p className="text-[10px] text-slate-500">
-                  Campus: Chhatarpur (M.P.) | Contact: +91 99882 23344
+                  Campus: Chhatarpur (M.P.) | Contact: +91 7000212637
                 </p>
               </div>
             </div>
