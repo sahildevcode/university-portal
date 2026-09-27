@@ -125,22 +125,22 @@ export default function App() {
 
     if (typeof document !== 'undefined') {
       if (activeView === 'admin') {
-        document.title = 'PKC Admin - Official Student Records & Management Portal';
+        document.title = 'PKC Admin Portal | PKC Education Learning Institute & Consultancy';
       } else if (activeView === 'staff') {
-        document.title = 'PKC Staff Desk - Cash Counter & Admissions';
+        document.title = 'PKC Staff Desk - Cash Counter & Admissions | PKC Chhatarpur';
       } else {
         if (publicTab === 'courses') {
-          document.title = 'Academic Courses Catalog | PKC Education Learning Institute';
+          document.title = 'Degree & Diploma Courses | PKC Chhatarpur (PKC Institute)';
         } else if (publicTab === 'about') {
-          document.title = 'About Us | PKC Education Learning Institute';
+          document.title = 'About Us | PKC Chhatarpur - PKC Education Learning Institute & Consultancy';
         } else if (publicTab === 'inquiry') {
-          document.title = 'Admission Inquiry | PKC Education Learning Institute';
+          document.title = 'Admission Inquiry Desk | PKC Institute Chhatarpur';
         } else if (publicTab === 'job-apply') {
-          document.title = 'Job Application | PKC Education Learning Institute';
+          document.title = 'Careers & Job Application | PKC Education Institute Chhatarpur';
         } else if (publicTab === 'gallery') {
-          document.title = 'Campus Gallery | PKC Education Learning Institute';
+          document.title = 'Campus Photo Gallery | PKC Institute Chhatarpur';
         } else {
-          document.title = 'PKC Education Learning Institute & Consultancy | Official Student Portal';
+          document.title = 'PKC Chhatarpur | PKC Institute | PKC Education Learning Institute & Consultancy';
         }
       }
     }
