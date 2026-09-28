@@ -410,10 +410,10 @@ export default function AdminPortal({
     },
     { 
       id: 'inquiries', 
-      label: 'Student Inquiry Section', 
-      fullName: 'Student Inquiry & Recruitment Section',
-      sub: 'Student admission inquiries, leads, follow-ups and candidate resumes',
-      shortDesc: 'Student Inquiries, Leads & Resumes',
+      label: 'Student Inquiry', 
+      fullName: 'Student Inquiry Desk & Job Resumes',
+      sub: 'Student admission inquiries, leads, follow-ups and candidate job resumes',
+      shortDesc: 'Student Inquiries & Job Resumes',
       icon: HelpCircle, 
       color: 'text-rose-600',
       badge: 'Inquiries & Resumes'

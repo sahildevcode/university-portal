@@ -46,10 +46,12 @@ export default function StudentList({
   const [filterSatra, setFilterSatra] = useState('all');
   const [filterUniversity, setFilterUniversity] = useState('all');
   const [filterCollege, setFilterCollege] = useState('all');
+  const [filterCourse, setFilterCourse] = useState('all');
   const [appliedSession, setAppliedSession] = useState('all');
   const [appliedSatra, setAppliedSatra] = useState('all');
   const [appliedUniversity, setAppliedUniversity] = useState('all');
   const [appliedCollege, setAppliedCollege] = useState('all');
+  const [appliedCourse, setAppliedCourse] = useState('all');
 
   // Entries / Pagination state
   const [pageSize, setPageSize] = useState(10);
@@ -328,6 +330,20 @@ export default function StudentList({
     return [{ id: `col-${filterUniversity}`, name: filterUniversity, shortName: filterUniversity, code: '' }];
   })();
 
+  // Dynamic list of all courses from API/Catalog + student enrolled courses + linked courses
+  const allAvailableCourses = Array.from(new Set([
+    ...allCoursesList.map(c => c.name),
+    ...(Array.isArray(courses) ? courses.map(c => c.name) : []),
+    ...students.map(s => s.courseName || s.course).filter(Boolean),
+    ...students.flatMap(s => (s.linkedCourses || []).map(l => l.courseName || l.course)).filter(Boolean)
+  ])).filter(Boolean).sort((a, b) => a.localeCompare(b));
+
+  const handleFilterCourseChange = (newCourse) => {
+    setFilterCourse(newCourse);
+    setAppliedCourse(newCourse);
+    setCurrentPage(1);
+  };
+
   const handleFilterUniversityChange = (newUniv) => {
     setFilterUniversity(newUniv);
     setAppliedUniversity(newUniv);
@@ -409,6 +425,7 @@ export default function StudentList({
     setAppliedSatra(filterSatra);
     setAppliedUniversity(filterUniversity);
     setAppliedCollege(filterCollege);
+    setAppliedCourse(filterCourse);
     setCurrentPage(1);
   };
 
@@ -417,10 +434,12 @@ export default function StudentList({
     setFilterSatra('all');
     setFilterUniversity('all');
     setFilterCollege('all');
+    setFilterCourse('all');
     setAppliedSession('all');
     setAppliedSatra('all');
     setAppliedUniversity('all');
     setAppliedCollege('all');
+    setAppliedCourse('all');
     setSearch('');
     setSelectedCourse('all');
     setSelectedSemester('all');
@@ -1406,6 +1425,17 @@ export default function StudentList({
       if (!isMatch && !linkedColMatch) return false;
     }
 
+    if (appliedCourse !== 'all') {
+      const targetCrs = appliedCourse.toLowerCase().trim();
+      const sc = (s.courseName || s.course || '').toLowerCase().trim();
+      const directMatch = sc === targetCrs || sc.includes(targetCrs) || targetCrs.includes(sc);
+      const linkedCrsMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+        const lsc = (lc.courseName || lc.course || '').toLowerCase().trim();
+        return lsc === targetCrs || lsc.includes(targetCrs) || targetCrs.includes(lsc);
+      });
+      if (!directMatch && !linkedCrsMatch) return false;
+    }
+
     if (!q) return true;
 
     const nameMatch = s.fullName?.toLowerCase().includes(q) || s.studentName?.toLowerCase().includes(q);
@@ -1492,9 +1522,9 @@ export default function StudentList({
         </div>
       )}
 
-      {/* Top University, College, Session & Satra Filter Form (5 Sections Compact Layout) */}
+      {/* Top University, College, Course, Session & Satra Filter Form (6 Sections Compact Layout) */}
       <div className="bg-[#f0f7f9] p-3.5 rounded-xl border border-[#bce0ee] shadow-sm space-y-2.5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-end">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 truncate">
               Select Session:
@@ -1570,6 +1600,27 @@ export default function StudentList({
           </div>
 
           <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 truncate flex items-center justify-between">
+              <span>Select Course:</span>
+              {allAvailableCourses.length > 0 && (
+                <span className="text-[10px] text-purple-700 font-bold">
+                  ({allAvailableCourses.length})
+                </span>
+              )}
+            </label>
+            <select
+              value={filterCourse}
+              onChange={(e) => handleFilterCourseChange(e.target.value)}
+              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium text-slate-800 cursor-pointer shadow-xs"
+            >
+              <option value="all">Select Course (All)</option>
+              {allAvailableCourses.map((cName, i) => (
+                <option key={i} value={cName}>{cName}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
               <span className="truncate">Search Student:</span>
               {search && (
@@ -1612,7 +1663,7 @@ export default function StudentList({
           >
             <span>Show Students Record ({displayedStudents.length} Students Matching)</span>
           </button>
-          {(appliedUniversity !== 'all' || appliedCollege !== 'all' || appliedSession !== 'all' || appliedSatra !== 'all' || search) && (
+          {(appliedUniversity !== 'all' || appliedCollege !== 'all' || appliedSession !== 'all' || appliedSatra !== 'all' || appliedCourse !== 'all' || search) && (
             <button
               type="button"
               onClick={handleResetFiltersToAll}
@@ -1627,7 +1678,7 @@ export default function StudentList({
       </div>
 
       {/* Dark Active Filter Status Strip */}
-      <div className="bg-[#0b1f33] text-white py-2 px-3 sm:px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs font-bold items-center">
+      <div className="bg-[#0b1f33] text-white py-2 px-3 sm:px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-bold items-center">
         <div className="flex items-center gap-1.5">
           <span className="text-slate-400 font-normal">Session:</span>
           <span className="text-emerald-400 font-mono tracking-wide truncate">{appliedSession === 'all' ? 'All Sessions' : appliedSession}</span>
@@ -1646,6 +1697,12 @@ export default function StudentList({
           <span className="text-slate-400 font-normal">College:</span>
           <span className="text-pink-300 truncate max-w-[170px]" title={appliedCollege === 'all' ? 'All Colleges' : appliedCollege}>
             {appliedCollege === 'all' ? 'All Colleges' : appliedCollege}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-400 font-normal">Course:</span>
+          <span className="text-purple-300 truncate max-w-[170px]" title={appliedCourse === 'all' ? 'All Courses' : appliedCourse}>
+            {appliedCourse === 'all' ? 'All Courses' : appliedCourse}
           </span>
         </div>
         <div className="flex items-center gap-1.5 lg:justify-end">
@@ -1778,7 +1835,7 @@ export default function StudentList({
               </button>
             )}
           </div>
-          {(search || appliedSession !== 'all' || appliedSatra !== 'all' || appliedUniversity !== 'all') && (
+          {(search || appliedSession !== 'all' || appliedSatra !== 'all' || appliedUniversity !== 'all' || appliedCollege !== 'all' || appliedCourse !== 'all') && (
             <button
               type="button"
               onClick={handleResetFiltersToAll}

@@ -31,8 +31,8 @@ function WhatsAppIcon({ className = "w-3.5 h-3.5" }) {
 export default function StudentInquirySection({ lang = 'en', toggleLang }) {
   const isHindi = lang === 'hi';
 
-  // Sub-tabs: 'inquiries' | 'jobs'
-  const [activeSubTab, setActiveSubTab] = useState('inquiries');
+  // View modes: 'all' | 'inquiries' | 'jobs'
+  const [activeSubTab, setActiveSubTab] = useState('all');
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -140,12 +140,12 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <h1 className="text-xl sm:text-2xl font-black mt-1 text-white">
-                {isHindi ? 'छात्र पूछताछ अनुभाग (Student Inquiry Section)' : 'Student Inquiry Section'}
+                {isHindi ? 'छात्र पूछताछ (Student Inquiry)' : 'Student Inquiry'}
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
                 {isHindi 
-                  ? 'छात्र पोर्टल से आने वाली ऑनलाइन पूछताछ, फोन नंबर, पता, एवं उम्मीदवारों के बायोडाटा (Resume) देखें व प्रबंधित करें।' 
-                  : 'Manage online admission inquiries, student leads, father names, addresses, follow-ups, and candidate resumes.'}
+                  ? 'छात्र पोर्टल से आने वाली ऑनलाइन प्रवेश पूछताछ एवं उम्मीदवारों के जॉब रेज्यूमे (Resumes) देखें व प्रबंधित करें।' 
+                  : 'Manage online admission inquiries, student leads, father names, addresses, and candidate job resumes.'}
               </p>
             </div>
           </div>
@@ -200,19 +200,33 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
         </div>
       )}
 
-      {/* Sub-Tabs: Inquiries vs Resumes */}
+      {/* Sub-Tabs: All in One vs Inquiries vs Resumes */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
+            onClick={() => setActiveSubTab('all')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
+              activeSubTab === 'all'
+                ? 'bg-[#071530] text-[#C59B27] shadow-md font-black ring-1 ring-[#C59B27]/40'
+                : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>📋 {isHindi ? 'दोनों एक साथ देखें' : 'View Both (Inquiries + Resumes)'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveSubTab('inquiries')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
               activeSubTab === 'inquiries'
-                ? 'bg-[#071530] text-[#C59B27] shadow-md font-black'
+                ? 'bg-[#071530] text-[#C59B27] shadow-md font-black ring-1 ring-[#C59B27]/40'
                 : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <HelpCircle className="w-4 h-4 text-amber-500" />
-            <span>📩 1. Student Inquiries ({inquiries.length})</span>
+            <span>📩 {isHindi ? 'छात्र पूछताछ' : 'Student Inquiries'} ({inquiries.length})</span>
             {pendingCount > 0 && (
               <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
                 {pendingCount} New
@@ -221,15 +235,16 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveSubTab('jobs')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
               activeSubTab === 'jobs'
-                ? 'bg-[#071530] text-[#C59B27] shadow-md font-black'
+                ? 'bg-[#071530] text-[#C59B27] shadow-md font-black ring-1 ring-[#C59B27]/40'
                 : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <Briefcase className="w-4 h-4 text-indigo-500" />
-            <span>💼 2. Recruitment &amp; Resumes</span>
+            <span>💼 {isHindi ? 'जॉब रेज्यूमे' : 'Job Applications & Resumes'}</span>
           </button>
         </div>
 
@@ -241,10 +256,23 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 1: 📩 STUDENT INQUIRIES DESK */}
+      {/* SECTION 1: 📩 STUDENT INQUIRIES DESK */}
       {/* ========================================================================= */}
-      {activeSubTab === 'inquiries' && (
+      {(activeSubTab === 'inquiries' || activeSubTab === 'all') && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+          {activeSubTab === 'all' && (
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                <h2 className="text-sm font-black uppercase tracking-wider text-slate-800">
+                  📩 {isHindi ? 'छात्र प्रवेश पूछताछ (Student Inquiries)' : 'Student Admission Inquiries'}
+                </h2>
+              </div>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                {inquiries.length} Leads
+              </span>
+            </div>
+          )}
           
           {/* Controls Bar: Search & Status Filters */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -471,10 +499,22 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 2: 💼 CANDIDATE RESUMES & RECRUITMENT */}
+      {/* SECTION 2: 💼 CANDIDATE RESUMES & RECRUITMENT (BELOW INQUIRIES) */}
       {/* ========================================================================= */}
-      {activeSubTab === 'jobs' && (
-        <JobApplicationsManager lang={lang} />
+      {(activeSubTab === 'jobs' || activeSubTab === 'all') && (
+        <div className="space-y-4 pt-2">
+          {activeSubTab === 'all' && (
+            <div className="flex items-center gap-3 pt-4 pb-1">
+              <div className="h-px bg-slate-300 flex-1" />
+              <div className="flex items-center gap-2 bg-[#071530] text-[#C59B27] px-4 py-1.5 rounded-full shadow-sm text-xs font-black uppercase tracking-wider border border-[#C59B27]/30">
+                <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+                <span>💼 {isHindi ? 'जॉब एप्लीकेशन एवं उम्मीदवार रेज्यूमे (Job Resumes)' : 'Job Applications & Candidate Resumes'}</span>
+              </div>
+              <div className="h-px bg-slate-300 flex-1" />
+            </div>
+          )}
+          <JobApplicationsManager lang={lang} />
+        </div>
       )}
 
     </div>
