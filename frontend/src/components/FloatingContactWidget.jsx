@@ -74,7 +74,7 @@ export default function FloatingContactWidget() {
               Location
             </span>
             <span className="block text-xs font-black tracking-tight text-white flex items-center gap-1">
-              Near Bus Stand, Chhatarpur <ExternalLink className="w-3 h-3 text-amber-200" />
+              Beside Govt. Girls College, Panna Road, Choubey Colony <ExternalLink className="w-3 h-3 text-amber-200" />
             </span>
           </div>
         </a>

@@ -510,24 +510,7 @@ export default function MainUniversityHome({
                 </button>
               </div>
 
-              {/* Social Proof */}
-              <div className="pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-3 border-t border-slate-800/80">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                  <img className="inline-block h-9 w-9 rounded-full ring-2 ring-[#071530] object-cover hover:scale-110 transition-transform" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop" alt="Student" />
-                </div>
-                <div className="text-left text-xs">
-                  <strong className="text-white block font-bold text-sm flex items-center gap-1.5">
-                    <span>18,500+ Students Guided Successfully</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  </strong>
-                  <span className="text-slate-400 block text-xs">
-                    Serving 50+ Districts Across Madhya Pradesh &amp; Central India
-                  </span>
-                </div>
-              </div>
+
 
             </div>
 
@@ -1236,7 +1219,7 @@ export default function MainUniversityHome({
                 PKC Education Learning Institute &amp; Consultancy
               </h3>
               <p className="text-xs sm:text-sm text-slate-300">
-                Head Office: <a href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8" target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:text-white underline font-semibold transition-colors" title="Open in Google Maps">Near Bus Stand, Chhatarpur (M.P.) - 471001 ↗</a> • Helpline: <a href="tel:+917000212637" className="text-white hover:text-amber-300 font-bold transition-colors">+91 7000212637</a>
+                Head Office: <a href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8" target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:text-white underline font-semibold transition-colors" title="Open in Google Maps">Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur (M.P.) - 471001 ↗</a> • Helpline: <a href="tel:+917000212637" className="text-white hover:text-amber-300 font-bold transition-colors">+91 7000212637</a>
               </p>
             </div>
 

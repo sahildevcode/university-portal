@@ -25,4 +25,5 @@ Thumbs.db
 desktop.ini
 *.lnk
 .vscode/
-.idea/
+# Database backups
+backend/data/*backup*.json

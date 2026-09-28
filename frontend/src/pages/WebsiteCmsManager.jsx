@@ -1053,10 +1053,12 @@ export default function WebsiteCmsManager({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#071530] text-[#C59B27] font-black uppercase text-[10.5px] tracking-wider">
-                  <th className="p-4">Student Name</th>
-                  <th className="p-4">Mobile Number</th>
+                  <th className="p-4">Inquiry Date</th>
+                  <th className="p-4">Student &amp; Father Name</th>
+                  <th className="p-4">Contact Details</th>
                   <th className="p-4">Course Interested</th>
-                  <th className="p-4">City</th>
+                  <th className="p-4">City &amp; Address</th>
+                  <th className="p-4">Message / Query</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
@@ -1064,15 +1066,40 @@ export default function WebsiteCmsManager({
               <tbody className="divide-y divide-slate-100 font-medium">
                 {inquiries.map(inq => (
                   <tr key={inq.id} className="hover:bg-slate-50">
-                    <td className="p-4 font-bold text-slate-900">{inq.fullName || inq.name}</td>
-                    <td className="p-4 font-bold text-emerald-700">
-                      <a href={`tel:${inq.phone}`} className="hover:underline flex items-center gap-1">
-                        <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
+                    <td className="p-4 whitespace-nowrap text-slate-700 font-bold">
+                      {inq.inquiryDate || (inq.createdAt ? inq.createdAt.split('T')[0] : 'N/A')}
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-slate-900">{inq.fullName || inq.name}</div>
+                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        <span className="font-semibold text-slate-600">Father:</span> {inq.fatherName || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <a href={`tel:${inq.phone}`} className="hover:underline flex items-center gap-1 font-bold text-emerald-700">
+                        <PhoneCall className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span>{inq.phone}</span>
                       </a>
+                      {inq.email && (
+                        <div className="text-[11px] text-slate-500 truncate max-w-[150px] mt-0.5">{inq.email}</div>
+                      )}
                     </td>
                     <td className="p-4 font-bold text-indigo-700">{inq.course || 'General Admission'}</td>
-                    <td className="p-4 text-slate-600">{inq.city || 'N/A'}</td>
+                    <td className="p-4">
+                      <div className="font-bold text-slate-800">{inq.city || 'N/A'}</div>
+                      <div className="text-[11px] text-slate-500 max-w-[200px] leading-tight mt-0.5" title={inq.address}>
+                        {inq.address || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {inq.message ? (
+                        <div className="text-[11px] text-slate-600 italic max-w-[180px] line-clamp-2" title={inq.message}>
+                          "{inq.message}"
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">-</span>
+                      )}
+                    </td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
                         inq.status === 'New' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
@@ -1080,7 +1107,7 @@ export default function WebsiteCmsManager({
                         {inq.status || 'New'}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
+                    <td className="p-4 text-right space-x-2 whitespace-nowrap">
                       <button
                         onClick={() => handleUpdateInquiryStatus(inq.id, 'Contacted')}
                         className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-[10.5px] hover:bg-emerald-700 cursor-pointer"

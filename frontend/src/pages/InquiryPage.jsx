@@ -18,10 +18,13 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
 
   const [form, setForm] = useState({
     name: '',
+    fatherName: '',
     phone: '',
     email: '',
     course: courses[0]?.name || 'Bachelor of Computer Applications (BCA)',
+    inquiryDate: new Date().toISOString().split('T')[0],
     city: '',
+    address: '',
     message: ''
   });
 
@@ -50,10 +53,13 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
       setSuccessMsg(t.successInquiry);
       setForm({
         name: '',
+        fatherName: '',
         phone: '',
         email: '',
         course: courses[0]?.name || 'Bachelor of Computer Applications (BCA)',
+        inquiryDate: new Date().toISOString().split('T')[0],
         city: '',
+        address: '',
         message: ''
       });
     } catch (err) {
@@ -135,6 +141,21 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 />
               </div>
 
+              {/* Father's Name */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  {t.formFatherName}
+                </label>
+                <input
+                  type="text"
+                  placeholder={t.formFatherNamePlh}
+                  value={form.fatherName}
+                  onChange={(e) => setForm({ ...form, fatherName: e.target.value })}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-[#071530]"
+                  required
+                />
+              </div>
+
               {/* Phone / WhatsApp */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 block">
@@ -150,7 +171,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 />
               </div>
 
-              {/* Email (Optional) */}
+              {/* Email */}
               <div className="space-y-1.5">
                 <label className="font-bold text-slate-700 block">
                   {t.formEmail}
@@ -161,6 +182,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-[#071530]"
+                  required
                 />
               </div>
 
@@ -194,6 +216,20 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 </select>
               </div>
 
+              {/* Inquiry Date */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  {t.formInquiryDate}
+                </label>
+                <input
+                  type="date"
+                  value={form.inquiryDate}
+                  onChange={(e) => setForm({ ...form, inquiryDate: e.target.value })}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-[#071530]"
+                  required
+                />
+              </div>
+
               {/* City / District */}
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="font-bold text-slate-700 block">
@@ -205,6 +241,22 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
                   className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-[#071530]"
+                  required
+                />
+              </div>
+
+              {/* Full Address */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="font-bold text-slate-700 block">
+                  {t.formAddress}
+                </label>
+                <input
+                  type="text"
+                  placeholder={t.formAddressPlh}
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-[#071530]"
+                  required
                 />
               </div>
 

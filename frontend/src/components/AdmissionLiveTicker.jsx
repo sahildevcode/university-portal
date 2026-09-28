@@ -6,34 +6,34 @@ export default function AdmissionLiveTicker({ onAction, lang = 'en' }) {
   const tickerItems = [
     {
       id: 1,
-      badge: lang === 'hi' ? 'प्रवेश प्रारंभ 2026-27' : 'Admissions 2026-27',
+      badge: lang === 'hi' ? 'पी.के.सी. एजुकेशन इंस्टीट्यूट' : 'PKC Education Institute',
       text: lang === 'hi' 
-        ? 'यूजीसी मान्यता प्राप्त विश्वविद्यालयों में B.Tech, MBA, BCA, B.Sc, DCA, PGDCA में सीधी प्रवेश सहायता उपलब्ध।' 
-        : 'Direct admissions open in B.Tech, MBA, BCA, B.Sc, DCA, PGDCA with recognized UGC Universities.',
+        ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट में BCA, MBA, BBA, B.Tech, DCA, PGDCA, B.Sc, B.Com कोर्सेज में प्रवेश प्रारंभ सत्र 2026-27।' 
+        : 'PKC Education Learning Institute & Consultancy: Admissions open for BCA, MBA, BBA, B.Tech, DCA, PGDCA, B.Sc, B.Com (Session 2026-27).',
       icon: '🎓'
     },
     {
       id: 2,
-      badge: lang === 'hi' ? '100% छात्रवृत्ति मार्गदर्शन' : '100% Scholarship Desk',
+      badge: lang === 'hi' ? 'कंप्यूटर डिप्लोमा कोर्सेज' : 'Computer Diploma Programs',
       text: lang === 'hi'
-        ? 'मध्य प्रदेश शासन MPTASS एवं राष्ट्रीय छात्रवृत्ति पोर्टल (NSP) हेतु निःशुल्क फॉर्म एवं परामर्श।'
-        : 'Free expert assistance for MPTASS & National Scholarship Portal (NSP) applicants.',
-      icon: '💰'
+        ? 'पी.के.सी. इंस्टीट्यूट छतरपुर - DCA, PGDCA एवं CPCT कंप्यूटर डिप्लोमा में डायरेक्ट एडमिशन एवं प्रैक्टिकल ट्रेनिंग।'
+        : 'PKC Education Learning Institute: Direct Admission & Practical Training in DCA, PGDCA & CPCT Diplomas.',
+      icon: '💻'
     },
     {
       id: 3,
-      badge: lang === 'hi' ? 'शासकीय नौकरियों हेतु मान्य' : 'Govt Job Approved',
+      badge: lang === 'hi' ? 'डिग्री एवं मास्टर प्रोग्राम्स' : 'Degree & Master Courses',
       text: lang === 'hi'
-        ? 'माखनलाल एवं सम्बद्ध विश्वविद्यालयों से DCA, PGDCA एवं CPCT सर्टिफिकेशन।'
-        : 'Govt. recruitment approved DCA, PGDCA & CPCT computer certifications.',
+        ? 'पी.के.सी. एजुकेशन इंस्टीट्यूट - B.Tech CSE, MBA, MCA, BCA, B.Sc, BA, B.Com एवं MA कोर्सेज उपलब्ध।'
+        : 'PKC Education Learning Institute: Enroll in UGC Recognized B.Tech, MBA, MCA, BCA, B.Sc, B.Com & MA Programs.',
       icon: '🏛️'
     },
     {
       id: 4,
-      badge: lang === 'hi' ? '18,500+ छात्र विश्वास' : '18,500+ Guided',
+      badge: lang === 'hi' ? 'प्रवेश परामर्श केंद्र' : 'Admission Counseling',
       text: lang === 'hi'
-        ? 'बुंदेलखंड एवं मध्य भारत का सबसे विश्वसनीय एवं पारदर्शी उच्च शिक्षा मार्गदर्शन केंद्र।'
-        : 'Bundelkhand & Central India’s premier university counseling network.',
+        ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी, छतरपुर (म.प्र.) - कॉलेज एवं यूनिवर्सिटी एडमिशन सहायता।'
+        : 'PKC Education Learning Institute & Consultancy, Chhatarpur (M.P.) - Authorized University Admission Center.',
       icon: '⭐'
     }
   ];

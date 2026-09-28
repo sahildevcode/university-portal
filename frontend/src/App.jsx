@@ -15,6 +15,7 @@ import AdminPortal from './pages/AdminPortal';
 import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
 import ScrollProgressTop from './components/ScrollProgressTop';
+import InquiryModal from './components/InquiryModal';
 
 // Helper to detect if running on dedicated admin domain
 const isAdminHost = () => {
@@ -60,6 +61,19 @@ export default function App() {
 
   // Animated Splash Screen state (Logo + Name animation on first load, skipped on admin host)
   const [showSplash, setShowSplash] = useState(() => !isAdminHost());
+
+  // Automatic Inquiry Pop-up Modal on Student Portal load with smooth fade-in delay
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+
+  useEffect(() => {
+    if (isAdminHost() || activeView !== 'public') return;
+    // Wait until splash completes if splash is active, else gentle 1000ms delay for smooth fade-in
+    const delay = showSplash ? 2600 : 1000;
+    const timer = setTimeout(() => {
+      setShowInquiryModal(true);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [showSplash, activeView]);
 
   // Navigation helper to sync URL and view state
   const navigateTo = (view, path) => {
@@ -456,6 +470,15 @@ export default function App() {
 
       {/* Floating Scroll To Top Indicator with Progress */}
       {activeView === 'public' && <ScrollProgressTop />}
+
+      {/* Automatic Admission Inquiry Pop-up Modal on Student Portal Load */}
+      {activeView === 'public' && (
+        <InquiryModal
+          isOpen={showInquiryModal}
+          onClose={() => setShowInquiryModal(false)}
+          lang={lang}
+        />
+      )}
 
       {/* Student Login / Sign Up Modal */}
       <StudentAuthModal

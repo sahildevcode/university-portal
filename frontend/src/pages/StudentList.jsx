@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Users, Search, Filter, Eye, Printer, CreditCard, Award, 
+  Users, Search, Filter, Eye, EyeOff, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
   ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
   PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle,
@@ -62,11 +62,101 @@ export default function StudentList({
     if (s.id && String(s.id).trim()) return String(s.id).trim();
     if (s.enrollmentNo && String(s.enrollmentNo).trim()) return String(s.enrollmentNo).trim();
     if (s.registrationNo && String(s.registrationNo).trim()) return String(s.registrationNo).trim();
-    return '';
+  };
+
+  // Helper to compute Year-Wise fee, scholarship, and received fee breakdown (1st, 2nd, 3rd, 4th Year)
+  const calculateStudentYearBreakdown = (item) => {
+    if (!item) return { feeY1: 0, schY1: 0, recY1: 0, feeY2: 0, schY2: 0, recY2: 0, feeY3: 0, schY3: 0, recY3: 0, feeY4: 0, schY4: 0, recY4: 0, totalFee: 0, totalSch: 0, totalPaid: 0, totalRem: 0 };
+    let feeY1 = 0, feeY2 = 0, feeY3 = 0, feeY4 = 0;
+    if (Array.isArray(item.academicFeeHistory) && item.academicFeeHistory.length > 0) {
+      item.academicFeeHistory.forEach(entry => {
+        const cls = (entry.currentClass || '').toUpperCase();
+        const amt = Number(entry.amount || entry.fee || 0);
+        if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+          feeY1 += amt;
+        } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+          feeY2 += amt;
+        } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+          feeY3 += amt;
+        } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+          feeY4 += amt;
+        } else {
+          feeY1 += amt;
+        }
+      });
+    } else {
+      feeY1 = Number(item.academicFee !== undefined && item.academicFee !== null ? item.academicFee : (item.studentFee || 0));
+      feeY2 = Number(item.academicFeeYear2 || item.feeYear2 || 0);
+      feeY3 = Number(item.academicFeeYear3 || item.feeYear3 || 0);
+      feeY4 = Number(item.academicFeeYear4 || item.feeYear4 || 0);
+    }
+
+    const schY1 = Number(item.scholarshipYear1 !== undefined && item.scholarshipYear1 !== null ? item.scholarshipYear1 : (!item.scholarshipYear2 ? (item.scholarshipAmount || 0) : 0));
+    const schY2 = Number(item.scholarshipYear2 || 0);
+    const schY3 = Number(item.scholarshipYear3 || 0);
+    const schY4 = Number(item.scholarshipYear4 || 0);
+
+    let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
+    const payList = Array.isArray(item.feeHistory) ? item.feeHistory : [];
+    if (payList.length > 0) {
+      payList.forEach(p => {
+        const cls = (p.currentClass || p.year || p.semester || '').toUpperCase();
+        const amt = Number(p.amountPaid || p.amount || 0);
+        if (cls.includes('YEAR1') || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+          recY1 += amt;
+        } else if (cls.includes('YEAR2') || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+          recY2 += amt;
+        } else if (cls.includes('YEAR3') || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+          recY3 += amt;
+        } else if (cls.includes('YEAR4') || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+          recY4 += amt;
+        } else {
+          recY1 += amt;
+        }
+      });
+    }
+    if (item.paidYear1 !== undefined) recY1 = Math.max(recY1, Number(item.paidYear1 || 0));
+    if (item.paidYear2 !== undefined) recY2 = Math.max(recY2, Number(item.paidYear2 || 0));
+    if (item.paidYear3 !== undefined) recY3 = Math.max(recY3, Number(item.paidYear3 || 0));
+    if (item.paidYear4 !== undefined) recY4 = Math.max(recY4, Number(item.paidYear4 || 0));
+    if (item.totalPaid && (recY1 + recY2 + recY3 + recY4 < Number(item.totalPaid))) {
+      recY1 += (Number(item.totalPaid) - (recY1 + recY2 + recY3 + recY4));
+    }
+
+    const totalFee = (feeY1 + feeY2 + feeY3 + feeY4) + (schY1 + schY2 + schY3 + schY4);
+    const totalSch = schY1 + schY2 + schY3 + schY4;
+    const totalPaid = Number(item.totalPaid || (recY1 + recY2 + recY3 + recY4) || 0);
+    const totalRem = Math.max(0, totalFee - totalPaid);
+
+    return {
+      feeY1, schY1, recY1,
+      feeY2, schY2, recY2,
+      feeY3, schY3, recY3,
+      feeY4, schY4, recY4,
+      totalFee, totalSch, totalPaid, totalRem
+    };
   };
 
   // Table Column Display Mode: 'all' (39+ fields horizontal scroll) or 'compact'
   const [tableColumnMode, setTableColumnMode] = useState('all');
+
+  // Toggle for Year-Wise Fee Breakdown Columns (1st, 2nd, 3rd & 4th Year - All 12 Columns)
+  const [showYearWiseFees, setShowYearWiseFees] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkc_show_year_wise_fees');
+      return saved !== null ? saved === 'true' : false; // Default to FALSE: "sab hide karna hai"
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleYearWiseFees = () => {
+    setShowYearWiseFees(prev => {
+      const next = !prev;
+      try { localStorage.setItem('pkc_show_year_wise_fees', String(next)); } catch (e) {}
+      return next;
+    });
+  };
 
   // Unified "Paid Student Fee" & Fee Desk Modal State (Matching User Ref Images)
   const [feeDeskStudent, setFeeDeskStudent] = useState(null);
@@ -1640,6 +1730,32 @@ export default function StudentList({
               <span>📑 Compact View</span>
             </button>
           </div>
+
+          {/* Toggle for All Year-Wise Fee Columns (1st, 2nd, 3rd, 4th Year - All 12 Columns) */}
+          {tableColumnMode === 'all' && (
+            <button
+              type="button"
+              onClick={toggleYearWiseFees}
+              className={`ml-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                showYearWiseFees
+                  ? 'bg-amber-100 text-amber-950 border-amber-400 shadow-xs'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-300'
+              }`}
+              title="Toggle visibility of All Year-Wise Fee Columns (1st, 2nd, 3rd & 4th Year)"
+            >
+              {showYearWiseFees ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5 text-amber-700" />
+                  <span>✕ Hide All Year Fees</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>👁️ Show All Year Fees</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -1724,16 +1840,65 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[180px]">Address</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Reference</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">1st_Yr_Schol</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">2nd_Yr_Schol</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">3rd_Yr_Schol</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">4th_Yr_Schol</th>
+                      {/* Remark with Toggle after it */}
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[210px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>Remark</span>
+                          <button
+                            type="button"
+                            onClick={toggleYearWiseFees}
+                            className={`px-2 py-0.5 rounded text-[10px] font-black cursor-pointer transition-all border flex items-center gap-1 shadow-sm ${
+                              showYearWiseFees 
+                                ? 'bg-rose-500/25 text-rose-300 border-rose-400/60 hover:bg-rose-500/40' 
+                                : 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 hover:bg-emerald-500/40'
+                            }`}
+                            title={showYearWiseFees ? "Click to Hide All Year Fee Columns" : "Click to Show All Year Fee Columns"}
+                          >
+                            {showYearWiseFees ? (
+                              <>
+                                <EyeOff className="w-3 h-3 text-rose-300" />
+                                <span>✕ Hide Fees</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3 h-3 text-emerald-300" />
+                                <span>👁️ Show Fees</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </th>
+
+                      {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                      {showYearWiseFees && (
+                        <>
+                          {/* 1st Year Columns */}
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">1st_Yr_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">1st_Yr_Schol</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">1st_Yr_Rec_Fee</th>
+
+                          {/* 2nd Year Columns */}
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">2nd_Yr_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">2nd_Yr_Schol</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">2nd_Yr_Rec_Fee</th>
+
+                          {/* 3rd Year Columns */}
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">3rd_Yr_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">3rd_Yr_Schol</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">3rd_Yr_Rec_Fee</th>
+
+                          {/* 4th Year Columns */}
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">4th_Yr_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">4th_Yr_Schol</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">4th_Yr_Rec_Fee</th>
+                        </>
+                      )}
+
+                      {/* Totals */}
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-300">Total_Scholarship</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Receive_Fee</th>
-                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-sky-200">Total_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-300">Total_Receive_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-300">Remaining_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
@@ -1805,15 +1970,16 @@ export default function StudentList({
                         std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
                       }
 
+                      const yd = calculateStudentYearBreakdown(std);
                       const acadFee = Number(std.academicFee !== undefined && std.academicFee !== null ? std.academicFee : (std.studentFee !== undefined && std.studentFee !== null ? std.studentFee : 0));
-                      const y1 = Number(std.scholarshipYear1 !== undefined && std.scholarshipYear1 !== null ? std.scholarshipYear1 : (!std.scholarshipYear2 ? (std.scholarshipAmount || 0) : 0));
-                      const y2 = Number(std.scholarshipYear2 || 0);
-                      const y3 = Number(std.scholarshipYear3 || 0);
-                      const y4 = Number(std.scholarshipYear4 || 0);
-                      const sch = Number(std.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-                      const tot = acadFee + sch;
-                      const paid = Number(std.totalPaid || 0);
-                      const rem = Math.max(0, tot - paid);
+                      const y1 = yd.schY1;
+                      const y2 = yd.schY2;
+                      const y3 = yd.schY3;
+                      const y4 = yd.schY4;
+                      const sch = yd.totalSch;
+                      const tot = yd.totalFee;
+                      const paid = yd.totalPaid;
+                      const rem = yd.totalRem;
 
                       return (
                         <React.Fragment key={std.id}>
@@ -1991,38 +2157,67 @@ export default function StudentList({
                               </td>
                             )}
 
-                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">
-                              {acadFee > 0 ? `${acadFee}/-` : '0/-'}
-                            </td>
-
-                            {tableColumnMode === 'all' && (
+                            {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                            {showYearWiseFees && (
                               <>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
-                                  {y1 > 0 ? `${y1}/-` : '-'}
+                                {/* 1st Year */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
+                                  {yd.feeY1 > 0 ? `${yd.feeY1}/-` : '0/-'}
                                 </td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
-                                  {y2 > 0 ? `${y2}/-` : '-'}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/20">
+                                  {yd.schY1 > 0 ? `${yd.schY1}/-` : '-'}
                                 </td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
-                                  {y3 > 0 ? `${y3}/-` : '-'}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
+                                  {yd.recY1 > 0 ? `${yd.recY1}/-` : '-'}
                                 </td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">
-                                  {y4 > 0 ? `${y4}/-` : '-'}
+
+                                {/* 2nd Year */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
+                                  {yd.feeY2 > 0 ? `${yd.feeY2}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/20">
+                                  {yd.schY2 > 0 ? `${yd.schY2}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
+                                  {yd.recY2 > 0 ? `${yd.recY2}/-` : '-'}
+                                </td>
+
+                                {/* 3rd Year */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
+                                  {yd.feeY3 > 0 ? `${yd.feeY3}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/20">
+                                  {yd.schY3 > 0 ? `${yd.schY3}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
+                                  {yd.recY3 > 0 ? `${yd.recY3}/-` : '-'}
+                                </td>
+
+                                {/* 4th Year */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
+                                  {yd.feeY4 > 0 ? `${yd.feeY4}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/20">
+                                  {yd.schY4 > 0 ? `${yd.schY4}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
+                                  {yd.recY4 > 0 ? `${yd.recY4}/-` : '-'}
                                 </td>
                               </>
                             )}
 
+                            {/* Totals */}
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">
-                              {sch > 0 ? `${sch}/-` : '0/-'}
+                              {yd.totalSch > 0 ? `${yd.totalSch}/-` : '0/-'}
                             </td>
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900 bg-slate-50/50">
-                              {tot > 0 ? `${tot}/-` : '0/-'}
+                              {yd.totalFee > 0 ? `${yd.totalFee}/-` : '0/-'}
                             </td>
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
-                              {paid > 0 ? `${paid}/-` : '0/-'}
+                              {yd.totalPaid > 0 ? `${yd.totalPaid}/-` : '0/-'}
                             </td>
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
-                              {rem > 0 ? `${rem}/-` : '0/-'}
+                              {yd.totalRem > 0 ? `${yd.totalRem}/-` : '0/-'}
                             </td>
                             <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                               <button
@@ -2098,15 +2293,16 @@ export default function StudentList({
 
                           {/* Connected Dual Program Secondary Row */}
                           {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
+                            const lyd = calculateStudentYearBreakdown(linked);
                             const lAcadFee = Number(linked.academicFee !== undefined && linked.academicFee !== null ? linked.academicFee : (linked.studentFee !== undefined && linked.studentFee !== null ? linked.studentFee : 0));
-                            const ly1 = Number(linked.scholarshipYear1 !== undefined && linked.scholarshipYear1 !== null ? linked.scholarshipYear1 : (!linked.scholarshipYear2 ? (linked.scholarshipAmount || 0) : 0));
-                            const ly2 = Number(linked.scholarshipYear2 || 0);
-                            const ly3 = Number(linked.scholarshipYear3 || 0);
-                            const ly4 = Number(linked.scholarshipYear4 || 0);
-                            const lSch = Number(linked.scholarshipAmount || (ly1 + ly2 + ly3 + ly4) || 0);
-                            const lTot = lAcadFee + lSch;
-                            const lPaid = Number(linked.totalPaid || 0);
-                            const lRem = Math.max(0, lTot - lPaid);
+                            const ly1 = lyd.schY1;
+                            const ly2 = lyd.schY2;
+                            const ly3 = lyd.schY3;
+                            const ly4 = lyd.schY4;
+                            const lSch = lyd.totalSch;
+                            const lTot = lyd.totalFee;
+                            const lPaid = lyd.totalPaid;
+                            const lRem = lyd.totalRem;
                             return (
                               <tr key={linked.id || `linked-${lIdx}`} className="group bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
                                 <td className="sticky left-0 z-20 bg-amber-50 group-hover:bg-amber-100 py-2.5 px-2 text-center font-bold text-amber-700 border-r border-slate-200 whitespace-nowrap min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">↳</td>
@@ -2184,21 +2380,68 @@ export default function StudentList({
                                   <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
                                 )}
 
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900">{lAcadFee > 0 ? `${lAcadFee}/-` : '0/-'}</td>
-
-                                {tableColumnMode === 'all' && (
+                                {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                                {showYearWiseFees && (
                                   <>
-                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly1 > 0 ? `${ly1}/-` : '-'}</td>
-                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly2 > 0 ? `${ly2}/-` : '-'}</td>
-                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly3 > 0 ? `${ly3}/-` : '-'}</td>
-                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700">{ly4 > 0 ? `${ly4}/-` : '-'}</td>
+                                    {/* 1st Year */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
+                                      {lyd.feeY1 > 0 ? `${lyd.feeY1}/-` : '0/-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/30">
+                                      {lyd.schY1 > 0 ? `${lyd.schY1}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
+                                      {lyd.recY1 > 0 ? `${lyd.recY1}/-` : '-'}
+                                    </td>
+
+                                    {/* 2nd Year */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
+                                      {lyd.feeY2 > 0 ? `${lyd.feeY2}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/30">
+                                      {lyd.schY2 > 0 ? `${lyd.schY2}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
+                                      {lyd.recY2 > 0 ? `${lyd.recY2}/-` : '-'}
+                                    </td>
+
+                                    {/* 3rd Year */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
+                                      {lyd.feeY3 > 0 ? `${lyd.feeY3}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/30">
+                                      {lyd.schY3 > 0 ? `${lyd.schY3}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
+                                      {lyd.recY3 > 0 ? `${lyd.recY3}/-` : '-'}
+                                    </td>
+
+                                    {/* 4th Year */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
+                                      {lyd.feeY4 > 0 ? `${lyd.feeY4}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-700 bg-purple-50/30">
+                                      {lyd.schY4 > 0 ? `${lyd.schY4}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
+                                      {lyd.recY4 > 0 ? `${lyd.recY4}/-` : '-'}
+                                    </td>
                                   </>
                                 )}
 
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">{lSch > 0 ? `${lSch}/-` : '0/-'}</td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">{lTot > 0 ? `${lTot}/-` : '0/-'}</td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">{lPaid > 0 ? `${lPaid}/-` : '0/-'}</td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">{lRem > 0 ? `${lRem}/-` : '0/-'}</td>
+                                {/* Totals */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-purple-800">
+                                  {lyd.totalSch > 0 ? `${lyd.totalSch}/-` : '0/-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">
+                                  {lyd.totalFee > 0 ? `${lyd.totalFee}/-` : '0/-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                  {lyd.totalPaid > 0 ? `${lyd.totalPaid}/-` : '0/-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                  {lyd.totalRem > 0 ? `${lyd.totalRem}/-` : '0/-'}
+                                </td>
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                   <button
                                     type="button"

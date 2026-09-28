@@ -540,10 +540,10 @@ export default function AdminPortal({
       )}
 
       {/* ========================================================================= */}
-      {/* 1. CENTRAL LAUNCHER HUB (~80% WIDTH, CENTERED) - SHOWN ON ADMIN HOME */}
+      {/* 1. CENTRAL LAUNCHER HUB (90% WIDTH, CENTERED) - SHOWN ON ADMIN HOME */}
       {/* ========================================================================= */}
       {activeTab === 'hub' ? (
-        <div className="w-full max-w-4xl mx-auto py-2 sm:py-6 animate-fadeIn">
+        <div className="w-full max-w-[90%] mx-auto py-2 sm:py-6 animate-fadeIn">
           <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl text-white space-y-6">
             
             {/* Hub Header matching screenshot media_1789402789467.png */}

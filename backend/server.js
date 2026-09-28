@@ -4219,17 +4219,20 @@ app.get('/api/inquiries', (req, res) => {
 
 app.post('/api/inquiries', (req, res) => {
   const db = readDB();
-  const { name, phone, email, course, city, message } = req.body;
+  const { name, fatherName, phone, email, course, inquiryDate, city, address, message } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ success: false, message: 'Student Name and Phone Number are required.' });
   }
   const newInquiry = {
     id: 'inq-' + Date.now(),
     name: name.trim(),
+    fatherName: (fatherName || '').trim(),
     phone: phone.trim(),
     email: (email || '').trim(),
     course: course || 'General Inquiry',
+    inquiryDate: inquiryDate || new Date().toISOString().split('T')[0],
     city: (city || '').trim(),
+    address: (address || '').trim(),
     message: (message || '').trim(),
     status: 'New',
     createdAt: new Date().toISOString()
