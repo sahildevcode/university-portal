@@ -2055,7 +2055,7 @@ export default function StudentList({
                               </button>
                             </td>
                             <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1.5">
+                              <div className="flex items-center justify-center gap-1">
                                 <button
                                   type="button"
                                   onClick={() => handleOpenProfile(std)}
@@ -2064,6 +2064,16 @@ export default function StudentList({
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                 </button>
+                                {!isRecordsDesk && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditModal(std)}
+                                    className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
+                                    title="Edit Details"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => setPrintSlipStudent(std)}
@@ -2072,6 +2082,16 @@ export default function StudentList({
                                 >
                                   <Printer className="w-3.5 h-3.5" />
                                 </button>
+                                {!isRecordsDesk && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteStudent(std)}
+                                    className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                    title="Delete Student"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -2207,7 +2227,7 @@ export default function StudentList({
                                   </button>
                                 </td>
                                 <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center gap-1.5">
+                                  <div className="flex items-center justify-center gap-1">
                                     <button
                                       type="button"
                                       onClick={() => handleOpenProfile(linked)}
@@ -2216,6 +2236,16 @@ export default function StudentList({
                                     >
                                       <Eye className="w-3.5 h-3.5" />
                                     </button>
+                                    {!isRecordsDesk && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditModal(linked)}
+                                        className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
+                                        title="Edit Details"
+                                      >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => setPrintSlipStudent(linked)}
@@ -2224,6 +2254,16 @@ export default function StudentList({
                                     >
                                       <Printer className="w-3.5 h-3.5" />
                                     </button>
+                                    {!isRecordsDesk && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteStudent(linked)}
+                                        className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                        title="Delete Enrollment"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -3845,6 +3885,17 @@ export default function StudentList({
               </div>
 
               <div className="flex items-center gap-2">
+                {!isRecordsDesk && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(selectedStudent)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    title="Fully Edit Student & Enrollment Record"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit Student</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setSelectedStudent(null)}
                   className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"
