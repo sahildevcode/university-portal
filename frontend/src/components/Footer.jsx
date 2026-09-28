@@ -97,7 +97,15 @@ export default function Footer({ setActiveTab }) {
             <div className="space-y-2.5 text-slate-400">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
-                <span>Head Office: Near Bus Stand, Chhatarpur (M.P.) - 471001</span>
+                <a 
+                  href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-amber-400 hover:underline transition-colors leading-relaxed"
+                  title="Open Campus Location on Google Maps"
+                >
+                  Head Office: Near Bus Stand, Chhatarpur (M.P.) - 471001 <span className="text-[10px] text-amber-400 font-bold ml-1">(View on Map ↗)</span>
+                </a>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#C59B27] shrink-0" />

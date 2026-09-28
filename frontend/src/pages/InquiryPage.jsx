@@ -263,7 +263,15 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 </div>
                 <div>
                   <strong className="block text-white font-semibold">Campus Address:</strong>
-                  <span className="text-slate-300">{t.officeAddress}</span>
+                  <a 
+                    href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-300 hover:text-amber-400 hover:underline transition-colors block"
+                    title="Open in Google Maps"
+                  >
+                    {t.officeAddress} <span className="text-[10px] text-amber-400 font-bold ml-1">(View on Map ↗)</span>
+                  </a>
                 </div>
               </div>
 

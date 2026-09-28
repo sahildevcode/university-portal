@@ -1236,7 +1236,7 @@ export default function MainUniversityHome({
                 PKC Education Learning Institute &amp; Consultancy
               </h3>
               <p className="text-xs sm:text-sm text-slate-300">
-                Head Office: Near Bus Stand, Chhatarpur (M.P.) - 471001 • Helpline: <strong className="text-white">+91 7000212637</strong>
+                Head Office: <a href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8" target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:text-white underline font-semibold transition-colors" title="Open in Google Maps">Near Bus Stand, Chhatarpur (M.P.) - 471001 ↗</a> • Helpline: <a href="tel:+917000212637" className="text-white hover:text-amber-300 font-bold transition-colors">+91 7000212637</a>
               </p>
             </div>
 
