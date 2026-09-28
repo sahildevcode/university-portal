@@ -330,13 +330,99 @@ export default function StudentList({
     return [{ id: `col-${filterUniversity}`, name: filterUniversity, shortName: filterUniversity, code: '' }];
   })();
 
-  // Dynamic list of all courses from API/Catalog + student enrolled courses + linked courses
-  const allAvailableCourses = Array.from(new Set([
-    ...allCoursesList.map(c => c.name),
-    ...(Array.isArray(courses) ? courses.map(c => c.name) : []),
-    ...students.map(s => s.courseName || s.course).filter(Boolean),
-    ...students.flatMap(s => (s.linkedCourses || []).map(l => l.courseName || l.course)).filter(Boolean)
-  ])).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  // Canonical course normalizer to merge duplicates (e.g. B.com, B.Com, B.COM, B.Com. -> B.Com)
+  const normalizeCourseName = (name) => {
+    if (!name || typeof name !== 'string') return '';
+    const raw = name.trim();
+    const upper = raw.toUpperCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+    
+    if (upper === 'BA' || upper === 'B A') return 'BA';
+    if (upper === 'MA' || upper === 'M A') return 'MA';
+    if (upper === 'BCOM' || upper === 'B COM') return 'B.Com';
+    if (upper === 'MCOM' || upper === 'M COM') return 'M.Com';
+    if (upper === 'BSC' || upper === 'B SC') return 'B.Sc';
+    if (upper === 'MSC' || upper === 'M SC') return 'M.Sc';
+    if (upper === 'BCA' || upper === 'B C A') return 'BCA';
+    if (upper === 'MCA' || upper === 'M C A') return 'MCA';
+    if (upper === 'BBA' || upper === 'B B A') return 'BBA';
+    if (upper === 'MBA' || upper === 'M B A') return 'MBA';
+    if (upper === 'BED' || upper === 'B ED') return 'B.Ed';
+    if (upper === 'BELED' || upper === 'B EL ED') return 'B.El.Ed';
+    if (upper === 'BPED' || upper === 'B P ED') return 'B.P.Ed';
+    if (upper === 'BLIB' || upper === 'B LIB') return 'B.Lib';
+    if (upper === 'MLIB' || upper === 'M LIB') return 'M.Lib';
+    if (upper === 'DCA' || upper === 'D C A') return 'DCA';
+    if (upper === 'PGDCA' || upper === 'P G D C A') return 'PGDCA';
+    if (upper === 'BTECH' || upper === 'B TECH') return 'B.Tech';
+    if (upper === 'MTECH' || upper === 'M TECH') return 'M.Tech';
+    if (upper === 'LLM' || upper === 'L L M') return 'LLM';
+    if (upper === 'LLB' || upper === 'L L B') return 'LLB';
+    if (upper === 'BALLB' || upper === 'B A LLB') return 'B.A.LLB';
+    if (upper === 'MSW' || upper === 'M S W') return 'MSW';
+    if (upper === 'BSW' || upper === 'B S W') return 'BSW';
+    if (upper === 'MSC MATH' || upper === 'M SC MATH' || upper === 'MSC (MATHEMATICS)') return 'M.Sc.(Mathematics)';
+    
+    return raw.replace(/\.+$/, '');
+  };
+
+  // Dynamic list of all courses without duplicates (deduplicated across Universities, Catalog, Colleges & Students)
+  const allAvailableCourses = (() => {
+    let sourceCourses = [];
+    
+    // If a university is selected, find courses from that university's colleges and students
+    if (filterUniversity !== 'all') {
+      const targetUniv = universitiesList.find(u => u.name === filterUniversity);
+      const targetId = targetUniv?.id;
+      const tu = filterUniversity.toLowerCase();
+      
+      const univColleges = collegesList.filter(c => {
+        if (targetId && c.universityId === targetId) return true;
+        const cu = (c.universityName || '').toLowerCase();
+        return cu === tu || (cu && tu && (cu.includes(tu) || tu.includes(cu)));
+      });
+      
+      univColleges.forEach(col => {
+        (col.courses || []).forEach(crs => {
+          const cName = crs.name || crs.courseName || crs.program || crs.degree;
+          if (cName) sourceCourses.push(cName);
+        });
+      });
+
+      // Also include courses from students under this university
+      students.forEach(s => {
+        const su = (s.universityName || s.collegeName || '').toLowerCase();
+        if (su.includes(tu) || tu.includes(su)) {
+          if (s.courseName) sourceCourses.push(s.courseName);
+          if (s.course) sourceCourses.push(s.course);
+          (s.linkedCourses || []).forEach(l => {
+            if (l.courseName) sourceCourses.push(l.courseName);
+          });
+        }
+      });
+    }
+
+    // If no university is selected, or if the selected university has no mapped courses yet, include all sources
+    if (sourceCourses.length === 0) {
+      sourceCourses = [
+        ...allCoursesList.map(c => c.name),
+        ...(Array.isArray(courses) ? courses.map(c => c.name) : []),
+        ...collegesList.flatMap(c => (c.courses || []).map(crs => crs.name || crs.courseName || crs.program || crs.degree)),
+        ...students.map(s => s.courseName || s.course),
+        ...students.flatMap(s => (s.linkedCourses || []).map(l => l.courseName || l.course))
+      ];
+    }
+
+    // Deduplicate into canonical clean course names
+    const uniqueMap = new Map();
+    sourceCourses.filter(Boolean).forEach(raw => {
+      const canonical = normalizeCourseName(raw);
+      if (canonical && !uniqueMap.has(canonical.toLowerCase())) {
+        uniqueMap.set(canonical.toLowerCase(), canonical);
+      }
+    });
+
+    return Array.from(uniqueMap.values()).sort((a, b) => a.localeCompare(b));
+  })();
 
   const handleFilterCourseChange = (newCourse) => {
     setFilterCourse(newCourse);
@@ -349,6 +435,8 @@ export default function StudentList({
     setAppliedUniversity(newUniv);
     setFilterCollege('all');
     setAppliedCollege('all');
+    setFilterCourse('all');
+    setAppliedCourse('all');
     setCurrentPage(1);
   };
 
@@ -1426,13 +1514,16 @@ export default function StudentList({
     }
 
     if (appliedCourse !== 'all') {
-      const targetCrs = appliedCourse.toLowerCase().trim();
-      const sc = (s.courseName || s.course || '').toLowerCase().trim();
-      const directMatch = sc === targetCrs || sc.includes(targetCrs) || targetCrs.includes(sc);
+      const targetCanonical = normalizeCourseName(appliedCourse).toLowerCase();
+      
+      const sNorm = normalizeCourseName(s.courseName || s.course).toLowerCase();
+      const directMatch = sNorm === targetCanonical || sNorm.includes(targetCanonical) || targetCanonical.includes(sNorm);
+      
       const linkedCrsMatch = s.linkedCourses && s.linkedCourses.some(lc => {
-        const lsc = (lc.courseName || lc.course || '').toLowerCase().trim();
-        return lsc === targetCrs || lsc.includes(targetCrs) || targetCrs.includes(lsc);
+        const lcNorm = normalizeCourseName(lc.courseName || lc.course).toLowerCase();
+        return lcNorm === targetCanonical || lcNorm.includes(targetCanonical) || targetCanonical.includes(lcNorm);
       });
+      
       if (!directMatch && !linkedCrsMatch) return false;
     }
 
