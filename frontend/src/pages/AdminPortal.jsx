@@ -4,7 +4,7 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX, GraduationCap, FolderLock, TrendingUp, Briefcase
+  UserX, GraduationCap, FolderLock, TrendingUp, Briefcase, HelpCircle, Camera
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -12,12 +12,12 @@ import StudentList from './StudentList';
 import StudentRegistration from './StudentRegistration';
 import StudentDocumentsTracker from './StudentDocumentsTracker';
 import WebsiteCmsManager from './WebsiteCmsManager';
+import StudentInquirySection from './StudentInquirySection';
 import UniversityPaidManager from './UniversityPaidManager';
 import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import SavePersonalDocuments from './SavePersonalDocuments';
 import PromoteStudentsManager from './PromoteStudentsManager';
 import VocationalCoursesManager from './VocationalCoursesManager';
-import JobApplicationsManager from './JobApplicationsManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -66,7 +66,10 @@ export default function AdminPortal({
       if (p.includes('university-paid') || search.includes('university-paid')) {
         return 'university-paid';
       }
-      if (p.includes('cms') || search.includes('cms')) {
+      if (p.includes('inquiries') || p.includes('inquiry') || search.includes('inquiries') || search.includes('inquiry')) {
+        return 'inquiries';
+      }
+      if (p.includes('update-images') || p.includes('cms') || search.includes('cms')) {
         return 'cms';
       }
       if (p.includes('staff') || search.includes('staff')) {
@@ -397,13 +400,23 @@ export default function AdminPortal({
     },
     { 
       id: 'cms', 
-      label: 'Website CMS & Inquiries', 
-      fullName: 'Website CMS & Inquiries Manager',
-      sub: 'Main website content, banners & student inquiries',
-      shortDesc: 'Front Website Banners & Student Inquiries',
-      icon: Globe, 
+      label: 'Update Images Student Portal', 
+      fullName: 'Update Images - Student Portal Manager',
+      sub: 'Update images, photos, banners, courses and text on student portal',
+      shortDesc: 'Photos, Banners & Website Content',
+      icon: Camera, 
       color: 'text-sky-600',
-      badge: 'CMS'
+      badge: 'Update Images'
+    },
+    { 
+      id: 'inquiries', 
+      label: 'Student Inquiry Section', 
+      fullName: 'Student Inquiry & Recruitment Section',
+      sub: 'Student admission inquiries, leads, follow-ups and candidate resumes',
+      shortDesc: 'Student Inquiries, Leads & Resumes',
+      icon: HelpCircle, 
+      color: 'text-rose-600',
+      badge: 'Inquiries & Resumes'
     },
     { 
       id: 'documents', 
@@ -444,16 +457,6 @@ export default function AdminPortal({
       icon: Briefcase, 
       color: 'text-amber-500',
       badge: 'Vocational'
-    },
-    { 
-      id: 'recruitment', 
-      label: 'Job Applications & Resumes', 
-      fullName: 'Recruitment & Job Applications Desk',
-      sub: 'View candidate job applications, details & download uploaded resumes',
-      shortDesc: 'Recruitment Desk & Candidate Resumes',
-      icon: Briefcase, 
-      color: 'text-[#C59B27]',
-      badge: 'Resumes & HR'
     }
   ];
 
@@ -1025,13 +1028,21 @@ export default function AdminPortal({
         <StudentDocumentsTracker isAdmin={true} courses={localCourses} lang={lang} toggleLang={toggleLang} />
       )}
 
-      {/* TAB 6: WEBSITE CMS & INQUIRIES */}
+      {/* TAB: UPDATE IMAGES STUDENT PORTAL */}
       {activeTab === 'cms' && (
         <WebsiteCmsManager 
           lang={lang} 
           toggleLang={toggleLang} 
           courses={localCourses} 
           onRefreshCourses={onRefreshCourses} 
+        />
+      )}
+
+      {/* TAB: STUDENT INQUIRY SECTION (INQUIRIES & RESUMES) */}
+      {activeTab === 'inquiries' && (
+        <StudentInquirySection 
+          lang={lang} 
+          toggleLang={toggleLang} 
         />
       )}
 
@@ -1067,10 +1078,6 @@ export default function AdminPortal({
         />
       )}
 
-      {/* TAB 13: RECRUITMENT & JOB APPLICATIONS DESK */}
-      {activeTab === 'recruitment' && (
-        <JobApplicationsManager lang={lang} />
-      )}
 
       </main>
       </>

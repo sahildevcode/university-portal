@@ -36,7 +36,6 @@ import {
   Check
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import JobApplicationsManager from './JobApplicationsManager';
 
 // Reusable Direct Image File Upload Component (NO URL typing needed!)
 function ImageUploadField({ label, value, onChange, placeholder = "Click to upload image file from device" }) {
@@ -187,10 +186,7 @@ export default function WebsiteCmsManager({
   });
   const [savingAbout, setSavingAbout] = useState(false);
 
-  // 5. INQUIRIES STATE
-  const [inquiries, setInquiries] = useState([]);
-
-  // 6. COURSES CMS STATE
+  // 4. COURSES CMS STATE
   const [courses, setCourses] = useState(propCourses || []);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
@@ -233,10 +229,6 @@ export default function WebsiteCmsManager({
       const abtRes = await fetch('/api/about');
       const abtData = await abtRes.json();
       if (abtData.success && abtData.about) setAboutForm(abtData.about);
-
-      const inqRes = await fetch('/api/inquiries');
-      const inqData = await inqRes.json();
-      if (inqData.success) setInquiries(inqData.inquiries || []);
 
       const crsRes = await fetch('/api/courses');
       const crsData = await crsRes.json();
@@ -428,33 +420,6 @@ export default function WebsiteCmsManager({
     }
   };
 
-  // Inquiry Status Handler
-  const handleUpdateInquiryStatus = async (id, newStatus) => {
-    try {
-      await fetch(`/api/inquiries/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-      setSuccessMsg(`Inquiry marked as ${newStatus}`);
-      loadData();
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err) {
-      setErrorMsg(err.message);
-    }
-  };
-
-  const handleDeleteInquiry = async (id) => {
-    if (!window.confirm('Delete this inquiry record?')) return;
-    try {
-      await fetch(`/api/inquiries/${id}`, { method: 'DELETE' });
-      setSuccessMsg('Inquiry deleted.');
-      loadData();
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err) {
-      setErrorMsg(err.message);
-    }
-  };
 
   // Testimonial Handlers
   const handleOpenAddTst = () => {
@@ -568,13 +533,13 @@ export default function WebsiteCmsManager({
             </div>
             <div>
               <span className="text-[11px] font-black uppercase tracking-widest text-[#C59B27] bg-[#C59B27]/15 px-3 py-1 rounded-full border border-[#C59B27]/30">
-                ULTIMATE PUBLIC WEBSITE CONTENT SUITE
+                DIRECT PHOTO &amp; TEXT CMS
               </span>
               <h1 className="text-xl sm:text-2xl font-black mt-1 text-white">
-                Website CMS &amp; Section Manager
+                Update Images - Student Portal
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                Direct image upload support enabled everywhere! Full power to edit headlines, uploaded photos, courses &amp; inquiries.
+                Direct image upload &amp; live text editor for student website (Home, About, Courses, Gallery &amp; Banners).
               </p>
             </div>
           </div>
@@ -588,16 +553,16 @@ export default function WebsiteCmsManager({
               <span>{isHindi ? 'English' : 'हिन्दी'}</span>
             </button>
             <div className="bg-[#C59B27] text-slate-950 px-4 py-2 rounded-2xl shadow-md text-right shrink-0">
-              <span className="text-[10px] font-black uppercase block text-slate-900">NEW LEADS</span>
+              <span className="text-[10px] font-black uppercase block text-slate-900">CMS SECTIONS</span>
               <span className="text-lg font-black text-slate-950">
-                {inquiries.filter(i => i.status === 'New').length} Pending
+                5 Active
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sub-Tabs Corresponding to Website Navigation */}
+      {/* Sub-Tabs Corresponding to Website Navigation (Images & Content Only) */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-2 text-xs font-bold">
         <button
           onClick={() => { setActiveSubTab('home'); setErrorMsg(null); setSuccessMsg(null); }}
@@ -636,30 +601,6 @@ export default function WebsiteCmsManager({
         </button>
 
         <button
-          onClick={() => { setActiveSubTab('inquiries'); setErrorMsg(null); setSuccessMsg(null); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
-            activeSubTab === 'inquiries'
-              ? 'bg-[#071530] text-[#C59B27] shadow-md font-black'
-              : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <HelpCircle className="w-4 h-4 text-purple-500" />
-          <span>📩 4. Student Inquiries ({inquiries.length})</span>
-        </button>
-
-        <button
-          onClick={() => { setActiveSubTab('jobs'); setErrorMsg(null); setSuccessMsg(null); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
-            activeSubTab === 'jobs'
-              ? 'bg-[#071530] text-[#C59B27] shadow-md font-black'
-              : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Briefcase className="w-4 h-4 text-indigo-500" />
-          <span>💼 5. Recruitment &amp; Resumes</span>
-        </button>
-
-        <button
           onClick={() => { setActiveSubTab('events_gallery'); setErrorMsg(null); setSuccessMsg(null); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
             activeSubTab === 'events_gallery'
@@ -668,7 +609,7 @@ export default function WebsiteCmsManager({
           }`}
         >
           <Camera className="w-4 h-4 text-rose-500" />
-          <span>📸 6. Campus Gallery ({eventPhotos.length})</span>
+          <span>📸 4. Campus Gallery ({eventPhotos.length})</span>
         </button>
 
         <button
@@ -680,7 +621,7 @@ export default function WebsiteCmsManager({
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-500" />
-          <span>🌟 7. Testimonials &amp; Success Stories ({testimonials.length})</span>
+          <span>🌟 5. Testimonials &amp; Success Stories ({testimonials.length})</span>
         </button>
       </div>
 
@@ -1038,106 +979,7 @@ export default function WebsiteCmsManager({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: 📩 STUDENT ADMISSION INQUIRIES DESK */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'inquiries' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-xl font-bold font-serif-academic text-[#071530]">Student Admission Inquiries ({inquiries.length})</h2>
-              <p className="text-xs text-slate-500">View leads, candidate phone numbers &amp; course preferences.</p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#071530] text-[#C59B27] font-black uppercase text-[10.5px] tracking-wider">
-                  <th className="p-4">Inquiry Date</th>
-                  <th className="p-4">Student &amp; Father Name</th>
-                  <th className="p-4">Contact Details</th>
-                  <th className="p-4">Course Interested</th>
-                  <th className="p-4">City &amp; Address</th>
-                  <th className="p-4">Message / Query</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {inquiries.map(inq => (
-                  <tr key={inq.id} className="hover:bg-slate-50">
-                    <td className="p-4 whitespace-nowrap text-slate-700 font-bold">
-                      {inq.inquiryDate || (inq.createdAt ? inq.createdAt.split('T')[0] : 'N/A')}
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-slate-900">{inq.fullName || inq.name}</div>
-                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                        <span className="font-semibold text-slate-600">Father:</span> {inq.fatherName || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <a href={`tel:${inq.phone}`} className="hover:underline flex items-center gap-1 font-bold text-emerald-700">
-                        <PhoneCall className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>{inq.phone}</span>
-                      </a>
-                      {inq.email && (
-                        <div className="text-[11px] text-slate-500 truncate max-w-[150px] mt-0.5">{inq.email}</div>
-                      )}
-                    </td>
-                    <td className="p-4 font-bold text-indigo-700">{inq.course || 'General Admission'}</td>
-                    <td className="p-4">
-                      <div className="font-bold text-slate-800">{inq.city || 'N/A'}</div>
-                      <div className="text-[11px] text-slate-500 max-w-[200px] leading-tight mt-0.5" title={inq.address}>
-                        {inq.address || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      {inq.message ? (
-                        <div className="text-[11px] text-slate-600 italic max-w-[180px] line-clamp-2" title={inq.message}>
-                          "{inq.message}"
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">-</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                        inq.status === 'New' ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'
-                      }`}>
-                        {inq.status || 'New'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                      <button
-                        onClick={() => handleUpdateInquiryStatus(inq.id, 'Contacted')}
-                        className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-[10.5px] hover:bg-emerald-700 cursor-pointer"
-                      >
-                        Mark Contacted
-                      </button>
-                      <button
-                        onClick={() => handleDeleteInquiry(inq.id)}
-                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 5: 💼 RECRUITMENT & JOB APPLICATIONS */}
-      {/* ========================================================================= */}
-      {activeSubTab === 'jobs' && (
-        <JobApplicationsManager lang={lang} />
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 6: 📸 CAMPUS GALLERY & EVENT PHOTOS */}
+      {/* TAB 4: 📸 CAMPUS GALLERY & EVENT PHOTOS */}
       {/* ========================================================================= */}
       {activeSubTab === 'events_gallery' && (
         <div className="space-y-6">
@@ -1194,7 +1036,7 @@ export default function WebsiteCmsManager({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 7: 🌟 TESTIMONIALS & REVIEWS MANAGER (100% WIDTH WEBSITE SLIDER) */}
+      {/* TAB 5: 🌟 TESTIMONIALS & REVIEWS MANAGER (100% WIDTH WEBSITE SLIDER) */}
       {/* ========================================================================= */}
       {activeSubTab === 'testimonials' && (
         <div className="space-y-6 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
