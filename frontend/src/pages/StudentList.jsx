@@ -2055,7 +2055,7 @@ export default function StudentList({
                               </button>
                             </td>
                             <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => handleOpenProfile(std)}
@@ -2066,27 +2066,11 @@ export default function StudentList({
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEditModal(std)}
-                                  className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
-                                  title="Edit Details"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
                                   onClick={() => setPrintSlipStudent(std)}
                                   className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                                   title="Print Admission Slip"
                                 >
                                   <Printer className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteStudent(std)}
-                                  className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                  title="Delete Student"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -2223,7 +2207,7 @@ export default function StudentList({
                                   </button>
                                 </td>
                                 <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                                  <div className="flex items-center justify-center gap-1">
+                                  <div className="flex items-center justify-center gap-1.5">
                                     <button
                                       type="button"
                                       onClick={() => handleOpenProfile(linked)}
@@ -2234,19 +2218,11 @@ export default function StudentList({
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenEditModal(linked)}
-                                      className="p-1 rounded hover:bg-amber-100 text-amber-700 transition-colors cursor-pointer"
-                                      title="Edit Details"
+                                      onClick={() => setPrintSlipStudent(linked)}
+                                      className="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                      title="Print Admission Slip"
                                     >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteStudent(linked)}
-                                      className="p-1 rounded hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                      title="Delete Enrollment"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <Printer className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 </td>
@@ -3298,38 +3274,6 @@ export default function StudentList({
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
                                       </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingPaymentModal({
-                                            ...p,
-                                            id: p.id || p.receiptNo,
-                                            amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
-                                            feeDate: p.feeDate ? p.feeDate.split('T')[0] : (p.paymentDate ? p.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0]),
-                                            purpose: p.purpose || p.feeType || 'Tuition Fee',
-                                            paymentMode: p.paymentMode || 'Cash',
-                                            refNo: p.refNo || p.transactionRef || '',
-                                            receivedBy: p.receivedBy || 'Admin Desk',
-                                            remark: p.remark || '',
-                                            currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                          });
-                                          setEditPaymentError(null);
-                                        }}
-                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit this payment entry"
-                                      >
-                                        <Edit3 className="w-3 h-3 text-indigo-600" />
-                                        <span>Edit</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
-                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete this payment entry"
-                                      >
-                                        <Trash2 className="w-3 h-3 text-rose-600" />
-                                        <span>Delete</span>
-                                      </button>
                                     </div>
                                   </td>
                                 </tr>
@@ -3443,39 +3387,6 @@ export default function StudentList({
                                       >
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingPaymentModal({
-                                            ...c,
-                                            isCenterFee: true,
-                                            id: c.id || c.receiptNo,
-                                            amountPaid: cAmt,
-                                            feeDate: c.feeDate ? c.feeDate.split('T')[0] : (c.date ? c.date.split('T')[0] : new Date().toISOString().split('T')[0]),
-                                            purpose: c.purpose || 'Center Fee (Academic Fee)',
-                                            paymentMode: c.paymentMode || 'Official Record',
-                                            refNo: c.refNo || '-',
-                                            receivedBy: c.receivedBy || 'Admin Desk',
-                                            remark: c.remark || '',
-                                            currentClass: c.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                          });
-                                          setEditPaymentError(null);
-                                        }}
-                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit this center fee entry"
-                                      >
-                                        <Edit3 className="w-3 h-3 text-indigo-600" />
-                                        <span>Edit</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteCenterFee(c.id || c.receiptNo, cAmt, c.purpose)}
-                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete fee entry"
-                                      >
-                                        <Trash2 className="w-3 h-3 text-rose-600" />
-                                        <span>Delete</span>
                                       </button>
                                     </div>
                                   </td>
@@ -3671,41 +3582,6 @@ export default function StudentList({
                                       >
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingPaymentModal({
-                                            ...sEntry,
-                                            isScholarship: true,
-                                            year: sEntry.year || 'year1',
-                                            yearLabel: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
-                                            id: sEntry.id || sEntry.receiptNo,
-                                            amountPaid: sAmt,
-                                            feeDate: sEntry.feeDate ? sEntry.feeDate.split('T')[0] : (sEntry.date ? sEntry.date.split('T')[0] : new Date().toISOString().split('T')[0]),
-                                            purpose: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
-                                            paymentMode: sEntry.paymentMode || 'Govt Scholarship Grant',
-                                            refNo: sEntry.refNo || '-',
-                                            receivedBy: sEntry.receivedBy || 'Admin Desk',
-                                            remark: sEntry.remark || '',
-                                            currentClass: sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                          });
-                                          setEditPaymentError(null);
-                                        }}
-                                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit this scholarship entry"
-                                      >
-                                        <Edit3 className="w-3 h-3 text-indigo-600" />
-                                        <span>Edit</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteScholarship(sEntry.year || sEntry.id, sAmt, sEntry.purpose || sEntry.yearLabel)}
-                                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete this scholarship entry"
-                                      >
-                                        <Trash2 className="w-3 h-3 text-rose-600" />
-                                        <span>Delete</span>
                                       </button>
                                     </div>
                                   </td>
@@ -3969,15 +3845,6 @@ export default function StudentList({
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenEditModal(selectedStudent)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                  title="Fully Edit Student & Enrollment Record"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit Student</span>
-                </button>
                 <button
                   onClick={() => setSelectedStudent(null)}
                   className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"

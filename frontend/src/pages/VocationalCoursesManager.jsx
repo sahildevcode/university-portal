@@ -2896,14 +2896,6 @@ export default function VocationalCoursesManager({
                                     <Printer className="w-3.5 h-3.5" />
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEditStudent(st)}
-                                  title="Edit Student Details"
-                                  className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors cursor-pointer"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
                                 {!(st.status === 'Cancelled' || st.cancel === 'Yes') && (
                                   <button
                                     type="button"
@@ -2914,14 +2906,6 @@ export default function VocationalCoursesManager({
                                     <Ban className="w-2.5 h-2.5" />
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => setDeletingStudent(st)}
-                                  title="Delete Student"
-                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 transition-colors cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
                               </div>
                             </td>
 
@@ -5566,16 +5550,6 @@ export default function VocationalCoursesManager({
                                   >
                                     <Printer className="w-3 h-3" />
                                     <span>Print</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeletePaymentFromDesk(p.id || p.receiptNo, pAmt)}
-                                    className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                    title="Delete this payment installment"
-                                  >
-                                    <Trash2 className="w-3 h-3 text-rose-600" />
-                                    <span>Delete</span>
                                   </button>
                                 </div>
                               </td>
