@@ -11,7 +11,7 @@ export default function FloatingContactWidget() {
   return (
     <aside 
       aria-label="Quick Contact & Location Desk" 
-      className="fixed right-0 top-[calc(50%+36px)] -translate-y-1/2 z-50 flex flex-col items-end gap-2 select-none print:hidden pointer-events-none"
+      className="fixed right-0 bottom-[20px] z-50 flex flex-col items-end gap-2 select-none print:hidden pointer-events-none"
     >
       
       {/* ========================================================================= */}
@@ -86,18 +86,19 @@ export default function FloatingContactWidget() {
       <div className="pointer-events-auto transform translate-x-[calc(100%-12px)] hover:translate-x-0 transition-transform duration-300 ease-out group">
         <a
           href={emailUrl}
-          className="flex items-center gap-2 bg-[#071530] hover:bg-[#0c2049] text-white pl-2.5 pr-4 py-2 rounded-l-xl shadow-xl shadow-slate-950/50 border-y border-l border-[#C59B27]/60 cursor-pointer transition-colors"
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white pl-2.5 pr-4 py-2 rounded-l-xl shadow-xl shadow-blue-700/30 border-y border-l border-blue-300/40 cursor-pointer transition-colors"
           title="Direct Email: pkcinstituteaiu@gmail.com"
           aria-label="Direct Email to PKC Institute"
         >
           {/* Peeking Icon at the left edge of tab */}
-          <div className="w-6 h-6 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-            <Mail className="w-3.5 h-3.5 text-amber-400" />
+          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            <Mail className="w-3.5 h-3.5 text-white" />
           </div>
 
           {/* Slide-out Text Content */}
           <div className="text-left whitespace-nowrap pr-1">
-            <span className="block text-[9px] uppercase tracking-wider font-extrabold text-amber-400">
+            <span className="block text-[9px] uppercase tracking-wider font-extrabold text-blue-100 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
               Email Us
             </span>
             <span className="block text-xs font-black tracking-tight text-white">
