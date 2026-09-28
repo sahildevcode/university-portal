@@ -466,6 +466,24 @@ export default function AdminPortal({
   return (
     <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 text-slate-900">
       
+      {/* Floating Fixed Back to Menu Button on Left Side */}
+      {activeTab !== 'hub' && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('hub')}
+          className="fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2.5 bg-[#071530] hover:bg-slate-900 text-white font-black p-2.5 sm:px-4 sm:py-3 rounded-2xl shadow-2xl border-2 border-amber-400 hover:border-amber-300 hover:scale-105 active:scale-95 transition-all cursor-pointer group backdrop-blur-md"
+          title="Back to Main Menu (Portal Hub)"
+        >
+          <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black group-hover:-translate-x-1 transition-transform shadow-md">
+            <ArrowLeft className="w-4 h-4 stroke-[3]" />
+          </div>
+          <div className="text-left hidden sm:block">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider block text-amber-300/90 leading-tight">Back To</span>
+            <span className="text-xs font-black text-white leading-tight whitespace-nowrap">Menu Page</span>
+          </div>
+        </button>
+      )}
+
       {/* Top Header */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-slate-800">
         <div className="flex items-center gap-4 text-center sm:text-left">
