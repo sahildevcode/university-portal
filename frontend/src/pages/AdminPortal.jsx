@@ -466,21 +466,20 @@ export default function AdminPortal({
   return (
     <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-6 text-slate-900">
       
-      {/* Floating Fixed Back to Menu Button on Left Side */}
+      {/* Floating Compact Fixed Back to Menu Button on Left Edge */}
       {activeTab !== 'hub' && (
         <button
           type="button"
           onClick={() => setActiveTab('hub')}
-          className="fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2.5 bg-[#071530] hover:bg-slate-900 text-white font-black p-2.5 sm:px-4 sm:py-3 rounded-2xl shadow-2xl border-2 border-amber-400 hover:border-amber-300 hover:scale-105 active:scale-95 transition-all cursor-pointer group backdrop-blur-md"
+          className="fixed left-2 top-1/2 -translate-y-1/2 z-50 group flex items-center bg-[#071530]/95 hover:bg-[#071530] text-amber-400 border border-amber-400/80 rounded-full p-1.5 shadow-xl hover:shadow-amber-500/25 backdrop-blur-md transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95"
           title="Back to Main Menu (Portal Hub)"
         >
-          <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black group-hover:-translate-x-1 transition-transform shadow-md">
-            <ArrowLeft className="w-4 h-4 stroke-[3]" />
+          <div className="w-7 h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0 shadow-xs">
+            <ArrowLeft className="w-3.5 h-3.5 stroke-[3] group-hover:-translate-x-0.5 transition-transform" />
           </div>
-          <div className="text-left hidden sm:block">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider block text-amber-300/90 leading-tight">Back To</span>
-            <span className="text-xs font-black text-white leading-tight whitespace-nowrap">Menu Page</span>
-          </div>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap text-[11px] font-black text-amber-300 group-hover:max-w-xs group-hover:px-2 transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100">
+            Menu Page
+          </span>
         </button>
       )}
 
