@@ -6,6 +6,7 @@ import {
   PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle,
   Sparkles
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
 import PrintMarksheet from '../components/PrintMarksheet';
 import PrintFeeReceipt from '../components/PrintFeeReceipt';
@@ -56,6 +57,16 @@ export default function StudentList({
   // Entries / Pagination state
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Excel Export Modal & Filter States
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportSession, setExportSession] = useState('all');
+  const [exportSatra, setExportSatra] = useState('all');
+  const [exportUniversity, setExportUniversity] = useState('all');
+  const [exportCollege, setExportCollege] = useState('all');
+  const [exportCourse, setExportCourse] = useState('all');
+  const [exportYear, setExportYear] = useState('all');
+  const [exportFeeStatus, setExportFeeStatus] = useState('all');
 
   // Student lookup key helper by RollNo, ID, or EnrollmentNo
   const getStudentKey = (s) => {
@@ -469,6 +480,258 @@ export default function StudentList({
     setFilterSatra(newSatra);
     setAppliedSatra(newSatra);
     setCurrentPage(1);
+  };
+
+  // Excel Export: Dynamic Available Colleges based on Export University selection
+  const exportAvailableColleges = (() => {
+    if (exportUniversity === 'all') return collegesList;
+    const targetUniv = universitiesList.find(u => u.name === exportUniversity);
+    const targetId = targetUniv?.id;
+    const tu = exportUniversity.toLowerCase();
+    return collegesList.filter(c => {
+      if (targetId && c.universityId === targetId) return true;
+      const cu = (c.universityName || '').toLowerCase();
+      return cu === tu || (cu && tu && (cu.includes(tu) || tu.includes(cu)));
+    });
+  })();
+
+  // Excel Export: Dynamic Available Courses based on Export University & Colleges
+  const exportAvailableCourses = (() => {
+    if (exportUniversity === 'all') return allAvailableCourses;
+    const targetUniv = universitiesList.find(u => u.name === exportUniversity);
+    const targetId = targetUniv?.id;
+    const tu = exportUniversity.toLowerCase();
+    
+    let sourceCourses = [];
+    exportAvailableColleges.forEach(col => {
+      (col.courses || []).forEach(crs => {
+        const cName = crs.name || crs.courseName || crs.program || crs.degree;
+        if (cName) sourceCourses.push(cName);
+      });
+    });
+
+    students.forEach(s => {
+      const su = (s.universityName || s.collegeName || '').toLowerCase();
+      if (su.includes(tu) || tu.includes(su)) {
+        if (s.courseName) sourceCourses.push(s.courseName);
+        if (s.course) sourceCourses.push(s.course);
+        (s.linkedCourses || []).forEach(l => {
+          if (l.courseName) sourceCourses.push(l.courseName);
+        });
+      }
+    });
+
+    if (sourceCourses.length === 0) return allAvailableCourses;
+
+    const uniqueMap = new Map();
+    sourceCourses.filter(Boolean).forEach(raw => {
+      const canonical = normalizeCourseName(raw);
+      if (canonical && !uniqueMap.has(canonical.toLowerCase())) {
+        uniqueMap.set(canonical.toLowerCase(), canonical);
+      }
+    });
+    return Array.from(uniqueMap.values()).sort((a, b) => a.localeCompare(b));
+  })();
+
+  // Open Export Modal with current active filters as initial defaults
+  const handleOpenExportModal = () => {
+    setExportSession(appliedSession !== 'all' ? appliedSession : 'all');
+    setExportSatra(appliedSatra !== 'all' ? appliedSatra : 'all');
+    setExportUniversity(appliedUniversity !== 'all' ? appliedUniversity : 'all');
+    setExportCollege(appliedCollege !== 'all' ? appliedCollege : 'all');
+    setExportCourse(appliedCourse !== 'all' ? appliedCourse : 'all');
+    setExportYear('all');
+    setExportFeeStatus(dueFilter !== 'all' ? dueFilter : 'all');
+    setShowExportModal(true);
+  };
+
+  // Filter students based on Export Modal selections
+  const getExportFilteredStudents = () => {
+    return students.filter(s => {
+      if (s.isSecondaryCourse) return false;
+      if (s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes') return false;
+
+      // Fee status filter
+      const feeDetails = calculateStudentYearBreakdown(s);
+      if (exportFeeStatus === 'due_only') {
+        if (feeDetails.totalRem <= 0) return false;
+      } else if (exportFeeStatus === 'cleared') {
+        if (feeDetails.totalRem > 0) return false;
+      } else if (exportFeeStatus === 'advance_only') {
+        if (feeDetails.advanceAmount <= 0) return false;
+      }
+
+      // Session filter
+      if (exportSession !== 'all') {
+        const sess = s.currentSession || s.admissionSession || '';
+        if (sess && sess !== exportSession) return false;
+      }
+
+      // Satra filter
+      if (exportSatra !== 'all') {
+        const satra = s.currentSatra || s.admissionSatra || '';
+        if (satra && satra.toLowerCase() !== exportSatra.toLowerCase()) return false;
+      }
+
+      // University filter
+      if (exportUniversity !== 'all') {
+        const univ = (s.universityName || s.collegeName || '').toLowerCase();
+        const target = exportUniversity.toLowerCase();
+        const isMcbu = (target.includes('mcbu') || target.includes('chhatrasal')) && (univ.includes('mcbu') || univ.includes('chhatrasal'));
+        const isSubharti = (target.includes('subharti') || target.includes('bharti')) && (univ.includes('subharti') || univ.includes('bharti'));
+        const isIes = target.includes('ies') && univ.includes('ies');
+        const isMcrpv = (target.includes('mcrpv') || target.includes('makhanlal')) && (univ.includes('mcrpv') || univ.includes('makhanlal'));
+        const isBhabha = target.includes('bhabha') && univ.includes('bhabha');
+        const isGyanveer = target.includes('gyanveer') && univ.includes('gyanveer');
+        const isMmyvv = (target.includes('mmyvv') || target.includes('maharishi') || target.includes('vedic')) && (univ.includes('mmyvv') || univ.includes('maharishi') || univ.includes('vedic'));
+        const isMpu = (target.includes('mpu') || target.includes('madhyanchal')) && (univ.includes('mpu') || univ.includes('madhyanchal'));
+        const isSku = (target.includes('sku') || target.includes('krishna')) && (univ.includes('sku') || univ.includes('krishna'));
+        const isChitrakoot = (target.includes('chitrakoot') || target.includes('gramodaya') || target.includes('mgcgv')) && (univ.includes('chitrakoot') || univ.includes('gramodaya') || univ.includes('mgcgv'));
+
+        const directMatch = univ.includes(target) || target.includes(univ) || isMcbu || isSubharti || isIes || isMcrpv || isBhabha || isGyanveer || isMmyvv || isMpu || isSku || isChitrakoot;
+        const linkedUnivMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+          const lu = (lc.universityName || lc.collegeName || '').toLowerCase();
+          return lu.includes(target) || target.includes(lu);
+        });
+
+        if (!directMatch && !linkedUnivMatch) return false;
+      }
+
+      // College filter
+      if (exportCollege !== 'all') {
+        const targetCol = exportCollege.toLowerCase();
+        const sc = (s.collegeName || s.universityName || '').toLowerCase();
+        const colObj = collegesList.find(c => c.name === exportCollege || c.code === exportCollege);
+        let isMatch = (sc === targetCol) || sc.includes(targetCol) || targetCol.includes(sc);
+        if (!isMatch && colObj) {
+          const code = (colObj.code || '').toLowerCase().replace(/[\s-]/g, '');
+          const cleanSc = sc.replace(/[\s-]/g, '');
+          if (code && cleanSc.includes(code)) isMatch = true;
+          const shortName = (colObj.shortName || '').toLowerCase();
+          if (shortName && (sc.includes(shortName) || shortName.includes(sc))) isMatch = true;
+        }
+        const linkedColMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+          const lsc = (lc.collegeName || '').toLowerCase();
+          return lsc === targetCol || lsc.includes(targetCol) || targetCol.includes(lsc);
+        });
+        if (!isMatch && !linkedColMatch) return false;
+      }
+
+      // Course filter
+      if (exportCourse !== 'all') {
+        const targetCanonical = normalizeCourseName(exportCourse).toLowerCase();
+        const sNorm = normalizeCourseName(s.courseName || s.course).toLowerCase();
+        const directMatch = sNorm === targetCanonical || sNorm.includes(targetCanonical) || targetCanonical.includes(sNorm);
+        const linkedCrsMatch = s.linkedCourses && s.linkedCourses.some(lc => {
+          const lcNorm = normalizeCourseName(lc.courseName || lc.course).toLowerCase();
+          return lcNorm === targetCanonical || lcNorm.includes(targetCanonical) || targetCanonical.includes(lcNorm);
+        });
+        if (!directMatch && !linkedCrsMatch) return false;
+      }
+
+      // Year / Semester filter
+      if (exportYear !== 'all') {
+        const cls = String(s.currentClass || `SEM-${s.currentSemester || 1}`).toUpperCase();
+        const sem = Number(s.currentSemester || 1);
+        if (exportYear === '1st Year' || exportYear === 'YEAR-1') {
+          const isY1 = cls.includes('YEAR-1') || cls.includes('1ST') || cls.includes('SEM-1') || cls.includes('SEM-2') || sem === 1 || sem === 2;
+          if (!isY1) return false;
+        } else if (exportYear === '2nd Year' || exportYear === 'YEAR-2') {
+          const isY2 = cls.includes('YEAR-2') || cls.includes('2ND') || cls.includes('SEM-3') || cls.includes('SEM-4') || sem === 3 || sem === 4;
+          if (!isY2) return false;
+        } else if (exportYear === '3rd Year' || exportYear === 'YEAR-3') {
+          const isY3 = cls.includes('YEAR-3') || cls.includes('3RD') || cls.includes('SEM-5') || cls.includes('SEM-6') || sem === 5 || sem === 6;
+          if (!isY3) return false;
+        } else if (exportYear === '4th Year' || exportYear === 'YEAR-4') {
+          const isY4 = cls.includes('YEAR-4') || cls.includes('4TH') || cls.includes('SEM-7') || cls.includes('SEM-8') || sem === 7 || sem === 8;
+          if (!isY4) return false;
+        } else if (exportYear.startsWith('SEM-')) {
+          const semNum = Number(exportYear.replace('SEM-', ''));
+          if (sem !== semNum && !cls.includes(exportYear)) return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  // Download filtered data as styled Excel file
+  const handleDownloadExcel = () => {
+    const listToExport = getExportFilteredStudents();
+    if (!listToExport || listToExport.length === 0) {
+      alert('No students found matching the selected export filters! (चुने गए फ़िल्टर के अनुसार कोई छात्र नहीं मिला)');
+      return;
+    }
+
+    const rows = listToExport.map((s, idx) => {
+      const breakdown = calculateStudentYearBreakdown(s);
+      return {
+        'S.No': idx + 1,
+        'Roll No / रोल नंबर': s.rollNo || '',
+        'Enrollment No / नामांकन संख्या': s.enrollmentNo || '',
+        'Registration No': s.registrationNo || '',
+        'Student Name / छात्र का नाम': s.fullName || s.studentName || '',
+        'Father Name / पिता का नाम': s.fatherName || s.father_name || '',
+        'Mother Name / माता का नाम': s.motherName || '',
+        'Mobile No / मोबाइल': s.phone || s.contact || '',
+        'Alternate Contact': s.alternatePhone || '',
+        'Email Address': s.email || '',
+        'Gender / लिंग': s.gender || '',
+        'Category / श्रेणी': s.socialCategory || s.category || '',
+        'Aadhaar No / आधार': s.aadhaarNo || s.aadharNo || '',
+        'University / विश्वविद्यालय': s.universityName || '',
+        'College / कॉलेज': s.collegeName || '',
+        'Course / पाठ्यक्रम': s.courseName || s.course || '',
+        'Branch / Specialization': s.branch || '',
+        'Admission Session': s.admissionSession || '',
+        'Current Session': s.currentSession || s.admissionSession || '',
+        'Satra (July/Jan)': s.currentSatra || s.admissionSatra || '',
+        'Current Class / Year': s.currentClass || (s.currentSemester ? `Semester ${s.currentSemester}` : '1st Year'),
+        '1st Year Fee (₹)': breakdown.feeY1,
+        '1st Year Paid (₹)': breakdown.recY1,
+        '1st Year Scholarship (₹)': breakdown.schY1,
+        '2nd Year Fee (₹)': breakdown.feeY2,
+        '2nd Year Paid (₹)': breakdown.recY2,
+        '2nd Year Scholarship (₹)': breakdown.schY2,
+        '3rd Year Fee (₹)': breakdown.feeY3,
+        '3rd Year Paid (₹)': breakdown.recY3,
+        '3rd Year Scholarship (₹)': breakdown.schY3,
+        '4th Year Fee (₹)': breakdown.feeY4,
+        '4th Year Paid (₹)': breakdown.recY4,
+        '4th Year Scholarship (₹)': breakdown.schY4,
+        'Total Course Fee (₹)': breakdown.totalFee,
+        'Total Scholarship (₹)': breakdown.totalSch,
+        'Total Paid Fee (₹)': breakdown.totalPaid,
+        'Remaining Due (₹) / बकाया': breakdown.totalRem,
+        'Advance Paid (₹) / अग्रिम': breakdown.advanceAmount,
+        'Next Fee Due Date / अंतिम तिथि': breakdown.nextFeeDueDate || '',
+        'Admission Date': s.admissionDate || s.createdAt ? new Date(s.admissionDate || s.createdAt).toLocaleDateString('en-IN') : '',
+        'City': s.city || '',
+        'State': s.state || '',
+        'Address': s.address || '',
+        'Status': s.status || 'Active'
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Auto-size column widths
+    const colWidths = Object.keys(rows[0] || {}).map(key => {
+      const maxLen = Math.max(
+        key.length,
+        ...rows.map(r => String(r[key] || '').length)
+      );
+      return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+    });
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Student_List');
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filterTag = exportCourse !== 'all' ? `_${exportCourse.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)}` : '';
+    XLSX.writeFile(wb, `Student_Records${filterTag}_${timestamp}.xlsx`);
+    setShowExportModal(false);
   };
 
   const fetchStudents = async (customSearch = null, customCourse = null, customSem = null, customTimeframe = null) => {
@@ -1604,8 +1867,17 @@ export default function StudentList({
 
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             <button
+              onClick={handleOpenExportModal}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-3.5 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-emerald-400/30"
+              title="Filter and download students data in Excel (.xlsx)"
+            >
+              <Download className="w-4 h-4 text-emerald-100" />
+              <span>📥 Export Excel (.xlsx)</span>
+            </button>
+
+            <button
               onClick={() => setShowBulkImport(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-emerald-400/30"
+              className="flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white font-extrabold px-3.5 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer border border-slate-600/30"
               title="Bulk Import Students & Past Fees from Excel or PDF"
             >
               <UploadCloud className="w-4 h-4 text-amber-300" />
@@ -2743,12 +3015,25 @@ export default function StudentList({
               </table>
             </div>
 
-            {/* Table Footer with Pagination Controls */}
-            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
-              <div>
-                Showing <strong className="text-slate-900">{totalEntries > 0 ? startIndex + 1 : 0}</strong> to{' '}
-                <strong className="text-slate-900">{endIndex}</strong> of{' '}
-                <strong className="text-slate-900">{totalEntries}</strong> entries
+            {/* Table Footer with Pagination Controls & Excel Download */}
+            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600">
+              <div className="flex flex-wrap items-center gap-3">
+                <div>
+                  Showing <strong className="text-slate-900">{totalEntries > 0 ? startIndex + 1 : 0}</strong> to{' '}
+                  <strong className="text-slate-900">{endIndex}</strong> of{' '}
+                  <strong className="text-slate-900">{totalEntries}</strong> entries
+                </div>
+
+                {/* Excel Download Button */}
+                <button
+                  type="button"
+                  onClick={handleOpenExportModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold shadow-xs transition-all text-xs cursor-pointer border border-emerald-700/30"
+                  title="Filter and download students data in Excel (.xlsx)"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-100" />
+                  <span>📥 Download Excel (एक्सेल डाउनलोड)</span>
+                </button>
               </div>
               {pageSize !== 'all' && totalPages > 1 && (
                 <div className="flex items-center gap-1.5 self-end sm:self-auto">
@@ -6027,6 +6312,261 @@ export default function StudentList({
           onCropComplete={handleCropComplete}
           title={`Crop Photo: ${croppingStudent?.fullName || croppingStudent?.studentName || 'Student'}`}
         />
+      )}
+
+      {/* Excel Download & Pre-Filter Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 px-5 py-4 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-xl shadow-inner">
+                  📊
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg leading-tight flex items-center gap-2">
+                    <span>Export Students Data to Excel (.xlsx)</span>
+                  </h3>
+                  <p className="text-xs text-emerald-100/90 font-medium">
+                    डाउनलोड करने से पहले फ़िल्टर (Session, Satra, University, Course, Year) सेट करें
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExportModal(false)}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body with Filters */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              
+              <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-emerald-950 font-bold">
+                  <span className="text-lg">🎯</span>
+                  <span>Filtered Matching Records:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-black text-sm shadow-xs">
+                    {getExportFilteredStudents().length} Students Ready
+                  </span>
+                  <span className="text-slate-500 font-medium">(Total: {students.length})</span>
+                </div>
+              </div>
+
+              {/* Filter Form Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                
+                {/* 1. Session */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Session (सत्र):
+                  </label>
+                  <select
+                    value={exportSession}
+                    onChange={(e) => setExportSession(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Sessions (सभी सत्र)</option>
+                    {Array.from(new Set([
+                      '2020-2021', '2021-2022', '2022-2023', '2023-2024', '2024-2025',
+                      '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030',
+                      ...students.map(s => s.currentSession || s.admissionSession).filter(Boolean)
+                    ])).sort().map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. Satra (July / Jan) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Satra (July / January):
+                  </label>
+                  <select
+                    value={exportSatra}
+                    onChange={(e) => setExportSatra(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Satras (दोनों सत्र)</option>
+                    <option value="July">July (जुलाई सत्र)</option>
+                    <option value="January">January (जनवरी सत्र)</option>
+                  </select>
+                </div>
+
+                {/* 3. University */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select University (विश्वविद्यालय):
+                  </label>
+                  <select
+                    value={exportUniversity}
+                    onChange={(e) => {
+                      setExportUniversity(e.target.value);
+                      setExportCollege('all');
+                      setExportCourse('all');
+                    }}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-indigo-900 shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Universities (सभी विश्वविद्यालय)</option>
+                    {allAvailableUniversities.map((uName, i) => (
+                      <option key={i} value={uName}>{uName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 4. College */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select College (कॉलेज / संस्थान):
+                  </label>
+                  <select
+                    value={exportCollege}
+                    onChange={(e) => setExportCollege(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Colleges (सभी कॉलेज)</option>
+                    {exportAvailableColleges.map((col, i) => (
+                      <option key={i} value={col.name || col.code}>{col.name} ({col.code || 'Affiliated'})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 5. Course */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Course (पाठ्यक्रम):
+                  </label>
+                  <select
+                    value={exportCourse}
+                    onChange={(e) => setExportCourse(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-800 shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Courses (सभी पाठ्यक्रम)</option>
+                    {exportAvailableCourses.map((cName, i) => (
+                      <option key={i} value={cName}>{cName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 6. Year / Semester */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Year / Class (वर्ष / कक्षा):
+                  </label>
+                  <select
+                    value={exportYear}
+                    onChange={(e) => setExportYear(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Years & Semesters (सभी वर्ष व सेमेस्टर)</option>
+                    <option value="1st Year">1st Year (प्रथम वर्ष / SEM 1-2)</option>
+                    <option value="2nd Year">2nd Year (द्वितीय वर्ष / SEM 3-4)</option>
+                    <option value="3rd Year">3rd Year (तृतीय वर्ष / SEM 5-6)</option>
+                    <option value="4th Year">4th Year (चतुर्थ वर्ष / SEM 7-8)</option>
+                    <option value="SEM-1">Semester 1 (सेमेस्टर 1)</option>
+                    <option value="SEM-2">Semester 2 (सेमेस्टर 2)</option>
+                    <option value="SEM-3">Semester 3 (सेमेस्टर 3)</option>
+                    <option value="SEM-4">Semester 4 (सेमेस्टर 4)</option>
+                    <option value="SEM-5">Semester 5 (सेमेस्टर 5)</option>
+                    <option value="SEM-6">Semester 6 (सेमेस्टर 6)</option>
+                    <option value="SEM-7">Semester 7 (सेमेस्टर 7)</option>
+                    <option value="SEM-8">Semester 8 (सेमेस्टर 8)</option>
+                  </select>
+                </div>
+
+                {/* 7. Fee Status */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Fee Payment Status (फीस स्थिति):
+                  </label>
+                  <select
+                    value={exportFeeStatus}
+                    onChange={(e) => setExportFeeStatus(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium shadow-2xs cursor-pointer"
+                  >
+                    <option value="all">All Students (सभी विद्यार्थी)</option>
+                    <option value="due_only">⚠️ Pending Dues Only (केवल बकाया फीस वाले)</option>
+                    <option value="cleared">✅ Fee Fully Cleared (पूरी फीस जमा वाले)</option>
+                    <option value="advance_only">💰 Advance Fee Credit (अग्रिम राशि जमा वाले)</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Data Inclusions Preview Box */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
+                <div className="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5">
+                  <span>📋</span>
+                  <span>Included Columns in Downloaded Excel (.xlsx):</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                  <div>• S.No, Roll No, Enrollment</div>
+                  <div>• Student & Parent Names</div>
+                  <div>• Mobile, Alternate, Email</div>
+                  <div>• University & College</div>
+                  <div>• Course & Specialization</div>
+                  <div>• Session, Satra & Year</div>
+                  <div>• 1st Year Fee & Paid</div>
+                  <div>• 2nd Year Fee & Paid</div>
+                  <div>• 3rd Year Fee & Paid</div>
+                  <div>• 4th Year Fee & Paid</div>
+                  <div>• Total Course Fee & Paid</div>
+                  <div>• Remaining Dues & Advance</div>
+                  <div>• Next Fee Due Date</div>
+                  <div>• Gender, Category, Aadhar</div>
+                  <div>• Admission Date & Status</div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setExportSession('all');
+                  setExportSatra('all');
+                  setExportUniversity('all');
+                  setExportCollege('all');
+                  setExportCourse('all');
+                  setExportYear('all');
+                  setExportFeeStatus('all');
+                }}
+                className="text-xs text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Export Filters</span>
+              </button>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowExportModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white border border-slate-300 rounded-xl hover:bg-slate-100 cursor-pointer shadow-2xs transition-colors"
+                >
+                  Cancel (रद्द करें)
+                </button>
+                <button
+                  type="button"
+                  disabled={getExportFilteredStudents().length === 0}
+                  onClick={handleDownloadExcel}
+                  className="flex-1 sm:flex-none px-5 py-2 text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4 text-emerald-100" />
+                  <span>Download Excel (.xlsx) ({getExportFilteredStudents().length})</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
       )}
 
     </div>
