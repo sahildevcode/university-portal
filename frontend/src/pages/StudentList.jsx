@@ -129,13 +129,26 @@ export default function StudentList({
     const totalSch = schY1 + schY2 + schY3 + schY4;
     const totalPaid = Number(item.totalPaid || (recY1 + recY2 + recY3 + recY4) || 0);
     const totalRem = Math.max(0, totalFee - totalPaid);
+    const advanceAmount = totalPaid > totalFee ? (totalPaid - totalFee) : 0;
+    const isAdvance = advanceAmount > 0;
+
+    let nextFeeDueDate = item.nextFeeDueDate || null;
+    if (!nextFeeDueDate && Array.isArray(item.promotionHistory) && item.promotionHistory.length > 0) {
+      for (let i = item.promotionHistory.length - 1; i >= 0; i--) {
+        if (item.promotionHistory[i].nextFeeDueDate) {
+          nextFeeDueDate = item.promotionHistory[i].nextFeeDueDate;
+          break;
+        }
+      }
+    }
 
     return {
       feeY1, schY1, recY1,
       feeY2, schY2, recY2,
       feeY3, schY3, recY3,
       feeY4, schY4, recY4,
-      totalFee, totalSch, totalPaid, totalRem
+      totalFee, totalSch, totalPaid, totalRem,
+      advanceAmount, isAdvance, nextFeeDueDate
     };
   };
 
@@ -2364,8 +2377,39 @@ export default function StudentList({
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
                               {yd.totalPaid > 0 ? `${yd.totalPaid}/-` : '0/-'}
                             </td>
-                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
-                              {yd.totalRem > 0 ? `${yd.totalRem}/-` : '0/-'}
+                            <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono">
+                              {yd.isAdvance ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px] font-black">
+                                    +₹{yd.advanceAmount.toLocaleString('en-IN')}/- (Adv)
+                                  </span>
+                                  {yd.nextFeeDueDate && (
+                                    <span className="text-[9px] text-emerald-700 font-sans font-semibold mt-0.5 bg-emerald-50/80 px-1 rounded border border-emerald-200">
+                                      📅 Due: {yd.nextFeeDueDate}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : yd.totalRem > 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-rose-700 bg-rose-50/50 px-1 py-0.5 rounded">
+                                    {yd.totalRem.toLocaleString('en-IN')}/-
+                                  </span>
+                                  {yd.nextFeeDueDate && (
+                                    <span className="text-[9px] text-amber-700 font-sans font-semibold mt-0.5 bg-amber-50 px-1 rounded border border-amber-200">
+                                      📅 Due: {yd.nextFeeDueDate}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-emerald-600 font-semibold">0/-</span>
+                                  {yd.nextFeeDueDate && (
+                                    <span className="text-[9px] text-slate-500 font-sans mt-0.5">
+                                      📅 Due: {yd.nextFeeDueDate}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </td>
                             <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                               <button
@@ -2587,8 +2631,39 @@ export default function StudentList({
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
                                   {lyd.totalPaid > 0 ? `${lyd.totalPaid}/-` : '0/-'}
                                 </td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
-                                  {lyd.totalRem > 0 ? `${lyd.totalRem}/-` : '0/-'}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono">
+                                  {lyd.isAdvance ? (
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px] font-black">
+                                        +₹{lyd.advanceAmount.toLocaleString('en-IN')}/- (Adv)
+                                      </span>
+                                      {lyd.nextFeeDueDate && (
+                                        <span className="text-[9px] text-emerald-700 font-sans font-semibold mt-0.5 bg-emerald-50/80 px-1 rounded border border-emerald-200">
+                                          📅 Due: {lyd.nextFeeDueDate}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : lyd.totalRem > 0 ? (
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-rose-700 bg-rose-50/50 px-1 py-0.5 rounded">
+                                        {lyd.totalRem.toLocaleString('en-IN')}/-
+                                      </span>
+                                      {lyd.nextFeeDueDate && (
+                                        <span className="text-[9px] text-amber-700 font-sans font-semibold mt-0.5 bg-amber-50 px-1 rounded border border-amber-200">
+                                          📅 Due: {lyd.nextFeeDueDate}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-emerald-600 font-semibold">0/-</span>
+                                      {lyd.nextFeeDueDate && (
+                                        <span className="text-[9px] text-slate-500 font-sans mt-0.5">
+                                          📅 Due: {lyd.nextFeeDueDate}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                   <button
@@ -2788,19 +2863,28 @@ export default function StudentList({
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class:</label>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
-                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
-                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
-                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
-                          <option value="SEM-4">SEM-4 (4th Semester)</option>
-                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
-                          <option value="SEM-6">SEM-6 (6th Semester)</option>
-                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
-                          <option value="SEM-8">SEM-8 (8th Semester)</option>
-                          <option value="Year-1">Year-1 (1st Year Annual)</option>
-                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                          <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
+                            <option value="Year-1">Year-1 (1st Year Annual)</option>
+                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                          </optgroup>
+                          <optgroup label="Semester Pattern (सेमेस्टर)">
+                            <option value="SEM-1">SEM-1 (1st Semester)</option>
+                            <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                            <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                            <option value="SEM-4">SEM-4 (4th Semester)</option>
+                            <option value="SEM-5">SEM-5 (5th Semester)</option>
+                            <option value="SEM-6">SEM-6 (6th Semester)</option>
+                            <option value="SEM-7">SEM-7 (7th Semester)</option>
+                            <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          </optgroup>
                         </select>
                       </div>
 
@@ -2980,19 +3064,28 @@ export default function StudentList({
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester:</label>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer">
-                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
-                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
-                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
-                          <option value="SEM-4">SEM-4 (4th Semester)</option>
-                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
-                          <option value="SEM-6">SEM-6 (6th Semester)</option>
-                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
-                          <option value="SEM-8">SEM-8 (8th Semester)</option>
-                          <option value="Year-1">Year-1 (1st Year Annual)</option>
-                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                          <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
+                            <option value="Year-1">Year-1 (1st Year Annual)</option>
+                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                          </optgroup>
+                          <optgroup label="Semester Pattern (सेमेस्टर)">
+                            <option value="SEM-1">SEM-1 (1st Semester)</option>
+                            <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                            <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                            <option value="SEM-4">SEM-4 (4th Semester)</option>
+                            <option value="SEM-5">SEM-5 (5th Semester)</option>
+                            <option value="SEM-6">SEM-6 (6th Semester)</option>
+                            <option value="SEM-7">SEM-7 (7th Semester)</option>
+                            <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          </optgroup>
                         </select>
                       </div>
 
@@ -3251,19 +3344,28 @@ export default function StudentList({
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester:</label>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
-                          <option value="SEM-1">SEM-1 (1st Semester / 1st Year)</option>
-                          <option value="SEM-2">SEM-2 (2nd Semester)</option>
-                          <option value="SEM-3">SEM-3 (3rd Semester / 2nd Year)</option>
-                          <option value="SEM-4">SEM-4 (4th Semester)</option>
-                          <option value="SEM-5">SEM-5 (5th Semester / 3rd Year)</option>
-                          <option value="SEM-6">SEM-6 (6th Semester)</option>
-                          <option value="SEM-7">SEM-7 (7th Semester / 4th Year)</option>
-                          <option value="SEM-8">SEM-8 (8th Semester)</option>
-                          <option value="Year-1">Year-1 (1st Year Annual)</option>
-                          <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                          <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                          <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
+                            <option value="Year-1">Year-1 (1st Year Annual)</option>
+                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
+                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
+                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                          </optgroup>
+                          <optgroup label="Semester Pattern (सेमेस्टर)">
+                            <option value="SEM-1">SEM-1 (1st Semester)</option>
+                            <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                            <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                            <option value="SEM-4">SEM-4 (4th Semester)</option>
+                            <option value="SEM-5">SEM-5 (5th Semester)</option>
+                            <option value="SEM-6">SEM-6 (6th Semester)</option>
+                            <option value="SEM-7">SEM-7 (7th Semester)</option>
+                            <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          </optgroup>
                         </select>
                       </div>
 
@@ -3492,11 +3594,14 @@ export default function StudentList({
                       recY1 += (Number(feeDeskStudent.totalPaid) - (recY1 + recY2 + recY3 + recY4));
                     }
 
+                    const isProfileAdvance = paid > tot;
+                    const profileAdvanceAmt = isProfileAdvance ? (paid - tot) : 0;
+
                     const yearRows = [
-                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: acadY1 + schY1, rec: recY1, due: Math.max(0, (acadY1 + schY1) - recY1) },
-                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: acadY2 + schY2, rec: recY2, due: Math.max(0, (acadY2 + schY2) - recY2) },
-                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: acadY3 + schY3, rec: recY3, due: Math.max(0, (acadY3 + schY3) - recY3) },
-                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: acadY4 + schY4, rec: recY4, due: Math.max(0, (acadY4 + schY4) - recY4) }
+                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: acadY1 + schY1, rec: recY1, due: Math.max(0, (acadY1 + schY1) - recY1), adv: Math.max(0, recY1 - (acadY1 + schY1)) },
+                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: acadY2 + schY2, rec: recY2, due: Math.max(0, (acadY2 + schY2) - recY2), adv: Math.max(0, recY2 - (acadY2 + schY2)) },
+                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: acadY3 + schY3, rec: recY3, due: Math.max(0, (acadY3 + schY3) - recY3), adv: Math.max(0, recY3 - (acadY3 + schY3)) },
+                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: acadY4 + schY4, rec: recY4, due: Math.max(0, (acadY4 + schY4) - recY4), adv: Math.max(0, recY4 - (acadY4 + schY4)) }
                     ];
 
                     return (
@@ -3519,10 +3624,23 @@ export default function StudentList({
                             <div className="text-[10px] text-emerald-700 uppercase font-bold">Receive Fees</div>
                             <div className="text-sm font-black text-emerald-800 font-mono">₹{paid.toLocaleString('en-IN')}/-</div>
                           </div>
-                          <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
-                            <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
-                            <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
-                          </div>
+                          {isProfileAdvance ? (
+                            <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
+                              <div className="text-[10px] text-emerald-700 uppercase font-bold">Advance Credit Paid</div>
+                              <div className="text-sm font-black text-emerald-800 font-mono">+₹{profileAdvanceAmt.toLocaleString('en-IN')}/-</div>
+                              {feeDeskStudent.nextFeeDueDate && (
+                                <div className="text-[9px] text-emerald-600 font-bold mt-0.5">📅 Due: {feeDeskStudent.nextFeeDueDate}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-rose-50/70 border border-rose-300 rounded-xl p-2.5 shadow-2xs col-span-2 sm:col-span-1">
+                              <div className="text-[10px] text-rose-700 uppercase font-bold">Remaining Fee</div>
+                              <div className="text-sm font-black text-rose-800 font-mono">₹{rem.toLocaleString('en-IN')}/-</div>
+                              {feeDeskStudent.nextFeeDueDate && (
+                                <div className="text-[9px] text-rose-600 font-bold mt-0.5">📅 Due Date: {feeDeskStudent.nextFeeDueDate}</div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Year-Wise Fee & Dues Summary Table (सालाना फीस व बकाया विवरण) */}
@@ -3541,8 +3659,8 @@ export default function StudentList({
                                 </p>
                               </div>
                             </div>
-                            <div className="bg-indigo-900 text-white px-3 py-1 rounded-xl text-[11px] font-black font-mono self-start sm:self-auto shadow-xs">
-                              Total Balance Due: ₹{rem.toLocaleString('en-IN')}/-
+                            <div className={`${isProfileAdvance ? 'bg-emerald-800' : 'bg-indigo-900'} text-white px-3 py-1 rounded-xl text-[11px] font-black font-mono self-start sm:self-auto shadow-xs`}>
+                              {isProfileAdvance ? `+ Advance Credit: ₹${profileAdvanceAmt.toLocaleString('en-IN')}/-` : `Total Balance Due: ₹${rem.toLocaleString('en-IN')}/-`}
                             </div>
                           </div>
 
@@ -3581,6 +3699,10 @@ export default function StudentList({
                                       {yr.due > 0 ? (
                                         <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 inline-block">
                                           ₹{yr.due.toLocaleString('en-IN')}/- Due
+                                        </span>
+                                      ) : yr.adv > 0 ? (
+                                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[10px] inline-block font-bold">
+                                          +₹{yr.adv.toLocaleString('en-IN')}/- (Adv)
                                         </span>
                                       ) : (
                                         <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[10px] inline-block font-bold">

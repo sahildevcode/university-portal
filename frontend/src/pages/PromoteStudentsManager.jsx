@@ -50,6 +50,14 @@ export default function PromoteStudentsManager({
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
+  // Financial Adjustment State for Promotion
+  const [nextTermFee, setNextTermFee] = useState('');
+  const [enableCarryForward, setEnableCarryForward] = useState(true);
+  const [carryForwardAmount, setCarryForwardAmount] = useState('');
+  const [enableAdvanceAdjustment, setEnableAdvanceAdjustment] = useState(true);
+  const [advanceAdjustmentAmount, setAdvanceAdjustmentAmount] = useState('');
+  const [nextFeeDueDate, setNextFeeDueDate] = useState('');
+
   // Batch Promote Selection state
   const [selectedRolls, setSelectedRolls] = useState([]);
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -123,22 +131,53 @@ export default function PromoteStudentsManager({
     return Array.from(set).sort();
   }, [students]);
 
-  // Helper to calculate next semester / class
+  // Helper to compute student's financial status for promotion
+  const getStudentFinancials = (std) => {
+    if (!std) return { totalFee: 0, totalPaid: 0, balanceDue: 0, advanceAmount: 0, isAdvance: false };
+    let fee = 0;
+    if (Array.isArray(std.academicFeeHistory) && std.academicFeeHistory.length > 0) {
+      fee = std.academicFeeHistory.reduce((acc, h) => acc + Number(h.amountPaid || h.amount || h.fee || 0), 0);
+    } else {
+      fee = Number(std.totalFee || std.studentFee || std.academicFee || 0);
+    }
+
+    let paid = 0;
+    if (Array.isArray(std.feeHistory) && std.feeHistory.length > 0) {
+      paid = std.feeHistory.reduce((acc, p) => acc + Number(p.amountPaid || p.amount || 0), 0);
+    }
+    if (std.totalPaid) {
+      paid = Math.max(paid, Number(std.totalPaid));
+    }
+
+    const balanceDue = Math.max(0, fee - paid);
+    const advanceAmount = paid > fee ? (paid - fee) : 0;
+    return {
+      totalFee: fee,
+      totalPaid: paid,
+      balanceDue,
+      advanceAmount,
+      isAdvance: advanceAmount > 0
+    };
+  };
+
+  // Helper to calculate next semester / class (Supports both Semester & Year patterns)
   const calculateNextTerm = (student) => {
     const curSem = Number(student.currentSemester) || 1;
     const curCls = (student.currentClass || '').toUpperCase();
 
     if (curCls.includes('YEAR') || curCls.includes('YR')) {
       if (curCls.includes('1ST') || curCls.includes('1')) {
-        return { sem: 2, className: '2nd Year' };
+        return { sem: 'year-2', className: '2nd Year' };
       } else if (curCls.includes('2ND') || curCls.includes('2')) {
-        return { sem: 3, className: 'Final Year / 3rd Year' };
+        return { sem: 'year-3', className: '3rd Year' };
+      } else if (curCls.includes('3RD') || curCls.includes('3')) {
+        return { sem: 'year-4', className: '4th Year' };
       }
     }
 
     const nextSemNum = curSem + 1;
     return {
-      sem: nextSemNum,
+      sem: String(nextSemNum),
       className: `SEM-${nextSemNum}`
     };
   };
@@ -152,6 +191,19 @@ export default function PromoteStudentsManager({
     setNextSession(student.currentSession || student.admissionSession || '');
     setPromotionDate(new Date().toISOString().split('T')[0]);
     setPromotionRemark(`Promoted from ${student.currentClass || ('SEM-' + (student.currentSemester || 1))} to ${className}`);
+
+    const fin = getStudentFinancials(student);
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(10);
+    const defaultDueDate = d.toISOString().split('T')[0];
+
+    setNextTermFee('');
+    setEnableCarryForward(fin.balanceDue > 0);
+    setCarryForwardAmount(fin.balanceDue > 0 ? String(fin.balanceDue) : '0');
+    setEnableAdvanceAdjustment(fin.isAdvance);
+    setAdvanceAdjustmentAmount(fin.isAdvance ? String(fin.advanceAmount) : '0');
+    setNextFeeDueDate(student.nextFeeDueDate || defaultDueDate);
   };
 
   // Confirm Single Promotion
@@ -161,7 +213,13 @@ export default function PromoteStudentsManager({
 
     setSubmitting(true);
     const lookupKey = promoteStudent.rollNo || promoteStudent.enrollmentNo || promoteStudent.registrationNo || promoteStudent.id;
-    const targetSemNum = Number(nextSemester);
+    const targetSemNum = String(nextSemester).startsWith('year-') 
+      ? Number(String(nextSemester).replace('year-', '')) 
+      : Number(nextSemester);
+
+    const carryForwardDue = enableCarryForward ? Number(carryForwardAmount || 0) : 0;
+    const advanceCredit = enableAdvanceAdjustment ? Number(advanceAdjustmentAmount || 0) : 0;
+    const nextTermFeeNum = Number(nextTermFee || 0);
 
     const payload = {
       targetSemester: targetSemNum,
@@ -170,7 +228,11 @@ export default function PromoteStudentsManager({
       nextClass: nextClass,
       nextSession: nextSession,
       promotionDate: promotionDate,
-      remark: promotionRemark
+      remark: promotionRemark,
+      carryForwardDue,
+      advanceCredit,
+      nextTermFee: nextTermFeeNum,
+      nextFeeDueDate: nextFeeDueDate || null
     };
 
     try {
@@ -324,7 +386,9 @@ export default function PromoteStudentsManager({
     if (selectedRolls.length === 0) return;
 
     setSubmitting(true);
-    const targetSemNum = Number(batchNextSemester);
+    const targetSemNum = String(batchNextSemester).startsWith('year-') 
+      ? Number(String(batchNextSemester).replace('year-', '')) 
+      : Number(batchNextSemester);
     const payload = {
       targetSemester: targetSemNum,
       targetClass: batchNextClass,
@@ -879,7 +943,7 @@ export default function PromoteStudentsManager({
           onClick={() => setPromoteStudent(null)}
         >
           <div 
-            className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl text-slate-900 shadow-2xl border-2 border-indigo-100 flex flex-col max-h-[92vh] my-auto overflow-hidden animate-in fade-in zoom-in duration-150"
+            className="bg-white w-full max-w-md sm:max-w-lg rounded-2xl sm:rounded-3xl text-slate-900 shadow-2xl border-2 border-indigo-100 flex flex-col max-h-[92vh] my-auto overflow-hidden animate-in fade-in zoom-in duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header (Fixed at top) */}
@@ -893,7 +957,7 @@ export default function PromoteStudentsManager({
                     Promote Student to Next Term
                   </h3>
                   <p className="text-[10px] text-slate-300 mt-0.5">
-                    अगले सेमेस्टर / वर्ष में प्रमोट करने की पुष्टि करें
+                    अगले सेमेस्टर / वर्ष में प्रमोट करने व फीस समायोजन की पुष्टि करें
                   </p>
                 </div>
               </div>
@@ -908,153 +972,342 @@ export default function PromoteStudentsManager({
             </div>
 
             {/* Scrollable Body Content */}
-            <form onSubmit={handleConfirmPromote} className="flex flex-col flex-1 overflow-hidden min-h-0">
-              <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 text-xs">
-                
-                {/* Student Info Card */}
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Student Name</span>
-                      <strong className="text-sm font-black text-slate-900 block truncate mt-0.5">
-                        {promoteStudent.fullName || promoteStudent.studentName}
-                      </strong>
+            {(() => {
+              const promoteFinancials = getStudentFinancials(promoteStudent);
+              return (
+                <form onSubmit={handleConfirmPromote} className="flex flex-col flex-1 overflow-hidden min-h-0">
+                  <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 text-xs">
+                    
+                    {/* Student Info Card */}
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block">Student Name</span>
+                          <strong className="text-sm font-black text-slate-900 block truncate mt-0.5">
+                            {promoteStudent.fullName || promoteStudent.studentName}
+                          </strong>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block">Roll Number</span>
+                          <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded block mt-0.5">
+                            {promoteStudent.rollNo || promoteStudent.enrollmentNo || 'NO-ROLL'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-slate-600 pt-1.5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-1.5">
+                        <span className="truncate max-w-[200px]" title={promoteStudent.courseName}>
+                          Course: <strong className="text-slate-900">{promoteStudent.courseName}</strong>
+                        </span>
+                        <span className="truncate max-w-[180px]" title={promoteStudent.universityName}>
+                          Univ: <strong className="text-slate-900">{promoteStudent.universityName}</strong>
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Roll Number</span>
-                      <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded block mt-0.5">
-                        {promoteStudent.rollNo || promoteStudent.enrollmentNo || 'NO-ROLL'}
-                      </span>
+
+                    {/* Visual Progression Card */}
+                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-3 rounded-xl flex items-center justify-between shadow-inner">
+                      <div className="text-center min-w-[70px]">
+                        <span className="text-[9px] text-slate-400 uppercase font-bold block">Current</span>
+                        <span className="text-xs font-black text-amber-300 block mt-0.5">
+                          {promoteStudent.currentClass || `SEM-${promoteStudent.currentSemester || 1}`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                        <span>Promoting</span>
+                        <ArrowRight className="w-3.5 h-3.5 animate-pulse" />
+                      </div>
+
+                      <div className="text-center min-w-[70px]">
+                        <span className="text-[9px] text-slate-400 uppercase font-bold block">Next Target</span>
+                        <span className="text-xs font-black text-emerald-400 block mt-0.5">
+                          {nextClass || `SEM-${nextSemester}`}
+                        </span>
+                      </div>
                     </div>
+
+                    {/* Form Fields Grid */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem / Year *</label>
+                        <select
+                          value={nextSemester}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNextSemester(val);
+                            if (val.startsWith('year-')) {
+                              const yrNum = val.replace('year-', '');
+                              const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
+                              setNextClass(yrMap[yrNum] || `${yrNum} Year`);
+                            } else {
+                              setNextClass(`SEM-${val}`);
+                            }
+                          }}
+                          className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                          required
+                        >
+                          <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                            <option value="year-1">1st Year (प्रथम वर्ष)</option>
+                            <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
+                            <option value="year-3">3rd Year (तृतीय वर्ष)</option>
+                            <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
+                          </optgroup>
+                          <optgroup label="Semester Pattern (सेमेस्टर)">
+                            <option value="1">SEM-1 (1st Sem)</option>
+                            <option value="2">SEM-2 (2nd Sem)</option>
+                            <option value="3">SEM-3 (3rd Sem)</option>
+                            <option value="4">SEM-4 (4th Sem)</option>
+                            <option value="5">SEM-5 (5th Sem)</option>
+                            <option value="6">SEM-6 (6th Sem)</option>
+                            <option value="7">SEM-7 (7th Sem)</option>
+                            <option value="8">SEM-8 (8th Sem)</option>
+                          </optgroup>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Class / Label *</label>
+                        <input
+                          type="text"
+                          value={nextClass}
+                          onChange={(e) => setNextClass(e.target.value)}
+                          placeholder="e.g. SEM-2 or 2nd Year"
+                          className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="font-bold block mb-1 text-slate-700 text-[11px]">Session *</label>
+                        <input
+                          type="text"
+                          value={nextSession}
+                          onChange={(e) => setNextSession(e.target.value)}
+                          placeholder="e.g. 2024-25"
+                          className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none font-mono"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-bold block mb-1 text-slate-700 text-[11px]">Promotion Date *</label>
+                        <input
+                          type="date"
+                          value={promotionDate}
+                          onChange={(e) => setPromotionDate(e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Financial Status & Fee Carry Forward / Advance Adjustment Section */}
+                    <div className="bg-slate-50/90 border border-indigo-200/80 rounded-2xl p-3.5 space-y-3 shadow-2xs">
+                      <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                            ₹
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-xs">
+                              Fee & Dues Adjustment (फीस समायोजन)
+                            </h4>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              बकाया फीस को अगले टर्म में जोड़ें या एडवांस राशि एडजस्ट करें
+                            </p>
+                          </div>
+                        </div>
+                        {promoteFinancials.isAdvance ? (
+                          <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-black">
+                            +₹{promoteFinancials.advanceAmount.toLocaleString('en-IN')} Advance
+                          </span>
+                        ) : promoteFinancials.balanceDue > 0 ? (
+                          <span className="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-black">
+                            ₹{promoteFinancials.balanceDue.toLocaleString('en-IN')} Current Due
+                          </span>
+                        ) : (
+                          <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            ✓ No Dues
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Current Term Mini Financial Summary */}
+                      <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-slate-200 text-center">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold block">Assigned Fee</span>
+                          <span className="text-xs font-black text-slate-900 font-mono block mt-0.5">
+                            ₹{promoteFinancials.totalFee.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-emerald-600 font-bold block">Paid So Far</span>
+                          <span className="text-xs font-black text-emerald-700 font-mono block mt-0.5">
+                            ₹{promoteFinancials.totalPaid.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold block">
+                            {promoteFinancials.isAdvance ? 'Advance (+)' : 'Current Due'}
+                          </span>
+                          <span className={`text-xs font-black font-mono block mt-0.5 ${promoteFinancials.isAdvance ? 'text-emerald-700' : promoteFinancials.balanceDue > 0 ? 'text-rose-700' : 'text-slate-700'}`}>
+                            {promoteFinancials.isAdvance ? `+₹${promoteFinancials.advanceAmount.toLocaleString('en-IN')}` : `₹${promoteFinancials.balanceDue.toLocaleString('en-IN')}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Next Term Base Fee & Next Fee Due Date */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="font-bold block mb-1 text-slate-700 text-[11px]">
+                            Next Term Base Fee (अगली फीस)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-slate-400 font-bold text-xs">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={nextTermFee}
+                              onChange={(e) => setNextTermFee(e.target.value)}
+                              placeholder="e.g. 5000 (वैकल्पिक)"
+                              className="w-full pl-6 pr-2.5 py-1.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                            />
+                          </div>
+                          <p className="text-[9px] text-slate-400 mt-0.5">नये सेमेस्टर/वर्ष की कोर्स फीस</p>
+                        </div>
+
+                        {/* Due Date picker */}
+                        <div>
+                          <label className="font-bold block mb-1 text-slate-700 text-[11px] flex items-center justify-between">
+                            <span>Fee Due Date (अंतिम तिथि)</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const d = new Date();
+                                d.setMonth(d.getMonth() + 1);
+                                d.setDate(10);
+                                setNextFeeDueDate(d.toISOString().split('T')[0]);
+                              }}
+                              className="text-[9px] text-indigo-600 hover:text-indigo-800 underline font-semibold cursor-pointer"
+                            >
+                              10 तारीख सेट करें
+                            </button>
+                          </label>
+                          <input
+                            type="date"
+                            value={nextFeeDueDate}
+                            onChange={(e) => setNextFeeDueDate(e.target.value)}
+                            className="w-full p-1.5 bg-white border border-slate-300 rounded-xl font-bold text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                          />
+                          <p className="text-[9px] text-slate-400 mt-0.5">बकाया फीस की अंतिम तिथि</p>
+                        </div>
+                      </div>
+
+                      {/* Carry Forward Remaining Due Toggle & Field */}
+                      {promoteFinancials.balanceDue > 0 && (
+                        <div className="p-2.5 bg-rose-50/80 border border-rose-200 rounded-xl space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={enableCarryForward}
+                              onChange={(e) => setEnableCarryForward(e.target.checked)}
+                              className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer"
+                            />
+                            <span className="text-[11px] font-bold text-rose-900">
+                              पिछली बकाया फीस ₹{promoteFinancials.balanceDue.toLocaleString('en-IN')} को अगले टर्म में जोड़ें (Carry Forward)
+                            </span>
+                          </label>
+                          {enableCarryForward && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1 pl-6">
+                              <label className="text-[10px] font-bold text-rose-800 whitespace-nowrap">Amount to Add:</label>
+                              <div className="relative max-w-[130px]">
+                                <span className="absolute left-2 top-1.5 text-slate-400 font-bold text-xs">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={carryForwardAmount}
+                                  onChange={(e) => setCarryForwardAmount(e.target.value)}
+                                  className="w-full pl-5 pr-2 py-1 bg-white border border-rose-300 rounded-lg font-mono font-bold text-xs text-rose-900 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                                />
+                              </div>
+                              <span className="text-[10px] text-rose-700 font-medium">₹{carryForwardAmount || 0}/- अगले टर्म में जुड़ेंगे</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Advance Adjustment Toggle & Field */}
+                      {promoteFinancials.isAdvance && (
+                        <div className="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={enableAdvanceAdjustment}
+                              onChange={(e) => setEnableAdvanceAdjustment(e.target.checked)}
+                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                            />
+                            <span className="text-[11px] font-bold text-emerald-900">
+                              जमा एडवांस राशि ₹{promoteFinancials.advanceAmount.toLocaleString('en-IN')} को अगले टर्म में क्रेडिट करें (Adjust Advance)
+                            </span>
+                          </label>
+                          {enableAdvanceAdjustment && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1 pl-6">
+                              <label className="text-[10px] font-bold text-emerald-800 whitespace-nowrap">Advance Credit:</label>
+                              <div className="relative max-w-[130px]">
+                                <span className="absolute left-2 top-1.5 text-slate-400 font-bold text-xs">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={advanceAdjustmentAmount}
+                                  onChange={(e) => setAdvanceAdjustmentAmount(e.target.value)}
+                                  className="w-full pl-5 pr-2 py-1 bg-white border border-emerald-300 rounded-lg font-mono font-bold text-xs text-emerald-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                />
+                              </div>
+                              <span className="text-[10px] text-emerald-700 font-medium">₹{advanceAdjustmentAmount || 0}/- अगले टर्म में एडजस्ट होंगे</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="font-bold block mb-1 text-slate-700 text-[11px]">Promotion Remarks / Note</label>
+                      <input
+                        type="text"
+                        value={promotionRemark}
+                        onChange={(e) => setPromotionRemark(e.target.value)}
+                        placeholder="e.g. Promoted to SEM-2 after fee clearance"
+                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
                   </div>
 
-                  <div className="text-[11px] text-slate-600 pt-1.5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-1.5">
-                    <span className="truncate max-w-[200px]" title={promoteStudent.courseName}>
-                      Course: <strong className="text-slate-900">{promoteStudent.courseName}</strong>
-                    </span>
-                    <span className="truncate max-w-[180px]" title={promoteStudent.universityName}>
-                      Univ: <strong className="text-slate-900">{promoteStudent.universityName}</strong>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Visual Progression Card */}
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-3 rounded-xl flex items-center justify-between shadow-inner">
-                  <div className="text-center min-w-[70px]">
-                    <span className="text-[9px] text-slate-400 uppercase font-bold block">Current</span>
-                    <span className="text-xs font-black text-amber-300 block mt-0.5">
-                      {promoteStudent.currentClass || `SEM-${promoteStudent.currentSemester || 1}`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-emerald-400 font-bold text-[11px] px-2 py-1 rounded-full bg-white/5 border border-white/10">
-                    <span>Promoting</span>
-                    <ArrowRight className="w-3.5 h-3.5 animate-pulse" />
-                  </div>
-
-                  <div className="text-center min-w-[70px]">
-                    <span className="text-[9px] text-slate-400 uppercase font-bold block">Next Target</span>
-                    <span className="text-xs font-black text-emerald-400 block mt-0.5">
-                      {nextClass || `SEM-${nextSemester}`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Form Fields Grid */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem Number *</label>
-                    <select
-                      value={nextSemester}
-                      onChange={(e) => {
-                        setNextSemester(e.target.value);
-                        setNextClass(`SEM-${e.target.value}`);
-                      }}
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                      required
+                  {/* Modal Sticky Footer (Always in View, never cut off!) */}
+                  <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPromoteStudent(null)}
+                      className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-bold border border-slate-200 transition-colors cursor-pointer text-xs"
                     >
-                      <option value="1">1 (SEM-1)</option>
-                      <option value="2">2 (SEM-2)</option>
-                      <option value="3">3 (SEM-3)</option>
-                      <option value="4">4 (SEM-4)</option>
-                      <option value="5">5 (SEM-5)</option>
-                      <option value="6">6 (SEM-6)</option>
-                      <option value="7">7 (SEM-7)</option>
-                      <option value="8">8 (SEM-8)</option>
-                    </select>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black px-5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 text-xs"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
+                      <span>{submitting ? 'Promoting...' : `Confirm & Promote`}</span>
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Class / Label *</label>
-                    <input
-                      type="text"
-                      value={nextClass}
-                      onChange={(e) => setNextClass(e.target.value)}
-                      placeholder="e.g. SEM-2 or 2nd Year"
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Session *</label>
-                    <input
-                      type="text"
-                      value={nextSession}
-                      onChange={(e) => setNextSession(e.target.value)}
-                      placeholder="e.g. 2024-25"
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none font-mono"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Promotion Date *</label>
-                    <input
-                      type="date"
-                      value={promotionDate}
-                      onChange={(e) => setPromotionDate(e.target.value)}
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="font-bold block mb-1 text-slate-700 text-[11px]">Promotion Remarks / Note</label>
-                  <input
-                    type="text"
-                    value={promotionRemark}
-                    onChange={(e) => setPromotionRemark(e.target.value)}
-                    placeholder="e.g. Promoted to SEM-2 after fee clearance"
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-              </div>
-
-              {/* Modal Sticky Footer (Always in View, never cut off!) */}
-              <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setPromoteStudent(null)}
-                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-bold border border-slate-200 transition-colors cursor-pointer text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black px-5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 text-xs"
-                >
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{submitting ? 'Promoting...' : `Confirm & Promote`}</span>
-                </button>
-              </div>
-
-            </form>
+                </form>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1111,23 +1364,39 @@ export default function PromoteStudentsManager({
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem Number *</label>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem / Year *</label>
                     <select
                       value={batchNextSemester}
                       onChange={(e) => {
-                        setBatchNextSemester(e.target.value);
-                        setBatchNextClass(`SEM-${e.target.value}`);
+                        const val = e.target.value;
+                        setBatchNextSemester(val);
+                        if (val.startsWith('year-')) {
+                          const yrNum = val.replace('year-', '');
+                          const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
+                          setBatchNextClass(yrMap[yrNum] || `${yrNum} Year`);
+                        } else {
+                          setBatchNextClass(`SEM-${val}`);
+                        }
                       }}
                       className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
                       required
                     >
-                      <option value="2">2 (SEM-2)</option>
-                      <option value="3">3 (SEM-3)</option>
-                      <option value="4">4 (SEM-4)</option>
-                      <option value="5">5 (SEM-5)</option>
-                      <option value="6">6 (SEM-6)</option>
-                      <option value="7">7 (SEM-7)</option>
-                      <option value="8">8 (SEM-8)</option>
+                      <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                        <option value="year-1">1st Year (प्रथम वर्ष)</option>
+                        <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
+                        <option value="year-3">3rd Year (तृतीय वर्ष)</option>
+                        <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
+                      </optgroup>
+                      <optgroup label="Semester Pattern (सेमेस्टर)">
+                        <option value="1">SEM-1 (1st Sem)</option>
+                        <option value="2">SEM-2 (2nd Sem)</option>
+                        <option value="3">SEM-3 (3rd Sem)</option>
+                        <option value="4">SEM-4 (4th Sem)</option>
+                        <option value="5">SEM-5 (5th Sem)</option>
+                        <option value="6">SEM-6 (6th Sem)</option>
+                        <option value="7">SEM-7 (7th Sem)</option>
+                        <option value="8">SEM-8 (8th Sem)</option>
+                      </optgroup>
                     </select>
                   </div>
 

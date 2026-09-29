@@ -1964,6 +1964,146 @@ app.delete('/api/students/:rollNo/photo', (req, res) => {
   }
 });
 
+// Helper to apply financial adjustments (carry forward dues, advance credit, next term fee, due date) on promotion
+function applyPromotionFinancials(student, prevClass, nextClass, financials, promotionDate) {
+  const { nextTermFee, carryForwardDue, advanceCredit, nextFeeDueDate } = financials || {};
+  
+  if (!Array.isArray(student.academicFeeHistory)) student.academicFeeHistory = [];
+  if (!Array.isArray(student.feeHistory)) student.feeHistory = [];
+
+  // Seed previous base fee into history if not already present
+  if (student.academicFeeHistory.length === 0 && Number(student.academicFee || student.studentFee || student.courseFee || 0) > 0) {
+    const initAmt = Number(student.academicFee || student.studentFee || student.courseFee || 0);
+    student.academicFeeHistory.push({
+      id: 'CF-INIT-' + (student.id || student.rollNo || Date.now()),
+      receiptNo: `CF-${student.rollNo || '001'}`,
+      date: student.admissionDate || student.academicFeeDate || new Date().toISOString().split('T')[0],
+      feeDate: student.admissionDate || student.academicFeeDate || new Date().toISOString().split('T')[0],
+      currentClass: prevClass || student.currentClass || 'SEM-1',
+      purpose: 'Center Fee',
+      paymentMode: 'Official Record',
+      refNo: '-',
+      receivedBy: 'Admin Desk',
+      amount: initAmt,
+      amountPaid: initAmt,
+      remark: 'Initial Assigned Fee'
+    });
+  }
+
+  // Seed previous payments into history if not already present
+  if (student.feeHistory.length === 0 && Number(student.totalPaid || 0) > 0) {
+    const initPaid = Number(student.totalPaid || 0);
+    student.feeHistory.push({
+      id: 'REC-INIT-' + (student.id || student.rollNo || Date.now()),
+      receiptNo: `REC-${student.rollNo || '001'}`,
+      date: student.admissionDate || new Date().toISOString().split('T')[0],
+      currentClass: prevClass || student.currentClass || 'SEM-1',
+      purpose: 'Initial Payment',
+      paymentMode: 'Cash / Transfer',
+      refNo: '-',
+      receivedBy: 'Admin Desk',
+      amount: initPaid,
+      amountPaid: initPaid,
+      remark: 'Initial Deposited Fee'
+    });
+  }
+
+  const dateStr = promotionDate || new Date().toISOString().split('T')[0];
+
+  // 1. Add Next Term Base Fee if specified
+  if (Number(nextTermFee) > 0) {
+    student.academicFeeHistory.push({
+      id: 'CF-FEE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      receiptNo: `FEE-${student.rollNo || '001'}-${Date.now().toString().slice(-4)}`,
+      date: dateStr,
+      feeDate: dateStr,
+      currentClass: String(nextClass).trim(),
+      purpose: `${nextClass} Course Fee`,
+      paymentMode: 'Official Fee',
+      refNo: '-',
+      receivedBy: 'Admin Desk',
+      amount: Number(nextTermFee),
+      amountPaid: Number(nextTermFee),
+      remark: `${nextClass} Assigned Fee`
+    });
+  }
+
+  // 2. Add Carry Forward Due if specified
+  if (Number(carryForwardDue) > 0) {
+    student.academicFeeHistory.push({
+      id: 'CF-DUE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      receiptNo: `DUE-${student.rollNo || '001'}-${Date.now().toString().slice(-4)}`,
+      date: dateStr,
+      feeDate: dateStr,
+      currentClass: String(nextClass).trim(),
+      purpose: `Carry Forward Due from ${prevClass}`,
+      paymentMode: 'Carry Forward',
+      refNo: `PREV-${prevClass}`,
+      receivedBy: 'Admin Desk',
+      amount: Number(carryForwardDue),
+      amountPaid: Number(carryForwardDue),
+      remark: `Carried forward due from ${prevClass}`
+    });
+  }
+
+  // 3. Add Advance Credit Payment if specified
+  if (Number(advanceCredit) > 0) {
+    student.feeHistory.push({
+      id: 'REC-ADV-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      receiptNo: `ADV-${student.rollNo || '001'}-${Date.now().toString().slice(-4)}`,
+      date: dateStr,
+      currentClass: String(nextClass).trim(),
+      purpose: `Advance Adjustment from ${prevClass}`,
+      paymentMode: 'Advance Credit',
+      refNo: `ADV-FROM-${prevClass}`,
+      receivedBy: 'Admin Desk',
+      amount: Number(advanceCredit),
+      amountPaid: Number(advanceCredit),
+      remark: `Advance balance adjusted from ${prevClass}`
+    });
+  }
+
+  // 4. Save Due Date
+  if (nextFeeDueDate) {
+    student.nextFeeDueDate = String(nextFeeDueDate).trim();
+  }
+
+  // 5. Update Year-wise fee buckets
+  const nCls = (nextClass || '').toUpperCase();
+  const addedFee = Number(nextTermFee || 0) + Number(carryForwardDue || 0);
+  const addedPaid = Number(advanceCredit || 0);
+
+  if (nCls.includes('SEM-3') || nCls.includes('SEM-4') || nCls.includes('2ND') || nCls.includes('YEAR-2')) {
+    student.academicFeeYear2 = (Number(student.academicFeeYear2) || 0) + addedFee;
+    if (addedPaid > 0) student.paidYear2 = (Number(student.paidYear2) || 0) + addedPaid;
+  } else if (nCls.includes('SEM-5') || nCls.includes('SEM-6') || nCls.includes('3RD') || nCls.includes('YEAR-3')) {
+    student.academicFeeYear3 = (Number(student.academicFeeYear3) || 0) + addedFee;
+    if (addedPaid > 0) student.paidYear3 = (Number(student.paidYear3) || 0) + addedPaid;
+  } else if (nCls.includes('SEM-7') || nCls.includes('SEM-8') || nCls.includes('4TH') || nCls.includes('YEAR-4')) {
+    student.academicFeeYear4 = (Number(student.academicFeeYear4) || 0) + addedFee;
+    if (addedPaid > 0) student.paidYear4 = (Number(student.paidYear4) || 0) + addedPaid;
+  } else {
+    student.academicFee = (Number(student.academicFee) || 0) + addedFee;
+    if (addedPaid > 0) student.paidYear1 = (Number(student.paidYear1) || 0) + addedPaid;
+  }
+
+  // Recalculate global academic fee and total fee
+  const totalAcad = student.academicFeeHistory.reduce((sum, e) => sum + (Number(e.amountPaid || e.amount) || 0), 0);
+  if (totalAcad > 0) {
+    student.academicFee = totalAcad;
+    student.studentFee = totalAcad;
+    student.courseFee = totalAcad;
+    student.totalFee = totalAcad;
+  }
+
+  // Recalculate total paid
+  const totalPaidRec = student.feeHistory.reduce((sum, p) => sum + (Number(p.amountPaid || p.amount) || 0), 0);
+  if (totalPaidRec > 0) {
+    student.totalPaid = totalPaidRec;
+  }
+  student.balanceDue = Math.max(0, (student.totalFee || 0) - (student.totalPaid || 0));
+}
+
 // Dedicated endpoint to promote individual student to next semester / year
 app.post('/api/students/:rollNo/promote', (req, res) => {
   try {
@@ -1998,6 +2138,9 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
     student.promotedAt = new Date().toISOString();
     student.updatedAt = new Date().toISOString();
 
+    // Apply financial adjustments (carry forward dues, advance credit, next term fee, due date)
+    applyPromotionFinancials(student, prevClass, nextClass, req.body, promotionDate);
+
     // Log in semester history
     if (!Array.isArray(student.semesterHistory)) student.semesterHistory = [];
     student.semesterHistory.push({
@@ -2018,7 +2161,11 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
       fromSession: prevSession,
       toSession: student.currentSession,
       promotedAt: new Date().toISOString(),
-      remark
+      remark,
+      carriedForwardDue: Number(req.body.carryForwardDue || 0),
+      advanceCredit: Number(req.body.advanceCredit || 0),
+      nextTermFee: Number(req.body.nextTermFee || 0),
+      nextFeeDueDate: req.body.nextFeeDueDate || null
     });
 
     // Also update any linked dual enrollment secondary student record if applicable
@@ -2376,6 +2523,9 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
   student.promotedAt = new Date().toISOString();
   student.updatedAt = new Date().toISOString();
 
+  // Apply financial adjustments (carry forward dues, advance credit, next term fee, due date)
+  applyPromotionFinancials(student, prevClass, nextClass, req.body, promotionDate);
+
   if (!Array.isArray(student.semesterHistory)) {
     student.semesterHistory = [];
   }
@@ -2398,7 +2548,11 @@ app.put('/api/students/:rollNo/promote', (req, res) => {
     fromSession: prevSession,
     toSession: student.currentSession,
     promotedAt: new Date().toISOString(),
-    remark
+    remark,
+    carriedForwardDue: Number(req.body.carryForwardDue || 0),
+    advanceCredit: Number(req.body.advanceCredit || 0),
+    nextTermFee: Number(req.body.nextTermFee || 0),
+    nextFeeDueDate: req.body.nextFeeDueDate || null
   });
 
   if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
@@ -2543,7 +2697,26 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
     return sum + (val > 0 ? val : 0);
   }, 0);
 
-  student.academicFee = totalAcad;
+  let y1Fee = 0, y2Fee = 0, y3Fee = 0, y4Fee = 0;
+  student.academicFeeHistory.forEach(e => {
+    const cls = (e.currentClass || '').toUpperCase();
+    const amt = Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0));
+    if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND') || cls.includes('YEAR 2')) {
+      y2Fee += amt;
+    } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD') || cls.includes('YEAR 3')) {
+      y3Fee += amt;
+    } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH') || cls.includes('YEAR 4')) {
+      y4Fee += amt;
+    } else {
+      y1Fee += amt;
+    }
+  });
+
+  student.academicFeeYear1 = y1Fee;
+  student.academicFeeYear2 = y2Fee;
+  student.academicFeeYear3 = y3Fee;
+  student.academicFeeYear4 = y4Fee;
+  student.academicFee = y1Fee > 0 ? y1Fee : totalAcad;
   student.studentFee = totalAcad;
   student.courseFee = totalAcad;
   if (remark !== undefined) {
@@ -2991,6 +3164,18 @@ app.post('/api/students/:rollNo/receive-fee', (req, res) => {
   if (remark) {
     student.remark = remark;
   }
+
+  const nCls = (currentClass || student.currentClass || '').toUpperCase();
+  if (nCls.includes('SEM-3') || nCls.includes('SEM-4') || nCls.includes('2ND') || nCls.includes('YEAR-2') || nCls.includes('YEAR 2')) {
+    student.paidYear2 = (Number(student.paidYear2) || 0) + payAmt;
+  } else if (nCls.includes('SEM-5') || nCls.includes('SEM-6') || nCls.includes('3RD') || nCls.includes('YEAR-3') || nCls.includes('YEAR 3')) {
+    student.paidYear3 = (Number(student.paidYear3) || 0) + payAmt;
+  } else if (nCls.includes('SEM-7') || nCls.includes('SEM-8') || nCls.includes('4TH') || nCls.includes('YEAR-4') || nCls.includes('YEAR 4')) {
+    student.paidYear4 = (Number(student.paidYear4) || 0) + payAmt;
+  } else {
+    student.paidYear1 = (Number(student.paidYear1) || 0) + payAmt;
+  }
+
   student.updatedAt = new Date().toISOString();
 
   const rNo = receiptNo && String(receiptNo).trim() 
