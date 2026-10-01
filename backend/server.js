@@ -2787,11 +2787,14 @@ app.post('/api/students/:rollNo/record-refund', (req, res) => {
 app.post('/api/students/:rollNo/complete-course', (req, res) => {
   try {
     const db = readDB();
-    const rawKey = (req.params.rollNo || '').trim();
+    const paramKey = (req.params.rollNo || '').trim();
+    const rawKey = (paramKey && paramKey !== 'undefined' && paramKey !== 'null')
+      ? paramKey
+      : (req.body?.id || req.body?.studentId || req.body?.rollNo || req.body?.enrollmentNo || '').trim();
     const student = findStudent(db.students, rawKey);
 
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+      return res.status(404).json({ success: false, message: `Student ${rawKey || paramKey} not found.` });
     }
 
     student.status = 'Completed';
@@ -2848,11 +2851,14 @@ app.post('/api/students/:rollNo/complete-course', (req, res) => {
 app.post('/api/students/:rollNo/revert-complete', (req, res) => {
   try {
     const db = readDB();
-    const rawKey = (req.params.rollNo || '').trim();
+    const paramKey = (req.params.rollNo || '').trim();
+    const rawKey = (paramKey && paramKey !== 'undefined' && paramKey !== 'null')
+      ? paramKey
+      : (req.body?.id || req.body?.studentId || req.body?.rollNo || req.body?.enrollmentNo || '').trim();
     const student = findStudent(db.students, rawKey);
 
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+      return res.status(404).json({ success: false, message: `Student ${rawKey || paramKey} not found.` });
     }
 
     student.status = 'Active';
@@ -2878,11 +2884,14 @@ app.post('/api/students/:rollNo/revert-complete', (req, res) => {
 app.post('/api/students/:rollNo/document-return', (req, res) => {
   try {
     const db = readDB();
-    const rawKey = (req.params.rollNo || '').trim();
+    const paramKey = (req.params.rollNo || '').trim();
+    const rawKey = (paramKey && paramKey !== 'undefined' && paramKey !== 'null')
+      ? paramKey
+      : (req.body?.id || req.body?.studentId || req.body?.rollNo || req.body?.enrollmentNo || '').trim();
     const student = findStudent(db.students, rawKey);
 
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+      return res.status(404).json({ success: false, message: `Student ${rawKey || paramKey} not found.` });
     }
 
     const {

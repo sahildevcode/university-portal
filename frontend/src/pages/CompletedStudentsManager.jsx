@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   GraduationCap, Search, Filter, RotateCcw, Printer, ArrowLeft,
   CheckCircle2, AlertCircle, Clock, Calendar, ChevronDown, ExternalLink,
   Users, Trash2, RefreshCw, CheckCircle, AlertTriangle, FileText, Eye,
   Building2, School, CreditCard, ChevronRight, X, ArrowUpRight, Award,
-  Download, BookOpen, ShieldCheck, UserCheck, Layers, FileCheck, Check
+  Download, BookOpen, ShieldCheck, UserCheck, Layers, FileCheck, Check,
+  Undo2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,7 +14,6 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
   const context = useLanguage();
   const lang = propLang || context?.lang || 'en';
   const toggleLang = propToggleLang || context?.toggleLang;
-  const isHindi = lang === 'hi';
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +71,17 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
   const showToast = (msg, type = 'success') => {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  // Helper to reliably find student key (even if rollNo is not set)
+  const getStudentLookupKey = (s) => {
+    if (!s) return '';
+    const r = (s.rollNo || '').trim();
+    if (r && r.toLowerCase() !== 'not set') return r;
+    if (s.id && String(s.id).trim()) return String(s.id).trim();
+    if (s.enrollmentNo && String(s.enrollmentNo).trim()) return String(s.enrollmentNo).trim();
+    if (s.registrationNo && String(s.registrationNo).trim()) return String(s.registrationNo).trim();
+    return '';
   };
 
   // Fetch all students from backend
@@ -157,15 +168,6 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
     return Array.from(set).sort();
   }, [completedStudents]);
 
-  const sessionOptions = useMemo(() => {
-    const set = new Set();
-    completedStudents.forEach(s => {
-      const sess = s.currentSession || s.admissionSession || s.session;
-      if (sess) set.add(sess);
-    });
-    return Array.from(set).sort();
-  }, [completedStudents]);
-
   // Filter and search
   const filteredList = useMemo(() => {
     const q = (search || '').trim().toLowerCase();
@@ -228,8 +230,8 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
   const handleOpenEditModal = (student) => {
     const dr = student.documentReturn || {};
     setDocForm({
-      rollNo: student.rollNo || '',
-      enrollmentNo: student.enrollmentNo || '',
+      rollNo: (student.rollNo && student.rollNo !== 'Not Set') ? student.rollNo : '',
+      enrollmentNo: (student.enrollmentNo && student.enrollmentNo !== 'Not Set') ? student.enrollmentNo : '',
       completionDate: student.completionDate || new Date().toISOString().split('T')[0],
       marksheetReturned: Boolean(dr.marksheetReturned),
       marksheetDetails: dr.marksheetDetails || 'All Semesters Original Marksheet',
@@ -269,17 +271,22 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/students/${encodeURIComponent(editModalStudent.rollNo)}/document-return`, {
+      const lookupKey = getStudentLookupKey(editModalStudent);
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/document-return`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(docForm)
+        body: JSON.stringify({
+          id: editModalStudent.id,
+          studentId: editModalStudent.id,
+          ...docForm
+        })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Failed to save document return details');
       }
 
-      showToast(`Document return details saved for ${editModalStudent.fullName || editModalStudent.rollNo}!`);
+      showToast(`Document return details saved for ${editModalStudent.fullName || editModalStudent.rollNo || 'Student'}!`);
       setEditModalStudent(null);
       setRefreshTrigger(prev => prev + 1);
     } catch (err) {
@@ -289,29 +296,43 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
     }
   };
 
-  // Revert Student back to Active Enrolled
+  // Revert Student back to Active Enrolled (Bulletproof with fallback key)
   const handleRevertComplete = async (student) => {
-    const sName = student.fullName || student.rollNo;
-    if (!window.confirm(`क्या आप ${sName} को पुनः "Active Enrolled Students" सूची में वापस भेजना चाहते हैं?`)) {
+    const sName = student.fullName || student.rollNo || 'Student';
+    if (!window.confirm(`Are you sure you want to revert/undo ${sName} back to "Active Enrolled Students"?\n\nThis will restore the student back to the active student list.`)) {
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch(`/api/students/${encodeURIComponent(student.rollNo)}/revert-complete`, {
+      const lookupKey = getStudentLookupKey(student);
+      if (!lookupKey) {
+        throw new Error('Unable to find student identifier. Please try editing the student.');
+      }
+
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/revert-complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ revertedBy: 'Admin' })
+        body: JSON.stringify({ 
+          id: student.id,
+          studentId: student.id,
+          rollNo: student.rollNo,
+          revertedBy: 'Admin'
+        })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Failed to revert student completion');
       }
 
-      showToast(`${sName} successfully restored to Active Enrolled Students!`);
+      if (editModalStudent) {
+        setEditModalStudent(null);
+      }
+
+      showToast(`${sName} successfully restored back to Active Enrolled Students!`);
       setRefreshTrigger(prev => prev + 1);
     } catch (err) {
-      alert(err.message);
+      alert('Error: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -381,13 +402,13 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black uppercase tracking-wider">
               <GraduationCap className="w-4 h-4 text-emerald-400" />
-              <span>Degree Completed & Document Return Clearance</span>
+              <span>Degree Completed &amp; Document Clearance Desk</span>
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
-              डिग्री पूर्ण एवं मूल दस्तावेज वापसी रजिस्टर
+              Degree Completed &amp; Document Return Registry
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Course-completed & graduated students registry. Track returned original marksheets, Transfer Certificate (TC), Migration Certificate, and issue formal clearance acknowledgment slips.
+              Course-completed and graduated students directory. Manage returned original marksheets, Transfer Certificate (TC), Migration Certificate, and issue clearance acknowledgment slips.
             </p>
           </div>
 
@@ -422,10 +443,10 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
           </div>
 
           <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-slate-700/60">
-            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Fully Cleared & Returned</p>
+            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Fully Cleared &amp; Returned</p>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-emerald-300">{stats.fullyCleared}</span>
-              <span className="text-xs text-slate-400 font-medium">Returned</span>
+              <span className="text-xs text-slate-400 font-medium">Cleared</span>
             </div>
           </div>
 
@@ -438,7 +459,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
           </div>
 
           <div className="bg-slate-800/60 backdrop-blur-xs p-3.5 sm:p-4 rounded-2xl border border-slate-700/60">
-            <p className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">TC & Migration Given</p>
+            <p className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">TC &amp; Migration Issued</p>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-sky-300">{stats.tcIssued} / {stats.migrationIssued}</span>
               <span className="text-xs text-slate-400 font-medium">TC / Mig</span>
@@ -507,10 +528,10 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
               onChange={(e) => setFilterClearance(e.target.value)}
               className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700"
             >
-              <option value="all">All Return Status</option>
-              <option value="fully_cleared">Fully Cleared (समस्त वापस)</option>
-              <option value="partially_returned">Partially Returned (आंशिक वापस)</option>
-              <option value="pending">Pending Handover (वापसी शेष)</option>
+              <option value="all">All Clearance Status</option>
+              <option value="fully_cleared">Fully Cleared (Returned)</option>
+              <option value="partially_returned">Partially Returned</option>
+              <option value="pending">Pending Handover</option>
             </select>
           </div>
         </div>
@@ -559,7 +580,6 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
           {filteredList.map((student, idx) => {
             const dr = student.documentReturn || {};
             const isFullyCleared = dr.clearanceStatus === 'Fully Returned' || dr.clearanceStatus === 'Fully Returned & Cleared';
-            const isPartial = dr.clearanceStatus === 'Partially Returned';
 
             return (
               <div 
@@ -660,6 +680,8 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end shrink-0">
+                  
+                  {/* Fill Document Details Button */}
                   <button
                     type="button"
                     onClick={() => handleOpenEditModal(student)}
@@ -667,9 +689,10 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     title="Fill / Manage Document Return Details"
                   >
                     <FileCheck className="w-3.5 h-3.5" />
-                    <span>दस्तावेज वापसी फॉर्म</span>
+                    <span>Return Form</span>
                   </button>
 
+                  {/* Print Slip Button */}
                   <button
                     type="button"
                     onClick={() => setPrintSlipStudent(student)}
@@ -679,13 +702,15 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     <Printer className="w-4 h-4" />
                   </button>
 
+                  {/* PROMINENT REVERT / UNDO BUTTON */}
                   <button
                     type="button"
                     onClick={() => handleRevertComplete(student)}
-                    className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition cursor-pointer"
-                    title="Revert back to Active Enrolled Students"
+                    className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                    title="Undo / Revert student back to active enrolled student list"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Undo / Revert</span>
                   </button>
                 </div>
               </div>
@@ -695,7 +720,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
       )}
 
       {/* ========================================================================= */}
-      {/* DOCUMENT RETURN EDIT MODAL (THE COMPREHENSIVE BLOCK FORM REQUESTED BY USER) */}
+      {/* DOCUMENT RETURN EDIT MODAL (THE COMPREHENSIVE BLOCK FORM IN ENGLISH)       */}
       {/* ========================================================================= */}
       {editModalStudent && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start">
@@ -709,7 +734,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-black">
-                    छात्र दस्तावेज वापसी एवं एनरोलमेंट/रोल नंबर पंजीयन
+                    Student Document Return &amp; Roll/Enrollment Registry
                   </h2>
                   <p className="text-xs text-indigo-200">
                     {editModalStudent.fullName || editModalStudent.name} • {editModalStudent.courseName || editModalStudent.course}
@@ -734,15 +759,15 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <span className="font-black text-slate-800 text-sm flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                    <span>Block 1: विद्यार्थी पहचान एवं पंजीयन क्रमांक (Identifiers)</span>
+                    <span>Block 1: Student Identifiers &amp; Registration</span>
                   </span>
-                  <span className="text-[10px] text-slate-500 font-bold">रोल नंबर एवं एनरोलमेंट नंबर भरें</span>
+                  <span className="text-[10px] text-slate-500 font-bold">Fill Roll No and Enrollment No</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">
-                      Roll Number (रोल नंबर) <span className="text-rose-500">*</span>
+                      Roll Number <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -756,7 +781,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
 
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">
-                      Enrollment Number (एनरोलमेंट नंबर) <span className="text-rose-500">*</span>
+                      Enrollment Number <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -770,7 +795,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
 
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">
-                      Completion Date (कोर्स पूर्ण दिनांक)
+                      Completion Date
                     </label>
                     <input
                       type="date"
@@ -787,7 +812,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
                   <span className="font-black text-emerald-900 text-sm flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-emerald-600" />
-                    <span>Block 2: मूल अंकसूची / मार्कशीट वापसी (Marksheet Return)</span>
+                    <span>Block 2: Original Marksheet Return</span>
                   </span>
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -796,14 +821,14 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, marksheetReturned: e.target.checked })}
                       className="w-4 h-4 accent-emerald-600 rounded"
                     />
-                    <span className="font-bold text-emerald-900 text-xs">मार्कशीट दे दी गई (Returned)</span>
+                    <span className="font-bold text-emerald-900 text-xs">Marksheet Returned to Student</span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="font-bold text-slate-700 block mb-1">
-                      Returned Marksheet Details (कौन-कौन सी अंकसूची दी गई)
+                      Returned Marksheet Details
                     </label>
                     <input
                       type="text"
@@ -815,7 +840,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Return Date (वापसी दिनांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">Return Date</label>
                     <input
                       type="date"
                       value={docForm.marksheetDate}
@@ -831,7 +856,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-amber-200 pb-2">
                   <span className="font-black text-amber-900 text-sm flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-amber-600" />
-                    <span>Block 3: स्थानांतरण प्रमाण पत्र (Transfer Certificate / TC)</span>
+                    <span>Block 3: Transfer Certificate (TC)</span>
                   </span>
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -840,13 +865,13 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, tcIssued: e.target.checked })}
                       className="w-4 h-4 accent-amber-600 rounded"
                     />
-                    <span className="font-bold text-amber-900 text-xs">टीसी प्रदान की गई (TC Given)</span>
+                    <span className="font-bold text-amber-900 text-xs">TC Issued &amp; Handed Over</span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">TC Number (टीसी क्रमांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">TC Number</label>
                     <input
                       type="text"
                       placeholder="e.g. TC-2026/045"
@@ -857,7 +882,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">TC Issue Date (टीसी दिनांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">TC Issue Date</label>
                     <input
                       type="date"
                       value={docForm.tcDate}
@@ -867,10 +892,10 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">TC Remarks (टिप्पणी)</label>
+                    <label className="font-bold text-slate-700 block mb-1">TC Remarks</label>
                     <input
                       type="text"
-                      placeholder="e.g. Original TC issued for higher studies"
+                      placeholder="e.g. Issued for higher education"
                       value={docForm.tcRemarks}
                       onChange={(e) => setDocForm({ ...docForm, tcRemarks: e.target.value })}
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium"
@@ -884,7 +909,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-sky-200 pb-2">
                   <span className="font-black text-sky-900 text-sm flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-sky-600" />
-                    <span>Block 4: माइग्रेशन सर्टिफिकेट (Migration Certificate)</span>
+                    <span>Block 4: Migration Certificate</span>
                   </span>
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -893,13 +918,13 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, migrationIssued: e.target.checked })}
                       className="w-4 h-4 accent-sky-600 rounded"
                     />
-                    <span className="font-bold text-sky-900 text-xs">माइग्रेशन दे दिया गया (Migration Given)</span>
+                    <span className="font-bold text-sky-900 text-xs">Migration Issued &amp; Given</span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Migration Number (क्रमांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">Migration Number</label>
                     <input
                       type="text"
                       placeholder="e.g. MIG-MCBU-8762"
@@ -910,7 +935,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Issue Date (दिनांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">Issue Date</label>
                     <input
                       type="date"
                       value={docForm.migrationDate}
@@ -920,10 +945,10 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Remarks (टिप्पणी)</label>
+                    <label className="font-bold text-slate-700 block mb-1">Remarks</label>
                     <input
                       type="text"
-                      placeholder="e.g. University issued original migration"
+                      placeholder="e.g. Original migration handed over"
                       value={docForm.migrationRemarks}
                       onChange={(e) => setDocForm({ ...docForm, migrationRemarks: e.target.value })}
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium"
@@ -937,7 +962,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-purple-200 pb-2">
                   <span className="font-black text-purple-900 text-sm flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-purple-600" />
-                    <span>Block 5: डिग्री / प्रोविजनल प्रमाण पत्र (Degree / Provisional)</span>
+                    <span>Block 5: Degree / Provisional &amp; Character Certificate</span>
                   </span>
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -946,7 +971,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, degreeIssued: e.target.checked })}
                       className="w-4 h-4 accent-purple-600 rounded"
                     />
-                    <span className="font-bold text-purple-900 text-xs">डिग्री / प्रोविजनल दे दी गई</span>
+                    <span className="font-bold text-purple-900 text-xs">Degree / Provisional Given</span>
                   </label>
                 </div>
 
@@ -963,7 +988,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Handover Date (हस्तांतरण दिनांक)</label>
+                    <label className="font-bold text-slate-700 block mb-1">Handover Date</label>
                     <input
                       type="date"
                       value={docForm.degreeDate}
@@ -981,7 +1006,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                         onChange={(e) => setDocForm({ ...docForm, characterCertificate: e.target.checked })}
                         className="w-4 h-4 accent-purple-600 rounded"
                       />
-                      <span className="font-bold text-slate-700">चरित्र प्रमाण पत्र भी दिया गया</span>
+                      <span className="font-bold text-slate-700">Character Certificate Issued</span>
                     </label>
                   </div>
                 </div>
@@ -992,9 +1017,9 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                   <span className="font-black text-amber-300 text-sm flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-400" />
-                    <span>Block 6: दस्तावेज प्राप्तकर्ता एवं पावती विवरण (Receiver & Clearance)</span>
+                    <span>Block 6: Receiver &amp; Clearance Acknowledgment</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">दस्तावेज किसको सौंपे गए</span>
+                  <span className="text-[10px] text-slate-400">Handover recipient info</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-slate-900">
@@ -1005,16 +1030,16 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, receiverType: e.target.value })}
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold"
                     >
-                      <option value="Student">Student Himself (स्वयं छात्र)</option>
-                      <option value="Father">Father (पिताजी)</option>
-                      <option value="Mother">Mother (माताजी)</option>
-                      <option value="Brother/Sister">Brother / Sister (भाई/बहन)</option>
-                      <option value="Authorized Representative">Authorized Person (अधिकृत व्यक्ति)</option>
+                      <option value="Student">Student Himself</option>
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Brother/Sister">Brother / Sister</option>
+                      <option value="Authorized Representative">Authorized Representative</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1 text-[11px]">Receiver Name (प्राप्तकर्ता का नाम)</label>
+                    <label className="font-bold text-slate-300 block mb-1 text-[11px]">Receiver Name</label>
                     <input
                       type="text"
                       required
@@ -1026,7 +1051,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1 text-[11px]">Receiver Mobile (मोबाइल)</label>
+                    <label className="font-bold text-slate-300 block mb-1 text-[11px]">Receiver Mobile</label>
                     <input
                       type="text"
                       placeholder="10-digit mobile number"
@@ -1043,9 +1068,9 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, clearanceStatus: e.target.value })}
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-black text-indigo-900"
                     >
-                      <option value="Fully Returned">Fully Returned (समस्त वापस ✅)</option>
-                      <option value="Partially Returned">Partially Returned (आंशिक वापस ⏳)</option>
-                      <option value="Pending">Pending Handover (वापसी शेष)</option>
+                      <option value="Fully Returned">Fully Returned &amp; Cleared</option>
+                      <option value="Partially Returned">Partially Returned</option>
+                      <option value="Pending">Pending Handover</option>
                     </select>
                   </div>
                 </div>
@@ -1060,23 +1085,36 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       className="w-4 h-4 accent-emerald-500 rounded mt-0.5"
                     />
                     <span className="text-xs text-slate-200 leading-relaxed">
-                      <strong>प्राप्तकर्ता घोषणा:</strong> "मैंने अपने सभी मूल प्रमाण पत्र, मार्कशीट, टीसी एवं माइग्रेशन प्रमाण पत्र पूर्ण रूप से सही अवस्था में प्राप्त कर लिए हैं। संस्थान के पास मेरा कोई भी मूल दस्तावेज शेष नहीं है।"
+                      <strong>Receiver Declaration:</strong> "I have received all my original marksheets, Transfer Certificate (TC), and Migration Certificate in good condition. No original documents are pending with the institute."
                     </span>
                   </label>
                 </div>
               </div>
 
               {/* Submit Buttons */}
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-200 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setEditModalStudent(null)}
-                  className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
-                >
-                  Cancel (रद्द करें)
-                </button>
-
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-200 shrink-0">
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditModalStudent(null)}
+                    className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
+                  >
+                    Close
+                  </button>
+
+                  {/* Undo / Revert Button Inside Modal */}
+                  <button
+                    type="button"
+                    onClick={() => handleRevertComplete(editModalStudent)}
+                    className="px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    title="Restore student back to Active Enrolled Students"
+                  >
+                    <RotateCcw className="w-4 h-4 text-amber-700" />
+                    <span>Undo / Revert to Active</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => {
@@ -1090,7 +1128,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Slip (रसीद)</span>
+                    <span>Print Slip</span>
                   </button>
 
                   <button
@@ -1099,7 +1137,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Saving...' : 'Save Document Return (सुरक्षित करें)'}</span>
+                    <span>{isSubmitting ? 'Saving...' : 'Save Document Return'}</span>
                   </button>
                 </div>
               </div>
@@ -1109,7 +1147,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
       )}
 
       {/* ========================================================================= */}
-      {/* PRINTABLE DOCUMENT RETURN & CLEARANCE RECEIPT / SLIP                       */}
+      {/* PRINTABLE DOCUMENT RETURN & CLEARANCE RECEIPT / SLIP IN 100% ENGLISH       */}
       {/* ========================================================================= */}
       {printSlipStudent && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-2 sm:p-6 py-4 flex justify-center items-start">
@@ -1119,7 +1157,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
             <div className="bg-slate-900 text-white p-3 px-5 flex items-center justify-between no-print">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                 <Printer className="w-4 h-4 text-emerald-400" />
-                <span>दस्तावेज वापसी पावती रसीद (Print Preview)</span>
+                <span>Document Return Clearance Slip (Print Preview)</span>
               </span>
 
               <div className="flex items-center gap-2">
@@ -1159,34 +1197,34 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   Direct Helpline: +91 7000212637 • Email: pkcinstituteaiu@gmail.com
                 </p>
                 <div className="inline-block mt-2 px-3 py-1 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-md">
-                  दस्तावेज वापसी एवं अनापत्ति पावती (Document Return &amp; Clearance Slip)
+                  Student Document Return &amp; Clearance Acknowledgment Slip
                 </div>
               </div>
 
               {/* Student Details Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                 <div>
-                  <span className="text-slate-500 font-medium">विद्यार्थी का नाम:</span>{' '}
+                  <span className="text-slate-500 font-medium">Student Name:</span>{' '}
                   <strong className="text-slate-900">{printSlipStudent.fullName || printSlipStudent.name}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-medium">पिता का नाम:</span>{' '}
+                  <span className="text-slate-500 font-medium">Father's Name:</span>{' '}
                   <strong className="text-slate-900">{printSlipStudent.fatherName || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-medium">रोल नंबर (Roll No):</span>{' '}
+                  <span className="text-slate-500 font-medium">Roll Number:</span>{' '}
                   <strong className="text-indigo-900 font-mono text-sm">{printSlipStudent.rollNo || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-medium">एनरोलमेंट नंबर (Enroll No):</span>{' '}
+                  <span className="text-slate-500 font-medium">Enrollment Number:</span>{' '}
                   <strong className="text-indigo-900 font-mono text-sm">{printSlipStudent.enrollmentNo || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-medium">कोर्स / डिग्री:</span>{' '}
+                  <span className="text-slate-500 font-medium">Course / Program:</span>{' '}
                   <strong className="text-slate-900">{printSlipStudent.courseName || printSlipStudent.course}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-medium">विश्वविद्यालय:</span>{' '}
+                  <span className="text-slate-500 font-medium">University / College:</span>{' '}
                   <strong className="text-slate-900">{printSlipStudent.universityName || printSlipStudent.collegeName}</strong>
                 </div>
               </div>
@@ -1194,24 +1232,24 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
               {/* Returned Documents Table */}
               <div className="space-y-1.5">
                 <h4 className="text-xs font-black uppercase text-slate-800 tracking-wider">
-                  वापस किए गए मूल दस्तावेज एवं प्रमाण पत्र (Returned Documents Registry):
+                  Returned Original Documents &amp; Certificates Registry:
                 </h4>
                 <table className="w-full text-left text-xs border border-slate-300 border-collapse">
                   <thead>
                     <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
-                      <th className="p-2 border-r border-slate-300 w-10">क्र.</th>
-                      <th className="p-2 border-r border-slate-300">दस्तावेज का विवरण (Document Name)</th>
-                      <th className="p-2 border-r border-slate-300 w-24">स्थिति</th>
-                      <th className="p-2 border-r border-slate-300">क्रमांक / विवरण</th>
-                      <th className="p-2 w-28">दिनांक</th>
+                      <th className="p-2 border-r border-slate-300 w-10">#</th>
+                      <th className="p-2 border-r border-slate-300">Document Name</th>
+                      <th className="p-2 border-r border-slate-300 w-24">Status</th>
+                      <th className="p-2 border-r border-slate-300">Serial No / Details</th>
+                      <th className="p-2 w-28">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-slate-200">
                       <td className="p-2 border-r border-slate-200 text-center font-bold">1</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">मूल अंकसूची (Original Marksheet)</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Original Degree Marksheets</td>
                       <td className="p-2 border-r border-slate-200 font-bold text-emerald-700">
-                        {printSlipStudent.documentReturn?.marksheetReturned ? 'वापस दी गई' : 'शेष'}
+                        {printSlipStudent.documentReturn?.marksheetReturned ? 'Returned' : 'Pending'}
                       </td>
                       <td className="p-2 border-r border-slate-200 font-mono">
                         {printSlipStudent.documentReturn?.marksheetDetails || 'All Semesters Marksheet'}
@@ -1220,36 +1258,36 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     </tr>
                     <tr className="border-b border-slate-200">
                       <td className="p-2 border-r border-slate-200 text-center font-bold">2</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">स्थानांतरण प्रमाण पत्र (Transfer Certificate - TC)</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Transfer Certificate (TC)</td>
                       <td className="p-2 border-r border-slate-200 font-bold text-emerald-700">
-                        {printSlipStudent.documentReturn?.tcIssued ? 'जारी किया गया' : 'लागू नहीं'}
+                        {printSlipStudent.documentReturn?.tcIssued ? 'Issued' : 'N/A'}
                       </td>
                       <td className="p-2 border-r border-slate-200 font-mono">{printSlipStudent.documentReturn?.tcNumber || '-'}</td>
                       <td className="p-2 font-mono">{printSlipStudent.documentReturn?.tcDate || '-'}</td>
                     </tr>
                     <tr className="border-b border-slate-200">
                       <td className="p-2 border-r border-slate-200 text-center font-bold">3</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">माइग्रेशन प्रमाण पत्र (Migration Certificate)</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Migration Certificate</td>
                       <td className="p-2 border-r border-slate-200 font-bold text-emerald-700">
-                        {printSlipStudent.documentReturn?.migrationIssued ? 'प्रदान किया गया' : 'लागू नहीं'}
+                        {printSlipStudent.documentReturn?.migrationIssued ? 'Issued' : 'N/A'}
                       </td>
                       <td className="p-2 border-r border-slate-200 font-mono">{printSlipStudent.documentReturn?.migrationNumber || '-'}</td>
                       <td className="p-2 font-mono">{printSlipStudent.documentReturn?.migrationDate || '-'}</td>
                     </tr>
                     <tr className="border-b border-slate-200">
                       <td className="p-2 border-r border-slate-200 text-center font-bold">4</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">डिग्री / प्रोविजनल प्रमाण पत्र</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Degree / Provisional Certificate</td>
                       <td className="p-2 border-r border-slate-200 font-bold text-emerald-700">
-                        {printSlipStudent.documentReturn?.degreeIssued ? 'हस्तांतरित' : 'प्रतीक्षित'}
+                        {printSlipStudent.documentReturn?.degreeIssued ? 'Handed Over' : 'Pending'}
                       </td>
                       <td className="p-2 border-r border-slate-200 font-mono">{printSlipStudent.documentReturn?.degreeNumber || '-'}</td>
                       <td className="p-2 font-mono">{printSlipStudent.documentReturn?.degreeDate || '-'}</td>
                     </tr>
                     <tr>
                       <td className="p-2 border-r border-slate-200 text-center font-bold">5</td>
-                      <td className="p-2 border-r border-slate-200 font-bold">चरित्र प्रमाण पत्र (Character Certificate)</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Character Certificate (CC)</td>
                       <td className="p-2 border-r border-slate-200 font-bold text-emerald-700">
-                        {printSlipStudent.documentReturn?.characterCertificate ? 'प्रदान किया गया' : 'लागू नहीं'}
+                        {printSlipStudent.documentReturn?.characterCertificate ? 'Issued' : 'N/A'}
                       </td>
                       <td className="p-2 border-r border-slate-200">-</td>
                       <td className="p-2 font-mono">{printSlipStudent.documentReturn?.handoverDate || '-'}</td>
@@ -1261,13 +1299,13 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
               {/* Receiver Acknowledgment Box */}
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
                 <p className="font-bold text-slate-800">
-                  प्राप्तकर्ता विवरण:{' '}
+                  Receiver Details:{' '}
                   <span className="font-normal">
                     {printSlipStudent.documentReturn?.receiverName || printSlipStudent.fullName} ({printSlipStudent.documentReturn?.receiverType || 'Student'}), Mobile: {printSlipStudent.documentReturn?.receiverMobile || printSlipStudent.mobileNo || 'N/A'}
                   </span>
                 </p>
                 <p className="text-[11px] text-slate-600 italic leading-relaxed">
-                  "मैंने उपरोक्त सभी मूल दस्तावेज एवं प्रमाण पत्र संस्थान से सही अवस्था में प्राप्त कर लिए हैं। संस्थान के पास मेरा कोई भी मूल शैक्षणिक दस्तावेज शेष नहीं है।"
+                  "I have received all the above original marksheets and certificates from the institute in good condition. No original academic documents are pending with the institute."
                 </p>
               </div>
 
@@ -1275,13 +1313,13 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
               <div className="grid grid-cols-2 gap-8 pt-8 text-center text-xs">
                 <div className="space-y-1">
                   <div className="border-t border-slate-400 w-44 mx-auto pt-1"></div>
-                  <p className="font-bold text-slate-800">हस्ताक्षर प्राप्तकर्ता / छात्र</p>
-                  <p className="text-[10px] text-slate-500">(Signature of Receiver / Student)</p>
+                  <p className="font-bold text-slate-800">Signature of Receiver / Student</p>
+                  <p className="text-[10px] text-slate-500">Receiver / Student</p>
                 </div>
 
                 <div className="space-y-1">
                   <div className="border-t border-slate-400 w-44 mx-auto pt-1"></div>
-                  <p className="font-bold text-slate-800">अधिकृत हस्ताक्षरकर्ता एवं सील</p>
+                  <p className="font-bold text-slate-800">Authorized Signatory &amp; Seal</p>
                   <p className="text-[10px] text-slate-500">PKC Education Learning Institute</p>
                 </div>
               </div>

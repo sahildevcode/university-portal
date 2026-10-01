@@ -6382,7 +6382,7 @@ export default function StudentList({
                 </div>
                 <div>
                   <h3 className="font-black text-base sm:text-lg">Mark Course / Degree Completed</h3>
-                  <p className="text-xs text-emerald-200">डिग्री पूर्ण करें एवं दस्तावेज वापसी में भेजें</p>
+                  <p className="text-xs text-emerald-200">Transfer student to Document Return Registry</p>
                 </div>
               </div>
               <button
@@ -6399,29 +6399,29 @@ export default function StudentList({
               <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-emerald-800 font-bold uppercase">Student Details</span>
-                  <span className="font-mono text-[11px] font-black text-emerald-900">Roll: {completingStudent.rollNo || 'N/A'}</span>
+                  <span className="font-mono text-[11px] font-black text-emerald-900">Roll: {completingStudent.rollNo || 'Not Set'}</span>
                 </div>
                 <p className="text-sm font-black text-slate-900">{completingStudent.fullName || completingStudent.name}</p>
                 <p className="text-[11px] text-slate-600">
                   S/O {completingStudent.fatherName || 'N/A'} • {completingStudent.courseName || completingStudent.course}
                 </p>
                 <p className="text-[10px] text-slate-500 font-mono">
-                  Enrollment No: {completingStudent.enrollmentNo || 'Pending'}
+                  Enrollment No: {completingStudent.enrollmentNo || 'Not Set'}
                 </p>
               </div>
 
               <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-amber-900 space-y-1 text-[11px]">
                 <p className="font-bold flex items-center gap-1.5 text-amber-950">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>महत्वपूर्ण सूचना (Course Completion Notice):</span>
+                  <span>Important Notice:</span>
                 </p>
                 <p className="leading-relaxed">
-                  इस बटन को दबाने के बाद यह छात्र <strong>"Completed &amp; Document Return"</strong> वाले नए पेज में चला जाएगा। वहां आप छात्र के मूल दस्तावेज (मार्कशीट, टीसी, माइग्रेशन) वापसी का रिकॉर्ड दर्ज कर सकेंगे और पावती रसीद प्रिंट कर सकेंगे।
+                  Upon marking as complete, this student will be moved to the <strong>"Completed &amp; Document Return"</strong> page. There you can record returned marksheets, TC, migration certificate, and print formal clearance acknowledgment slips.
                 </p>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Completion Date (कोर्स पूर्ण दिनांक):</label>
+                <label className="font-bold text-slate-700 block mb-1">Completion Date:</label>
                 <input
                   type="date"
                   value={completionDate}
@@ -6431,7 +6431,7 @@ export default function StudentList({
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Remarks / Note (टिप्पणी):</label>
+                <label className="font-bold text-slate-700 block mb-1">Remarks / Notes:</label>
                 <input
                   type="text"
                   value={completionRemark}
@@ -6448,7 +6448,7 @@ export default function StudentList({
                   onClick={() => setCompletingStudent(null)}
                   className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
                 >
-                  Cancel (रद्द करें)
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -6457,7 +6457,7 @@ export default function StudentList({
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
                 >
                   <GraduationCap className="w-4 h-4" />
-                  <span>{completeLoading ? 'Completing...' : 'Confirm & Complete (डिग्री पूर्ण करें)'}</span>
+                  <span>{completeLoading ? 'Completing...' : 'Confirm & Complete'}</span>
                 </button>
               </div>
             </div>
