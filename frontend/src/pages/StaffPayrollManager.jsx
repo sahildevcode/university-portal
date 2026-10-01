@@ -6,6 +6,24 @@ import {
   MapPin, Landmark, Check, RotateCcw, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 
+export const ALL_PORTAL_MODULES = [
+  { id: 'records', label: 'Student Records', desc: 'Master database, college search & fee ledgers', badge: 'All Students' },
+  { id: 'admissions', label: 'Enroll New Student', desc: '39-field admission form & directory', badge: 'Admissions' },
+  { id: 'cashcounter', label: 'Fee & Cash Counter', desc: 'Fee receipts, installment collection & accounts', badge: 'Live Counter' },
+  { id: 'promote', label: 'Promote Students', desc: '1-click upgrade to next semester or year', badge: 'Promote' },
+  { id: 'completed-students', label: 'Completed Students', desc: 'Degree completed registry & document return', badge: 'Document Return' },
+  { id: 'yearly-marksheets', label: 'Student Marksheet Manager', desc: '8 sem & 4 yrs marksheet PDF hub', badge: '8 Sem / 4 Yr' },
+  { id: 'documents', label: 'Documents Tracker', desc: 'KYC & original certificate verification', badge: 'KYC Desk' },
+  { id: 'inquiries', label: 'Student Inquiry Desk', desc: 'Student admission leads & job resumes', badge: 'Inquiries' },
+  { id: 'university-paid', label: 'University Settlement', desc: 'University official fees paid & dues ledger', badge: 'Settlement' },
+  { id: 'cancelled', label: 'Cancelled Admissions', desc: 'Cancelled admissions & refund clearance', badge: 'Refund Desk' },
+  { id: 'staff', label: 'Staff & Payroll Management', desc: 'Staff directory, attendance & salary payroll', badge: 'Staff Hub' },
+  { id: 'cms', label: 'Update Images Student Portal', desc: 'Update photos, banners & student website text', badge: 'CMS' },
+  { id: 'syllabus', label: 'Universities & Courses', desc: 'Affiliated colleges, courses & syllabus master', badge: 'Curricula' },
+  { id: 'personal-docs', label: 'Save Personal Documents', desc: 'Confidential certificates & personal ID vault', badge: 'Vault' },
+  { id: 'vocational', label: 'Vocational Courses', desc: 'Skill trades & vocational Excel imports', badge: 'Vocational' }
+];
+
 export default function StaffPayrollManager({ adminUser }) {
   // Active Sub-Tab: 'directory' | 'attendance' | 'payroll'
   const [activeTab, setActiveTab] = useState('directory');
@@ -38,6 +56,7 @@ export default function StaffPayrollManager({ adminUser }) {
     role: 'Cash Counter & Admission Desk',
     department: 'Accounts & Admissions',
     status: 'Active',
+    allowedModules: ['cashcounter', 'admissions', 'documents', 'records'],
 
     // Personal & Family Details
     fatherName: '',
@@ -328,7 +347,10 @@ export default function StaffPayrollManager({ adminUser }) {
   // ========================================================
   const handleOpenAddStaff = () => {
     setEditingStaffId(null);
-    setStaffForm(initialStaffForm);
+    setStaffForm({
+      ...initialStaffForm,
+      allowedModules: ['cashcounter', 'admissions', 'documents', 'records']
+    });
     setShowStaffModal(true);
   };
 
@@ -338,7 +360,10 @@ export default function StaffPayrollManager({ adminUser }) {
       ...initialStaffForm,
       ...stf,
       experienceMonths: stf.experienceMonths !== undefined ? String(stf.experienceMonths) : '',
-      salary: stf.salary !== undefined ? String(stf.salary) : ''
+      salary: stf.salary !== undefined ? String(stf.salary) : '',
+      allowedModules: Array.isArray(stf.allowedModules) && stf.allowedModules.length > 0
+        ? stf.allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records']
     });
     setShowStaffModal(true);
   };
@@ -355,7 +380,8 @@ export default function StaffPayrollManager({ adminUser }) {
         body: JSON.stringify({
           ...staffForm,
           salary: Number(staffForm.salary) || 0,
-          experienceMonths: Number(staffForm.experienceMonths) || 0
+          experienceMonths: Number(staffForm.experienceMonths) || 0,
+          allowedModules: Array.isArray(staffForm.allowedModules) ? staffForm.allowedModules : []
         })
       });
       const data = await res.json();
@@ -594,6 +620,16 @@ export default function StaffPayrollManager({ adminUser }) {
                               <p className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded inline-block mt-0.5">
                                 {stf.post || stf.role || 'Staff Member'}
                               </p>
+                              <div className="flex flex-wrap items-center gap-1 mt-1">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 flex items-center gap-1">
+                                  <span>🔑</span>
+                                  <span>
+                                    {Array.isArray(stf.allowedModules) && stf.allowedModules.length === ALL_PORTAL_MODULES.length 
+                                      ? 'Full Access (All 15 Pages)' 
+                                      : `${(Array.isArray(stf.allowedModules) ? stf.allowedModules : ['cashcounter', 'admissions', 'documents', 'records']).length} Pages Allowed`}
+                                  </span>
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -1150,6 +1186,92 @@ export default function StaffPayrollManager({ adminUser }) {
                 </div>
               </div>
 
+              {/* SECTION: Portal Pages & Module Access Permissions (Select Single or Multiple) */}
+              <div className="bg-gradient-to-br from-indigo-50/70 via-white to-amber-50/40 p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-indigo-950 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                      <span>Portal Pages & Module Access Permissions (Single or Multiple)</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Admin manually selects which portal pages this staff member can access. When staff logs in, they only see the selected pages.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setStaffForm(prev => ({ ...prev, allowedModules: ALL_PORTAL_MODULES.map(m => m.id) }))}
+                      className="px-2.5 py-1 text-[11px] font-extrabold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition cursor-pointer shadow-xs"
+                    >
+                      ✓ Select All (15)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStaffForm(prev => ({ ...prev, allowedModules: ['cashcounter', 'admissions', 'documents', 'records'] }))}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer shadow-xs"
+                    >
+                      Standard Counter (4)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStaffForm(prev => ({ ...prev, allowedModules: [] }))}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 transition cursor-pointer"
+                    >
+                      ✕ Clear All
+                    </button>
+                    <span className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 border border-amber-500 shadow-xs">
+                      Permitted: {(staffForm.allowedModules || []).length} / {ALL_PORTAL_MODULES.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Module Checkbox Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+                  {ALL_PORTAL_MODULES.map(mod => {
+                    const isChecked = (staffForm.allowedModules || []).includes(mod.id);
+                    return (
+                      <label
+                        key={mod.id}
+                        className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                          isChecked 
+                            ? 'bg-indigo-50/70 border-indigo-500 shadow-xs ring-1 ring-indigo-500/20' 
+                            : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 opacity-70'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const current = staffForm.allowedModules || [];
+                            if (e.target.checked) {
+                              setStaffForm(prev => ({ ...prev, allowedModules: [...current, mod.id] }));
+                            } else {
+                              setStaffForm(prev => ({ ...prev, allowedModules: current.filter(id => id !== mod.id) }));
+                            }
+                          }}
+                          className="w-4 h-4 mt-0.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className={`font-bold text-xs ${isChecked ? 'text-indigo-950 font-black' : 'text-slate-800'}`}>
+                              {mod.label}
+                            </span>
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${isChecked ? 'bg-indigo-200/70 text-indigo-900' : 'bg-slate-100 text-slate-500'}`}>
+                              {mod.badge}
+                            </span>
+                          </div>
+                          <p className="text-[10.5px] text-slate-500 leading-tight mt-0.5">
+                            {mod.desc}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* SECTION 2: Personal & Family Details */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                 <h4 className="font-extrabold text-sm text-indigo-900 flex items-center gap-1.5 border-b border-slate-200 pb-2">
@@ -1616,6 +1738,27 @@ export default function StaffPayrollManager({ adminUser }) {
                   <div><span className="text-slate-500 block text-[10px]">BANK NAME</span><strong>{viewingStaff.bankName || '—'}</strong></div>
                   <div><span className="text-slate-500 block text-[10px]">ACCOUNT NUMBER</span><strong className="font-mono">{viewingStaff.bankAccountNo || '—'}</strong></div>
                   <div><span className="text-slate-500 block text-[10px]">IFSC CODE</span><strong className="font-mono">{viewingStaff.bankIfsc || '—'}</strong></div>
+                </div>
+              </div>
+
+              {/* Permitted Portal Pages */}
+              <div className="border border-indigo-200 rounded-2xl p-4 space-y-2 bg-indigo-50/40">
+                <div className="flex items-center justify-between border-b border-indigo-100 pb-1">
+                  <p className="font-extrabold text-indigo-950 text-xs uppercase tracking-wide flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Permitted Portal Pages & Modules</span>
+                  </p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
+                    {(viewingStaff.allowedModules || ['cashcounter', 'admissions', 'documents', 'records']).length} of {ALL_PORTAL_MODULES.length} Allowed
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {ALL_PORTAL_MODULES.filter(m => (viewingStaff.allowedModules || ['cashcounter', 'admissions', 'documents', 'records']).includes(m.id)).map(m => (
+                    <span key={m.id} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white border border-indigo-200 text-indigo-900 shadow-xs flex items-center gap-1">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span>{m.label}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
 

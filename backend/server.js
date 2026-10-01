@@ -77,6 +77,20 @@ try {
       }
     });
   }
+  if (Array.isArray(db.jobApplications)) {
+    const origCount = db.jobApplications.length;
+    db.jobApplications = db.jobApplications.filter(a => a && typeof a === 'object' && a.id);
+    if (db.jobApplications.length !== origCount) {
+      dbChanged = true;
+    }
+  }
+  if (Array.isArray(db.inquiries)) {
+    const origCount = db.inquiries.length;
+    db.inquiries = db.inquiries.filter(i => i && typeof i === 'object');
+    if (db.inquiries.length !== origCount) {
+      dbChanged = true;
+    }
+  }
   if (dbChanged) {
     writeDB(db);
     console.log('Sanitized database records successfully.');
@@ -134,9 +148,12 @@ app.use('/uploads/resumes', express.static(resumesUploadDir));
 // Job Applications Endpoints
 app.get('/api/job-applications', (req, res) => {
   const db = readDB();
+  const applications = Array.isArray(db.jobApplications)
+    ? db.jobApplications.filter(a => a && typeof a === 'object' && a.id)
+    : [];
   res.json({
     success: true,
-    applications: db.jobApplications || []
+    applications
   });
 });
 
@@ -307,7 +324,11 @@ app.post('/api/auth/staff-login', (req, res) => {
       name: staff.name,
       username: staff.username,
       role: staff.role,
-      department: staff.department
+      department: staff.department,
+      post: staff.post || staff.role || 'Staff Member',
+      allowedModules: Array.isArray(staff.allowedModules) && staff.allowedModules.length > 0
+        ? staff.allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records']
     }
   });
 });
@@ -327,7 +348,10 @@ app.get('/api/staff', (req, res) => {
       department: s.department || 'Accounts & Admissions',
       status: s.status || 'Active',
       salary: Number(s.salary || 0),
-      spouseName: s.spouseName || 'NA'
+      spouseName: s.spouseName || 'NA',
+      allowedModules: Array.isArray(s.allowedModules) && s.allowedModules.length > 0
+        ? s.allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records']
     }));
     res.json({ success: true, count: staffList.length, staff: staffList });
   } catch (err) {
@@ -345,7 +369,8 @@ app.post('/api/staff', (req, res) => {
       dob, gender, education, professionalQualification, experienceMonths,
       dateOfJoining, address, pincode, email, mobile, salary, pfNo,
       religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
-      bankAccountNo, bankName, bankIfsc
+      bankAccountNo, bankName, bankIfsc,
+      allowedModules
     } = req.body;
 
     const staffName = (name || '').trim() || 'Staff Member';
@@ -366,6 +391,9 @@ app.post('/api/staff', (req, res) => {
       role: role || 'Cash Counter & Admission Desk',
       department: department || 'Accounts & Admissions',
       status: status || 'Active',
+      allowedModules: Array.isArray(allowedModules) && allowedModules.length > 0
+        ? allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records'],
       
       // Personal Details
       fatherName: (fatherName || '').trim(),
@@ -437,7 +465,8 @@ app.put('/api/staff/:id', (req, res) => {
       dob, gender, education, professionalQualification, experienceMonths,
       dateOfJoining, address, pincode, email, mobile, salary, pfNo,
       religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
-      bankAccountNo, bankName, bankIfsc
+      bankAccountNo, bankName, bankIfsc,
+      allowedModules
     } = req.body;
 
     if (username && username.trim().toLowerCase() !== (staff.username || '').trim().toLowerCase()) {
@@ -454,6 +483,9 @@ app.put('/api/staff/:id', (req, res) => {
     if (role !== undefined) staff.role = role.trim();
     if (department !== undefined) staff.department = department.trim();
     if (status !== undefined) staff.status = status.trim();
+    if (allowedModules !== undefined) {
+      staff.allowedModules = Array.isArray(allowedModules) ? allowedModules : [];
+    }
 
     if (fatherName !== undefined) staff.fatherName = fatherName.trim();
     if (motherName !== undefined) staff.motherName = motherName.trim();
@@ -5110,7 +5142,10 @@ app.put('/api/about', (req, res) => {
 // ----------------------------------------------------
 app.get('/api/inquiries', (req, res) => {
   const db = readDB();
-  res.json({ success: true, inquiries: db.inquiries || [] });
+  const inquiries = Array.isArray(db.inquiries)
+    ? db.inquiries.filter(i => i && typeof i === 'object' && i.id)
+    : [];
+  res.json({ success: true, inquiries });
 });
 
 app.post('/api/inquiries', (req, res) => {

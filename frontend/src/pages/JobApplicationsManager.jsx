@@ -33,7 +33,7 @@ export default function JobApplicationsManager({ lang = 'en' }) {
       const res = await fetch(`${apiBase}/api/job-applications`);
       const data = await res.json();
       if (data.success && Array.isArray(data.applications)) {
-        setApplications(data.applications);
+        setApplications(data.applications.filter(a => a && typeof a === 'object' && a.id));
       } else {
         // Fallback to localStorage
         loadFromLocalStorage();
@@ -50,7 +50,10 @@ export default function JobApplicationsManager({ lang = 'en' }) {
     try {
       const saved = localStorage.getItem('pkc_job_applications');
       if (saved) {
-        setApplications(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setApplications(parsed.filter(a => a && typeof a === 'object' && a.id));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -71,7 +74,7 @@ export default function JobApplicationsManager({ lang = 'en' }) {
       console.log('API delete failed, updating local state:', err);
     }
 
-    const updated = applications.filter(a => a.id !== id);
+    const updated = (applications || []).filter(a => a && a.id !== id);
     setApplications(updated);
     try {
       localStorage.setItem('pkc_job_applications', JSON.stringify(updated));
@@ -80,15 +83,16 @@ export default function JobApplicationsManager({ lang = 'en' }) {
     if (selectedApp?.id === id) setSelectedApp(null);
   };
 
-  const filtered = applications.filter(app => {
+  const safeApplications = (applications || []).filter(a => a && typeof a === 'object');
+  const filtered = safeApplications.filter(app => {
     const matchRole = roleFilter === 'all' || app.role === roleFilter;
-    const q = searchTerm.toLowerCase();
-    const matchSearch = (
-      (app.fullName || '').toLowerCase().includes(q) ||
-      (app.phone || '').toLowerCase().includes(q) ||
-      (app.email || '').toLowerCase().includes(q) ||
-      (app.city || '').toLowerCase().includes(q) ||
-      (app.role || '').toLowerCase().includes(q)
+    const q = (searchTerm || '').toLowerCase();
+    const matchSearch = !q || (
+      String(app.fullName || '').toLowerCase().includes(q) ||
+      String(app.phone || '').toLowerCase().includes(q) ||
+      String(app.email || '').toLowerCase().includes(q) ||
+      String(app.city || '').toLowerCase().includes(q) ||
+      String(app.role || '').toLowerCase().includes(q)
     );
     return matchRole && matchSearch;
   });

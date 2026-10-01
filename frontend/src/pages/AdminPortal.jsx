@@ -23,13 +23,169 @@ import StaffPayrollManager from './StaffPayrollManager';
 import CompletedStudentsManager from './CompletedStudentsManager';
 import StudentYearlyMarksheetManager from './StudentYearlyMarksheetManager';
 import BulkImportModal from '../components/BulkImportModal';
+import ModuleErrorBoundary from '../components/ModuleErrorBoundary';
 import { useLanguage } from '../context/LanguageContext';
+
+export const ALL_ADMIN_MODULES = [
+  { 
+    id: 'records', 
+    label: 'Student Records', 
+    fullName: 'Master Student Records & University/College Directory',
+    sub: 'All enrolled students database, search by university & college, full profile & fee ledger',
+    shortDesc: 'All Student Records, Search by University & College',
+    icon: GraduationCap, 
+    color: 'text-emerald-500',
+    badge: 'All Students'
+  },
+  { 
+    id: 'admissions', 
+    label: 'Enroll New Student', 
+    fullName: 'Enroll New Student & Enrolled Directory',
+    sub: 'All enrolled students records & new student registration (39 fields)',
+    shortDesc: 'Enrolled Students & New Form (39 Fields)',
+    icon: Users, 
+    color: 'text-blue-600',
+    badge: 'Admissions'
+  },
+  { 
+    id: 'cashcounter', 
+    label: 'Fee & Cash Counter', 
+    fullName: 'Cash Counter Fee & Accounts Layer',
+    sub: 'Student fee receipts, pending dues & collection registers',
+    shortDesc: 'Fee Receipts, Student Ledgers & Cash Registry',
+    icon: CreditCard, 
+    color: 'text-emerald-600',
+    badge: 'Live Counter'
+  },
+  { 
+    id: 'promote', 
+    label: 'Promote Students', 
+    fullName: 'Promote Students to Next Semester / Year Desk',
+    sub: 'Upgrade enrolled students to next semester or academic year with 1-click',
+    shortDesc: '1-Click Next Semester / Year Promotion',
+    icon: TrendingUp, 
+    color: 'text-teal-500',
+    badge: 'Promote'
+  },
+  { 
+    id: 'completed-students', 
+    label: 'Completed & Document Return', 
+    fullName: 'Completed Students & Original Document Return Registry',
+    sub: 'Degree-completed students registry, track returned original marksheets, TC, migration certificate return & clearance slip',
+    shortDesc: 'Completed Degree Students & Document Return Desk',
+    icon: GraduationCap, 
+    color: 'text-emerald-600',
+    badge: 'Document Clearance'
+  },
+  { 
+    id: 'yearly-marksheets', 
+    label: 'Student Marksheet Manager', 
+    fullName: 'Student Yearly & Semester Marksheets Hub',
+    sub: 'Upload and manage 8 semesters / 4 years marksheet PDFs for promoted students, completed students & 8-sem matrix',
+    shortDesc: '8 Semesters & 4 Years Marksheet PDFs',
+    icon: FileText, 
+    color: 'text-sky-600',
+    badge: '8 Sem / 4 Yr'
+  },
+  { 
+    id: 'university-paid', 
+    label: 'University Settlement', 
+    fullName: 'University Paid & Settlement Ledger',
+    sub: 'University official fees paid, outstanding dues & margin ledger',
+    shortDesc: 'Official Dues, Margins & University Pay',
+    icon: Building2, 
+    color: 'text-amber-600',
+    badge: 'Settlement'
+  },
+  { 
+    id: 'cancelled', 
+    label: 'Cancelled Admissions', 
+    fullName: 'Cancelled Admissions & Student Fee Settlement Registry',
+    sub: 'Cancelled student records, deposited fees & refund clearance ledger',
+    shortDesc: 'Cancelled Records, Paid Fees & Refund Status',
+    icon: UserX, 
+    color: 'text-rose-600',
+    badge: 'Refund Desk'
+  },
+  { 
+    id: 'staff', 
+    label: 'Staff & Payroll Management', 
+    fullName: 'Staff Directory, Attendance & Monthly Payroll Hub',
+    sub: 'Manage 26+ staff details, daily attendance marking & attendance-based monthly salary disbursement',
+    shortDesc: 'Staff Profiles, Daily Attendance & Monthly Salary',
+    icon: UserCheck, 
+    color: 'text-amber-600',
+    badge: 'Staff Hub'
+  },
+  { 
+    id: 'cms', 
+    label: 'Update Images Student Portal', 
+    fullName: 'Update Images - Student Portal Manager',
+    sub: 'Update images, photos, banners, courses and text on student portal',
+    shortDesc: 'Photos, Banners & Website Content',
+    icon: Camera, 
+    color: 'text-sky-600',
+    badge: 'Update Images'
+  },
+  { 
+    id: 'inquiries', 
+    label: 'Student Inquiry', 
+    fullName: 'Student Inquiry Desk & Job Resumes',
+    sub: 'Student admission inquiries, leads, follow-ups and candidate job resumes',
+    shortDesc: 'Student Inquiries & Job Resumes',
+    icon: HelpCircle, 
+    color: 'text-rose-600',
+    badge: 'Inquiries & Resumes'
+  },
+  { 
+    id: 'documents', 
+    label: 'Documents Tracker', 
+    fullName: 'Student Documents Tracker & Verification Desk',
+    sub: 'Student documents verification & KYC compliance desk',
+    shortDesc: 'KYC, Marksheets & Digital Dossier',
+    icon: FolderCheck, 
+    color: 'text-purple-600',
+    badge: 'KYC Desk'
+  },
+  { 
+    id: 'syllabus', 
+    label: 'Universities & Courses', 
+    fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
+    sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
+    shortDesc: 'Universities, Colleges, Branches & Syllabus',
+    icon: Building2, 
+    color: 'text-indigo-600',
+    badge: 'MPU • 18 Colleges'
+  },
+  { 
+    id: 'personal-docs', 
+    label: 'Save Personal Documents', 
+    fullName: 'Save Personal Documents Vault & Manager',
+    sub: 'Personal identity proofs, certificates, agreements & confidential records',
+    shortDesc: 'Aadhaar, PAN, Marksheets & Private Docs Vault',
+    icon: FolderLock, 
+    color: 'text-amber-500',
+    badge: 'Personal Docs'
+  },
+  { 
+    id: 'vocational', 
+    label: 'Vocational Courses', 
+    fullName: 'Vocational Courses, Skills & Trades Master Hub',
+    sub: 'Import vocational courses via Excel and create customized skill certification programs',
+    shortDesc: 'Excel Upload, Skill Trades & Add Custom Courses',
+    icon: Briefcase, 
+    color: 'text-amber-500',
+    badge: 'Vocational'
+  }
+];
 
 export default function AdminPortal({ 
   adminUser, 
+  staffUser,
   courses, 
   onRefreshCourses, 
   onLogout,
+  onStaffLogout,
   onViewStudentWebsite,
   lang: propLang,
   setLang: propSetLang,
@@ -39,68 +195,64 @@ export default function AdminPortal({
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
 
+  const allowedModuleIds = staffUser
+    ? (Array.isArray(staffUser.allowedModules) && staffUser.allowedModules.length > 0
+        ? staffUser.allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records'])
+    : null;
+
   const getInitialAdminTab = () => {
+    let chosen = 'records';
     if (typeof window !== 'undefined') {
       const p = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
 
       // If URL explicitly requests hub
       if (p.includes('hub') || search.includes('hub')) {
-        return 'hub';
+        chosen = 'hub';
+      } else if (p.includes('promote') || search.includes('promote')) {
+        chosen = 'promote';
+      } else if (p.includes('completed') || search.includes('completed') || p.includes('document-return')) {
+        chosen = 'completed-students';
+      } else if (p.includes('yearly-marksheets') || p.includes('marksheet') || search.includes('marksheet')) {
+        chosen = 'yearly-marksheets';
+      } else if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
+        chosen = 'records';
+      } else if (p.includes('registration') || p.includes('register') || p.includes('admissions') || p.includes('admission') || search.includes('registration') || search.includes('admission')) {
+        chosen = 'admissions';
+      } else if (p.includes('cashcounter') || p.includes('fee') || p.includes('account') || search.includes('cashcounter') || search.includes('fee')) {
+        chosen = 'cashcounter';
+      } else if (p.includes('documents') || search.includes('documents')) {
+        chosen = 'documents';
+      } else if (p.includes('cancelled') || search.includes('cancelled')) {
+        chosen = 'cancelled';
+      } else if (p.includes('university-paid') || search.includes('university-paid')) {
+        chosen = 'university-paid';
+      } else if (p.includes('inquiries') || p.includes('inquiry') || search.includes('inquiries') || search.includes('inquiry')) {
+        chosen = 'inquiries';
+      } else if (p.includes('update-images') || p.includes('cms') || search.includes('cms')) {
+        chosen = 'cms';
+      } else if (p.includes('staff') || search.includes('staff')) {
+        chosen = 'staff';
+      } else if (p.includes('personal-doc') || p.includes('personal-document') || p.includes('save-personal') || search.includes('personal-doc')) {
+        chosen = 'personal-docs';
+      } else if (p.includes('vocational') || search.includes('vocational') || p.includes('trade') || search.includes('trade')) {
+        chosen = 'vocational';
+      } else if (p.includes('syllabus') || p.includes('course') || search.includes('syllabus')) {
+        chosen = 'syllabus';
+      } else {
+        try {
+          const savedKey = staffUser ? 'pkc_staff_active_tab' : 'pkc_admin_active_tab';
+          const saved = localStorage.getItem(savedKey);
+          if (saved && saved !== 'hub') chosen = saved;
+        } catch {}
       }
-
-      if (p.includes('promote') || search.includes('promote')) {
-        return 'promote';
-      }
-      if (p.includes('completed') || search.includes('completed') || p.includes('document-return')) {
-        return 'completed-students';
-      }
-      if (p.includes('yearly-marksheets') || p.includes('marksheet') || search.includes('marksheet')) {
-        return 'yearly-marksheets';
-      }
-      if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
-        return 'records';
-      }
-      if (p.includes('registration') || p.includes('register') || p.includes('admissions') || p.includes('admission') || search.includes('registration') || search.includes('admission')) {
-        return 'admissions';
-      }
-      if (p.includes('cashcounter') || p.includes('fee') || p.includes('account') || search.includes('cashcounter') || search.includes('fee')) {
-        return 'cashcounter';
-      }
-      if (p.includes('documents') || search.includes('documents')) {
-        return 'documents';
-      }
-      if (p.includes('cancelled') || search.includes('cancelled')) {
-        return 'cancelled';
-      }
-      if (p.includes('university-paid') || search.includes('university-paid')) {
-        return 'university-paid';
-      }
-      if (p.includes('inquiries') || p.includes('inquiry') || search.includes('inquiries') || search.includes('inquiry')) {
-        return 'inquiries';
-      }
-      if (p.includes('update-images') || p.includes('cms') || search.includes('cms')) {
-        return 'cms';
-      }
-      if (p.includes('staff') || search.includes('staff')) {
-        return 'staff';
-      }
-      if (p.includes('personal-doc') || p.includes('personal-document') || p.includes('save-personal') || search.includes('personal-doc')) {
-        return 'personal-docs';
-      }
-      if (p.includes('vocational') || search.includes('vocational') || p.includes('trade') || search.includes('trade')) {
-        return 'vocational';
-      }
-      if (p.includes('syllabus') || p.includes('course') || search.includes('syllabus')) {
-        return 'syllabus';
-      }
-      try {
-        const saved = localStorage.getItem('pkc_admin_active_tab');
-        if (saved && saved !== 'hub') return saved;
-      } catch {}
     }
-    // 1 DISPLAY SHOW STUDENT RECORDS (BY DEFAULT)
-    return 'records';
+
+    if (allowedModuleIds && chosen !== 'hub' && !allowedModuleIds.includes(chosen)) {
+      return allowedModuleIds[0] || 'hub';
+    }
+    return chosen;
   };
 
   const getInitialAdmissionSubTab = () => {
@@ -130,21 +282,26 @@ export default function AdminPortal({
   // Sync activeTab and admissionSubTab to localStorage and update browser URL
   useEffect(() => {
     try {
-      localStorage.setItem('pkc_admin_active_tab', activeTab);
+      if (staffUser) {
+        localStorage.setItem('pkc_staff_active_tab', activeTab);
+      } else {
+        localStorage.setItem('pkc_admin_active_tab', activeTab);
+      }
       localStorage.setItem('pkc_admin_admission_subtab', admissionSubTab);
 
       if (typeof window !== 'undefined' && window.history?.replaceState) {
+        const basePath = staffUser ? '/staff' : '/admin';
         if (activeTab === 'hub') {
-          if (window.location.pathname !== '/admin') {
-            window.history.replaceState({}, '', '/admin');
+          if (window.location.pathname !== basePath) {
+            window.history.replaceState({}, '', basePath);
           }
         } else if (activeTab === 'admissions') {
-          const target = admissionSubTab === 'new' ? '/admin/registration' : '/admin/admissions';
+          const target = admissionSubTab === 'new' ? `${basePath}/registration` : `${basePath}/admissions`;
           if (window.location.pathname !== target) {
             window.history.replaceState({}, '', target);
           }
         } else {
-          const target = `/admin/${activeTab}`;
+          const target = `${basePath}/${activeTab}`;
           if (window.location.pathname !== target) {
             window.history.replaceState({}, '', target);
           }
@@ -153,7 +310,14 @@ export default function AdminPortal({
     } catch (e) {
       console.error('Error updating admin tab state:', e);
     }
-  }, [activeTab, admissionSubTab]);
+  }, [activeTab, admissionSubTab, staffUser]);
+
+  // Guard against unauthorized module tab if staffUser changes
+  useEffect(() => {
+    if (allowedModuleIds && activeTab !== 'hub' && !allowedModuleIds.includes(activeTab)) {
+      setActiveTab(allowedModuleIds[0] || 'hub');
+    }
+  }, [staffUser, allowedModuleIds, activeTab]);
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -266,158 +430,9 @@ export default function AdminPortal({
 
 
 
-  const adminModules = [
-    { 
-      id: 'records', 
-      label: 'Student Records', 
-      fullName: 'Master Student Records & University/College Directory',
-      sub: 'All enrolled students database, search by university & college, full profile & fee ledger',
-      shortDesc: 'All Student Records, Search by University & College',
-      icon: GraduationCap, 
-      color: 'text-emerald-500',
-      badge: 'All Students'
-    },
-    { 
-      id: 'admissions', 
-      label: 'Enroll New Student', 
-      fullName: 'Enroll New Student & Enrolled Directory',
-      sub: 'All enrolled students records & new student registration (39 fields)',
-      shortDesc: 'Enrolled Students & New Form (39 Fields)',
-      icon: Users, 
-      color: 'text-blue-600',
-      badge: 'Admissions'
-    },
-    { 
-      id: 'cashcounter', 
-      label: 'Fee & Cash Counter', 
-      fullName: 'Cash Counter Fee & Accounts Layer',
-      sub: 'Student fee receipts, pending dues & collection registers',
-      shortDesc: 'Fee Receipts, Student Ledgers & Cash Registry',
-      icon: CreditCard, 
-      color: 'text-emerald-600',
-      badge: 'Live Counter'
-    },
-    { 
-      id: 'promote', 
-      label: 'Promote Students', 
-      fullName: 'Promote Students to Next Semester / Year Desk',
-      sub: 'Upgrade enrolled students to next semester or academic year with 1-click',
-      shortDesc: '1-Click Next Semester / Year Promotion',
-      icon: TrendingUp, 
-      color: 'text-teal-500',
-      badge: 'Promote'
-    },
-    { 
-      id: 'completed-students', 
-      label: 'Completed & Document Return', 
-      fullName: 'Completed Students & Original Document Return Registry',
-      sub: 'Degree-completed students registry, track returned original marksheets, TC, migration certificate return & clearance slip',
-      shortDesc: 'Completed Degree Students & Document Return Desk',
-      icon: GraduationCap, 
-      color: 'text-emerald-600',
-      badge: 'Document Clearance'
-    },
-    { 
-      id: 'yearly-marksheets', 
-      label: 'Student Marksheet Manager', 
-      fullName: 'Student Yearly & Semester Marksheets Hub',
-      sub: 'Upload and manage 8 semesters / 4 years marksheet PDFs for promoted students, completed students & 8-sem matrix',
-      shortDesc: '8 Semesters & 4 Years Marksheet PDFs',
-      icon: FileText, 
-      color: 'text-sky-600',
-      badge: '8 Sem / 4 Yr'
-    },
-    { 
-      id: 'university-paid', 
-      label: 'University Settlement', 
-      fullName: 'University Paid & Settlement Ledger',
-      sub: 'University official fees paid, outstanding dues & margin ledger',
-      shortDesc: 'Official Dues, Margins & University Pay',
-      icon: Building2, 
-      color: 'text-amber-600',
-      badge: 'Settlement'
-    },
-    { 
-      id: 'cancelled', 
-      label: 'Cancelled Admissions', 
-      fullName: 'Cancelled Admissions & Student Fee Settlement Registry',
-      sub: 'Cancelled student records, deposited fees & refund clearance ledger',
-      shortDesc: 'Cancelled Records, Paid Fees & Refund Status',
-      icon: UserX, 
-      color: 'text-rose-600',
-      badge: 'Refund Desk'
-    },
-    { 
-      id: 'staff', 
-      label: 'Staff & Payroll Management', 
-      fullName: 'Staff Directory, Attendance & Monthly Payroll Hub',
-      sub: 'Manage 26+ staff details, daily attendance marking & attendance-based monthly salary disbursement',
-      shortDesc: 'Staff Profiles, Daily Attendance & Monthly Salary',
-      icon: UserCheck, 
-      color: 'text-amber-600',
-      badge: `${staffList.length} Staff`
-    },
-    { 
-      id: 'cms', 
-      label: 'Update Images Student Portal', 
-      fullName: 'Update Images - Student Portal Manager',
-      sub: 'Update images, photos, banners, courses and text on student portal',
-      shortDesc: 'Photos, Banners & Website Content',
-      icon: Camera, 
-      color: 'text-sky-600',
-      badge: 'Update Images'
-    },
-    { 
-      id: 'inquiries', 
-      label: 'Student Inquiry', 
-      fullName: 'Student Inquiry Desk & Job Resumes',
-      sub: 'Student admission inquiries, leads, follow-ups and candidate job resumes',
-      shortDesc: 'Student Inquiries & Job Resumes',
-      icon: HelpCircle, 
-      color: 'text-rose-600',
-      badge: 'Inquiries & Resumes'
-    },
-    { 
-      id: 'documents', 
-      label: 'Documents Tracker', 
-      fullName: 'Student Documents Tracker & Verification Desk',
-      sub: 'Student documents verification & KYC compliance desk',
-      shortDesc: 'KYC, Marksheets & Digital Dossier',
-      icon: FolderCheck, 
-      color: 'text-purple-600',
-      badge: 'KYC Desk'
-    },
-    { 
-      id: 'syllabus', 
-      label: 'Universities & Courses', 
-      fullName: 'Universities, Affiliated Colleges & Curricula Master Hub',
-      sub: 'Manage partner universities, affiliated colleges, degree branches & semester curricula',
-      shortDesc: 'Universities, Colleges, Branches & Syllabus',
-      icon: Building2, 
-      color: 'text-indigo-600',
-      badge: 'MPU • 18 Colleges'
-    },
-    { 
-      id: 'personal-docs', 
-      label: 'Save Personal Documents', 
-      fullName: 'Save Personal Documents Vault & Manager',
-      sub: 'Personal identity proofs, certificates, agreements & confidential records',
-      shortDesc: 'Aadhaar, PAN, Marksheets & Private Docs Vault',
-      icon: FolderLock, 
-      color: 'text-amber-500',
-      badge: 'Personal Docs'
-    },
-    { 
-      id: 'vocational', 
-      label: 'Vocational Courses', 
-      fullName: 'Vocational Courses, Skills & Trades Master Hub',
-      sub: 'Import vocational courses via Excel and create customized skill certification programs',
-      shortDesc: 'Excel Upload, Skill Trades & Add Custom Courses',
-      icon: Briefcase, 
-      color: 'text-amber-500',
-      badge: 'Vocational'
-    }
-  ];
+  const adminModules = ALL_ADMIN_MODULES
+    .filter(m => !allowedModuleIds || allowedModuleIds.includes(m.id))
+    .map(m => m.id === 'staff' ? { ...m, badge: `${staffList.length} Staff` } : m);
 
   const activeModule = adminModules.find(m => m.id === activeTab || (m.id === 'syllabus' && activeTab === 'courses')) || null;
   const ActiveIcon = activeModule ? activeModule.icon : LayoutGrid;
@@ -450,13 +465,17 @@ export default function AdminPortal({
           </div>
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-              Admin Controller Panel
+              {staffUser ? `Official Staff Desk • ${staffUser.post || staffUser.role || 'Staff Operator'}` : 'Admin Controller Panel'}
             </span>
             <h1 className="text-xl sm:text-2xl font-extrabold mt-1">
               PKC Education Learning Institute & Consultancy
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Logged in: <strong className="text-white font-mono">{adminUser?.name || 'Administrator'}</strong>
+              {staffUser ? (
+                <>Logged in as Staff: <strong className="text-amber-300 font-mono">{staffUser.name}</strong> ({adminModules.length} Modules Authorized)</>
+              ) : (
+                <>Logged in: <strong className="text-white font-mono">{adminUser?.name || 'Administrator'}</strong></>
+              )}
             </p>
           </div>
         </div>
@@ -502,11 +521,11 @@ export default function AdminPortal({
 
           {/* Logout */}
           <button
-            onClick={onLogout}
+            onClick={staffUser ? (onStaffLogout || onLogout) : onLogout}
             className="flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Logout Admin</span>
+            <span>{staffUser ? 'Sign Out Staff' : 'Logout Admin'}</span>
           </button>
         </div>
       </div>
@@ -811,12 +830,15 @@ export default function AdminPortal({
           {/* 100% FULL-PAGE ACTIVE DESK WORKSPACE (NO SQUEEZING, MAXIMUM WIDTH & HEIGHT) */}
           {/* ========================================================================= */}
           <main className="w-full space-y-6">
-
-
+            <ModuleErrorBoundary
+              key={activeTab}
+              moduleName={activeModule?.label || activeTab}
+              onBackToMenu={() => setActiveTab('hub')}
+            >
 
       {/* TAB 2: STAFF & OPERATOR MANAGEMENT, ATTENDANCE & PAYROLL */}
       {activeTab === 'staff' && (
-        <StaffPayrollManager adminUser={adminUser} />
+        <StaffPayrollManager adminUser={adminUser || staffUser} />
       )}
 
       {/* TAB 1: COURSES & SYLLABUS HUB */}
@@ -873,7 +895,7 @@ export default function AdminPortal({
           ) : (
             <StudentRegistration
               courses={localCourses}
-              adminUser={adminUser}
+              adminUser={adminUser || staffUser}
               onStudentCreated={() => {
                 setAdmissionSubTab('directory');
                 if (onRefreshCourses) onRefreshCourses();
@@ -967,7 +989,7 @@ export default function AdminPortal({
       {/* TAB 10: SAVE PERSONAL DOCUMENTS */}
       {activeTab === 'personal-docs' && (
         <SavePersonalDocuments 
-          adminUser={adminUser} 
+          adminUser={adminUser || staffUser} 
           lang={lang} 
           toggleLang={toggleLang} 
         />
@@ -978,7 +1000,7 @@ export default function AdminPortal({
         <VocationalCoursesManager 
           lang={lang} 
           toggleLang={toggleLang} 
-          adminUser={adminUser}
+          adminUser={adminUser || staffUser}
           onNavigateToRecords={() => setActiveTab('records')}
           onNavigateToAdmissions={() => setActiveTab('admissions')}
           onNavigateToCancelled={() => setActiveTab('cancelled')}
@@ -986,8 +1008,8 @@ export default function AdminPortal({
         />
       )}
 
-
-      </main>
+            </ModuleErrorBoundary>
+          </main>
       </>
       )}
 

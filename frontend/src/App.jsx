@@ -369,10 +369,16 @@ export default function App() {
           <div className="p-4 sm:p-6 lg:p-8">
             {!adminUser ? (
               staffUser ? (
-                <CashCounterPortal 
-                  courses={courses} 
+                <AdminPortal 
                   staffUser={staffUser}
+                  courses={courses}
+                  onRefreshCourses={fetchGlobalData}
+                  onLogout={handleStaffLogout}
                   onStaffLogout={handleStaffLogout}
+                  onViewStudentWebsite={() => {
+                    localStorage.setItem('pkc_active_view', 'public');
+                    navigateTo('public', '/');
+                  }}
                   lang={lang}
                   setLang={setLang}
                   toggleLang={toggleLang}
@@ -413,7 +419,7 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 3: STAFF DESK (CASH COUNTER & ADMISSIONS) */}
+        {/* VIEW 3: STAFF DESK (AUTHORIZED MODULES) */}
         {/* ========================================================================= */}
         {activeView === 'staff' && (
           <div className="p-4 sm:p-6 lg:p-8">
@@ -444,9 +450,11 @@ export default function App() {
                 />
               )
             ) : (
-              <CashCounterPortal 
-                courses={courses} 
+              <AdminPortal 
                 staffUser={staffUser}
+                courses={courses} 
+                onRefreshCourses={fetchGlobalData}
+                onLogout={handleStaffLogout}
                 onStaffLogout={handleStaffLogout}
                 onViewStudentWebsite={() => {
                   localStorage.setItem('pkc_active_view', 'public');

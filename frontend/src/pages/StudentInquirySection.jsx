@@ -103,24 +103,25 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
   };
 
   // Filtered inquiries
-  const filteredInquiries = inquiries.filter(inq => {
+  const safeInquiries = (inquiries || []).filter(inq => inq && typeof inq === 'object');
+  const filteredInquiries = safeInquiries.filter(inq => {
     const matchStatus = statusFilter === 'all' || inq.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchSearch = !search || (
-      (inq.name || inq.fullName || '').toLowerCase().includes(q) ||
-      (inq.fatherName || '').toLowerCase().includes(q) ||
-      (inq.phone || '').includes(q) ||
-      (inq.course || '').toLowerCase().includes(q) ||
-      (inq.city || '').toLowerCase().includes(q) ||
-      (inq.address || '').toLowerCase().includes(q) ||
-      (inq.email || '').toLowerCase().includes(q) ||
-      (inq.inquiryDate || '').includes(q)
+    const q = (search || '').toLowerCase();
+    const matchSearch = !q || (
+      String(inq.name || inq.fullName || '').toLowerCase().includes(q) ||
+      String(inq.fatherName || '').toLowerCase().includes(q) ||
+      String(inq.phone || '').includes(q) ||
+      String(inq.course || '').toLowerCase().includes(q) ||
+      String(inq.city || '').toLowerCase().includes(q) ||
+      String(inq.address || '').toLowerCase().includes(q) ||
+      String(inq.email || '').toLowerCase().includes(q) ||
+      String(inq.inquiryDate || '').includes(q)
     );
     return matchStatus && matchSearch;
   });
 
-  const pendingCount = inquiries.filter(i => (i.status || 'New') === 'New').length;
-  const contactedCount = inquiries.filter(i => i.status === 'Contacted').length;
+  const pendingCount = safeInquiries.filter(i => (i.status || 'New') === 'New').length;
+  const contactedCount = safeInquiries.filter(i => i.status === 'Contacted').length;
 
   return (
     <div className="space-y-6 text-slate-900 animate-fadeIn font-sans">
@@ -364,14 +365,15 @@ export default function StudentInquirySection({ lang = 'en', toggleLang }) {
                 ) : (
                   filteredInquiries.map((inq) => {
                     const studentName = inq.fullName || inq.name || 'Anonymous Student';
-                    const cleanPhone = (inq.phone || '').replace(/\D/g, '');
+                    const cleanPhone = String(inq.phone || '').replace(/\D/g, '');
                     const waLink = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(`Hello ${studentName}, this is PKC Education Learning Institute regarding your admission inquiry for ${inq.course || 'degree course'}.`)}`;
+                    const displayDate = inq.inquiryDate || (inq.createdAt ? (String(inq.createdAt).includes('T') ? String(inq.createdAt).split('T')[0] : String(inq.createdAt).slice(0, 10)) : 'N/A');
 
                     return (
                       <tr key={inq.id} className="hover:bg-amber-50/20 transition-colors">
                         {/* Inquiry Date */}
                         <td className="p-3.5 whitespace-nowrap border-r border-slate-100 text-slate-700 font-bold font-mono">
-                          {inq.inquiryDate || (inq.createdAt ? inq.createdAt.split('T')[0] : 'N/A')}
+                          {displayDate}
                         </td>
 
                         {/* Student & Father Name */}
