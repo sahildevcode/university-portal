@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+Sitemap: https://pkc-admin.vercel.app/sitemap.xml
 Sitemap: https://pkc-education-institute.vercel.app/sitemap.xml
