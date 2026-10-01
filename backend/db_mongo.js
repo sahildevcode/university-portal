@@ -176,6 +176,32 @@ const universityCourseFeeSchema = new mongoose.Schema({
   notes: String
 }, { strict: false, timestamps: true });
 
+const staffUserSchema = new mongoose.Schema({
+  id: String,
+  username: String,
+  name: String,
+  role: String,
+  department: String,
+  status: String,
+  salary: Number
+}, { strict: false, timestamps: true });
+
+const staffAttendanceSchema = new mongoose.Schema({
+  id: String,
+  date: String,
+  staffId: String,
+  staffName: String,
+  status: String
+}, { strict: false, timestamps: true });
+
+const staffSalaryPaymentSchema = new mongoose.Schema({
+  id: String,
+  voucherNo: String,
+  staffId: String,
+  staffName: String,
+  monthString: String
+}, { strict: false, timestamps: true });
+
 // Models
 export const SettingModel = mongoose.model('Setting', settingSchema);
 export const UserModel = mongoose.model('User', userSchema);
@@ -190,6 +216,9 @@ export const InquiryModel = mongoose.model('Inquiry', inquirySchema);
 export const EventPhotoModel = mongoose.model('EventPhoto', eventPhotoSchema);
 export const UniversityPaymentModel = mongoose.model('UniversityPayment', universityPaymentSchema);
 export const UniversityCourseFeeModel = mongoose.model('UniversityCourseFee', universityCourseFeeSchema);
+export const StaffUserModel = mongoose.model('StaffUser', staffUserSchema);
+export const StaffAttendanceModel = mongoose.model('StaffAttendance', staffAttendanceSchema);
+export const StaffSalaryPaymentModel = mongoose.model('StaffSalaryPayment', staffSalaryPaymentSchema);
 
 function cleanDoc(doc) {
   if (!doc) return doc;
@@ -268,7 +297,10 @@ export async function hydrateFromMongo() {
       about,
       users,
       university_payments,
-      university_course_fees
+      university_course_fees,
+      staff_users,
+      staff_attendance,
+      staff_salary_payments
     ] = await Promise.all([
       StudentModel.find({}).lean(),
       CourseModel.find({}).lean(),
@@ -281,6 +313,9 @@ export async function hydrateFromMongo() {
       UserModel.find({}).lean(),
       UniversityPaymentModel.find({}).lean(),
       UniversityCourseFeeModel.find({}).lean(),
+      StaffUserModel.find({}).lean(),
+      StaffAttendanceModel.find({}).lean(),
+      StaffSalaryPaymentModel.find({}).lean(),
     ]);
 
     let localDb = {};
@@ -302,9 +337,26 @@ export async function hydrateFromMongo() {
       if (users && users.length > 0) localDb.users = users.map(cleanDoc);
       if (university_payments && university_payments.length > 0) localDb.university_payments = university_payments.map(cleanDoc);
       if (university_course_fees && university_course_fees.length > 0) localDb.university_course_fees = university_course_fees.map(cleanDoc);
+      if (staff_users && staff_users.length > 0) localDb.staff_users = staff_users.map(cleanDoc);
+      if (staff_attendance && staff_attendance.length > 0) localDb.staff_attendance = staff_attendance.map(cleanDoc);
+      if (staff_salary_payments && staff_salary_payments.length > 0) localDb.staff_salary_payments = staff_salary_payments.map(cleanDoc);
+
+      // If Atlas doesn't have staff data yet, auto-seed from local database.json
+      if ((!staff_users || staff_users.length === 0) && localDb.staff_users && localDb.staff_users.length > 0) {
+        await StaffUserModel.deleteMany({});
+        await StaffUserModel.insertMany(localDb.staff_users);
+      }
+      if ((!staff_attendance || staff_attendance.length === 0) && localDb.staff_attendance && localDb.staff_attendance.length > 0) {
+        await StaffAttendanceModel.deleteMany({});
+        await StaffAttendanceModel.insertMany(localDb.staff_attendance);
+      }
+      if ((!staff_salary_payments || staff_salary_payments.length === 0) && localDb.staff_salary_payments && localDb.staff_salary_payments.length > 0) {
+        await StaffSalaryPaymentModel.deleteMany({});
+        await StaffSalaryPaymentModel.insertMany(localDb.staff_salary_payments);
+      }
 
       fs.writeFileSync(DB_FILE, JSON.stringify(localDb, null, 2), 'utf8');
-      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.fee_payments?.length || 0} fee payments, ${localDb.courses?.length || 0} courses synced into memory/cache.`);
+      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.staff_users?.length || 0} staff members, ${localDb.staff_attendance?.length || 0} attendance records synced into memory/cache.`);
     } else if (localDb.students && localDb.students.length > 0) {
       console.log('⚠️ MongoDB Atlas is empty. Auto-seeding from local database.json...');
       await seedMongoFromDb(localDb);
@@ -352,7 +404,10 @@ async function diffAndSync(current) {
     diffCollection(TestimonialModel, previousDbState.testimonials || [], current.testimonials || [], 'id'),
     diffCollection(EventPhotoModel, previousDbState.event_photos || [], current.event_photos || [], 'id'),
     diffCollection(UniversityPaymentModel, previousDbState.university_payments || [], current.university_payments || [], 'id'),
-    diffCollection(UniversityCourseFeeModel, previousDbState.university_course_fees || [], current.university_course_fees || [], 'id')
+    diffCollection(UniversityCourseFeeModel, previousDbState.university_course_fees || [], current.university_course_fees || [], 'id'),
+    diffCollection(StaffUserModel, previousDbState.staff_users || [], current.staff_users || [], 'id'),
+    diffCollection(StaffAttendanceModel, previousDbState.staff_attendance || [], current.staff_attendance || [], 'id'),
+    diffCollection(StaffSalaryPaymentModel, previousDbState.staff_salary_payments || [], current.staff_salary_payments || [], 'id')
   ]);
 
   if (current.settings && JSON.stringify(current.settings) !== JSON.stringify(previousDbState.settings)) {
@@ -463,5 +518,17 @@ async function seedMongoFromDb(data) {
   if (Array.isArray(data.university_course_fees) && data.university_course_fees.length) {
     await UniversityCourseFeeModel.deleteMany({});
     await UniversityCourseFeeModel.insertMany(data.university_course_fees);
+  }
+  if (Array.isArray(data.staff_users) && data.staff_users.length) {
+    await StaffUserModel.deleteMany({});
+    await StaffUserModel.insertMany(data.staff_users);
+  }
+  if (Array.isArray(data.staff_attendance) && data.staff_attendance.length) {
+    await StaffAttendanceModel.deleteMany({});
+    await StaffAttendanceModel.insertMany(data.staff_attendance);
+  }
+  if (Array.isArray(data.staff_salary_payments) && data.staff_salary_payments.length) {
+    await StaffSalaryPaymentModel.deleteMany({});
+    await StaffSalaryPaymentModel.insertMany(data.staff_salary_payments);
   }
 }
