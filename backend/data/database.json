@@ -60985,7 +60985,9 @@
       "role": "Cash Counter & Admission Desk",
       "department": "Accounts & Admissions",
       "status": "Active",
-      "createdAt": "2026-09-09T09:52:36.226Z"
+      "createdAt": "2026-09-09T09:52:36.226Z",
+      "salary": 10000,
+      "updatedAt": "2026-09-30T15:17:56.400Z"
     }
   ],
   "users": [
@@ -62213,6 +62215,51 @@
       "description": "Specialized Nursery Teacher Training (NTT), ECCE and Pre-Primary Educator Programs.",
       "status": "Active",
       "createdAt": "2026-09-19T16:40:22.667Z"
+    }
+  ],
+  "staff_attendance": [
+    {
+      "id": "att-1790779916522-cml0",
+      "date": "2026-09-30",
+      "staffId": "stf-1788947556226",
+      "staffName": "motti",
+      "post": "Cash Counter & Admission Desk",
+      "status": "Present",
+      "checkIn": "09:30",
+      "checkOut": "17:30",
+      "remarks": "",
+      "markedBy": "Institute Administrator",
+      "updatedAt": "2026-09-30T15:16:39.159Z"
+    }
+  ],
+  "staff_salary_payments": [
+    {
+      "id": "sal-1790781476400",
+      "voucherNo": "SAL-202609-001",
+      "staffId": "stf-1788947556226",
+      "staffName": "motti",
+      "post": "Cash Counter & Admission Desk",
+      "department": "Accounts & Admissions",
+      "mobile": "",
+      "monthString": "2026-09",
+      "baseSalary": 10000,
+      "totalDaysInMonth": 30,
+      "payableDays": 1,
+      "earnedSalary": 333,
+      "bonus": 0,
+      "allowances": 0,
+      "deductions": 0,
+      "netSalaryPaid": 333,
+      "paymentMode": "Bank Transfer",
+      "transactionRef": "",
+      "bankAccountNo": "",
+      "bankName": "",
+      "bankIfsc": "",
+      "paymentDate": "2026-09-30",
+      "remarks": "Salary for 2026-09",
+      "paidBy": "Institute Administrator",
+      "status": "Paid",
+      "createdAt": "2026-09-30T15:17:56.400Z"
     }
   ]
 }

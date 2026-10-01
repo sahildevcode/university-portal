@@ -81,6 +81,16 @@ export default function Footer({ setActiveTab }) {
                   Admission Inquiry Desk
                 </button>
               </li>
+              <li>
+                <a href="/admin" className="text-slate-400 hover:text-[#C59B27] transition-colors flex items-center gap-1">
+                  <span>PKC Admin Portal</span>
+                </a>
+              </li>
+              <li>
+                <a href="/staff" className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1">
+                  <span>Staff &amp; Cash Counter</span>
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -217,6 +227,8 @@ export default function Footer({ setActiveTab }) {
             <span className="hover:text-white cursor-pointer">Terms of Use</span>
             <span>|</span>
             <span className="hover:text-white cursor-pointer">Approved by UGC &amp; MP Higher Education</span>
+            <span>|</span>
+            <a href="/admin" className="hover:text-[#C59B27] text-slate-500 font-semibold transition-colors">Admin Login</a>
           </div>
         </div>
 

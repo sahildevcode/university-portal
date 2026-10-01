@@ -18,6 +18,7 @@ import CancelledAdmissionsManager from './CancelledAdmissionsManager';
 import SavePersonalDocuments from './SavePersonalDocuments';
 import PromoteStudentsManager from './PromoteStudentsManager';
 import VocationalCoursesManager from './VocationalCoursesManager';
+import StaffPayrollManager from './StaffPayrollManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -154,15 +155,7 @@ export default function AdminPortal({
     eligibility: '10+2 with minimum 50% aggregate marks', description: ''
   });
 
-  // Add / Edit Staff Modal
-  const [showStaffModal, setShowStaffModal] = useState(false);
-  const [editingStaffId, setEditingStaffId] = useState(null);
-  const [staffForm, setStaffForm] = useState({
-    name: '', username: '', password: '',
-    role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
-    status: 'Active'
-  });
-  const [showStaffPasswords, setShowStaffPasswords] = useState({});
+
 
   useEffect(() => {
     setLocalCourses(courses || []);
@@ -262,70 +255,7 @@ export default function AdminPortal({
     } catch (err) { alert('Failed to delete course'); }
   };
 
-  // Staff Handlers
-  const handleOpenAddStaff = () => {
-    setEditingStaffId(null);
-    setStaffForm({
-      name: '', username: '', password: '',
-      role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
-      status: 'Active'
-    });
-    setShowStaffModal(true);
-  };
 
-  const handleOpenEditStaff = (stf) => {
-    setEditingStaffId(stf.id);
-    setStaffForm({
-      name: stf.name || '',
-      username: stf.username || '',
-      password: stf.password || '',
-      role: stf.role || 'Cash Counter & Admission Desk',
-      department: stf.department || 'Accounts & Admissions',
-      status: stf.status || 'Active'
-    });
-    setShowStaffModal(true);
-  };
-
-  const handleSaveStaff = async (e) => {
-    e.preventDefault();
-    try {
-      const url = editingStaffId ? `/api/staff/${editingStaffId}` : '/api/staff';
-      const method = editingStaffId ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(staffForm)
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save staff account');
-
-      setShowStaffModal(false);
-      setEditingStaffId(null);
-      setStaffForm({
-        name: '', username: '', password: '',
-        role: 'Cash Counter & Admission Desk', department: 'Accounts & Admissions',
-        status: 'Active'
-      });
-      setSuccessMsg(data.message);
-      fetchStaffData();
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleDeleteStaff = async (id, staffName) => {
-    if (!window.confirm(`Are you sure you want to delete staff account for "${staffName}"?`)) return;
-    try {
-      const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg(`Staff account "${staffName}" removed.`);
-        fetchStaffData();
-        setTimeout(() => setSuccessMsg(null), 4000);
-      }
-    } catch (err) { alert('Failed to delete staff member'); }
-  };
 
   const adminModules = [
     { 
@@ -390,10 +320,10 @@ export default function AdminPortal({
     },
     { 
       id: 'staff', 
-      label: 'Staff Management', 
-      fullName: 'Staff & Operator Credentials Manager',
-      sub: 'Cashier and counselor login password control',
-      shortDesc: 'Cashier & Operator IDs and Passwords',
+      label: 'Staff & Payroll Management', 
+      fullName: 'Staff Directory, Attendance & Monthly Payroll Hub',
+      sub: 'Manage 26+ staff details, daily attendance marking & attendance-based monthly salary disbursement',
+      shortDesc: 'Staff Profiles, Daily Attendance & Monthly Salary',
       icon: UserCheck, 
       color: 'text-amber-600',
       badge: `${staffList.length} Staff`
@@ -855,94 +785,9 @@ export default function AdminPortal({
 
 
 
-      {/* TAB 2: STAFF & OPERATOR MANAGEMENT */}
+      {/* TAB 2: STAFF & OPERATOR MANAGEMENT, ATTENDANCE & PAYROLL */}
       {activeTab === 'staff' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <UserCheck className="w-6 h-6 text-amber-500" />
-                <span>Staff & Operator Credentials Manager</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Staff cannot register themselves. Only the Admin can create, assign roles, and set passwords for staff members.
-              </p>
-            </div>
-            <button
-              onClick={handleOpenAddStaff}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Create New Staff Member</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden p-6 space-y-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-900 text-white uppercase text-[11px] font-bold">
-                  <tr>
-                    <th className="p-3">Staff Name</th>
-                    <th className="p-3">Staff Login ID</th>
-                    <th className="p-3">Password</th>
-                    <th className="p-3">Role / Designation</th>
-                    <th className="p-3">Department</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {staffList.map((stf) => (
-                    <tr key={stf.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-bold text-slate-900">{stf.name}</td>
-                      <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/50 rounded">{stf.username}</td>
-                      <td className="p-3 font-mono">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-800">{showStaffPasswords[stf.id] ? stf.password : '••••••••'}</span>
-                          <button
-                            onClick={() => setShowStaffPasswords(prev => ({ ...prev, [stf.id]: !prev[stf.id] }))}
-                            className="text-slate-400 hover:text-slate-600 p-0.5"
-                          >
-                            {showStaffPasswords[stf.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="p-3 font-semibold text-slate-700">{stf.role}</td>
-                      <td className="p-3 text-slate-500">{stf.department}</td>
-                      <td className="p-3">
-                        <span className={`border px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          stf.status === 'Inactive' 
-                            ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        }`}>
-                          {stf.status || 'Active'}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleOpenEditStaff(stf)}
-                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                            title="Edit Staff Credentials"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteStaff(stf.id, stf.name)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete Staff"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <StaffPayrollManager adminUser={adminUser} />
       )}
 
       {/* TAB 1: COURSES & SYLLABUS HUB */}
@@ -1126,113 +971,6 @@ export default function AdminPortal({
         </div>
       )}
 
-      {/* Modal Add Staff */}
-      {showStaffModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 overflow-y-auto p-3 sm:p-6 py-6 sm:py-10 flex justify-center items-start" onClick={() => setShowStaffModal(false)}>
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-7 space-y-4 text-slate-900 my-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="font-extrabold text-lg text-slate-900 flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-emerald-600" />
-                <span>{editingStaffId ? 'Edit Staff Member Credentials' : 'Create Staff Member Credentials'}</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {editingStaffId ? 'Update operator details, password, or department assignment.' : 'Admin-issued credentials for cash counter and admission operators.'}
-              </p>
-            </div>
-
-            <form onSubmit={handleSaveStaff} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-bold block mb-1 text-slate-700">Staff Member Full Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Suresh Kumar"
-                  value={staffForm.name}
-                  onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:bg-white focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="font-bold block mb-1 text-slate-700">Staff Login ID / Username *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. suresh_cashier"
-                  value={staffForm.username}
-                  onChange={(e) => setStaffForm({ ...staffForm, username: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="font-bold block mb-1 text-slate-700">Assign Password *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. pass1234"
-                  value={staffForm.password}
-                  onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold focus:bg-white focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="font-bold block mb-1 text-slate-700">Designation / Role</label>
-                  <select
-                    value={staffForm.role}
-                    onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none"
-                  >
-                    <option value="Cash Counter & Admission Desk">Cash Counter & Desk</option>
-                    <option value="Accounts Operator">Accounts Operator</option>
-                    <option value="Admission Counselor">Admission Counselor</option>
-                    <option value="Verification Officer">Verification Officer</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="font-bold block mb-1 text-slate-700">Department</label>
-                  <input
-                    type="text"
-                    value={staffForm.department}
-                    onChange={(e) => setStaffForm({ ...staffForm, department: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold block mb-1 text-slate-700">Account Status</label>
-                <select
-                  value={staffForm.status || 'Active'}
-                  onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowStaffModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md transition-all cursor-pointer"
-                >
-                  {editingStaffId ? 'Update Staff Account' : 'Create Staff Account'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Bulk Data Import Modal (Excel / PDF) */}
       <BulkImportModal

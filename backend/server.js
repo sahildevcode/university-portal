@@ -312,58 +312,186 @@ app.post('/api/auth/staff-login', (req, res) => {
   });
 });
 
+// ==========================================
+// STAFF & OPERATOR MANAGEMENT WITH ATTENDANCE & PAYROLL
+// ==========================================
+
 // Admin: List all staff members
 app.get('/api/staff', (req, res) => {
-  const db = readDB();
-  res.json({
-    success: true,
-    staff: (db.staff_users || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      username: s.username,
-      password: s.password, // Return exact password set by Admin so it displays accurately
-      role: s.role,
-      department: s.department,
+  try {
+    const db = readDB();
+    const staffList = (db.staff_users || []).map(s => ({
+      ...s,
+      post: s.post || s.role || 'Staff Member',
+      role: s.role || 'Cash Counter & Admission Desk',
+      department: s.department || 'Accounts & Admissions',
       status: s.status || 'Active',
-      createdAt: s.createdAt
-    }))
-  });
+      salary: Number(s.salary || 0),
+      spouseName: s.spouseName || 'NA'
+    }));
+    res.json({ success: true, count: staffList.length, staff: staffList });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Admin: Create new staff account
 app.post('/api/staff', (req, res) => {
-  const db = readDB();
-  const { name, username, password, role, department } = req.body;
+  try {
+    const db = readDB();
+    const {
+      name, username, password, post, role, department, status,
+      fatherName, motherName, spouseName,
+      dob, gender, education, professionalQualification, experienceMonths,
+      dateOfJoining, address, pincode, email, mobile, salary, pfNo,
+      religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
+      bankAccountNo, bankName, bankIfsc
+    } = req.body;
 
-  if (!name || !username || !password) {
-    return res.status(400).json({ success: false, message: 'Name, Staff ID, and Password are required.' });
+    const staffName = (name || '').trim() || 'Staff Member';
+    const cleanUser = (username || '').trim().toLowerCase() || `staff_${Date.now().toString().slice(-6)}`;
+    const staffPass = (password || '').trim() || 'pass123';
+
+    if (!db.staff_users) db.staff_users = [];
+    if (db.staff_users.some(s => (s.username || '').trim().toLowerCase() === cleanUser)) {
+      return res.status(400).json({ success: false, message: `Staff Login ID "${cleanUser}" already exists. Please choose another ID.` });
+    }
+
+    const newStaff = {
+      id: `stf-${Date.now()}`,
+      name: staffName,
+      username: cleanUser,
+      password: staffPass,
+      post: (post || role || 'Staff Member').trim(),
+      role: role || 'Cash Counter & Admission Desk',
+      department: department || 'Accounts & Admissions',
+      status: status || 'Active',
+      
+      // Personal Details
+      fatherName: (fatherName || '').trim(),
+      motherName: (motherName || '').trim(),
+      spouseName: (spouseName || 'NA').trim(),
+      dob: dob || '',
+      gender: gender || 'Male',
+      religion: religion || 'Hindu',
+      socialClass: socialClass || 'General',
+
+      // Educational & Professional
+      education: (education || '').trim(),
+      professionalQualification: (professionalQualification || '').trim(),
+      experienceMonths: experienceMonths !== undefined && experienceMonths !== '' ? Number(experienceMonths) : 0,
+      dateOfJoining: dateOfJoining || new Date().toISOString().split('T')[0],
+
+      // Contact & Address
+      address: (address || '').trim(),
+      pincode: (pincode || '').trim(),
+      email: (email || '').trim(),
+      mobile: (mobile || '').trim(),
+
+      // Compensation & PF
+      salary: salary !== undefined && salary !== '' ? Number(salary) : 0,
+      pfNo: (pfNo || '').trim(),
+
+      // Government KYC & Identity
+      samagraId: (samagraId || '').trim(),
+      aadhaarNo: (aadhaarNo || '').trim(),
+      panNo: (panNo || '').trim(),
+      otherDetail: (otherDetail || '').trim(),
+
+      // Bank Details
+      bankAccountNo: (bankAccountNo || '').trim(),
+      bankName: (bankName || '').trim(),
+      bankIfsc: (bankIfsc || '').trim(),
+
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.staff_users.push(newStaff);
+    writeDB(db);
+
+    res.status(201).json({
+      success: true,
+      message: `Staff member "${newStaff.name}" created successfully!`,
+      staff: newStaff
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
+});
 
-  if (!db.staff_users) db.staff_users = [];
-  const cleanUser = username.trim().toLowerCase();
-  if (db.staff_users.some(s => (s.username || '').trim().toLowerCase() === cleanUser)) {
-    return res.status(400).json({ success: false, message: 'Staff ID already exists. Please choose another ID.' });
+// Admin: Update staff account
+app.put('/api/staff/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const { id } = req.params;
+    if (!db.staff_users) db.staff_users = [];
+    const staff = db.staff_users.find(s => s.id === id || s.username === id);
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'Staff member not found.' });
+    }
+
+    const {
+      name, username, password, post, role, department, status,
+      fatherName, motherName, spouseName,
+      dob, gender, education, professionalQualification, experienceMonths,
+      dateOfJoining, address, pincode, email, mobile, salary, pfNo,
+      religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
+      bankAccountNo, bankName, bankIfsc
+    } = req.body;
+
+    if (username && username.trim().toLowerCase() !== (staff.username || '').trim().toLowerCase()) {
+      const exists = db.staff_users.some(s => s.id !== staff.id && (s.username || '').trim().toLowerCase() === username.trim().toLowerCase());
+      if (exists) {
+        return res.status(400).json({ success: false, message: `Staff login ID "${username}" is already taken.` });
+      }
+      staff.username = username.trim().toLowerCase();
+    }
+
+    if (name !== undefined) staff.name = name.trim();
+    if (password !== undefined && password.trim()) staff.password = password.trim();
+    if (post !== undefined) staff.post = post.trim();
+    if (role !== undefined) staff.role = role.trim();
+    if (department !== undefined) staff.department = department.trim();
+    if (status !== undefined) staff.status = status.trim();
+
+    if (fatherName !== undefined) staff.fatherName = fatherName.trim();
+    if (motherName !== undefined) staff.motherName = motherName.trim();
+    if (spouseName !== undefined) staff.spouseName = spouseName.trim();
+    if (dob !== undefined) staff.dob = dob;
+    if (gender !== undefined) staff.gender = gender;
+    if (religion !== undefined) staff.religion = religion;
+    if (socialClass !== undefined) staff.socialClass = socialClass;
+
+    if (education !== undefined) staff.education = education.trim();
+    if (professionalQualification !== undefined) staff.professionalQualification = professionalQualification.trim();
+    if (experienceMonths !== undefined) staff.experienceMonths = Number(experienceMonths) || 0;
+    if (dateOfJoining !== undefined) staff.dateOfJoining = dateOfJoining;
+
+    if (address !== undefined) staff.address = address.trim();
+    if (pincode !== undefined) staff.pincode = pincode.trim();
+    if (email !== undefined) staff.email = email.trim();
+    if (mobile !== undefined) staff.mobile = mobile.trim();
+
+    if (salary !== undefined) staff.salary = Number(salary) || 0;
+    if (pfNo !== undefined) staff.pfNo = pfNo.trim();
+
+    if (samagraId !== undefined) staff.samagraId = samagraId.trim();
+    if (aadhaarNo !== undefined) staff.aadhaarNo = aadhaarNo.trim();
+    if (panNo !== undefined) staff.panNo = panNo.trim();
+    if (otherDetail !== undefined) staff.otherDetail = otherDetail.trim();
+
+    if (bankAccountNo !== undefined) staff.bankAccountNo = bankAccountNo.trim();
+    if (bankName !== undefined) staff.bankName = bankName.trim();
+    if (bankIfsc !== undefined) staff.bankIfsc = bankIfsc.trim();
+
+    staff.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+    res.json({ success: true, message: 'Staff credentials and details updated successfully.', staff });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-
-  const newStaff = {
-    id: `stf-${Date.now()}`,
-    name: name.trim(),
-    username: cleanUser,
-    password: password.trim(),
-    role: role || 'Cash Counter & Admission Desk',
-    department: department || 'Accounts & Admissions',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  };
-
-  db.staff_users.push(newStaff);
-  writeDB(db);
-
-  res.json({
-    success: true,
-    message: `Staff account for "${newStaff.name}" created successfully!`,
-    staff: newStaff
-  });
 });
 
 // Admin: Delete staff account
@@ -383,35 +511,298 @@ app.delete('/api/staff/:id', (req, res) => {
   res.json({ success: true, message: 'Staff account removed successfully.' });
 });
 
-// Admin: Update staff account
-app.put('/api/staff/:id', (req, res) => {
+// ----------------------------------------------------
+// STAFF ATTENDANCE APIs
+// ----------------------------------------------------
+
+// Get Attendance records for a date or month
+app.get('/api/staff-attendance', (req, res) => {
+  try {
+    const { date, month, staffId } = req.query;
+    const db = readDB();
+    if (!Array.isArray(db.staff_attendance)) db.staff_attendance = [];
+
+    let list = db.staff_attendance;
+    if (date) {
+      list = list.filter(a => a.date === date);
+    } else if (month) {
+      list = list.filter(a => (a.date || '').startsWith(month));
+    }
+    if (staffId) {
+      list = list.filter(a => a.staffId === staffId);
+    }
+
+    res.json({ success: true, count: list.length, attendance: list });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Mark / Update Batch Attendance for a Date
+app.post('/api/staff-attendance/mark', (req, res) => {
+  try {
+    const { date, records, markedBy } = req.body;
+    if (!date || !Array.isArray(records)) {
+      return res.status(400).json({ success: false, message: 'Date and records array are required.' });
+    }
+
+    const db = readDB();
+    if (!Array.isArray(db.staff_attendance)) db.staff_attendance = [];
+
+    records.forEach(rec => {
+      const staff = (db.staff_users || []).find(s => s.id === rec.staffId);
+      const existingIdx = db.staff_attendance.findIndex(a => a.date === date && a.staffId === rec.staffId);
+
+      const attItem = {
+        id: existingIdx !== -1 ? db.staff_attendance[existingIdx].id : `att-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        date,
+        staffId: rec.staffId,
+        staffName: rec.staffName || staff?.name || 'Staff Member',
+        post: staff?.post || staff?.role || '',
+        status: rec.status || 'Present', // 'Present', 'Absent', 'Half Day', 'Leave', 'Holiday'
+        checkIn: rec.checkIn || '',
+        checkOut: rec.checkOut || '',
+        remarks: rec.remarks || '',
+        markedBy: markedBy || 'Admin',
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingIdx !== -1) {
+        db.staff_attendance[existingIdx] = attItem;
+      } else {
+        db.staff_attendance.push(attItem);
+      }
+    });
+
+    writeDB(db);
+    res.json({ success: true, message: `Attendance for ${date} saved successfully (${records.length} staff marked).` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Monthly Attendance Summary & Calculated Salary Calculation per Staff
+app.get('/api/staff-attendance/summary', (req, res) => {
   try {
     const db = readDB();
-    const { id } = req.params;
-    const { name, username, password, role, department, status } = req.body;
+    const now = new Date();
+    const requestedMonth = req.query.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Parse year and month
+    const [yStr, mStr] = requestedMonth.split('-');
+    const year = parseInt(yStr, 10);
+    const monthIndex = parseInt(mStr, 10) - 1; // 0-based
+    const totalDaysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
-    if (!db.staff_users) db.staff_users = [];
-    const staff = db.staff_users.find(s => s.id === id || s.username === id);
+    if (!Array.isArray(db.staff_users)) db.staff_users = [];
+    if (!Array.isArray(db.staff_attendance)) db.staff_attendance = [];
+    if (!Array.isArray(db.staff_salary_payments)) db.staff_salary_payments = [];
+
+    // Filter attendance for requested month
+    const monthAtt = db.staff_attendance.filter(a => (a.date || '').startsWith(requestedMonth));
+
+    const summary = db.staff_users.map(staff => {
+      const staffAtt = monthAtt.filter(a => a.staffId === staff.id);
+      
+      let presentDays = 0;
+      let halfDays = 0;
+      let paidLeaves = 0;
+      let holidays = 0;
+      let absentDays = 0;
+
+      staffAtt.forEach(a => {
+        const st = (a.status || 'Present').toLowerCase();
+        if (st === 'present' || st === 'p') presentDays++;
+        else if (st === 'half day' || st === 'hd') halfDays++;
+        else if (st === 'leave' || st === 'l') paidLeaves++;
+        else if (st === 'holiday' || st === 'h') holidays++;
+        else if (st === 'absent' || st === 'a') absentDays++;
+      });
+
+      // Total payable days
+      const effectiveWorkingDays = presentDays + paidLeaves + holidays + (halfDays * 0.5);
+      const markedDays = presentDays + halfDays + paidLeaves + holidays + absentDays;
+      
+      // Base salary & per-day calculation
+      const baseSalary = Number(staff.salary || 0);
+      const perDaySalary = totalDaysInMonth > 0 ? (baseSalary / totalDaysInMonth) : 0;
+      const calculatedSalary = Math.round(perDaySalary * effectiveWorkingDays);
+
+      // Check if already paid for this month
+      const paymentRecord = db.staff_salary_payments.find(p => p.staffId === staff.id && p.monthString === requestedMonth);
+
+      return {
+        staffId: staff.id,
+        name: staff.name,
+        username: staff.username,
+        post: staff.post || staff.role || 'Staff Member',
+        department: staff.department || 'Accounts & Admissions',
+        mobile: staff.mobile || '',
+        bankAccountNo: staff.bankAccountNo || '',
+        bankName: staff.bankName || '',
+        bankIfsc: staff.bankIfsc || '',
+        baseSalary,
+        monthString: requestedMonth,
+        totalDaysInMonth,
+        markedDays,
+        presentDays,
+        halfDays,
+        paidLeaves,
+        holidays,
+        absentDays,
+        payableDays: effectiveWorkingDays,
+        perDaySalary: Math.round(perDaySalary * 100) / 100,
+        calculatedSalary,
+        isPaid: !!paymentRecord,
+        paymentRecord: paymentRecord || null
+      };
+    });
+
+    res.json({
+      success: true,
+      month: requestedMonth,
+      totalDaysInMonth,
+      summary
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// STAFF SALARY DISBURSEMENT APIs
+// ----------------------------------------------------
+
+// List Salary Disbursement Records
+app.get('/api/staff-salaries', (req, res) => {
+  try {
+    const { month, staffId } = req.query;
+    const db = readDB();
+    if (!Array.isArray(db.staff_salary_payments)) db.staff_salary_payments = [];
+
+    let list = db.staff_salary_payments;
+    if (month) list = list.filter(s => s.monthString === month);
+    if (staffId) list = list.filter(s => s.staffId === staffId);
+
+    res.json({ success: true, count: list.length, payments: list });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Pay Monthly Salary
+app.post('/api/staff-salaries/pay', (req, res) => {
+  try {
+    const {
+      staffId,
+      monthString, // "2026-09"
+      baseSalary,
+      payableDays,
+      totalDaysInMonth,
+      earnedSalary,
+      bonus,
+      allowances,
+      deductions,
+      netSalaryPaid,
+      paymentMode,
+      transactionRef,
+      paymentDate,
+      remarks,
+      paidBy
+    } = req.body;
+
+    if (!staffId || !monthString) {
+      return res.status(400).json({ success: false, message: 'Staff ID and Month are required.' });
+    }
+
+    const db = readDB();
+    if (!Array.isArray(db.staff_users)) db.staff_users = [];
+    if (!Array.isArray(db.staff_salary_payments)) db.staff_salary_payments = [];
+
+    const staff = db.staff_users.find(s => s.id === staffId);
     if (!staff) {
       return res.status(404).json({ success: false, message: 'Staff member not found.' });
     }
 
-    if (username && username.trim().toLowerCase() !== (staff.username || '').trim().toLowerCase()) {
-      const exists = db.staff_users.some(s => s.id !== staff.id && (s.username || '').trim().toLowerCase() === username.trim().toLowerCase());
-      if (exists) {
-        return res.status(400).json({ success: false, message: `Staff login ID "${username}" is already taken.` });
+    // Check if payment already exists for this staff and month
+    const existingIndex = db.staff_salary_payments.findIndex(p => p.staffId === staffId && p.monthString === monthString);
+
+    const voucherNo = existingIndex !== -1 
+      ? db.staff_salary_payments[existingIndex].voucherNo 
+      : `SAL-${monthString.replace('-', '')}-${String(db.staff_salary_payments.length + 1).padStart(3, '0')}`;
+
+    const paymentItem = {
+      id: existingIndex !== -1 ? db.staff_salary_payments[existingIndex].id : `sal-${Date.now()}`,
+      voucherNo,
+      staffId,
+      staffName: staff.name,
+      post: staff.post || staff.role || 'Staff Member',
+      department: staff.department || '',
+      mobile: staff.mobile || '',
+      monthString,
+      baseSalary: Number(baseSalary !== undefined && baseSalary !== '' ? baseSalary : staff.salary || 0),
+      totalDaysInMonth: Number(totalDaysInMonth || 30),
+      payableDays: Number(payableDays || 0),
+      earnedSalary: Number(earnedSalary || 0),
+      bonus: Number(bonus || 0),
+      allowances: Number(allowances || 0),
+      deductions: Number(deductions || 0),
+      netSalaryPaid: Number(netSalaryPaid || 0),
+      paymentMode: paymentMode || 'Bank Transfer',
+      transactionRef: (transactionRef || '').trim(),
+      bankAccountNo: staff.bankAccountNo || '',
+      bankName: staff.bankName || '',
+      bankIfsc: staff.bankIfsc || '',
+      paymentDate: paymentDate || new Date().toISOString().split('T')[0],
+      remarks: remarks || `Salary for ${monthString}`,
+      paidBy: paidBy || 'Administrator',
+      status: 'Paid',
+      createdAt: new Date().toISOString()
+    };
+
+    // If baseSalary is provided/fixed during payment, persist it to staff profile
+    if (baseSalary !== undefined && baseSalary !== '') {
+      const numBase = Number(baseSalary);
+      if (!isNaN(numBase) && numBase >= 0) {
+        staff.salary = numBase;
+        staff.updatedAt = new Date().toISOString();
       }
-      staff.username = username.trim().toLowerCase();
     }
 
-    if (name) staff.name = name.trim();
-    if (password) staff.password = password.trim();
-    if (role) staff.role = role.trim();
-    if (department !== undefined) staff.department = department.trim();
-    if (status) staff.status = status.trim();
+    if (existingIndex !== -1) {
+      db.staff_salary_payments[existingIndex] = paymentItem;
+    } else {
+      db.staff_salary_payments.unshift(paymentItem);
+    }
 
     writeDB(db);
-    res.json({ success: true, message: 'Staff credentials updated successfully.', staff });
+
+    res.status(201).json({
+      success: true,
+      message: `Salary of ₹${paymentItem.netSalaryPaid.toLocaleString('en-IN')} paid successfully to ${staff.name}! Voucher #${voucherNo}`,
+      payment: paymentItem
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Salary Voucher
+app.delete('/api/staff-salaries/:voucherId', (req, res) => {
+  try {
+    const { voucherId } = req.params;
+    const db = readDB();
+    if (!Array.isArray(db.staff_salary_payments)) db.staff_salary_payments = [];
+
+    const index = db.staff_salary_payments.findIndex(p => p.id === voucherId || p.voucherNo === voucherId);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Salary voucher not found.' });
+    }
+
+    const [deleted] = db.staff_salary_payments.splice(index, 1);
+    writeDB(db);
+
+    res.json({ success: true, message: `Salary voucher "${deleted.voucherNo}" cancelled successfully.`, deleted });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
