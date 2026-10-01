@@ -2783,6 +2783,194 @@ app.post('/api/students/:rollNo/record-refund', (req, res) => {
   }
 });
 
+// Dedicated endpoint to mark student course as completed
+app.post('/api/students/:rollNo/complete-course', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    student.status = 'Completed';
+    student.courseCompleted = 'Yes';
+    student.completionDate = req.body.completionDate || new Date().toISOString().split('T')[0];
+    student.completedBy = req.body.completedBy || 'Admin';
+    student.completionRemark = (req.body.remark || 'All course terms/semesters successfully completed').trim();
+
+    // Ensure documentReturn object exists
+    if (!student.documentReturn) {
+      student.documentReturn = {
+        marksheetReturned: false,
+        marksheetDetails: 'Final Degree Marksheet',
+        marksheetDate: '',
+        tcIssued: false,
+        tcNumber: '',
+        tcDate: '',
+        tcRemarks: '',
+        migrationIssued: false,
+        migrationNumber: '',
+        migrationDate: '',
+        migrationRemarks: '',
+        degreeIssued: false,
+        degreeNumber: '',
+        degreeDate: '',
+        characterCertificate: false,
+        otherDocsReturned: '',
+        receiverType: 'Student',
+        receiverName: student.fullName || student.name || '',
+        receiverMobile: student.mobileNo || student.mobile || '',
+        receiverAadhaar: student.aadhaarNo || '',
+        handoverDate: '',
+        handedOverBy: 'Admin',
+        clearanceStatus: 'Pending',
+        remarks: ''
+      };
+    }
+
+    student.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Course marked as Completed for ${student.fullName || student.rollNo}! Moved to Completed Students & Document Return Section.`,
+      student
+    });
+  } catch (err) {
+    console.error('Error completing course:', err);
+    res.status(500).json({ success: false, message: 'Failed to complete course: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to revert student back to active from completed
+app.post('/api/students/:rollNo/revert-complete', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    student.status = 'Active';
+    student.courseCompleted = 'No';
+    student.revertedAt = new Date().toISOString();
+    student.revertedBy = req.body?.revertedBy || 'Admin';
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Student ${student.fullName || student.rollNo} reverted back to Active Enrolled Students!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error reverting student completion:', err);
+    res.status(500).json({ success: false, message: 'Failed to revert completion: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to update student document return & identifiers (rollNo, enrollmentNo)
+app.post('/api/students/:rollNo/document-return', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const student = findStudent(db.students, rawKey);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: `Student ${rawKey} not found.` });
+    }
+
+    const {
+      rollNo,
+      enrollmentNo,
+      documentReturn,
+      marksheetReturned,
+      marksheetDetails,
+      marksheetDate,
+      tcIssued,
+      tcNumber,
+      tcDate,
+      tcRemarks,
+      migrationIssued,
+      migrationNumber,
+      migrationDate,
+      migrationRemarks,
+      degreeIssued,
+      degreeNumber,
+      degreeDate,
+      characterCertificate,
+      otherDocsReturned,
+      receiverType,
+      receiverName,
+      receiverMobile,
+      receiverAadhaar,
+      handoverDate,
+      handedOverBy,
+      clearanceStatus,
+      remarks
+    } = req.body || {};
+
+    // Allow updating rollNo and enrollmentNo if provided
+    if (rollNo && String(rollNo).trim()) {
+      student.rollNo = String(rollNo).trim();
+    }
+    if (enrollmentNo !== undefined) {
+      student.enrollmentNo = String(enrollmentNo || '').trim();
+    }
+
+    // Merge or set documentReturn
+    const docData = documentReturn || {
+      marksheetReturned: marksheetReturned !== undefined ? marksheetReturned : (student.documentReturn?.marksheetReturned || false),
+      marksheetDetails: marksheetDetails !== undefined ? marksheetDetails : (student.documentReturn?.marksheetDetails || ''),
+      marksheetDate: marksheetDate !== undefined ? marksheetDate : (student.documentReturn?.marksheetDate || ''),
+      tcIssued: tcIssued !== undefined ? tcIssued : (student.documentReturn?.tcIssued || false),
+      tcNumber: tcNumber !== undefined ? tcNumber : (student.documentReturn?.tcNumber || ''),
+      tcDate: tcDate !== undefined ? tcDate : (student.documentReturn?.tcDate || ''),
+      tcRemarks: tcRemarks !== undefined ? tcRemarks : (student.documentReturn?.tcRemarks || ''),
+      migrationIssued: migrationIssued !== undefined ? migrationIssued : (student.documentReturn?.migrationIssued || false),
+      migrationNumber: migrationNumber !== undefined ? migrationNumber : (student.documentReturn?.migrationNumber || ''),
+      migrationDate: migrationDate !== undefined ? migrationDate : (student.documentReturn?.migrationDate || ''),
+      migrationRemarks: migrationRemarks !== undefined ? migrationRemarks : (student.documentReturn?.migrationRemarks || ''),
+      degreeIssued: degreeIssued !== undefined ? degreeIssued : (student.documentReturn?.degreeIssued || false),
+      degreeNumber: degreeNumber !== undefined ? degreeNumber : (student.documentReturn?.degreeNumber || ''),
+      degreeDate: degreeDate !== undefined ? degreeDate : (student.documentReturn?.degreeDate || ''),
+      characterCertificate: characterCertificate !== undefined ? characterCertificate : (student.documentReturn?.characterCertificate || false),
+      otherDocsReturned: otherDocsReturned !== undefined ? otherDocsReturned : (student.documentReturn?.otherDocsReturned || ''),
+      receiverType: receiverType || student.documentReturn?.receiverType || 'Student',
+      receiverName: receiverName !== undefined ? receiverName : (student.documentReturn?.receiverName || student.fullName || student.name || ''),
+      receiverMobile: receiverMobile !== undefined ? receiverMobile : (student.documentReturn?.receiverMobile || student.mobileNo || student.mobile || ''),
+      receiverAadhaar: receiverAadhaar !== undefined ? receiverAadhaar : (student.documentReturn?.receiverAadhaar || student.aadhaarNo || ''),
+      handoverDate: handoverDate !== undefined ? handoverDate : (student.documentReturn?.handoverDate || new Date().toISOString().split('T')[0]),
+      handedOverBy: handedOverBy || student.documentReturn?.handedOverBy || 'Admin',
+      clearanceStatus: clearanceStatus || student.documentReturn?.clearanceStatus || 'Pending',
+      remarks: remarks !== undefined ? remarks : (student.documentReturn?.remarks || '')
+    };
+
+    student.documentReturn = {
+      ...(student.documentReturn || {}),
+      ...docData,
+      updatedAt: new Date().toISOString()
+    };
+
+    student.updatedAt = new Date().toISOString();
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Document return details successfully saved for ${student.fullName || student.rollNo}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error saving document return details:', err);
+    res.status(500).json({ success: false, message: 'Failed to save document return: ' + err.message });
+  }
+});
+
 // Dedicated endpoint to attach an additional / dual course to an existing student
 app.post('/api/students/:rollNo/add-course', (req, res) => {
   const db = readDB();

@@ -19,6 +19,7 @@ import SavePersonalDocuments from './SavePersonalDocuments';
 import PromoteStudentsManager from './PromoteStudentsManager';
 import VocationalCoursesManager from './VocationalCoursesManager';
 import StaffPayrollManager from './StaffPayrollManager';
+import CompletedStudentsManager from './CompletedStudentsManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -48,6 +49,9 @@ export default function AdminPortal({
 
       if (p.includes('promote') || search.includes('promote')) {
         return 'promote';
+      }
+      if (p.includes('completed') || search.includes('completed') || p.includes('document-return')) {
+        return 'completed-students';
       }
       if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
         return 'records';
@@ -297,6 +301,16 @@ export default function AdminPortal({
       icon: TrendingUp, 
       color: 'text-teal-500',
       badge: 'Promote'
+    },
+    { 
+      id: 'completed-students', 
+      label: 'Completed & Document Return', 
+      fullName: 'Completed Students & Original Document Return Registry',
+      sub: 'Degree-completed students registry, track returned original marksheets, TC, migration certificate return & clearance slip',
+      shortDesc: 'Completed Degree Students & Document Return Desk',
+      icon: GraduationCap, 
+      color: 'text-emerald-600',
+      badge: 'Document Clearance'
     },
     { 
       id: 'university-paid', 
@@ -877,6 +891,14 @@ export default function AdminPortal({
           lang={lang} 
           toggleLang={toggleLang} 
           onRefreshCourses={onRefreshCourses}
+        />
+      )}
+
+      {/* TAB: COMPLETED STUDENTS & DOCUMENT RETURN DESK */}
+      {activeTab === 'completed-students' && (
+        <CompletedStudentsManager 
+          lang={lang} 
+          toggleLang={toggleLang} 
         />
       )}
 

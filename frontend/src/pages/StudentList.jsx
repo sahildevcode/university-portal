@@ -244,6 +244,12 @@ export default function StudentList({
   const [cancelPaymentMode, setCancelPaymentMode] = useState('Cash');
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // Course Completion State
+  const [completingStudent, setCompletingStudent] = useState(null);
+  const [completeLoading, setCompleteLoading] = useState(false);
+  const [completionDate, setCompletionDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [completionRemark, setCompletionRemark] = useState('All semesters/terms completed successfully');
+
   // Default Fallback Partner Universities list (immediately available before API completes)
   const DEFAULT_UNIVERSITIES = [
     { id: 'univ-1789571739471-463', name: 'Bhabha University, Bhopal (M.P)', shortName: 'Bhabha University' },
@@ -1642,6 +1648,56 @@ export default function StudentList({
     }
   };
 
+  const handleOpenCompleteCourseModal = (std) => {
+    setCompletingStudent(std);
+    setCompletionDate(new Date().toISOString().split('T')[0]);
+    setCompletionRemark('All semesters/terms completed successfully');
+  };
+
+  const handleConfirmCompleteCourse = async () => {
+    if (!completingStudent) return;
+    setCompleteLoading(true);
+    const lookupKey = completingStudent.rollNo || completingStudent.id;
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/complete-course`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completionDate,
+          remark: completionRemark,
+          completedBy: 'Admin'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to mark course as completed');
+      }
+
+      // Update state in memory
+      setStudents(prev => prev.map(s => {
+        if ((s.id && s.id === lookupKey) || (s.rollNo && s.rollNo === lookupKey)) {
+          return { ...s, status: 'Completed', courseCompleted: 'Yes', completionDate };
+        }
+        return s;
+      }));
+
+      if (selectedStudent && (selectedStudent.id === lookupKey || selectedStudent.rollNo === lookupKey)) {
+        setSelectedStudent(null);
+      }
+      if (editingStudent && (editingStudent.id === lookupKey || editingStudent.rollNo === lookupKey)) {
+        setEditingStudent(null);
+      }
+
+      const completedStdName = completingStudent.fullName || completingStudent.rollNo;
+      setCompletingStudent(null);
+      alert(`Degree/Course marked as Completed for ${completedStdName}!\nStudent has been moved to the "Completed & Document Return" section.`);
+    } catch (err) {
+      alert(err.message || 'Failed to complete course');
+    } finally {
+      setCompleteLoading(false);
+    }
+  };
+
   const handlePromoteStudent = async (std, targetSem = null) => {
     const currentSem = Number(std.currentSemester) || 1;
     const nextSem = targetSem !== null ? Number(targetSem) : currentSem + 1;
@@ -1700,6 +1756,8 @@ export default function StudentList({
     if (s.isSecondaryCourse) return false;
     // Exclude cancelled admissions so they disappear from Enrolled Students section
     if (s.status === 'Cancelled' || s.status === 'Admission Cancelled' || s.cancel === 'Yes') return false;
+    // Exclude completed students so they move to the dedicated Completed & Document Return section
+    if (s.status === 'Completed' || s.courseCompleted === 'Yes') return false;
 
     // Due Filter support (for Accounts Dashboard integration)
     if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
@@ -2733,6 +2791,14 @@ export default function StudentList({
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCompleteCourseModal(std)}
+                                  className="p-1 rounded hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                                  title="Complete Degree (डिग्री पूर्ण मार्क करें एवं दस्तावेज वापसी में भेजें)"
+                                >
+                                  <GraduationCap className="w-3.5 h-3.5" />
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => setPrintSlipStudent(std)}
@@ -6091,16 +6157,29 @@ export default function StudentList({
 
               {/* Action Buttons */}
               <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                {/* Cancel Admission Button on the Left */}
-                <button
-                  type="button"
-                  onClick={() => setCancellingStudent(editingStudent)}
-                  className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold flex items-center justify-center gap-2 cursor-pointer transition shadow-2xs hover:shadow text-xs"
-                  title="Cancel this student's admission and move to Cancelled Admissions registry"
-                >
-                  <Ban className="w-4 h-4 text-rose-600" />
-                  <span>Cancel Admission (एडमिशन रद्द करें)</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Cancel Admission Button */}
+                  <button
+                    type="button"
+                    onClick={() => setCancellingStudent(editingStudent)}
+                    className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition shadow-2xs hover:shadow text-xs"
+                    title="Cancel this student's admission and move to Cancelled Admissions registry"
+                  >
+                    <Ban className="w-4 h-4 text-rose-600" />
+                    <span>Cancel Admission</span>
+                  </button>
+
+                  {/* Complete Course / Degree Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCompleteCourseModal(editingStudent)}
+                    className="px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold flex items-center justify-center gap-1.5 cursor-pointer transition shadow-2xs hover:shadow text-xs"
+                    title="Mark degree completed and transfer to Document Return section"
+                  >
+                    <GraduationCap className="w-4 h-4 text-emerald-600" />
+                    <span>Complete Degree (डिग्री पूर्ण)</span>
+                  </button>
+                </div>
 
                 <div className="flex items-center justify-end gap-3">
                   <button
@@ -6284,6 +6363,101 @@ export default function StudentList({
                 >
                   <Ban className="w-4 h-4" />
                   <span>{cancelLoading ? 'Cancelling...' : 'Confirm & Cancel Admission'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Course / Degree Confirmation Modal */}
+      {completingStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 py-4 sm:py-8 flex justify-center items-start">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-emerald-200 my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base sm:text-lg">Mark Course / Degree Completed</h3>
+                  <p className="text-xs text-emerald-200">डिग्री पूर्ण करें एवं दस्तावेज वापसी में भेजें</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCompletingStudent(null)}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 space-y-4 text-xs text-slate-800">
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-emerald-800 font-bold uppercase">Student Details</span>
+                  <span className="font-mono text-[11px] font-black text-emerald-900">Roll: {completingStudent.rollNo || 'N/A'}</span>
+                </div>
+                <p className="text-sm font-black text-slate-900">{completingStudent.fullName || completingStudent.name}</p>
+                <p className="text-[11px] text-slate-600">
+                  S/O {completingStudent.fatherName || 'N/A'} • {completingStudent.courseName || completingStudent.course}
+                </p>
+                <p className="text-[10px] text-slate-500 font-mono">
+                  Enrollment No: {completingStudent.enrollmentNo || 'Pending'}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-amber-900 space-y-1 text-[11px]">
+                <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>महत्वपूर्ण सूचना (Course Completion Notice):</span>
+                </p>
+                <p className="leading-relaxed">
+                  इस बटन को दबाने के बाद यह छात्र <strong>"Completed &amp; Document Return"</strong> वाले नए पेज में चला जाएगा। वहां आप छात्र के मूल दस्तावेज (मार्कशीट, टीसी, माइग्रेशन) वापसी का रिकॉर्ड दर्ज कर सकेंगे और पावती रसीद प्रिंट कर सकेंगे।
+                </p>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Completion Date (कोर्स पूर्ण दिनांक):</label>
+                <input
+                  type="date"
+                  value={completionDate}
+                  onChange={(e) => setCompletionDate(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Remarks / Note (टिप्पणी):</label>
+                <input
+                  type="text"
+                  value={completionRemark}
+                  onChange={(e) => setCompletionRemark(e.target.value)}
+                  placeholder="e.g. All semesters/years completed successfully"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCompletingStudent(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel (रद्द करें)
+                </button>
+                <button
+                  type="button"
+                  disabled={completeLoading}
+                  onClick={handleConfirmCompleteCourse}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>{completeLoading ? 'Completing...' : 'Confirm & Complete (डिग्री पूर्ण करें)'}</span>
                 </button>
               </div>
             </div>

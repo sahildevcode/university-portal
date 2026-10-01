@@ -292,6 +292,36 @@ export default function PromoteStudentsManager({
     }
   };
 
+  // Mark student course/degree completed
+  const handleCompleteCourse = async (student) => {
+    const sName = student.fullName || student.rollNo;
+    if (!window.confirm(`क्या आप ${sName} की डिग्री / कोर्स को Complete मार्क करना चाहते हैं?\nयह छात्र "Completed & Document Return" सेक्शन में ट्रांसफर हो जाएगा।`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const lookupKey = student.rollNo || student.enrollmentNo || student.id;
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/complete-course`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completedBy: 'Admin' })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to complete course');
+      }
+
+      fireCelebration({ x: 0.5, y: 0.5 });
+      showToast(`${sName} successfully marked as Completed! Moved to Completed & Document Return section.`);
+      fetchStudents();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter students
   const filteredStudents = useMemo(() => {
     const q = (searchQuery || '').trim().toLowerCase();
@@ -299,6 +329,8 @@ export default function PromoteStudentsManager({
     return students.filter(s => {
       // Exclude secondary link shadow records from master promote
       if (s.isSecondaryCourse) return false;
+      // Exclude completed degree students and cancelled admissions
+      if (s.status === 'Completed' || s.courseCompleted === 'Yes' || s.status === 'Cancelled' || s.cancel === 'Yes') return false;
 
       // University Filter
       if (selectedUniversity !== 'all') {
@@ -839,15 +871,27 @@ export default function PromoteStudentsManager({
 
                       {/* Action Column: Sticky Right */}
                       <td className="p-2.5 text-center sticky right-0 z-10 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_rgba(0,0,0,0.06)] border-l border-slate-100 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenPromote(student)}
-                          className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 mx-auto cursor-pointer group active:scale-95"
-                          title={`Promote ${student.fullName} to next semester/year`}
-                        >
-                          <TrendingUp className="w-3.5 h-3.5 text-amber-300 group-hover:translate-x-0.5 transition-transform" />
-                          <span>Promote Student</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 justify-center">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPromote(student)}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                            title={`Promote ${student.fullName} to next semester/year`}
+                          >
+                            <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Promote</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCompleteCourse(student)}
+                            className="bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/40 font-black text-xs px-2.5 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                            title={`Mark course completed for ${student.fullName} and move to Document Return section`}
+                          >
+                            <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Complete</span>
+                          </button>
+                        </div>
                       </td>
 
                     </tr>
