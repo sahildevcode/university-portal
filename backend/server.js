@@ -2921,6 +2921,7 @@ app.post('/api/students/:rollNo/document-return', (req, res) => {
       handoverDate,
       handedOverBy,
       clearanceStatus,
+      marksheetFiles,
       remarks
     } = req.body || {};
 
@@ -2963,6 +2964,7 @@ app.post('/api/students/:rollNo/document-return', (req, res) => {
     student.documentReturn = {
       ...(student.documentReturn || {}),
       ...docData,
+      marksheetFiles: marksheetFiles !== undefined ? marksheetFiles : (student.documentReturn?.marksheetFiles || []),
       updatedAt: new Date().toISOString()
     };
 
@@ -2977,6 +2979,114 @@ app.post('/api/students/:rollNo/document-return', (req, res) => {
   } catch (err) {
     console.error('Error saving document return details:', err);
     res.status(500).json({ success: false, message: 'Failed to save document return: ' + err.message });
+  }
+});
+
+// Upload Semester / Year Marksheet PDF for Completed Student
+app.post('/api/students/:rollNo/marksheet-upload', upload.single('marksheet_file'), (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    let student = findStudent(db.students, rawKey);
+    if (!student && (req.body?.id || req.body?.studentId)) {
+      student = findStudent(db.students, req.body?.id || req.body?.studentId);
+    }
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found in registry.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select a valid Marksheet PDF or image file.' });
+    }
+
+    const { term, title, remarks } = req.body;
+    const fileUrl = `/uploads/documents/${req.file.filename}`;
+
+    if (!student.documentReturn) {
+      student.documentReturn = {};
+    }
+    if (!Array.isArray(student.documentReturn.marksheetFiles)) {
+      student.documentReturn.marksheetFiles = [];
+    }
+
+    const marksheetItem = {
+      id: `MSF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      term: (term || 'All Semesters').trim(),
+      title: (title || req.file.originalname).trim(),
+      fileName: req.file.originalname,
+      storedName: req.file.filename,
+      fileUrl: fileUrl,
+      size: req.file.size,
+      uploadedAt: new Date().toISOString(),
+      remarks: (remarks || '').trim()
+    };
+
+    student.documentReturn.marksheetFiles.unshift(marksheetItem);
+    student.documentReturn.marksheetReturned = true; // Auto-mark marksheet returned when file is attached
+    student.documentReturn.updatedAt = new Date().toISOString();
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Marksheet PDF (${marksheetItem.term} - ${marksheetItem.title}) uploaded successfully!`,
+      marksheetFile: marksheetItem,
+      marksheetFiles: student.documentReturn.marksheetFiles,
+      student
+    });
+  } catch (err) {
+    console.error('Error uploading marksheet PDF:', err);
+    res.status(500).json({ success: false, message: 'Failed to upload marksheet PDF: ' + err.message });
+  }
+});
+
+// Delete Semester / Year Marksheet PDF
+app.delete('/api/students/:rollNo/marksheet-upload/:fileId', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    let student = findStudent(db.students, rawKey);
+    if (!student && (req.body?.id || req.query?.id || req.query?.studentId)) {
+      student = findStudent(db.students, req.body?.id || req.query?.id || req.query?.studentId);
+    }
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
+    if (!student.documentReturn || !Array.isArray(student.documentReturn.marksheetFiles)) {
+      return res.status(404).json({ success: false, message: 'No marksheet files found for student.' });
+    }
+
+    const targetFile = student.documentReturn.marksheetFiles.find(f => f.id === req.params.fileId);
+    if (targetFile && targetFile.storedName) {
+      const diskPath = path.join(__dirname, 'uploads', 'documents', targetFile.storedName);
+      if (fs.existsSync(diskPath)) {
+        try {
+          fs.unlinkSync(diskPath);
+        } catch (e) {
+          console.warn('Could not remove file from disk:', e.message);
+        }
+      }
+    }
+
+    student.documentReturn.marksheetFiles = student.documentReturn.marksheetFiles.filter(f => f.id !== req.params.fileId);
+    student.documentReturn.updatedAt = new Date().toISOString();
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'Marksheet PDF deleted successfully.',
+      marksheetFiles: student.documentReturn.marksheetFiles,
+      student
+    });
+  } catch (err) {
+    console.error('Error deleting marksheet PDF:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete marksheet PDF: ' + err.message });
   }
 });
 

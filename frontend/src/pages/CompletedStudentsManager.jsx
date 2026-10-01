@@ -5,7 +5,7 @@ import {
   Users, Trash2, RefreshCw, CheckCircle, AlertTriangle, FileText, Eye,
   Building2, School, CreditCard, ChevronRight, X, ArrowUpRight, Award,
   Download, BookOpen, ShieldCheck, UserCheck, Layers, FileCheck, Check,
-  Undo2
+  Undo2, UploadCloud, Paperclip
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useLanguage } from '../context/LanguageContext';
@@ -64,6 +64,15 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
     receiverAcknowledged: true,
     remarks: ''
   });
+
+  // Marksheet PDF Upload State inside Edit Modal
+  const [marksheetFiles, setMarksheetFiles] = useState([]);
+  const [uploadTerm, setUploadTerm] = useState('All Semesters');
+  const [uploadTitle, setUploadTitle] = useState('All Semesters Final Marksheet');
+  const [uploadRemarks, setUploadRemarks] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploadingMarksheet, setIsUploadingMarksheet] = useState(false);
+  const [deletingFileId, setDeletingFileId] = useState(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
@@ -261,7 +270,96 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
       receiverAcknowledged: dr.receiverAcknowledged !== undefined ? Boolean(dr.receiverAcknowledged) : true,
       remarks: dr.remarks || ''
     });
+    setMarksheetFiles(Array.isArray(dr.marksheetFiles) ? dr.marksheetFiles : []);
+    setUploadTerm('All Semesters');
+    setUploadTitle('All Semesters Final Marksheet');
+    setUploadRemarks('');
+    setSelectedFile(null);
     setEditModalStudent(student);
+  };
+
+  // Upload Marksheet PDF for student (All Semesters / Year-wise / Custom)
+  const handleUploadMarksheet = async (e) => {
+    if (e) e.preventDefault();
+    if (!editModalStudent) return;
+    if (!selectedFile) {
+      alert('Please select a PDF or image file first.');
+      return;
+    }
+
+    try {
+      setIsUploadingMarksheet(true);
+      const lookupKey = getStudentLookupKey(editModalStudent);
+      const formData = new FormData();
+      formData.append('marksheet_file', selectedFile);
+      formData.append('term', uploadTerm || 'All Semesters');
+      formData.append('title', uploadTitle || uploadTerm || 'Marksheet PDF');
+      formData.append('remarks', uploadRemarks || '');
+      formData.append('id', editModalStudent.id);
+      formData.append('studentId', editModalStudent.id);
+
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/marksheet-upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to upload marksheet PDF');
+      }
+
+      const updatedFiles = data.marksheetFiles || [];
+      setMarksheetFiles(updatedFiles);
+      setDocForm(prev => ({ ...prev, marksheetReturned: true }));
+      setSelectedFile(null);
+      const fileInput = document.getElementById('marksheet-file-input');
+      if (fileInput) fileInput.value = '';
+
+      if (editModalStudent.documentReturn) {
+        editModalStudent.documentReturn.marksheetFiles = updatedFiles;
+        editModalStudent.documentReturn.marksheetReturned = true;
+      }
+
+      showToast(`Marksheet PDF (${uploadTerm} - ${uploadTitle}) uploaded successfully!`);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (err) {
+      alert('Upload error: ' + err.message);
+    } finally {
+      setIsUploadingMarksheet(false);
+    }
+  };
+
+  // Delete Marksheet PDF
+  const handleDeleteMarksheet = async (fileId, termTitle) => {
+    if (!editModalStudent) return;
+    if (!window.confirm(`Are you sure you want to delete this marksheet PDF (${termTitle})?`)) {
+      return;
+    }
+
+    try {
+      setDeletingFileId(fileId);
+      const lookupKey = getStudentLookupKey(editModalStudent);
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/marksheet-upload/${encodeURIComponent(fileId)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editModalStudent.id, studentId: editModalStudent.id })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete marksheet PDF');
+      }
+
+      const updatedFiles = data.marksheetFiles || [];
+      setMarksheetFiles(updatedFiles);
+      if (editModalStudent.documentReturn) {
+        editModalStudent.documentReturn.marksheetFiles = updatedFiles;
+      }
+      showToast('Marksheet PDF deleted successfully.');
+      setRefreshTrigger(prev => prev + 1);
+    } catch (err) {
+      alert('Delete error: ' + err.message);
+    } finally {
+      setDeletingFileId(null);
+    }
   };
 
   // Submit Document Return Details
@@ -278,7 +376,9 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
         body: JSON.stringify({
           id: editModalStudent.id,
           studentId: editModalStudent.id,
-          ...docForm
+          marksheetFiles: marksheetFiles,
+          ...docForm,
+          marksheetReturned: marksheetFiles.length > 0 ? true : docForm.marksheetReturned
         })
       });
       const data = await res.json();
@@ -631,6 +731,12 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                         <span className="text-[10px] text-indigo-600 uppercase font-bold mr-1">Enrollment No:</span>
                         <strong className="text-indigo-900">{student.enrollmentNo || 'Not Set'}</strong>
                       </div>
+                      {Array.isArray(dr.marksheetFiles) && dr.marksheetFiles.length > 0 && (
+                        <div className="bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200 text-xs flex items-center gap-1 font-bold text-emerald-800">
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{dr.marksheetFiles.length} Marksheet PDF{dr.marksheetFiles.length > 1 ? 's' : ''}</span>
+                        </div>
+                      )}
                     </div>
 
                     <p className="text-[11px] text-slate-600 font-medium truncate pt-0.5">
@@ -646,7 +752,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                     {dr.marksheetReturned ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700">
                         <Check className="w-3 h-3 text-emerald-600" />
-                        <span>Returned</span>
+                        <span>{Array.isArray(dr.marksheetFiles) && dr.marksheetFiles.length > 0 ? `${dr.marksheetFiles.length} PDF(s)` : 'Returned'}</span>
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold text-amber-600">Pending</span>
@@ -807,12 +913,12 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                 </div>
               </div>
 
-              {/* BLOCK 2: Original Marksheets Return Block */}
-              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/80 space-y-3">
+              {/* BLOCK 2: Original Marksheets Return & PDF Upload Block */}
+              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/80 space-y-4">
                 <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
                   <span className="font-black text-emerald-900 text-sm flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-emerald-600" />
-                    <span>Block 2: Original Marksheet Return</span>
+                    <span>Block 2: Original Marksheets &amp; PDF Upload</span>
                   </span>
                   <label className="inline-flex items-center gap-2 cursor-pointer">
                     <input
@@ -825,6 +931,7 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </label>
                 </div>
 
+                {/* Marksheet Return Details & Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="font-bold text-slate-700 block mb-1">
@@ -847,6 +954,197 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                       onChange={(e) => setDocForm({ ...docForm, marksheetDate: e.target.value })}
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold"
                     />
+                  </div>
+                </div>
+
+                {/* Marksheet PDF Upload Subsection (All Semesters / Year-wise / Custom) */}
+                <div className="pt-3 border-t border-emerald-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                        <UploadCloud className="w-4 h-4 text-emerald-600" />
+                        <span>Upload Marksheet PDFs (Semester-wise / Year-wise)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Upload digital marksheet copies for any semester (Sem 1 to 8), any year (1st to 4th yr), or all semesters.
+                      </p>
+                    </div>
+                    {marksheetFiles.length > 0 && (
+                      <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        {marksheetFiles.length} Uploaded
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Upload Form Box */}
+                  <div className="bg-white p-3.5 rounded-2xl border border-emerald-200/90 shadow-2xs space-y-3">
+                    {/* Quick Term Selector Buttons */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1.5">
+                        Select Semester / Year / Category:
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          'All Semesters',
+                          'Sem 1',
+                          'Sem 2',
+                          'Sem 3',
+                          'Sem 4',
+                          'Sem 5',
+                          'Sem 6',
+                          'Sem 7',
+                          'Sem 8',
+                          '1st Year',
+                          '2nd Year',
+                          '3rd Year',
+                          '4th Year',
+                          'Custom'
+                        ].map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => {
+                              setUploadTerm(t);
+                              if (t === 'All Semesters') setUploadTitle('All Semesters Final Marksheet');
+                              else if (t.startsWith('Sem')) setUploadTitle(`Semester ${t.replace('Sem ', '')} Marksheet`);
+                              else if (t.includes('Year')) setUploadTitle(`${t} Marksheet`);
+                              else setUploadTitle('');
+                            }}
+                            className={`px-2.5 py-1 text-xs rounded-lg font-bold transition cursor-pointer ${
+                              uploadTerm === t
+                                ? 'bg-emerald-600 text-white shadow-2xs'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Title & File Input & Upload button */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                      <div className="sm:col-span-5">
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Marksheet Label / Title:
+                        </label>
+                        <input
+                          type="text"
+                          value={uploadTitle}
+                          onChange={(e) => setUploadTitle(e.target.value)}
+                          placeholder="e.g. Semester 1 Marksheet"
+                          className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Choose PDF / Scanned File:
+                        </label>
+                        <input
+                          id="marksheet-file-input"
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                          className="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3">
+                        <button
+                          type="button"
+                          disabled={!selectedFile || isUploadingMarksheet}
+                          onClick={handleUploadMarksheet}
+                          className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                        >
+                          {isUploadingMarksheet ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud className="w-3.5 h-3.5" />
+                              <span>Upload PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Uploaded Marksheets List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-slate-600 block">
+                      Attached Marksheet PDFs ({marksheetFiles.length}):
+                    </span>
+
+                    {marksheetFiles.length === 0 ? (
+                      <div className="p-3 bg-white/70 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-xs">
+                        No marksheet PDFs attached yet. Choose semester/year and select a PDF file above to upload.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {marksheetFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="p-2.5 bg-white rounded-xl border border-slate-200 hover:border-emerald-300 transition flex items-center justify-between gap-2 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="p-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-100 shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    {file.term || 'Marksheet'}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-800 truncate" title={file.title}>
+                                    {file.title || file.fileName}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 truncate">
+                                  {file.fileName} • {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : 'Uploaded'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0">
+                              <a
+                                href={file.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                                title="View / Open PDF"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </a>
+                              <a
+                                href={file.fileUrl}
+                                download={file.fileName || 'marksheet.pdf'}
+                                className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition"
+                                title="Download PDF"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                type="button"
+                                disabled={deletingFileId === file.id}
+                                onClick={() => handleDeleteMarksheet(file.id, file.title || file.term)}
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+                                title="Delete Marksheet PDF"
+                              >
+                                {deletingFileId === file.id ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1295,6 +1593,22 @@ export default function CompletedStudentsManager({ lang: propLang, toggleLang: p
                   </tbody>
                 </table>
               </div>
+
+              {/* Attached Marksheet PDF Documents (if any) */}
+              {Array.isArray(printSlipStudent.documentReturn?.marksheetFiles) && printSlipStudent.documentReturn.marksheetFiles.length > 0 && (
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <span className="font-bold text-slate-800 text-[11px] uppercase tracking-wide block">
+                    Attached Marksheet PDF Copies ({printSlipStudent.documentReturn.marksheetFiles.length}):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {printSlipStudent.documentReturn.marksheetFiles.map((file, i) => (
+                      <span key={file.id || i} className="px-2 py-0.5 rounded text-[10px] font-mono bg-white border border-slate-300 text-slate-700">
+                        <strong>{file.term}:</strong> {file.title || file.fileName}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Receiver Acknowledgment Box */}
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
