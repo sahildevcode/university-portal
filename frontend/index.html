@@ -15,7 +15,22 @@
     
     <meta name="google-site-verification" content="google0295c8513dc98df2" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-    <link rel="canonical" href="https://pkc-education-institute.vercel.app/" />
+    <link id="pkc-canonical" rel="canonical" href="https://pkc-education-institute.vercel.app/" />
+    <script>
+      (function() {
+        try {
+          var h = window.location.hostname.toLowerCase();
+          var canonical = document.getElementById('pkc-canonical');
+          var isPkcAdmin = h.includes('admin') || h.startsWith('pkc-institute');
+          if (isPkcAdmin) {
+            if (canonical) canonical.setAttribute('href', 'https://pkc-admin.vercel.app' + window.location.pathname);
+            document.title = "PKC Admin Portal | PKC Education Learning Institute";
+          } else {
+            if (canonical) canonical.setAttribute('href', 'https://pkc-education-institute.vercel.app' + window.location.pathname);
+          }
+        } catch(e) {}
+      })();
+    </script>
     
     <!-- Open Graph (Facebook / WhatsApp / Telegram Previews) -->
     <meta property="og:title" content="PKC Chhatarpur | PKC Admin Portal | PKC Education Learning Institute &amp; Consultancy" />
