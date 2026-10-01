@@ -3025,6 +3025,13 @@ app.post('/api/students/:rollNo/marksheet-upload', upload.single('marksheet_file
     student.documentReturn.marksheetFiles.unshift(marksheetItem);
     student.documentReturn.marksheetReturned = true; // Auto-mark marksheet returned when file is attached
     student.documentReturn.updatedAt = new Date().toISOString();
+
+    if (!Array.isArray(student.marksheetFiles)) {
+      student.marksheetFiles = [];
+    }
+    // Avoid duplicate item in student.marksheetFiles
+    student.marksheetFiles = [marksheetItem, ...student.marksheetFiles.filter(f => f.id !== marksheetItem.id)];
+
     student.updatedAt = new Date().toISOString();
 
     writeDB(db);
@@ -3056,11 +3063,10 @@ app.delete('/api/students/:rollNo/marksheet-upload/:fileId', (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found.' });
     }
 
-    if (!student.documentReturn || !Array.isArray(student.documentReturn.marksheetFiles)) {
-      return res.status(404).json({ success: false, message: 'No marksheet files found for student.' });
-    }
+    const docList = Array.isArray(student.documentReturn?.marksheetFiles) ? student.documentReturn.marksheetFiles : [];
+    const rootList = Array.isArray(student.marksheetFiles) ? student.marksheetFiles : [];
+    const targetFile = docList.find(f => f.id === req.params.fileId) || rootList.find(f => f.id === req.params.fileId);
 
-    const targetFile = student.documentReturn.marksheetFiles.find(f => f.id === req.params.fileId);
     if (targetFile && targetFile.storedName) {
       const diskPath = path.join(__dirname, 'uploads', 'documents', targetFile.storedName);
       if (fs.existsSync(diskPath)) {
@@ -3072,16 +3078,23 @@ app.delete('/api/students/:rollNo/marksheet-upload/:fileId', (req, res) => {
       }
     }
 
-    student.documentReturn.marksheetFiles = student.documentReturn.marksheetFiles.filter(f => f.id !== req.params.fileId);
-    student.documentReturn.updatedAt = new Date().toISOString();
+    if (student.documentReturn && Array.isArray(student.documentReturn.marksheetFiles)) {
+      student.documentReturn.marksheetFiles = student.documentReturn.marksheetFiles.filter(f => f.id !== req.params.fileId);
+      student.documentReturn.updatedAt = new Date().toISOString();
+    }
+    if (Array.isArray(student.marksheetFiles)) {
+      student.marksheetFiles = student.marksheetFiles.filter(f => f.id !== req.params.fileId);
+    }
     student.updatedAt = new Date().toISOString();
 
     writeDB(db);
 
+    const updatedList = (student.documentReturn?.marksheetFiles) || (student.marksheetFiles) || [];
+
     res.json({
       success: true,
       message: 'Marksheet PDF deleted successfully.',
-      marksheetFiles: student.documentReturn.marksheetFiles,
+      marksheetFiles: updatedList,
       student
     });
   } catch (err) {

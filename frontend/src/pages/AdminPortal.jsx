@@ -4,7 +4,8 @@ import {
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
   UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
-  UserX, GraduationCap, FolderLock, TrendingUp, Briefcase, HelpCircle, Camera
+  UserX, GraduationCap, FolderLock, TrendingUp, Briefcase, HelpCircle, Camera,
+  FileText
 } from 'lucide-react';
 import SyllabusManager from './SyllabusManager';
 import AccountsDashboard from './AccountsDashboard';
@@ -20,6 +21,7 @@ import PromoteStudentsManager from './PromoteStudentsManager';
 import VocationalCoursesManager from './VocationalCoursesManager';
 import StaffPayrollManager from './StaffPayrollManager';
 import CompletedStudentsManager from './CompletedStudentsManager';
+import StudentYearlyMarksheetManager from './StudentYearlyMarksheetManager';
 import BulkImportModal from '../components/BulkImportModal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -52,6 +54,9 @@ export default function AdminPortal({
       }
       if (p.includes('completed') || search.includes('completed') || p.includes('document-return')) {
         return 'completed-students';
+      }
+      if (p.includes('yearly-marksheets') || p.includes('marksheet') || search.includes('marksheet')) {
+        return 'yearly-marksheets';
       }
       if (p.includes('student-records') || p.includes('records') || search.includes('records')) {
         return 'records';
@@ -311,6 +316,16 @@ export default function AdminPortal({
       icon: GraduationCap, 
       color: 'text-emerald-600',
       badge: 'Document Clearance'
+    },
+    { 
+      id: 'yearly-marksheets', 
+      label: 'Student Marksheet Manager', 
+      fullName: 'Student Yearly & Semester Marksheets Hub',
+      sub: 'Upload and manage 8 semesters / 4 years marksheet PDFs for promoted students, completed students & 8-sem matrix',
+      shortDesc: '8 Semesters & 4 Years Marksheet PDFs',
+      icon: FileText, 
+      color: 'text-sky-600',
+      badge: '8 Sem / 4 Yr'
     },
     { 
       id: 'university-paid', 
@@ -897,6 +912,15 @@ export default function AdminPortal({
       {/* TAB: COMPLETED STUDENTS & DOCUMENT RETURN DESK */}
       {activeTab === 'completed-students' && (
         <CompletedStudentsManager 
+          lang={lang} 
+          toggleLang={toggleLang} 
+        />
+      )}
+
+      {/* TAB: STUDENT YEARLY & SEMESTER MARKSHEETS HUB */}
+      {activeTab === 'yearly-marksheets' && (
+        <StudentYearlyMarksheetManager 
+          courses={localCourses}
           lang={lang} 
           toggleLang={toggleLang} 
         />
