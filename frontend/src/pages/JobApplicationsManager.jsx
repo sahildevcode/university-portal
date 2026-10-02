@@ -28,35 +28,66 @@ export default function JobApplicationsManager({ lang = 'en' }) {
 
   const fetchApplications = async () => {
     setLoading(true);
+    let serverApps = [];
     try {
       const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-      const res = await fetch(`${apiBase}/api/job-applications`);
+      let res = await fetch(`${apiBase}/api/job-applications`);
+      if (!res.ok && apiBase === '') {
+        res = await fetch('https://pkc-university-api.onrender.com/api/job-applications');
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.applications)) {
-        setApplications(data.applications.filter(a => a && typeof a === 'object' && a.id));
-      } else {
-        // Fallback to localStorage
-        loadFromLocalStorage();
+        serverApps = data.applications.filter(a => a && typeof a === 'object' && a.id);
       }
     } catch (err) {
-      console.log('Error fetching job applications from API, loading local:', err);
-      loadFromLocalStorage();
-    } finally {
-      setLoading(false);
+      console.log('API fetch notice, trying direct backend:', err);
+      try {
+        const directRes = await fetch('https://pkc-university-api.onrender.com/api/job-applications');
+        const directData = await directRes.json();
+        if (directData.success && Array.isArray(directData.applications)) {
+          serverApps = directData.applications.filter(a => a && typeof a === 'object' && a.id);
+        }
+      } catch (dErr) {}
     }
-  };
 
-  const loadFromLocalStorage = () => {
+    // Merge with localStorage so locally submitted applicants are never lost
     try {
       const saved = localStorage.getItem('pkc_job_applications');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setApplications(parsed.filter(a => a && typeof a === 'object' && a.id));
-        }
+      const localApps = saved ? JSON.parse(saved) : [];
+      const appMap = new Map();
+
+      // Put server apps first
+      serverApps.forEach(a => {
+        if (a && a.id) appMap.set(a.id, a);
+      });
+
+      // Include local apps if not yet present on server, and push them to backend
+      if (Array.isArray(localApps)) {
+        localApps.forEach(a => {
+          if (a && a.id) {
+            if (!appMap.has(a.id)) {
+              appMap.set(a.id, a);
+              // Silently push unsynced local app to backend
+              try {
+                fetch('/api/job-applications', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(a)
+                }).catch(() => {});
+              } catch (_) {}
+            }
+          }
+        });
       }
+
+      const merged = Array.from(appMap.values());
+      setApplications(merged);
+      localStorage.setItem('pkc_job_applications', JSON.stringify(merged));
     } catch (e) {
       console.error(e);
+      setApplications(serverApps);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,7 +102,10 @@ export default function JobApplicationsManager({ lang = 'en' }) {
       const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
       await fetch(`${apiBase}/api/job-applications/${id}`, { method: 'DELETE' });
     } catch (err) {
-      console.log('API delete failed, updating local state:', err);
+      console.log('API delete failed, trying direct Render fallback:', err);
+      try {
+        await fetch(`https://pkc-university-api.onrender.com/api/job-applications/${id}`, { method: 'DELETE' });
+      } catch (_) {}
     }
 
     const updated = (applications || []).filter(a => a && a.id !== id);

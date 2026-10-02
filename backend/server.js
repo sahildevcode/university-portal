@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -146,39 +146,93 @@ if (!fs.existsSync(resumesUploadDir)) {
 app.use('/uploads/resumes', express.static(resumesUploadDir));
 
 // Job Applications Endpoints
-app.get('/api/job-applications', (req, res) => {
-  const db = readDB();
-  const applications = Array.isArray(db.jobApplications)
-    ? db.jobApplications.filter(a => a && typeof a === 'object' && a.id)
-    : [];
-  res.json({
-    success: true,
-    applications
-  });
-});
+app.get('/api/job-applications', async (req, res) => {
+  try {
+    let applications = [];
+    if (isMongoConnected()) {
+      try {
+        const mongoApps = await JobApplicationModel.find({}).sort({ createdAt: -1 }).lean();
+        if (Array.isArray(mongoApps) && mongoApps.length > 0) {
+          applications = mongoApps.map(a => {
+            const { _id, __v, ...rest } = a;
+            return rest;
+          });
+        }
+      } catch (e) {
+        console.warn('Mongo job applications read notice:', e.message);
+      }
+    }
 
-app.post('/api/job-applications', (req, res) => {
-  const db = readDB();
-  if (!Array.isArray(db.jobApplications)) {
-    db.jobApplications = [];
+    if (!applications || applications.length === 0) {
+      const db = readDB();
+      applications = Array.isArray(db.jobApplications)
+        ? db.jobApplications.filter(a => a && typeof a === 'object' && a.id)
+        : [];
+    }
+
+    res.json({
+      success: true,
+      applications: applications.filter(a => a && typeof a === 'object' && a.id)
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  const appData = req.body;
-  db.jobApplications.unshift(appData);
-  writeDB(db);
-  res.json({
-    success: true,
-    message: 'Job application registered successfully.',
-    application: appData
-  });
 });
 
-app.delete('/api/job-applications/:id', (req, res) => {
-  const db = readDB();
-  if (Array.isArray(db.jobApplications)) {
-    db.jobApplications = db.jobApplications.filter(a => a.id !== req.params.id);
+app.post('/api/job-applications', async (req, res) => {
+  try {
+    const db = readDB();
+    if (!Array.isArray(db.jobApplications)) {
+      db.jobApplications = [];
+    }
+    const appData = req.body;
+    if (!appData || !appData.id || !appData.fullName) {
+      return res.status(400).json({ success: false, message: 'Application ID and full name are required.' });
+    }
+
+    const idx = db.jobApplications.findIndex(a => a.id === appData.id);
+    if (idx !== -1) {
+      db.jobApplications[idx] = appData;
+    } else {
+      db.jobApplications.unshift(appData);
+    }
     writeDB(db);
+
+    if (isMongoConnected()) {
+      try {
+        await JobApplicationModel.findOneAndUpdate({ id: appData.id }, appData, { upsert: true });
+      } catch (mErr) {
+        console.warn('Mongo direct job application save notice:', mErr.message);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Job application registered successfully.',
+      application: appData
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, message: 'Job application deleted.' });
+});
+
+app.delete('/api/job-applications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = readDB();
+    if (Array.isArray(db.jobApplications)) {
+      db.jobApplications = db.jobApplications.filter(a => a.id !== id);
+      writeDB(db);
+    }
+    if (isMongoConnected()) {
+      try {
+        await JobApplicationModel.deleteOne({ id });
+      } catch (e) {}
+    }
+    res.json({ success: true, message: 'Job application deleted.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 const syllabusUpload = multer({
@@ -521,6 +575,28 @@ app.put('/api/staff/:id', (req, res) => {
 
     writeDB(db);
     res.json({ success: true, message: 'Staff credentials and details updated successfully.', staff });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin / Staff: Get single staff account details and live permissions
+app.get('/api/staff/:id', (req, res) => {
+  try {
+    const db = readDB();
+    const { id } = req.params;
+    if (!db.staff_users) db.staff_users = [];
+    const staff = db.staff_users.find(s => s.id === id || s.username === id);
+    if (!staff) {
+      return res.status(404).json({ success: false, message: 'Staff member not found.' });
+    }
+    const safeStaff = {
+      ...staff,
+      allowedModules: Array.isArray(staff.allowedModules) && staff.allowedModules.length > 0
+        ? staff.allowedModules
+        : ['cashcounter', 'admissions', 'documents', 'records']
+    };
+    res.json({ success: true, staff: safeStaff });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

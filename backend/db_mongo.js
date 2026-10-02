@@ -202,6 +202,25 @@ const staffSalaryPaymentSchema = new mongoose.Schema({
   monthString: String
 }, { strict: false, timestamps: true });
 
+const jobApplicationSchema = new mongoose.Schema({
+  id: String,
+  fullName: String,
+  phone: String,
+  email: String,
+  city: String,
+  role: String,
+  experience: String,
+  education: String,
+  skills: String,
+  coverNote: String,
+  resumeFileName: String,
+  resumeFileSize: String,
+  resumeBase64: String,
+  resumeUrl: String,
+  date: String,
+  status: { type: String, default: 'New' }
+}, { strict: false, timestamps: true });
+
 // Models
 export const SettingModel = mongoose.model('Setting', settingSchema);
 export const UserModel = mongoose.model('User', userSchema);
@@ -219,6 +238,7 @@ export const UniversityCourseFeeModel = mongoose.model('UniversityCourseFee', un
 export const StaffUserModel = mongoose.model('StaffUser', staffUserSchema);
 export const StaffAttendanceModel = mongoose.model('StaffAttendance', staffAttendanceSchema);
 export const StaffSalaryPaymentModel = mongoose.model('StaffSalaryPayment', staffSalaryPaymentSchema);
+export const JobApplicationModel = mongoose.model('JobApplication', jobApplicationSchema);
 
 function cleanDoc(doc) {
   if (!doc) return doc;
@@ -300,7 +320,8 @@ export async function hydrateFromMongo() {
       university_course_fees,
       staff_users,
       staff_attendance,
-      staff_salary_payments
+      staff_salary_payments,
+      job_applications
     ] = await Promise.all([
       StudentModel.find({}).lean(),
       CourseModel.find({}).lean(),
@@ -316,6 +337,7 @@ export async function hydrateFromMongo() {
       StaffUserModel.find({}).lean(),
       StaffAttendanceModel.find({}).lean(),
       StaffSalaryPaymentModel.find({}).lean(),
+      JobApplicationModel.find({}).lean(),
     ]);
 
     let localDb = {};
@@ -340,6 +362,9 @@ export async function hydrateFromMongo() {
       if (staff_users && staff_users.length > 0) localDb.staff_users = staff_users.map(cleanDoc);
       if (staff_attendance && staff_attendance.length > 0) localDb.staff_attendance = staff_attendance.map(cleanDoc);
       if (staff_salary_payments && staff_salary_payments.length > 0) localDb.staff_salary_payments = staff_salary_payments.map(cleanDoc);
+      if (job_applications && job_applications.length > 0) {
+        localDb.jobApplications = job_applications.map(cleanDoc);
+      }
 
       // If Atlas doesn't have staff data yet, auto-seed from local database.json
       if ((!staff_users || staff_users.length === 0) && localDb.staff_users && localDb.staff_users.length > 0) {
@@ -354,9 +379,13 @@ export async function hydrateFromMongo() {
         await StaffSalaryPaymentModel.deleteMany({});
         await StaffSalaryPaymentModel.insertMany(localDb.staff_salary_payments);
       }
+      if ((!job_applications || job_applications.length === 0) && localDb.jobApplications && localDb.jobApplications.length > 0) {
+        await JobApplicationModel.deleteMany({});
+        await JobApplicationModel.insertMany(localDb.jobApplications);
+      }
 
       fs.writeFileSync(DB_FILE, JSON.stringify(localDb, null, 2), 'utf8');
-      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.staff_users?.length || 0} staff members, ${localDb.staff_attendance?.length || 0} attendance records synced into memory/cache.`);
+      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.staff_users?.length || 0} staff members, ${localDb.jobApplications?.length || 0} job applications synced into memory/cache.`);
     } else if (localDb.students && localDb.students.length > 0) {
       console.log('⚠️ MongoDB Atlas is empty. Auto-seeding from local database.json...');
       await seedMongoFromDb(localDb);
@@ -407,7 +436,8 @@ async function diffAndSync(current) {
     diffCollection(UniversityCourseFeeModel, previousDbState.university_course_fees || [], current.university_course_fees || [], 'id'),
     diffCollection(StaffUserModel, previousDbState.staff_users || [], current.staff_users || [], 'id'),
     diffCollection(StaffAttendanceModel, previousDbState.staff_attendance || [], current.staff_attendance || [], 'id'),
-    diffCollection(StaffSalaryPaymentModel, previousDbState.staff_salary_payments || [], current.staff_salary_payments || [], 'id')
+    diffCollection(StaffSalaryPaymentModel, previousDbState.staff_salary_payments || [], current.staff_salary_payments || [], 'id'),
+    diffCollection(JobApplicationModel, previousDbState.jobApplications || [], current.jobApplications || [], 'id')
   ]);
 
   if (current.settings && JSON.stringify(current.settings) !== JSON.stringify(previousDbState.settings)) {
@@ -530,5 +560,9 @@ async function seedMongoFromDb(data) {
   if (Array.isArray(data.staff_salary_payments) && data.staff_salary_payments.length) {
     await StaffSalaryPaymentModel.deleteMany({});
     await StaffSalaryPaymentModel.insertMany(data.staff_salary_payments);
+  }
+  if (Array.isArray(data.jobApplications) && data.jobApplications.length) {
+    await JobApplicationModel.deleteMany({});
+    await JobApplicationModel.insertMany(data.jobApplications);
   }
 }

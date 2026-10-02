@@ -387,6 +387,24 @@ export default function StaffPayrollManager({ adminUser }) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Failed to save staff');
 
+      // If edited staff is currently logged in locally, update session immediately
+      try {
+        const curStaffStr = localStorage.getItem('pkc_staff_user');
+        if (curStaffStr) {
+          const curStaff = JSON.parse(curStaffStr);
+          if (curStaff && (curStaff.id === editingStaffId || curStaff.username === staffForm.username)) {
+            const updatedCurStaff = {
+              ...curStaff,
+              ...staffForm,
+              allowedModules: Array.isArray(staffForm.allowedModules) ? staffForm.allowedModules : []
+            };
+            localStorage.setItem('pkc_staff_user', JSON.stringify(updatedCurStaff));
+          }
+        }
+      } catch (stfErr) {
+        console.warn('Local staff sync notice:', stfErr);
+      }
+
       setShowStaffModal(false);
       fetchStaffData();
     } catch (err) {

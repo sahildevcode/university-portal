@@ -215,6 +215,21 @@ export default function App() {
         const stdData = await stdRes.json();
         if (stdData.success) setStudentData(stdData.student);
       }
+
+      // If staff is logged in, refresh live allowedModules and profile
+      if (staffUser?.id || staffUser?.username) {
+        try {
+          const sId = staffUser.id || staffUser.username;
+          const stfRes = await fetch(`/api/staff/${sId}`);
+          const stfData = await stfRes.json();
+          if (stfData.success && stfData.staff) {
+            setStaffUser(stfData.staff);
+            localStorage.setItem('pkc_staff_user', JSON.stringify(stfData.staff));
+          }
+        } catch (stfErr) {
+          console.warn('Error refreshing staff permissions in global data:', stfErr);
+        }
+      }
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -224,7 +239,7 @@ export default function App() {
 
   useEffect(() => {
     fetchGlobalData();
-  }, [studentUser?.rollNo]);
+  }, [studentUser?.rollNo, staffUser?.id]);
 
   // Student Handlers
   const handleStudentLoginSuccess = (user, student) => {

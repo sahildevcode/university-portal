@@ -82,26 +82,44 @@ export default function JobApplyPage({ lang = 'en' }) {
       })
     };
 
-    // Save locally
+    // Save locally immediately
     try {
       const saved = localStorage.getItem('pkc_job_applications');
       const list = saved ? JSON.parse(saved) : [];
-      list.unshift(newApp);
-      localStorage.setItem('pkc_job_applications', JSON.stringify(list));
+      const filtered = list.filter(item => item && item.id !== newApp.id);
+      filtered.unshift(newApp);
+      localStorage.setItem('pkc_job_applications', JSON.stringify(filtered));
     } catch (err) {
       console.error('Error saving local application:', err);
     }
 
-    // Try posting to backend API
+    // Post to backend API (relative with fallback to direct Render backend)
     try {
       const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-      await fetch(`${apiBase}/api/job-applications`, {
+      let res = await fetch(`${apiBase}/api/job-applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newApp)
       });
+      if (!res.ok && apiBase === '') {
+        // Fallback directly to Render backend if proxy has an issue
+        await fetch('https://pkc-university-api.onrender.com/api/job-applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newApp)
+        });
+      }
     } catch (err) {
-      console.log('Backend sync notice (saved locally):', err);
+      console.log('Primary sync notice, trying direct backend:', err);
+      try {
+        await fetch('https://pkc-university-api.onrender.com/api/job-applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newApp)
+        });
+      } catch (directErr) {
+        console.warn('Backend sync queued in local storage:', directErr);
+      }
     }
 
     setTimeout(() => {

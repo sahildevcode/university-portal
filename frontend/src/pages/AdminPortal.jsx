@@ -195,9 +195,46 @@ export default function AdminPortal({
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
 
-  const allowedModuleIds = staffUser
-    ? (Array.isArray(staffUser.allowedModules) && staffUser.allowedModules.length > 0
-        ? staffUser.allowedModules
+  const [currentStaff, setCurrentStaff] = useState(staffUser);
+
+  useEffect(() => {
+    setCurrentStaff(staffUser);
+  }, [staffUser]);
+
+  const activeStaff = currentStaff || staffUser;
+
+  const syncStaffPermissions = async () => {
+    const s = activeStaff;
+    if (!s || (!s.id && !s.username)) return;
+    try {
+      const sId = s.id || s.username;
+      const res = await fetch(`/api/staff/${sId}`);
+      const data = await res.json();
+      if (data.success && data.staff) {
+        setCurrentStaff(data.staff);
+        localStorage.setItem('pkc_staff_user', JSON.stringify(data.staff));
+      }
+    } catch (e) {
+      console.warn('Sync staff error:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (staffUser) {
+      syncStaffPermissions();
+      const interval = setInterval(syncStaffPermissions, 10000);
+      const onFocus = () => syncStaffPermissions();
+      window.addEventListener('focus', onFocus);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', onFocus);
+      };
+    }
+  }, [staffUser?.id, staffUser?.username]);
+
+  const allowedModuleIds = activeStaff
+    ? (Array.isArray(activeStaff.allowedModules) && activeStaff.allowedModules.length > 0
+        ? activeStaff.allowedModules
         : ['cashcounter', 'admissions', 'documents', 'records'])
     : null;
 
@@ -317,7 +354,7 @@ export default function AdminPortal({
     if (allowedModuleIds && activeTab !== 'hub' && !allowedModuleIds.includes(activeTab)) {
       setActiveTab(allowedModuleIds[0] || 'hub');
     }
-  }, [staffUser, allowedModuleIds, activeTab]);
+  }, [activeStaff, allowedModuleIds, activeTab]);
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
@@ -465,14 +502,14 @@ export default function AdminPortal({
           </div>
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30">
-              {staffUser ? `Official Staff Desk • ${staffUser.post || staffUser.role || 'Staff Operator'}` : 'Admin Controller Panel'}
+              {activeStaff ? `Official Staff Desk • ${activeStaff.post || activeStaff.role || 'Staff Operator'}` : 'Admin Controller Panel'}
             </span>
             <h1 className="text-xl sm:text-2xl font-extrabold mt-1">
               PKC Education Learning Institute & Consultancy
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              {staffUser ? (
-                <>Logged in as Staff: <strong className="text-amber-300 font-mono">{staffUser.name}</strong> ({adminModules.length} Modules Authorized)</>
+              {activeStaff ? (
+                <>Logged in as Staff: <strong className="text-amber-300 font-mono">{activeStaff.name}</strong> ({adminModules.length} Modules Authorized)</>
               ) : (
                 <>Logged in: <strong className="text-white font-mono">{adminUser?.name || 'Administrator'}</strong></>
               )}
