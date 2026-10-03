@@ -121,10 +121,17 @@ export default function Navbar({
                 <span>{t.student}</span>
               </button>
             )}
-
-
-
             <span className="text-slate-700">|</span>
+
+            {/* Direct Admin Login Link */}
+            <a
+              href="/admin"
+              className="text-amber-300 hover:text-white transition-colors flex items-center gap-1 font-bold cursor-pointer"
+              title="PKC Education Admin Portal"
+            >
+              <Shield className="w-3 h-3 text-amber-400" />
+              <span>Admin</span>
+            </a>
 
             {/* Language Switcher */}
             <button
@@ -385,6 +392,13 @@ export default function Navbar({
                 <span>JOB APPLY</span>
                 <ArrowRight className="w-4 h-4 text-slate-950" />
               </button>
+              <a
+                href="/admin"
+                className="w-full bg-[#071530] text-[#C59B27] hover:bg-[#0a1f44] font-black text-xs uppercase tracking-wider py-3 rounded-md shadow-sm text-center flex items-center justify-center gap-2 border border-[#C59B27]/40 cursor-pointer"
+              >
+                <Shield className="w-4 h-4 text-amber-400" />
+                <span>PKC EDUCATION ADMIN</span>
+              </a>
             </div>
           </div>
         )}

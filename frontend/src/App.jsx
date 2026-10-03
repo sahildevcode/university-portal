@@ -139,9 +139,9 @@ export default function App() {
 
     if (typeof document !== 'undefined') {
       if (activeView === 'admin') {
-        document.title = 'PKC Admin Portal | PKC Education Learning Institute & Consultancy';
+        document.title = 'PKC Education Admin | PKC Education Admin Portal | Official Desk';
       } else if (activeView === 'staff') {
-        document.title = 'PKC Staff Desk - Cash Counter & Admissions | PKC Chhatarpur';
+        document.title = 'PKC Education Staff Desk - Cash Counter & Admissions | PKC Chhatarpur';
       } else {
         if (publicTab === 'courses') {
           document.title = 'Degree & Diploma Courses | PKC Chhatarpur (PKC Institute)';
