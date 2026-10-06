@@ -1272,6 +1272,7 @@ export default function StudentList({
           body: JSON.stringify({
             amount: editingPaymentModal.amountPaid,
             feeDate: editingPaymentModal.feeDate || editingPaymentModal.paymentDate,
+            receiptNo: editingPaymentModal.receiptNo,
             purpose: editingPaymentModal.purpose,
             paymentMode: editingPaymentModal.paymentMode,
             refNo: editingPaymentModal.refNo,
@@ -4115,7 +4116,7 @@ export default function StudentList({
                             <th className="py-2.5 px-2.5 border-r border-slate-700">Purpose</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700">Payment_Mode</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700">Ref No</th>
-                            <th className="py-2.5 px-2.5 border-r border-slate-700">Rreceived by</th>
+                            <th className="py-2.5 px-2.5 border-r border-slate-700">Received By</th>
                             <th className="py-2.5 px-2.5 border-r border-slate-700 text-right">Fee</th>
                             <th className="py-2.5 px-2 text-center">Fee Receipt / Action</th>
                           </tr>
@@ -4174,6 +4175,51 @@ export default function StudentList({
                                       >
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditPaymentError(null);
+                                          const rawDate = p.feeDate || p.paymentDate || p.date || '';
+                                          let formattedDate = new Date().toISOString().split('T')[0];
+                                          if (rawDate) {
+                                            try {
+                                              const d = new Date(rawDate);
+                                              if (!isNaN(d.getTime())) {
+                                                formattedDate = d.toISOString().split('T')[0];
+                                              }
+                                            } catch (e) {}
+                                          }
+                                          setEditingPaymentModal({
+                                            ...p,
+                                            id: p.id || p.receiptNo,
+                                            receiptNo: p.receiptNo || '',
+                                            amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
+                                            feeDate: formattedDate,
+                                            paymentMode: p.paymentMode || 'Cash',
+                                            purpose: p.purpose || p.feeType || 'Tuition Fee',
+                                            currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1',
+                                            refNo: p.refNo || p.transactionRef || '',
+                                            receivedBy: p.receivedBy || 'Admin Desk',
+                                            remark: p.remark || ''
+                                          });
+                                        }}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit this Payment Entry"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                        <span>Edit</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
+                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete this Payment Entry"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Delete</span>
                                       </button>
                                     </div>
                                   </td>
@@ -4288,6 +4334,48 @@ export default function StudentList({
                                       >
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditPaymentError(null);
+                                          const rawDate = c.feeDate || c.date || '';
+                                          let formattedDate = new Date().toISOString().split('T')[0];
+                                          if (rawDate) {
+                                            try {
+                                              const d = new Date(rawDate);
+                                              if (!isNaN(d.getTime())) {
+                                                formattedDate = d.toISOString().split('T')[0];
+                                              }
+                                            } catch (e) {}
+                                          }
+                                          setEditingPaymentModal({
+                                            ...c,
+                                            isCenterFee: true,
+                                            id: c.id,
+                                            receiptNo: c.receiptNo || `CF-${feeDeskStudent.rollNo || '001'}`,
+                                            amountPaid: cAmt,
+                                            feeDate: formattedDate,
+                                            purpose: c.purpose || 'Center Fee',
+                                            currentClass: c.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                          });
+                                        }}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit Center Fee"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                        <span>Edit</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteCenterFee(c.id, cAmt, c.purpose)}
+                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete Center Fee"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Delete</span>
                                       </button>
                                     </div>
                                   </td>
@@ -4484,6 +4572,38 @@ export default function StudentList({
                                         <Printer className="w-3 h-3" />
                                         <span>Print</span>
                                       </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditPaymentError(null);
+                                          const rawDate = sEntry.feeDate || sEntry.date || '';
+                                          let formattedDate = new Date().toISOString().split('T')[0];
+                                          if (rawDate) {
+                                            try {
+                                              const d = new Date(rawDate);
+                                              if (!isNaN(d.getTime())) {
+                                                formattedDate = d.toISOString().split('T')[0];
+                                              }
+                                            } catch (e) {}
+                                          }
+                                          setEditingPaymentModal({
+                                            ...sEntry,
+                                            isScholarship: true,
+                                            year: sEntry.year || 'year1',
+                                            receiptNo: sEntry.receiptNo,
+                                            amountPaid: sAmt,
+                                            feeDate: formattedDate,
+                                            purpose: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
+                                            currentClass: sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                          });
+                                        }}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Edit Scholarship Entry"
+                                      >
+                                        <Edit3 className="w-3 h-3" />
+                                        <span>Edit</span>
+                                      </button>
                                     </div>
                                   </td>
                                 </tr>
@@ -4596,6 +4716,21 @@ export default function StudentList({
                     Enter 0 or any corrected amount. Total fee, paid fee and remaining balance will update automatically.
                   </p>
                 </div>
+
+                {!(editingPaymentModal.isCenterFee || editingPaymentModal.isScholarship) && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Receipt No*
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingPaymentModal.receiptNo || ''}
+                      onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, receiptNo: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300 font-mono text-indigo-900"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">

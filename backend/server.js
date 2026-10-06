@@ -4141,11 +4141,14 @@ app.put('/api/students/:rollNo/payments/:paymentId', (req, res) => {
   }
 
   const oldAmt = Number(payment.amountPaid || payment.amount || 0);
-  const { amount, paymentMode, purpose, refNo, receivedBy, feeDate, remark, currentClass } = req.body;
+  const { amount, paymentMode, purpose, refNo, receivedBy, feeDate, remark, currentClass, receiptNo } = req.body;
   const newAmt = (amount === '' || amount === null || amount === undefined) ? 0 : Math.max(0, Number(amount) || 0);
 
   // Update payment object
   payment.amountPaid = newAmt;
+  if (receiptNo !== undefined && String(receiptNo).trim()) {
+    payment.receiptNo = String(receiptNo).trim();
+  }
   if (paymentMode !== undefined) payment.paymentMode = paymentMode;
   if (purpose !== undefined) {
     payment.purpose = purpose;
@@ -4163,7 +4166,22 @@ app.put('/api/students/:rollNo/payments/:paymentId', (req, res) => {
   student.balanceDue = Math.max(0, totalFee - student.totalPaid);
   student.updatedAt = new Date().toISOString();
 
+  // Also sync in student.payments if present on student
+  if (Array.isArray(student.payments)) {
+    const sIdx = student.payments.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
+    if (sIdx !== -1) {
+      student.payments[sIdx] = { ...student.payments[sIdx], ...payment };
+    }
+  }
+
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      FeePaymentModel.findOneAndUpdate({ id: payment.id }, payment, { upsert: true }).catch(() => {});
+      StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+    } catch (_) {}
+  }
 
   const sRoll = (student.rollNo || '').toUpperCase();
   const sId = student.id || '';
