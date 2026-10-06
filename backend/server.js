@@ -1789,10 +1789,56 @@ app.get('/api/students/:rollNo', (req, res) => {
 
     const sRoll = student.rollNo ? student.rollNo.toUpperCase() : '';
     const sId = student.id || '';
-    const payments = (db.fee_payments || []).filter(p => 
+    let payments = (db.fee_payments || []).filter(p => 
       (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
       (sId && p.studentId && p.studentId === sId)
     );
+
+    // Fallback to student.feeHistory or student.payments if db.fee_payments didn't have entries
+    if (payments.length === 0) {
+      if (Array.isArray(student.feeHistory) && student.feeHistory.length > 0) {
+        payments = [...student.feeHistory];
+      } else if (Array.isArray(student.payments) && student.payments.length > 0) {
+        payments = [...student.payments];
+      }
+    }
+
+    // Synthesize entries for any year-wise paid fees not explicitly covered in payments
+    const yearChecks = [
+      { key: 'paidYear1', yr: 1, label: '1st Year', amt: Number(student.paidYear1 || 0), match: ['YEAR1', 'SEM-1', 'SEM-2', '1ST'] },
+      { key: 'paidYear2', yr: 2, label: '2nd Year', amt: Number(student.paidYear2 || 0), match: ['YEAR2', 'SEM-3', 'SEM-4', '2ND'] },
+      { key: 'paidYear3', yr: 3, label: '3rd Year', amt: Number(student.paidYear3 || 0), match: ['YEAR3', 'SEM-5', 'SEM-6', '3RD'] },
+      { key: 'paidYear4', yr: 4, label: '4th Year', amt: Number(student.paidYear4 || 0), match: ['YEAR4', 'SEM-7', 'SEM-8', '4TH'] },
+    ];
+
+    yearChecks.forEach(yc => {
+      if (yc.amt > 0) {
+        const hasEntry = payments.some(p => {
+          const cls = (p.currentClass || p.year || '').toUpperCase();
+          return yc.match.some(m => cls.includes(m));
+        });
+        if (!hasEntry) {
+          payments.push({
+            id: `paid-year${yc.yr}`,
+            receiptNo: `REC-Y${yc.yr}`,
+            rollNo: student.rollNo || '',
+            studentId: student.id || '',
+            studentName: student.fullName || student.studentName || '',
+            currentClass: `${yc.label}`,
+            amount: yc.amt,
+            amountPaid: yc.amt,
+            purpose: `${yc.label} Received Fee`,
+            paymentMode: 'Cash',
+            paymentDate: student.updatedAt || new Date().toISOString(),
+            feeDate: (student.updatedAt || new Date().toISOString()).split('T')[0],
+            receivedBy: 'Admin Desk',
+            isYearEntry: true,
+            yearKey: yc.key
+          });
+        }
+      }
+    });
+
     const results = (db.results || []).filter(r => 
       (sRoll && r.rollNo && r.rollNo.toUpperCase() === sRoll) ||
       (sId && r.studentId && r.studentId === sId)
@@ -4069,15 +4115,74 @@ app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
+  // Handle Year-level payment resets (e.g. paid-year1..4 or paidYear1..4)
+  if (paymentId.startsWith('paid-year') || ['paidYear1', 'paidYear2', 'paidYear3', 'paidYear4'].includes(paymentId)) {
+    const yrNum = paymentId.replace(/\D/g, '') || '2';
+    const yrKey = `paidYear${yrNum}`;
+    const removedAmt = Number(student[yrKey] || 0);
+    student[yrKey] = 0;
+    
+    // Recalculate totalPaid and balanceDue
+    const py1 = Number(student.paidYear1 || 0);
+    const py2 = Number(student.paidYear2 || 0);
+    const py3 = Number(student.paidYear3 || 0);
+    const py4 = Number(student.paidYear4 || 0);
+    const newTotal = py1 + py2 + py3 + py4;
+    student.totalPaid = newTotal;
+    const totalFee = Number(student.totalFee) || 0;
+    student.balanceDue = Math.max(0, totalFee - newTotal);
+    student.updatedAt = new Date().toISOString();
+
+    if (Array.isArray(student.feeHistory)) {
+      student.feeHistory = student.feeHistory.filter(p => p.id !== paymentId && p.receiptNo !== paymentId);
+    }
+    if (Array.isArray(db.fee_payments)) {
+      db.fee_payments = db.fee_payments.filter(p => p.id !== paymentId && p.receiptNo !== paymentId);
+    }
+
+    writeDB(db);
+    if (isMongoConnected()) {
+      try {
+        StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+        FeePaymentModel.deleteOne({ $or: [{ id: paymentId }, { receiptNo: paymentId }] }).catch(() => {});
+      } catch (_) {}
+    }
+
+    const sRoll = (student.rollNo || '').toUpperCase();
+    const sId = student.id || '';
+    const studentPayments = (db.fee_payments || []).filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+
+    return res.json({
+      success: true,
+      message: `${yrNum} Year Received Fee cleared to ₹0 successfully.`,
+      student,
+      payments: studentPayments
+    });
+  }
+
   if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
 
   const pIdx = db.fee_payments.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
-  if (pIdx === -1) {
-    return res.status(404).json({ success: false, message: 'Payment record not found' });
+  let removed = null;
+  let removedAmt = 0;
+
+  if (pIdx !== -1) {
+    removed = db.fee_payments.splice(pIdx, 1)[0];
+    removedAmt = Number(removed.amountPaid || removed.amount || 0);
+  } else if (Array.isArray(student.feeHistory)) {
+    const fhIdx = student.feeHistory.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
+    if (fhIdx !== -1) {
+      removed = student.feeHistory.splice(fhIdx, 1)[0];
+      removedAmt = Number(removed.amountPaid || removed.amount || 0);
+    }
   }
 
-  const removed = db.fee_payments.splice(pIdx, 1)[0];
-  const removedAmt = Number(removed.amountPaid || removed.amount || 0);
+  if (!removed) {
+    return res.status(404).json({ success: false, message: 'Payment record not found' });
+  }
 
   // Deduct from student.totalPaid
   student.totalPaid = Math.max(0, (Number(student.totalPaid) || 0) - removedAmt);
@@ -4107,6 +4212,13 @@ app.delete('/api/students/:rollNo/payments/:paymentId', (req, res) => {
 
   writeDB(db);
 
+  if (isMongoConnected()) {
+    try {
+      FeePaymentModel.deleteOne({ $or: [{ id: paymentId }, { receiptNo: paymentId }] }).catch(() => {});
+      StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+    } catch (_) {}
+  }
+
   const sRoll = (student.rollNo || '').toUpperCase();
   const sId = student.id || '';
   const studentPayments = db.fee_payments.filter(p => 
@@ -4133,9 +4245,55 @@ app.put('/api/students/:rollNo/payments/:paymentId', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
+  // Handle Year-level payment updates (e.g. paid-year1..4 or paidYear1..4)
+  if (paymentId.startsWith('paid-year') || ['paidYear1', 'paidYear2', 'paidYear3', 'paidYear4'].includes(paymentId)) {
+    const yrNum = paymentId.replace(/\D/g, '') || '2';
+    const yrKey = `paidYear${yrNum}`;
+    const { amount, receiptNo, remark, currentClass } = req.body;
+    const newAmt = (amount === '' || amount === null || amount === undefined) ? 0 : Math.max(0, Number(amount) || 0);
+    student[yrKey] = newAmt;
+
+    const py1 = Number(student.paidYear1 || 0);
+    const py2 = Number(student.paidYear2 || 0);
+    const py3 = Number(student.paidYear3 || 0);
+    const py4 = Number(student.paidYear4 || 0);
+    const newTotal = py1 + py2 + py3 + py4;
+    student.totalPaid = newTotal;
+    const totalFee = Number(student.totalFee) || 0;
+    student.balanceDue = Math.max(0, totalFee - newTotal);
+    if (currentClass) student.currentClass = currentClass;
+    if (remark !== undefined) student.remark = remark;
+    student.updatedAt = new Date().toISOString();
+
+    writeDB(db);
+    if (isMongoConnected()) {
+      try {
+        StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+      } catch (_) {}
+    }
+
+    const sRoll = (student.rollNo || '').toUpperCase();
+    const sId = student.id || '';
+    const studentPayments = (db.fee_payments || []).filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+
+    return res.json({
+      success: true,
+      message: `${yrNum} Year Received Fee updated to ₹${newAmt.toLocaleString('en-IN')}.`,
+      student,
+      payments: studentPayments
+    });
+  }
+
   if (!Array.isArray(db.fee_payments)) db.fee_payments = [];
 
-  const payment = db.fee_payments.find(p => p.id === paymentId || p.receiptNo === paymentId);
+  let payment = db.fee_payments.find(p => p.id === paymentId || p.receiptNo === paymentId);
+  if (!payment && Array.isArray(student.feeHistory)) {
+    payment = student.feeHistory.find(p => p.id === paymentId || p.receiptNo === paymentId);
+  }
+
   if (!payment) {
     return res.status(404).json({ success: false, message: 'Payment record not found' });
   }
@@ -4171,6 +4329,14 @@ app.put('/api/students/:rollNo/payments/:paymentId', (req, res) => {
     const sIdx = student.payments.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
     if (sIdx !== -1) {
       student.payments[sIdx] = { ...student.payments[sIdx], ...payment };
+    }
+  }
+
+  // Also sync in student.feeHistory if present on student
+  if (Array.isArray(student.feeHistory)) {
+    const fhIdx = student.feeHistory.findIndex(p => p.id === paymentId || p.receiptNo === paymentId);
+    if (fhIdx !== -1) {
+      student.feeHistory[fhIdx] = { ...student.feeHistory[fhIdx], ...payment };
     }
   }
 

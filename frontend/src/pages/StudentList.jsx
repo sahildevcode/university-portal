@@ -865,7 +865,12 @@ export default function StudentList({
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}`);
         const data = await res.json();
         if (data.success && data.student) {
-          setFeeDeskPayments(data.student.payments || []);
+          const loadedPayments = (Array.isArray(data.student.payments) && data.student.payments.length > 0)
+            ? data.student.payments
+            : (Array.isArray(data.student.feeHistory) && data.student.feeHistory.length > 0)
+              ? data.student.feeHistory
+              : [];
+          setFeeDeskPayments(loadedPayments);
           setFeeDeskStudent(data.student);
           const sy1 = Number(data.student.scholarshipYear1 !== undefined ? data.student.scholarshipYear1 : (!data.student.scholarshipYear2 ? (data.student.scholarshipAmount || 0) : 0));
           const sy2 = Number(data.student.scholarshipYear2 || 0);
@@ -880,13 +885,13 @@ export default function StudentList({
             setFeeDeskAmount('');
           }
         } else {
-          setFeeDeskPayments(student.payments || []);
+          setFeeDeskPayments(student.payments || student.feeHistory || []);
         }
       } else {
-        setFeeDeskPayments(student.payments || []);
+        setFeeDeskPayments(student.payments || student.feeHistory || []);
       }
     } catch (e) {
-      setFeeDeskPayments(student.payments || []);
+      setFeeDeskPayments(student.payments || student.feeHistory || []);
     }
   };
 
@@ -3218,14 +3223,10 @@ export default function StudentList({
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
                           <optgroup label="Annual / Yearly Pattern (वार्षिक)">
-                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
-                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
-                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
-                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
-                            <option value="Year-1">Year-1 (1st Year Annual)</option>
-                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
-                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                            <option value="1st Year">1st Year (1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (4th Year Annual)</option>
                           </optgroup>
                           <optgroup label="Semester Pattern (सेमेस्टर)">
                             <option value="SEM-1">SEM-1 (1st Semester)</option>
@@ -3419,14 +3420,10 @@ export default function StudentList({
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer">
                           <optgroup label="Annual / Yearly Pattern (वार्षिक)">
-                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
-                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
-                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
-                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
-                            <option value="Year-1">Year-1 (1st Year Annual)</option>
-                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
-                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                            <option value="1st Year">1st Year (1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (4th Year Annual)</option>
                           </optgroup>
                           <optgroup label="Semester Pattern (सेमेस्टर)">
                             <option value="SEM-1">SEM-1 (1st Semester)</option>
@@ -3699,14 +3696,10 @@ export default function StudentList({
                         <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
                         <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-none cursor-pointer">
                           <optgroup label="Annual / Yearly Pattern (वार्षिक)">
-                            <option value="1st Year">1st Year (First Year / 1st Year Annual)</option>
-                            <option value="2nd Year">2nd Year (Second Year / 2nd Year Annual)</option>
-                            <option value="3rd Year">3rd Year (Third Year / 3rd Year Annual)</option>
-                            <option value="4th Year">4th Year (Fourth Year / 4th Year Annual)</option>
-                            <option value="Year-1">Year-1 (1st Year Annual)</option>
-                            <option value="Year-2">Year-2 (2nd Year Annual)</option>
-                            <option value="Year-3">Year-3 (3rd Year Annual)</option>
-                            <option value="Year-4">Year-4 (4th Year Annual)</option>
+                            <option value="1st Year">1st Year (1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (4th Year Annual)</option>
                           </optgroup>
                           <optgroup label="Semester Pattern (सेमेस्टर)">
                             <option value="SEM-1">SEM-1 (1st Semester)</option>
@@ -4045,7 +4038,44 @@ export default function StudentList({
                                       ₹{yr.total.toLocaleString('en-IN')}/-
                                     </td>
                                     <td className="py-2 px-3 border-r border-slate-200 text-right font-mono font-bold text-emerald-700 bg-emerald-50/30">
-                                      ₹{yr.rec.toLocaleString('en-IN')}/-
+                                      <div className="flex items-center justify-end gap-1.5">
+                                        <span>₹{yr.rec.toLocaleString('en-IN')}/-</span>
+                                        {yr.rec > 0 && (
+                                          <div className="flex items-center gap-1 ml-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const yrNum = idx + 1;
+                                                setEditingPaymentModal({
+                                                  id: `paid-year${yrNum}`,
+                                                  receiptNo: `REC-Y${yrNum}`,
+                                                  currentClass: yr.label,
+                                                  amountPaid: yr.rec,
+                                                  purpose: `${yr.label} Received Fee`,
+                                                  paymentMode: 'Cash',
+                                                  refNo: '',
+                                                  receivedBy: 'Admin Desk',
+                                                  remark: '',
+                                                  feeDate: new Date().toISOString().split('T')[0],
+                                                  yearKey: `paidYear${yrNum}`
+                                                });
+                                              }}
+                                              className="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                                              title={`Edit ${yr.label} Received Fee`}
+                                            >
+                                              <Edit3 className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeletePayment(`paid-year${idx + 1}`, yr.rec)}
+                                              className="p-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                                              title={`Clear / Reset ${yr.label} Received Fee (Set to ₹0)`}
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="py-2 px-3 text-right font-mono font-black">
                                       {yr.due > 0 ? (
@@ -4122,14 +4152,59 @@ export default function StudentList({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
-                          {feeDeskPayments.length === 0 ? (
-                            <tr>
-                              <td colSpan="10" className="py-6 text-center text-slate-400 italic">
-                                No payment installments recorded yet for this student.
-                              </td>
-                            </tr>
-                          ) : (
-                            feeDeskPayments.map((p, idx) => {
+                          {(() => {
+                            let list = (Array.isArray(feeDeskPayments) && feeDeskPayments.length > 0)
+                              ? [...feeDeskPayments]
+                              : (Array.isArray(feeDeskStudent?.feeHistory) && feeDeskStudent.feeHistory.length > 0)
+                                ? [...feeDeskStudent.feeHistory]
+                                : (Array.isArray(feeDeskStudent?.payments) && feeDeskStudent.payments.length > 0)
+                                  ? [...feeDeskStudent.payments]
+                                  : [];
+
+                            const yearDefs = [
+                              { key: 'paidYear1', yr: 1, label: '1st Year', match: ['YEAR1', 'SEM-1', 'SEM-2', '1ST'] },
+                              { key: 'paidYear2', yr: 2, label: '2nd Year', match: ['YEAR2', 'SEM-3', 'SEM-4', '2ND'] },
+                              { key: 'paidYear3', yr: 3, label: '3rd Year', match: ['YEAR3', 'SEM-5', 'SEM-6', '3RD'] },
+                              { key: 'paidYear4', yr: 4, label: '4th Year', match: ['YEAR4', 'SEM-7', 'SEM-8', '4TH'] },
+                            ];
+
+                            yearDefs.forEach(yd => {
+                              const yAmt = Number(feeDeskStudent?.[yd.key] || 0);
+                              if (yAmt > 0) {
+                                const alreadyHas = list.some(p => {
+                                  const cls = (p.currentClass || p.year || '').toUpperCase();
+                                  return yd.match.some(m => cls.includes(m));
+                                });
+                                if (!alreadyHas) {
+                                  list.push({
+                                    id: `paid-year${yd.yr}`,
+                                    receiptNo: `REC-Y${yd.yr}`,
+                                    currentClass: `${yd.label}`,
+                                    purpose: `${yd.label} Received Fee`,
+                                    paymentMode: 'Cash',
+                                    refNo: '-',
+                                    receivedBy: 'Admin Desk',
+                                    amountPaid: yAmt,
+                                    amount: yAmt,
+                                    feeDate: feeDeskStudent?.admissionDate || new Date().toISOString().split('T')[0],
+                                    isYearEntry: true,
+                                    yearKey: yd.key
+                                  });
+                                }
+                              }
+                            });
+
+                            if (list.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan="10" className="py-6 text-center text-slate-400 italic">
+                                    No payment installments recorded yet for this student.
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return list.map((p, idx) => {
                               const pDate = p.feeDate || (p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('en-IN') : '-');
                               const pAmt = Number(p.amountPaid || p.amount || 0);
 
@@ -4202,7 +4277,8 @@ export default function StudentList({
                                             currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1',
                                             refNo: p.refNo || p.transactionRef || '',
                                             receivedBy: p.receivedBy || 'Admin Desk',
-                                            remark: p.remark || ''
+                                            remark: p.remark || '',
+                                            yearKey: p.yearKey
                                           });
                                         }}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
@@ -4225,8 +4301,8 @@ export default function StudentList({
                                   </td>
                                 </tr>
                               );
-                            })
-                          )}
+                            });
+                          })()}
                         </tbody>
                       </table>
                     </div>
