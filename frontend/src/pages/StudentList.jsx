@@ -53,6 +53,7 @@ export default function StudentList({
   const [appliedUniversity, setAppliedUniversity] = useState('all');
   const [appliedCollege, setAppliedCollege] = useState('all');
   const [appliedCourse, setAppliedCourse] = useState('all');
+  const [feeCategoryFilter, setFeeCategoryFilter] = useState('all');
 
   // Entries / Pagination state
   const [pageSize, setPageSize] = useState(10);
@@ -110,7 +111,12 @@ export default function StudentList({
     const schY4 = Number(item.scholarshipYear4 || 0);
 
     let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
-    const payList = Array.isArray(item.feeHistory) ? item.feeHistory : [];
+    const payList = (Array.isArray(item.payments) && item.payments.length > 0)
+      ? item.payments
+      : (Array.isArray(item.feeHistory) && item.feeHistory.length > 0)
+        ? item.feeHistory
+        : [];
+
     if (payList.length > 0) {
       payList.forEach(p => {
         const cls = (p.currentClass || p.year || p.semester || '').toUpperCase();
@@ -127,18 +133,37 @@ export default function StudentList({
           recY1 += amt;
         }
       });
-    }
-    if (item.paidYear1 !== undefined) recY1 = Math.max(recY1, Number(item.paidYear1 || 0));
-    if (item.paidYear2 !== undefined) recY2 = Math.max(recY2, Number(item.paidYear2 || 0));
-    if (item.paidYear3 !== undefined) recY3 = Math.max(recY3, Number(item.paidYear3 || 0));
-    if (item.paidYear4 !== undefined) recY4 = Math.max(recY4, Number(item.paidYear4 || 0));
-    if (item.totalPaid && (recY1 + recY2 + recY3 + recY4 < Number(item.totalPaid))) {
-      recY1 += (Number(item.totalPaid) - (recY1 + recY2 + recY3 + recY4));
+    } else {
+      recY1 = Number(item.paidYear1 || 0);
+      recY2 = Number(item.paidYear2 || 0);
+      recY3 = Number(item.paidYear3 || 0);
+      recY4 = Number(item.paidYear4 || 0);
     }
 
-    const totalFee = (feeY1 + feeY2 + feeY3 + feeY4) + (schY1 + schY2 + schY3 + schY4);
     const totalSch = schY1 + schY2 + schY3 + schY4;
-    const totalPaid = Number(item.totalPaid || (recY1 + recY2 + recY3 + recY4) || 0);
+    const totalAcadFee = feeY1 + feeY2 + feeY3 + feeY4;
+
+    // Fee calculation based on student feeCategory:
+    // 'full_course_fee': full course fee without scholarship deduction
+    // 'course_fee_scholarship': academic fee minus student scholarship
+    // 'full_scholarship': scholarship base
+    const rawCat = item.feeCategory;
+    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+      ? 'full_scholarship'
+      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+        ? 'course_fee_scholarship'
+        : 'full_course_fee';
+
+    let totalFee = totalAcadFee;
+    if (cat === 'course_fee_scholarship') {
+      totalFee = Math.max(0, totalAcadFee - totalSch);
+    } else if (cat === 'full_scholarship') {
+      totalFee = totalSch;
+    } else {
+      totalFee = totalAcadFee > 0 ? totalAcadFee : (Number(item.totalFee || item.studentFee || 0));
+    }
+
+    const totalPaid = Number(item.totalPaid !== undefined ? item.totalPaid : (recY1 + recY2 + recY3 + recY4));
     const totalRem = Math.max(0, totalFee - totalPaid);
     const advanceAmount = totalPaid > totalFee ? (totalPaid - totalFee) : 0;
     const isAdvance = advanceAmount > 0;
@@ -1203,8 +1228,42 @@ export default function StudentList({
     }
   };
 
+  const handleStudentFeeCategoryChange = async (student, newCategory) => {
+    const key = getStudentKey(student);
+    if (!key) return;
+
+    // Instant optimistic update in student list
+    setStudents(prev => prev.map(s => {
+      const sKey = getStudentKey(s);
+      if (sKey === key) {
+        return { ...s, feeCategory: newCategory };
+      }
+      return s;
+    }));
+
+    if (feeDeskStudent && getStudentKey(feeDeskStudent) === key) {
+      setFeeDeskStudent(prev => ({ ...prev, feeCategory: newCategory }));
+    }
+
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feeCategory: newCategory })
+      });
+      const data = await res.json();
+      if (data.success && data.student) {
+        setStudents(prev => prev.map(s => getStudentKey(s) === key ? { ...s, ...data.student } : s));
+        if (feeDeskStudent && getStudentKey(feeDeskStudent) === key) {
+          setFeeDeskStudent(data.student);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating fee category:', err);
+    }
+  };
+
   const handleUpdatePayment = async (e) => {
-    e.preventDefault();
     if (!feeDeskStudent || !editingPaymentModal) return;
 
     setEditPaymentLoading(true);
@@ -1792,6 +1851,16 @@ export default function StudentList({
       if (rem + linkedRem > 0) return false;
     }
 
+    if (feeCategoryFilter !== 'all') {
+      const rawCat = s.feeCategory;
+      const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+        ? 'full_scholarship'
+        : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+          ? 'course_fee_scholarship'
+          : 'full_course_fee';
+      if (cat !== feeCategoryFilter) return false;
+    }
+
     if (appliedSession !== 'all') {
       const sess = s.currentSession || s.admissionSession || '';
       if (sess && sess !== appliedSession) return false;
@@ -2337,6 +2406,26 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[180px]">Address</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Reference</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
+                      {/* Fee Category Column with Filter Dropdown */}
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2 px-2 border-r border-slate-700 whitespace-nowrap text-center min-w-[150px]">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] font-extrabold text-amber-300">Fee_Category</span>
+                          <select
+                            value={feeCategoryFilter}
+                            onChange={(e) => {
+                              setFeeCategoryFilter(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="bg-slate-800 text-amber-200 border border-slate-600 rounded px-1.5 py-0.5 text-[9.5px] font-bold outline-none cursor-pointer hover:border-amber-400"
+                            title="Filter by Fee Category"
+                          >
+                            <option value="all">All Categories</option>
+                            <option value="full_scholarship">Full Scholarship Base</option>
+                            <option value="course_fee_scholarship">Course Fees + Scholarship</option>
+                            <option value="full_course_fee">Full Course Fee Base</option>
+                          </select>
+                        </div>
+                      </th>
                       {/* Remark with Toggle after it */}
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[210px]">
                         <div className="flex items-center justify-between gap-2">
@@ -2411,6 +2500,26 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Course_Names</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 border-r border-slate-700 whitespace-nowrap">Course_Type</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
+                      {/* Fee Category Column with Filter Dropdown */}
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2 px-2 border-r border-slate-700 whitespace-nowrap text-center min-w-[150px]">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] font-extrabold text-amber-300">Fee_Category</span>
+                          <select
+                            value={feeCategoryFilter}
+                            onChange={(e) => {
+                              setFeeCategoryFilter(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="bg-slate-800 text-amber-200 border border-slate-600 rounded px-1.5 py-0.5 text-[9.5px] font-bold outline-none cursor-pointer hover:border-amber-400"
+                            title="Filter by Fee Category"
+                          >
+                            <option value="all">All Categories</option>
+                            <option value="full_scholarship">Full Scholarship Base</option>
+                            <option value="course_fee_scholarship">Course Fees + Scholarship</option>
+                            <option value="full_course_fee">Full Course Fee Base</option>
+                          </select>
+                        </div>
+                      </th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Semester</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Acadmic_Fee</th>
@@ -2428,11 +2537,11 @@ export default function StudentList({
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={tableColumnMode === 'all' ? 48 : 19} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
+                      <td colSpan={tableColumnMode === 'all' ? 49 : 20} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
                     </tr>
                   ) : paginatedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={tableColumnMode === 'all' ? 48 : 19} className="p-10 text-center bg-slate-50">
+                      <td colSpan={tableColumnMode === 'all' ? 49 : 20} className="p-10 text-center bg-slate-50">
                         <div className="max-w-md mx-auto space-y-3">
                           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
                             <Search className="w-6 h-6" />
@@ -2644,6 +2753,38 @@ export default function StudentList({
                                 {std.status || 'Active'}
                               </span>
                             </td>
+
+                            {/* Fee Category Dropdown Column */}
+                            <td className="py-2 px-2 border-r border-slate-200 text-center whitespace-nowrap bg-amber-50/15">
+                              {(() => {
+                                const rawCat = std.feeCategory;
+                                const curCat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+                                  ? 'full_scholarship'
+                                  : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+                                    ? 'course_fee_scholarship'
+                                    : 'full_course_fee';
+
+                                return (
+                                  <select
+                                    value={curCat}
+                                    onChange={(e) => handleStudentFeeCategoryChange(std, e.target.value)}
+                                    className={`text-[10px] font-black rounded-lg px-2 py-1 border shadow-xs transition-all cursor-pointer outline-none ${
+                                      curCat === 'full_scholarship'
+                                        ? 'bg-purple-50 text-purple-800 border-purple-300 hover:bg-purple-100'
+                                        : curCat === 'course_fee_scholarship'
+                                          ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+                                          : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                                    }`}
+                                    title="Change Student Fee Category"
+                                  >
+                                    <option value="full_scholarship">Full Scholarship Base</option>
+                                    <option value="course_fee_scholarship">Course Fees + Scholarship</option>
+                                    <option value="full_course_fee">Full Course Fee Base</option>
+                                  </select>
+                                );
+                              })()}
+                            </td>
+
                             <td className="py-2.5 px-2.5 border-r border-slate-200 text-slate-700 font-medium min-w-[170px] max-w-[280px] break-words whitespace-normal leading-snug" title={std.remark || ''}>
                               {std.remark || '-'}
                             </td>
@@ -3881,7 +4022,20 @@ export default function StudentList({
                     const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
                     const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
                     const sch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-                    const tot = acad + sch;
+                    const rawCat = feeDeskStudent.feeCategory;
+                    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+                      ? 'full_scholarship'
+                      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+                        ? 'course_fee_scholarship'
+                        : 'full_course_fee';
+                    let tot = acad;
+                    if (cat === 'course_fee_scholarship') {
+                      tot = Math.max(0, acad - sch);
+                    } else if (cat === 'full_scholarship') {
+                      tot = sch;
+                    } else {
+                      tot = acad;
+                    }
                     const paid = Number(feeDeskStudent.totalPaid || 0);
                     const rem = Math.max(0, tot - paid);
 
@@ -3930,23 +4084,27 @@ export default function StudentList({
                           recY1 += amt;
                         }
                       });
-                    }
-                    if (feeDeskStudent.paidYear1 !== undefined) recY1 = Math.max(recY1, Number(feeDeskStudent.paidYear1 || 0));
-                    if (feeDeskStudent.paidYear2 !== undefined) recY2 = Math.max(recY2, Number(feeDeskStudent.paidYear2 || 0));
-                    if (feeDeskStudent.paidYear3 !== undefined) recY3 = Math.max(recY3, Number(feeDeskStudent.paidYear3 || 0));
-                    if (feeDeskStudent.paidYear4 !== undefined) recY4 = Math.max(recY4, Number(feeDeskStudent.paidYear4 || 0));
-                    if (feeDeskStudent.totalPaid && (recY1 + recY2 + recY3 + recY4 < Number(feeDeskStudent.totalPaid))) {
-                      recY1 += (Number(feeDeskStudent.totalPaid) - (recY1 + recY2 + recY3 + recY4));
+                    } else {
+                      recY1 = Number(feeDeskStudent.paidYear1 || 0);
+                      recY2 = Number(feeDeskStudent.paidYear2 || 0);
+                      recY3 = Number(feeDeskStudent.paidYear3 || 0);
+                      recY4 = Number(feeDeskStudent.paidYear4 || 0);
                     }
 
                     const isProfileAdvance = paid > tot;
                     const profileAdvanceAmt = isProfileAdvance ? (paid - tot) : 0;
 
+                    const calcYrTotal = (yrAcad, yrSch) => {
+                      if (cat === 'course_fee_scholarship') return Math.max(0, yrAcad - yrSch);
+                      if (cat === 'full_scholarship') return yrSch;
+                      return yrAcad;
+                    };
+
                     const yearRows = [
-                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: acadY1 + schY1, rec: recY1, due: Math.max(0, (acadY1 + schY1) - recY1), adv: Math.max(0, recY1 - (acadY1 + schY1)) },
-                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: acadY2 + schY2, rec: recY2, due: Math.max(0, (acadY2 + schY2) - recY2), adv: Math.max(0, recY2 - (acadY2 + schY2)) },
-                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: acadY3 + schY3, rec: recY3, due: Math.max(0, (acadY3 + schY3) - recY3), adv: Math.max(0, recY3 - (acadY3 + schY3)) },
-                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: acadY4 + schY4, rec: recY4, due: Math.max(0, (acadY4 + schY4) - recY4), adv: Math.max(0, recY4 - (acadY4 + schY4)) }
+                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: calcYrTotal(acadY1, schY1), rec: recY1, due: Math.max(0, calcYrTotal(acadY1, schY1) - recY1), adv: Math.max(0, recY1 - calcYrTotal(acadY1, schY1)) },
+                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: calcYrTotal(acadY2, schY2), rec: recY2, due: Math.max(0, calcYrTotal(acadY2, schY2) - recY2), adv: Math.max(0, recY2 - calcYrTotal(acadY2, schY2)) },
+                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: calcYrTotal(acadY3, schY3), rec: recY3, due: Math.max(0, calcYrTotal(acadY3, schY3) - recY3), adv: Math.max(0, recY3 - calcYrTotal(acadY3, schY3)) },
+                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: calcYrTotal(acadY4, schY4), rec: recY4, due: Math.max(0, calcYrTotal(acadY4, schY4) - recY4), adv: Math.max(0, recY4 - calcYrTotal(acadY4, schY4)) }
                     ];
 
                     return (
@@ -4046,19 +4204,41 @@ export default function StudentList({
                                               type="button"
                                               onClick={() => {
                                                 const yrNum = idx + 1;
-                                                setEditingPaymentModal({
-                                                  id: `paid-year${yrNum}`,
-                                                  receiptNo: `REC-Y${yrNum}`,
-                                                  currentClass: yr.label,
-                                                  amountPaid: yr.rec,
-                                                  purpose: `${yr.label} Received Fee`,
-                                                  paymentMode: 'Cash',
-                                                  refNo: '',
-                                                  receivedBy: 'Admin Desk',
-                                                  remark: '',
-                                                  feeDate: new Date().toISOString().split('T')[0],
-                                                  yearKey: `paidYear${yrNum}`
+                                                const matchLabels = yrNum === 1 ? ['YEAR1', 'SEM-1', 'SEM-2', '1ST'] : yrNum === 2 ? ['YEAR2', 'SEM-3', 'SEM-4', '2ND'] : yrNum === 3 ? ['YEAR3', 'SEM-5', 'SEM-6', '3RD'] : ['YEAR4', 'SEM-7', 'SEM-8', '4TH'];
+                                                const foundP = payList.find(p => {
+                                                  const cls = (p.currentClass || p.year || p.semester || '').toUpperCase();
+                                                  return matchLabels.some(m => cls.includes(m));
                                                 });
+
+                                                if (foundP) {
+                                                  setEditingPaymentModal({
+                                                    id: foundP.id || foundP.receiptNo,
+                                                    receiptNo: foundP.receiptNo || `REC-Y${yrNum}`,
+                                                    currentClass: foundP.currentClass || yr.label,
+                                                    amountPaid: Number(foundP.amountPaid || foundP.amount || yr.rec),
+                                                    purpose: foundP.purpose || `${yr.label} Received Fee`,
+                                                    paymentMode: foundP.paymentMode || 'Cash',
+                                                    refNo: foundP.refNo || '',
+                                                    receivedBy: foundP.receivedBy || 'Admin Desk',
+                                                    remark: foundP.remark || '',
+                                                    feeDate: foundP.feeDate || (foundP.paymentDate ? foundP.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0]),
+                                                    yearKey: `paidYear${yrNum}`
+                                                  });
+                                                } else {
+                                                  setEditingPaymentModal({
+                                                    id: `paid-year${yrNum}`,
+                                                    receiptNo: `REC-Y${yrNum}`,
+                                                    currentClass: yr.label,
+                                                    amountPaid: yr.rec,
+                                                    purpose: `${yr.label} Received Fee`,
+                                                    paymentMode: 'Cash',
+                                                    refNo: '',
+                                                    receivedBy: 'Admin Desk',
+                                                    remark: '',
+                                                    feeDate: new Date().toISOString().split('T')[0],
+                                                    yearKey: `paidYear${yrNum}`
+                                                  });
+                                                }
                                               }}
                                               className="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
                                               title={`Edit ${yr.label} Received Fee`}
@@ -4067,7 +4247,15 @@ export default function StudentList({
                                             </button>
                                             <button
                                               type="button"
-                                              onClick={() => handleDeletePayment(`paid-year${idx + 1}`, yr.rec)}
+                                              onClick={() => {
+                                                const yrNum = idx + 1;
+                                                const matchLabels = yrNum === 1 ? ['YEAR1', 'SEM-1', 'SEM-2', '1ST'] : yrNum === 2 ? ['YEAR2', 'SEM-3', 'SEM-4', '2ND'] : yrNum === 3 ? ['YEAR3', 'SEM-5', 'SEM-6', '3RD'] : ['YEAR4', 'SEM-7', 'SEM-8', '4TH'];
+                                                const foundP = payList.find(p => {
+                                                  const cls = (p.currentClass || p.year || p.semester || '').toUpperCase();
+                                                  return matchLabels.some(m => cls.includes(m));
+                                                });
+                                                handleDeletePayment(foundP ? (foundP.id || foundP.receiptNo) : `paid-year${yrNum}`, yr.rec);
+                                              }}
                                               className="p-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 transition-all cursor-pointer shadow-2xs"
                                               title={`Clear / Reset ${yr.label} Received Fee (Set to ₹0)`}
                                             >
