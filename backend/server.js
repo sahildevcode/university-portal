@@ -2826,7 +2826,7 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
 app.post('/api/students/batch-promote', (req, res) => {
   try {
     const db = readDB();
-    const { rollNumbers, nextSemester, nextClass, nextSession, promotionDate, remark, autoAdvance } = req.body;
+    const { rollNumbers, autoAdvance, promotionPattern, nextSemester, nextClass, nextSession, promotionDate, remark } = req.body;
 
     if (!Array.isArray(rollNumbers) || rollNumbers.length === 0) {
       return res.status(400).json({ success: false, message: 'No students selected for promotion.' });
@@ -2844,36 +2844,39 @@ app.post('/api/students/batch-promote', (req, res) => {
         const prevClass = student.currentClass || `SEM-${curSem}`;
         const prevSession = student.currentSession || student.admissionSession || '';
 
-        // If autoAdvance is requested or no fixed semester is given, advance each student to their own next term!
+        const isYearly = promotionPattern === 'yearly' || (!promotionPattern && (curCls.includes('YEAR') || curCls.includes('YR')));
+
+        // If autoAdvance is requested or nextSemester is 'auto'
         if (autoAdvance || !nextSemester || nextSemester === 'auto') {
-          if (curCls.includes('YEAR') || curCls.includes('YR')) {
-            if (curCls.includes('1ST') || curCls.includes('1')) {
-              student.currentClass = '2nd Year';
-              student.currentSemester = 2;
-            } else if (curCls.includes('2ND') || curCls.includes('2')) {
-              student.currentClass = '3rd Year';
-              student.currentSemester = 3;
-            } else if (curCls.includes('3RD') || curCls.includes('3')) {
-              student.currentClass = '4th Year';
-              student.currentSemester = 4;
-            } else {
-              student.currentSemester = curSem + 1;
-              student.currentClass = `SEM-${student.currentSemester}`;
-            }
+          if (isYearly) {
+            let nextYr = 2;
+            if (curCls.includes('1ST') || curCls.includes('1')) nextYr = 2;
+            else if (curCls.includes('2ND') || curCls.includes('2')) nextYr = 3;
+            else if (curCls.includes('3RD') || curCls.includes('3')) nextYr = 4;
+            else nextYr = curSem + 1;
+            const yrLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+            student.currentSemester = nextYr;
+            student.currentClass = yrLabels[nextYr] || `${nextYr}th Year`;
           } else {
             student.currentSemester = curSem + 1;
             student.currentClass = `SEM-${student.currentSemester}`;
           }
           student.manualSemester = student.currentSemester;
         } else {
-          if (nextSemester !== undefined && nextSemester !== '') {
-            student.currentSemester = Number(nextSemester);
-            student.manualSemester = Number(nextSemester);
-          }
-          if (nextClass) {
+          // Fixed target class / semester specified
+          const semNum = String(nextSemester).startsWith('year-')
+            ? Number(String(nextSemester).replace('year-', ''))
+            : Number(nextSemester);
+          student.currentSemester = semNum;
+          student.manualSemester = semNum;
+
+          if (nextClass && String(nextClass).trim()) {
             student.currentClass = String(nextClass).trim();
-          } else if (nextSemester) {
-            student.currentClass = `SEM-${nextSemester}`;
+          } else if (isYearly || String(nextSemester).startsWith('year-')) {
+            const yrLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+            student.currentClass = yrLabels[semNum] || `${semNum} Year`;
+          } else {
+            student.currentClass = `SEM-${semNum}`;
           }
         }
 

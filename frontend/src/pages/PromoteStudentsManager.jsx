@@ -63,9 +63,9 @@ export default function PromoteStudentsManager({
   // Batch Promote Selection state
   const [selectedRolls, setSelectedRolls] = useState([]);
   const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchMode, setBatchMode] = useState('auto'); // 'auto' or 'fixed'
-  const [batchNextSemester, setBatchNextSemester] = useState('2');
-  const [batchNextClass, setBatchNextClass] = useState('SEM-2');
+  const [batchPattern, setBatchPattern] = useState('semester'); // 'semester' or 'yearly'
+  const [batchNextSemester, setBatchNextSemester] = useState('auto'); // 'auto' or '1','2'... or 'year-1'...
+  const [batchNextClass, setBatchNextClass] = useState('');
   const [batchNextSession, setBatchNextSession] = useState('');
 
   // Demote State
@@ -462,19 +462,34 @@ export default function PromoteStudentsManager({
     if (selectedRolls.length === 0) return;
 
     setSubmitting(true);
-    const isAuto = batchMode === 'auto';
-    const targetSemNum = String(batchNextSemester).startsWith('year-') 
-      ? Number(String(batchNextSemester).replace('year-', '')) 
-      : Number(batchNextSemester);
+    const isAuto = batchNextSemester === 'auto';
+    let targetSemNum = null;
+    let targetClassName = '';
+
+    if (!isAuto) {
+      if (batchPattern === 'yearly' || String(batchNextSemester).startsWith('year-')) {
+        const yrNum = Number(String(batchNextSemester).replace('year-', '')) || 1;
+        targetSemNum = yrNum;
+        const yrMap = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+        targetClassName = (batchNextClass || '').trim() || yrMap[yrNum] || `${yrNum} Year`;
+      } else {
+        targetSemNum = Number(batchNextSemester) || 1;
+        targetClassName = (batchNextClass || '').trim() || `SEM-${targetSemNum}`;
+      }
+    }
+
     const payload = {
       autoAdvance: isAuto,
+      promotionPattern: batchPattern,
       targetSemester: targetSemNum,
-      targetClass: batchNextClass,
-      nextSemester: targetSemNum,
-      nextClass: batchNextClass,
+      targetClass: targetClassName,
+      nextSemester: isAuto ? 'auto' : targetSemNum,
+      nextClass: targetClassName,
       nextSession: batchNextSession,
       promotionDate: new Date().toISOString().split('T')[0],
-      remark: isAuto ? 'Batch promoted (+1 Auto Next Term)' : `Batch promoted to ${batchNextClass}`
+      remark: isAuto 
+        ? `Batch promoted (+1 ${batchPattern === 'yearly' ? 'Year' : 'Semester'})`
+        : `Batch promoted to ${targetClassName}`
     };
 
     try {
@@ -510,16 +525,33 @@ export default function PromoteStudentsManager({
             const student = students.find(s => (s.rollNo || s.id) === roll);
             let sPayload = { ...payload };
             if (isAuto && student) {
-              const { sem, className } = calculateNextTerm(student);
-              const semNum = String(sem).startsWith('year-') ? Number(String(sem).replace('year-', '')) : Number(sem);
-              sPayload = {
-                ...sPayload,
-                targetSemester: semNum,
-                targetClass: className,
-                nextSemester: semNum,
-                nextClass: className,
-                remark: `Auto promoted to ${className}`
-              };
+              if (batchPattern === 'yearly') {
+                const curCls = (student.currentClass || '').toUpperCase();
+                let nextYr = 2;
+                if (curCls.includes('1ST') || curCls.includes('1')) nextYr = 2;
+                else if (curCls.includes('2ND') || curCls.includes('2')) nextYr = 3;
+                else if (curCls.includes('3RD') || curCls.includes('3')) nextYr = 4;
+                const yrLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+                sPayload = {
+                  ...sPayload,
+                  targetSemester: nextYr,
+                  targetClass: yrLabels[nextYr] || `${nextYr}th Year`,
+                  nextSemester: nextYr,
+                  nextClass: yrLabels[nextYr] || `${nextYr}th Year`,
+                  remark: `Auto promoted to ${yrLabels[nextYr] || `${nextYr}th Year`}`
+                };
+              } else {
+                const curSem = Number(student.currentSemester) || 1;
+                const nextSem = curSem + 1;
+                sPayload = {
+                  ...sPayload,
+                  targetSemester: nextSem,
+                  targetClass: `SEM-${nextSem}`,
+                  nextSemester: nextSem,
+                  nextClass: `SEM-${nextSem}`,
+                  remark: `Auto promoted to SEM-${nextSem}`
+                };
+              }
             }
             const res = await fetch(`/api/students/${encodeURIComponent(roll)}/promote`, {
               method: 'PUT',
@@ -1774,99 +1806,90 @@ export default function PromoteStudentsManager({
                   </span>
                 </div>
 
-                {/* Batch Mode Selection (Auto vs Fixed) */}
-                <div className="space-y-2">
-                  <label className="font-bold block text-slate-700 text-[11px]">Promotion Mode (प्रमोशन का तरीका) *</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setBatchMode('auto')}
-                      className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                        batchMode === 'auto'
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
-                      }`}
-                    >
-                      <div className="font-black text-xs flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Auto Next (+1)</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-1 leading-tight">
-                        प्रत्येक छात्र अपने अगले सेमेस्टर में स्वतः जाएगा (e.g. Sem-1 ➔ 2, Sem-2 ➔ 3)
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBatchMode('fixed')}
-                      className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                        batchMode === 'fixed'
-                          ? 'border-indigo-500 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-500/20'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
-                      }`}
-                    >
-                      <div className="font-black text-xs flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Fixed Class</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-1 leading-tight">
-                        सभी छात्रों को एक समान टारगेट क्लास/सेमेस्टर में सेट करें
-                      </p>
-                    </button>
-                  </div>
+                {/* 1. Dropdown: Semester or Yearly Promotion */}
+                <div>
+                  <label className="font-black block mb-1.5 text-slate-900 text-xs flex items-center gap-1.5">
+                    <span className="text-amber-500">❖</span>
+                    <span>प्रमोशन पैटर्न (Semester या Yearly चुनें) *</span>
+                  </label>
+                  <select
+                    value={batchPattern}
+                    onChange={(e) => {
+                      const pattern = e.target.value;
+                      setBatchPattern(pattern);
+                      setBatchNextSemester('auto');
+                      setBatchNextClass('');
+                    }}
+                    className="w-full p-2.5 bg-indigo-50/70 border-2 border-indigo-200 focus:border-indigo-600 rounded-xl font-black text-indigo-950 text-xs focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                  >
+                    <option value="semester">📚 Semester Wise (सेमेस्टर अनुसार प्रमोट करें - SEM-1 ➔ SEM-2...)</option>
+                    <option value="yearly">🎓 Yearly / Annual Wise (इयरली / वार्षिक अनुसार प्रमोट करें - 1st Year ➔ 2nd Year...)</option>
+                  </select>
                 </div>
 
-                {/* If Fixed Mode, show Target inputs */}
-                {batchMode === 'fixed' && (
-                  <div className="grid grid-cols-2 gap-2.5 pt-1">
-                    <div>
-                      <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem / Year *</label>
-                      <select
-                        value={batchNextSemester}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setBatchNextSemester(val);
-                          if (val.startsWith('year-')) {
-                            const yrNum = val.replace('year-', '');
-                            const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
-                            setBatchNextClass(yrMap[yrNum] || `${yrNum} Year`);
-                          } else {
-                            setBatchNextClass(`SEM-${val}`);
-                          }
-                        }}
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                        required
-                      >
-                        <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                {/* 2. Dropdown: Target Semester or Year */}
+                <div>
+                  <label className="font-bold block mb-1 text-slate-700 text-[11px]">
+                    {batchPattern === 'yearly' ? 'टारगेट वर्ष (Target Year) *' : 'टारगेट सेमेस्टर (Target Semester) *'}
+                  </label>
+                  <select
+                    value={batchNextSemester}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setBatchNextSemester(val);
+                      if (val === 'auto') {
+                        setBatchNextClass('');
+                      } else if (batchPattern === 'yearly' || val.startsWith('year-')) {
+                        const yrNum = val.replace('year-', '');
+                        const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
+                        setBatchNextClass(yrMap[yrNum] || `${yrNum} Year`);
+                      } else {
+                        setBatchNextClass(`SEM-${val}`);
+                      }
+                    }}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                    required
+                  >
+                    {batchPattern === 'semester' ? (
+                      <>
+                        <option value="auto">⚡ Auto Next Semester (+1) (हर छात्र स्वतः अपने अगले सेमेस्टर में जाएगा)</option>
+                        <optgroup label="या निश्चित सेमेस्टर सेट करें (Fixed Semester):">
+                          <option value="1">SEM-1 (1st Semester)</option>
+                          <option value="2">SEM-2 (2nd Semester)</option>
+                          <option value="3">SEM-3 (3rd Semester)</option>
+                          <option value="4">SEM-4 (4th Semester)</option>
+                          <option value="5">SEM-5 (5th Semester)</option>
+                          <option value="6">SEM-6 (6th Semester)</option>
+                          <option value="7">SEM-7 (7th Semester)</option>
+                          <option value="8">SEM-8 (8th Semester)</option>
+                        </optgroup>
+                      </>
+                    ) : (
+                      <>
+                        <option value="auto">⚡ Auto Next Year (+1) (हर छात्र स्वतः अपने अगले वर्ष में जाएगा)</option>
+                        <optgroup label="या निश्चित वर्ष सेट करें (Fixed Year):">
                           <option value="year-1">1st Year (प्रथम वर्ष)</option>
                           <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
                           <option value="year-3">3rd Year (तृतीय वर्ष)</option>
                           <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
                         </optgroup>
-                        <optgroup label="Semester Pattern (सेमेस्टर)">
-                          <option value="1">SEM-1 (1st Sem)</option>
-                          <option value="2">SEM-2 (2nd Sem)</option>
-                          <option value="3">SEM-3 (3rd Sem)</option>
-                          <option value="4">SEM-4 (4th Sem)</option>
-                          <option value="5">SEM-5 (5th Sem)</option>
-                          <option value="6">SEM-6 (6th Sem)</option>
-                          <option value="7">SEM-7 (7th Sem)</option>
-                          <option value="8">SEM-8 (8th Sem)</option>
-                        </optgroup>
-                      </select>
-                    </div>
+                      </>
+                    )}
+                  </select>
+                </div>
 
-                    <div>
-                      <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Class / Label *</label>
-                      <input
-                        type="text"
-                        value={batchNextClass}
-                        onChange={(e) => setBatchNextClass(e.target.value)}
-                        placeholder="e.g. SEM-2 or 2nd Year"
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                        required
-                      />
-                    </div>
+                {/* If fixed term is chosen, show editable Class Label */}
+                {batchNextSemester !== 'auto' && (
+                  <div>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Class Label *</label>
+                    <input
+                      type="text"
+                      value={batchNextClass}
+                      onChange={(e) => setBatchNextClass(e.target.value)}
+                      placeholder={batchPattern === 'yearly' ? 'e.g. 2nd Year' : 'e.g. SEM-2'}
+                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-xs focus:bg-white focus:outline-none"
+                      required
+                    />
                   </div>
                 )}
 
