@@ -1187,22 +1187,22 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
                         {/* 1st Year (3 Columns) */}
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">1st_Yr_Fee</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">1st_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">1st_Yr_Paid</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">1st_Yr_Remaining</th>
 
                         {/* 2nd Year (3 Columns) */}
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">2nd_Yr_Fee</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">2nd_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">2nd_Yr_Paid</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">2nd_Yr_Remaining</th>
 
                         {/* 3rd Year (3 Columns) */}
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">3rd_Yr_Fee</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">3rd_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">3rd_Yr_Paid</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">3rd_Yr_Remaining</th>
 
                         {/* 4th Year (3 Columns) */}
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">4th_Yr_Fee</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">4th_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">4th_Yr_Paid</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">4th_Yr_Remaining</th>
 
                         {/* Overall Totals (3 Columns) */}
