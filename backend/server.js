@@ -2293,19 +2293,21 @@ app.put('/api/students/:rollNo', (req, res) => {
     const schAmt = Number(updatedStudent.scholarshipAmount) || 0;
     const acadFee = Number(updatedStudent.academicFee !== undefined ? updatedStudent.academicFee : (updatedStudent.totalFee || 0));
     const rawCat = updatedStudent.feeCategory;
-    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-      ? 'full_scholarship'
+    const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+      ? 'full_course_fee'
       : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
         ? 'course_fee_scholarship'
-        : 'full_course_fee';
+        : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+          ? 'full_scholarship'
+          : ((acadFee > 0 && schAmt > 0)
+              ? 'course_fee_scholarship'
+              : (acadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
 
     const regFee = Number(updatedStudent.registrationFee || updatedStudent.regFee || 0);
-    if (cat === 'course_fee_scholarship') {
-      updatedStudent.totalFee = acadFee + schAmt + regFee;
-    } else if (cat === 'full_scholarship') {
-      updatedStudent.totalFee = schAmt + regFee;
-    } else {
+    if (cat === 'full_course_fee') {
       updatedStudent.totalFee = acadFee + regFee;
+    } else {
+      updatedStudent.totalFee = acadFee + schAmt + regFee;
     }
     updatedStudent.netTotalFee = updatedStudent.totalFee;
     updatedStudent.balanceDue = Math.max(0, updatedStudent.totalFee - (Number(updatedStudent.totalPaid) || 0));
@@ -3609,19 +3611,21 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
 
   const sch = Number(student.scholarshipAmount) || 0;
   const rawCat = student.feeCategory;
-  const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-    ? 'full_scholarship'
+  const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+    ? 'full_course_fee'
     : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
       ? 'course_fee_scholarship'
-      : 'full_course_fee';
+      : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+        ? 'full_scholarship'
+        : ((totalAcad > 0 && sch > 0)
+            ? 'course_fee_scholarship'
+            : (totalAcad > 0 ? 'full_course_fee' : 'full_scholarship'));
 
   const regFee = Number(student.registrationFee || student.regFee || 0);
-  if (cat === 'course_fee_scholarship') {
-    student.totalFee = totalAcad + sch + regFee;
-  } else if (cat === 'full_scholarship') {
-    student.totalFee = sch + regFee;
-  } else {
+  if (cat === 'full_course_fee') {
     student.totalFee = totalAcad + regFee;
+  } else {
+    student.totalFee = totalAcad + sch + regFee;
   }
   student.netTotalFee = student.totalFee;
   student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
@@ -3697,19 +3701,21 @@ app.delete(['/api/students/:rollNo/set-fee', '/api/students/:rollNo/set-fee/:ent
 
   const sch = Number(student.scholarshipAmount) || 0;
   const rawCat = student.feeCategory;
-  const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-    ? 'full_scholarship'
+  const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+    ? 'full_course_fee'
     : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
       ? 'course_fee_scholarship'
-      : 'full_course_fee';
+      : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+        ? 'full_scholarship'
+        : ((totalAcad > 0 && sch > 0)
+            ? 'course_fee_scholarship'
+            : (totalAcad > 0 ? 'full_course_fee' : 'full_scholarship'));
 
   const regFee = Number(student.registrationFee || student.regFee || 0);
-  if (cat === 'course_fee_scholarship') {
-    student.totalFee = totalAcad + sch + regFee;
-  } else if (cat === 'full_scholarship') {
-    student.totalFee = sch + regFee;
-  } else {
+  if (cat === 'full_course_fee') {
     student.totalFee = totalAcad + regFee;
+  } else {
+    student.totalFee = totalAcad + sch + regFee;
   }
   student.netTotalFee = student.totalFee;
   student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
@@ -4246,20 +4252,22 @@ function syncStudentPaymentState(student, db) {
     : Number(student.scholarshipAmount || 0);
 
   const rawCat = student.feeCategory;
-  const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-    ? 'full_scholarship'
+  const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+    ? 'full_course_fee'
     : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
       ? 'course_fee_scholarship'
-      : 'full_course_fee';
+      : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+        ? 'full_scholarship'
+        : ((totalAcadFee > 0 && totalSch > 0)
+            ? 'course_fee_scholarship'
+            : (totalAcadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
 
   const regFee = Number(student.registrationFee || student.regFee || 0);
   let calcTotalFee = totalAcadFee + regFee;
-  if (cat === 'course_fee_scholarship') {
-    calcTotalFee = totalAcadFee + totalSch + regFee;
-  } else if (cat === 'full_scholarship') {
-    calcTotalFee = totalSch + regFee;
-  } else {
+  if (cat === 'full_course_fee') {
     calcTotalFee = totalAcadFee + regFee;
+  } else {
+    calcTotalFee = totalAcadFee + totalSch + regFee;
   }
   student.totalFee = calcTotalFee;
   student.netTotalFee = calcTotalFee;

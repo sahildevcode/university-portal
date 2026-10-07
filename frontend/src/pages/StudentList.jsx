@@ -127,19 +127,26 @@ export default function StudentList({
 
     // 3. Category & Year-wise Payable Fee
     const rawCat = item.feeCategory;
-    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-      ? 'full_scholarship'
+    const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+      ? 'full_course_fee'
       : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
         ? 'course_fee_scholarship'
-        : 'full_course_fee';
+        : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+          ? 'full_scholarship'
+          : ((totalAcadFee > 0 && totalSch > 0)
+              ? 'course_fee_scholarship'
+              : (totalAcadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
 
     const regFee = Number(item.registrationFee || item.regFee || 0);
 
     const calcYrTotal = (yrAcad, yrSch, isY1 = false) => {
       const extra = isY1 ? regFee : 0;
-      if (cat === 'course_fee_scholarship') return yrAcad + yrSch + extra;
-      if (cat === 'full_scholarship') return yrSch + extra;
-      return yrAcad + extra;
+      if (cat === 'full_course_fee') {
+        return yrAcad + extra;
+      }
+      // For both course_fee_scholarship and full_scholarship:
+      // If student has course fee entered, add it! If course fee is 0, it's pure scholarship
+      return yrAcad + yrSch + extra;
     };
 
     const totalY1 = calcYrTotal(feeY1, schY1, true);
@@ -148,12 +155,10 @@ export default function StudentList({
     const totalY4 = calcYrTotal(feeY4, schY4, false);
 
     let totalFee = 0;
-    if (cat === 'course_fee_scholarship') {
-      totalFee = totalAcadFee + totalSch + regFee;
-    } else if (cat === 'full_scholarship') {
-      totalFee = totalSch + regFee;
-    } else {
+    if (cat === 'full_course_fee') {
       totalFee = (totalAcadFee > 0 ? totalAcadFee : Number(item.totalFee || item.studentFee || 0)) + regFee;
+    } else {
+      totalFee = totalAcadFee + totalSch + regFee;
     }
 
     // 4. Received Fees per Year
@@ -219,10 +224,10 @@ export default function StudentList({
     }
 
     return {
-      feeY1, schY1, recY1, totalY1, dueY1, advY1,
-      feeY2, schY2, recY2, totalY2, dueY2, advY2,
-      feeY3, schY3, recY3, totalY3, dueY3, advY3,
-      feeY4, schY4, recY4, totalY4, dueY4, advY4,
+      feeY1, schY1, recY1, totalY1, dueY1, advY1, net1,
+      feeY2, schY2, recY2, totalY2, dueY2, advY2, net2,
+      feeY3, schY3, recY3, totalY3, dueY3, advY3, net3,
+      feeY4, schY4, recY4, totalY4, dueY4, advY4, net4,
       totalFee, totalSch, totalPaid, totalRem,
       advanceAmount, isAdvance, nextFeeDueDate,
       cat
@@ -2489,28 +2494,32 @@ export default function StudentList({
                         </div>
                       </th>
 
-                      {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                      {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 16 Columns: Fee, Schol, Rec, Dues) */}
                       {showYearWiseFees && (
                         <>
                           {/* 1st Year Columns */}
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">1st_Yr_Fee</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">1st_Yr_Schol</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">1st_Yr_Rec_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">1st_Yr_Dues</th>
 
                           {/* 2nd Year Columns */}
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">2nd_Yr_Fee</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">2nd_Yr_Schol</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">2nd_Yr_Rec_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">2nd_Yr_Dues</th>
 
                           {/* 3rd Year Columns */}
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">3rd_Yr_Fee</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">3rd_Yr_Schol</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">3rd_Yr_Rec_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">3rd_Yr_Dues</th>
 
                           {/* 4th Year Columns */}
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">4th_Yr_Fee</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-purple-200">4th_Yr_Schol</th>
                           <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">4th_Yr_Rec_Fee</th>
+                          <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">4th_Yr_Dues</th>
                         </>
                       )}
 
@@ -2571,11 +2580,11 @@ export default function StudentList({
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={tableColumnMode === 'all' ? 49 : 20} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
+                      <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 53 : 37) : 20} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
                     </tr>
                   ) : paginatedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={tableColumnMode === 'all' ? 49 : 20} className="p-10 text-center bg-slate-50">
+                      <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 53 : 37) : 20} className="p-10 text-center bg-slate-50">
                         <div className="max-w-md mx-auto space-y-3">
                           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
                             <Search className="w-6 h-6" />
@@ -2829,7 +2838,7 @@ export default function StudentList({
                               </td>
                             )}
 
-                            {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                            {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 16 Columns: Fee, Schol, Rec, Dues) */}
                             {showYearWiseFees && (
                               <>
                                 {/* 1st Year */}
@@ -2842,6 +2851,15 @@ export default function StudentList({
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
                                   {yd.recY1 > 0 ? `${yd.recY1}/-` : '-'}
                                 </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
+                                  {yd.net1 > 0 ? (
+                                    <span className="text-rose-700 font-bold">{yd.net1}/-</span>
+                                  ) : yd.net1 < 0 ? (
+                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net1)}/-</span>
+                                  ) : (
+                                    <span className="text-slate-400">0/-</span>
+                                  )}
+                                </td>
 
                                 {/* 2nd Year */}
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
@@ -2852,6 +2870,15 @@ export default function StudentList({
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
                                   {yd.recY2 > 0 ? `${yd.recY2}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
+                                  {yd.net2 > 0 ? (
+                                    <span className="text-rose-700 font-bold">{yd.net2}/-</span>
+                                  ) : yd.net2 < 0 ? (
+                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net2)}/-</span>
+                                  ) : (
+                                    <span className="text-slate-400">0/-</span>
+                                  )}
                                 </td>
 
                                 {/* 3rd Year */}
@@ -2864,6 +2891,15 @@ export default function StudentList({
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
                                   {yd.recY3 > 0 ? `${yd.recY3}/-` : '-'}
                                 </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
+                                  {yd.net3 > 0 ? (
+                                    <span className="text-rose-700 font-bold">{yd.net3}/-</span>
+                                  ) : yd.net3 < 0 ? (
+                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net3)}/-</span>
+                                  ) : (
+                                    <span className="text-slate-400">0/-</span>
+                                  )}
+                                </td>
 
                                 {/* 4th Year */}
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/20">
@@ -2874,6 +2910,15 @@ export default function StudentList({
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
                                   {yd.recY4 > 0 ? `${yd.recY4}/-` : '-'}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
+                                  {yd.net4 > 0 ? (
+                                    <span className="text-rose-700 font-bold">{yd.net4}/-</span>
+                                  ) : yd.net4 < 0 ? (
+                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net4)}/-</span>
+                                  ) : (
+                                    <span className="text-slate-400">0/-</span>
+                                  )}
                                 </td>
                               </>
                             )}
@@ -3091,7 +3136,7 @@ export default function StudentList({
                                   <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-amber-900">{linked.currentClass || 'SEM-1'}</td>
                                 )}
 
-                                {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 12 Columns) */}
+                                {/* All Year Fee Columns (1st, 2nd, 3rd & 4th Year - 16 Columns: Fee, Schol, Rec, Dues) */}
                                 {showYearWiseFees && (
                                   <>
                                     {/* 1st Year */}
@@ -3104,6 +3149,15 @@ export default function StudentList({
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
                                       {lyd.recY1 > 0 ? `${lyd.recY1}/-` : '-'}
                                     </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
+                                      {lyd.net1 > 0 ? (
+                                        <span className="text-rose-700 font-bold">{lyd.net1}/-</span>
+                                      ) : lyd.net1 < 0 ? (
+                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net1)}/-</span>
+                                      ) : (
+                                        <span className="text-slate-400">0/-</span>
+                                      )}
+                                    </td>
 
                                     {/* 2nd Year */}
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
@@ -3114,6 +3168,15 @@ export default function StudentList({
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
                                       {lyd.recY2 > 0 ? `${lyd.recY2}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
+                                      {lyd.net2 > 0 ? (
+                                        <span className="text-rose-700 font-bold">{lyd.net2}/-</span>
+                                      ) : lyd.net2 < 0 ? (
+                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net2)}/-</span>
+                                      ) : (
+                                        <span className="text-slate-400">0/-</span>
+                                      )}
                                     </td>
 
                                     {/* 3rd Year */}
@@ -3126,6 +3189,15 @@ export default function StudentList({
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
                                       {lyd.recY3 > 0 ? `${lyd.recY3}/-` : '-'}
                                     </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
+                                      {lyd.net3 > 0 ? (
+                                        <span className="text-rose-700 font-bold">{lyd.net3}/-</span>
+                                      ) : lyd.net3 < 0 ? (
+                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net3)}/-</span>
+                                      ) : (
+                                        <span className="text-slate-400">0/-</span>
+                                      )}
+                                    </td>
 
                                     {/* 4th Year */}
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-slate-900 bg-amber-50/30">
@@ -3136,6 +3208,15 @@ export default function StudentList({
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
                                       {lyd.recY4 > 0 ? `${lyd.recY4}/-` : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
+                                      {lyd.net4 > 0 ? (
+                                        <span className="text-rose-700 font-bold">{lyd.net4}/-</span>
+                                      ) : lyd.net4 < 0 ? (
+                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net4)}/-</span>
+                                      ) : (
+                                        <span className="text-slate-400">0/-</span>
+                                      )}
                                     </td>
                                   </>
                                 )}
