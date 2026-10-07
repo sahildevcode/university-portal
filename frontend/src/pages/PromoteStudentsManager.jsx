@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
+  TrendingDown,
+  ArrowDown,
   Search, 
   Filter, 
   GraduationCap, 
@@ -61,9 +63,16 @@ export default function PromoteStudentsManager({
   // Batch Promote Selection state
   const [selectedRolls, setSelectedRolls] = useState([]);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchMode, setBatchMode] = useState('auto'); // 'auto' or 'fixed'
   const [batchNextSemester, setBatchNextSemester] = useState('2');
   const [batchNextClass, setBatchNextClass] = useState('SEM-2');
   const [batchNextSession, setBatchNextSession] = useState('');
+
+  // Demote State
+  const [demoteStudent, setDemoteStudent] = useState(null);
+  const [demoteTargetClass, setDemoteTargetClass] = useState('');
+  const [demoteTargetSemester, setDemoteTargetSemester] = useState(1);
+  const [demoteRemark, setDemoteRemark] = useState('');
 
   const showToast = (msg, type = 'success') => {
     setFeedback({ msg, type });
@@ -180,6 +189,41 @@ export default function PromoteStudentsManager({
       sem: String(nextSemNum),
       className: `SEM-${nextSemNum}`
     };
+  };
+
+  // Helper to calculate previous semester / class for demotion
+  const calculatePrevTerm = (student) => {
+    if (!student) return { canDemote: false, prevSem: 1, prevClass: 'SEM-1', reason: 'Student not found' };
+    const curSem = Number(student.currentSemester || student.manualSemester || 1);
+    const curCls = String(student.currentClass || '').toUpperCase();
+
+    if (curCls.includes('YEAR') || curCls.includes('YR')) {
+      let yearNum = 1;
+      if (curCls.includes('4TH') || curCls.includes('4')) yearNum = 4;
+      else if (curCls.includes('3RD') || curCls.includes('3')) yearNum = 3;
+      else if (curCls.includes('2ND') || curCls.includes('2')) yearNum = 2;
+      else if (curCls.includes('1ST') || curCls.includes('1')) yearNum = 1;
+      else yearNum = Math.max(1, curSem);
+
+      if (yearNum <= 1) {
+        return { canDemote: false, prevSem: 1, prevClass: '1st Year', reason: 'पहले से 1st Year में है' };
+      }
+      const prevYear = yearNum - 1;
+      const yearLabels = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+      return { canDemote: true, prevSem: prevYear, prevClass: yearLabels[prevYear] || `${prevYear}th Year` };
+    }
+
+    let semNum = curSem;
+    const match = curCls.match(/SEM[- ]*(\d+)/i);
+    if (match) {
+      semNum = parseInt(match[1], 10);
+    }
+
+    if (semNum <= 1) {
+      return { canDemote: false, prevSem: 1, prevClass: 'SEM-1', reason: 'पहले से SEM-1 में है' };
+    }
+    const prevSem = semNum - 1;
+    return { canDemote: true, prevSem, prevClass: `SEM-${prevSem}` };
   };
 
   // Open Promote Modal for a specific student
@@ -412,30 +456,32 @@ export default function PromoteStudentsManager({
     );
   };
 
-  // Confirm Batch Promotion
+  // Confirm Batch Promotion (Supports Auto Next Term or Fixed Target Class)
   const handleConfirmBatchPromote = async (e) => {
     e.preventDefault();
     if (selectedRolls.length === 0) return;
 
     setSubmitting(true);
+    const isAuto = batchMode === 'auto';
     const targetSemNum = String(batchNextSemester).startsWith('year-') 
       ? Number(String(batchNextSemester).replace('year-', '')) 
       : Number(batchNextSemester);
     const payload = {
+      autoAdvance: isAuto,
       targetSemester: targetSemNum,
       targetClass: batchNextClass,
       nextSemester: targetSemNum,
       nextClass: batchNextClass,
       nextSession: batchNextSession,
       promotionDate: new Date().toISOString().split('T')[0],
-      remark: `Batch promoted to ${batchNextClass}`
+      remark: isAuto ? 'Batch promoted (+1 Auto Next Term)' : `Batch promoted to ${batchNextClass}`
     };
 
     try {
       let success = false;
       let successMsg = '';
 
-      // Attempt 1: Try backend batch endpoint
+      // Attempt 1: Backend batch endpoint
       try {
         const res = await fetch('/api/students/batch-promote', {
           method: 'POST',
@@ -454,17 +500,31 @@ export default function PromoteStudentsManager({
           }
         }
       } catch (err) {
-        // Fall back to individual promotions
+        // Fall back to parallel promotions
       }
 
       // Attempt 2: Fallback to parallel individual promotions via PUT
       if (!success) {
         const results = await Promise.allSettled(
           selectedRolls.map(async (roll) => {
+            const student = students.find(s => (s.rollNo || s.id) === roll);
+            let sPayload = { ...payload };
+            if (isAuto && student) {
+              const { sem, className } = calculateNextTerm(student);
+              const semNum = String(sem).startsWith('year-') ? Number(String(sem).replace('year-', '')) : Number(sem);
+              sPayload = {
+                ...sPayload,
+                targetSemester: semNum,
+                targetClass: className,
+                nextSemester: semNum,
+                nextClass: className,
+                remark: `Auto promoted to ${className}`
+              };
+            }
             const res = await fetch(`/api/students/${encodeURIComponent(roll)}/promote`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+              body: JSON.stringify(sPayload)
             });
             return res.ok;
           })
@@ -473,27 +533,11 @@ export default function PromoteStudentsManager({
         const succeeded = results.filter(r => r.status === 'fulfilled' && r.value).length;
         if (succeeded > 0) {
           success = true;
-          successMsg = `🎉 ${succeeded} छात्र सफलतापूर्वक ${batchNextClass} में प्रमोट हो गए!`;
+          successMsg = `🎉 ${succeeded} छात्र सफलतापूर्वक प्रमोट हो गए!`;
         }
       }
 
       if (success) {
-        // Optimistic UI state update
-        setStudents(prev => prev.map(s => {
-          const r = s.rollNo || s.enrollmentNo || s.registrationNo || s.id;
-          if (selectedRolls.includes(r) || (s.rollNo && selectedRolls.includes(s.rollNo)) || (s.id && selectedRolls.includes(s.id))) {
-            return {
-              ...s,
-              currentSemester: targetSemNum,
-              currentClass: batchNextClass,
-              manualSemester: targetSemNum,
-              currentSession: batchNextSession || s.currentSession,
-              updatedAt: new Date().toISOString()
-            };
-          }
-          return s;
-        }));
-
         fireCelebration({ x: 0.5, y: 0.5 });
         showToast(successMsg || 'Batch promotion successful!', 'success');
         setShowBatchModal(false);
@@ -506,6 +550,89 @@ export default function PromoteStudentsManager({
     } catch (err) {
       console.error('Error in batch promotion:', err);
       showToast('Network error in batch promotion: ' + err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Open Demote Modal for an individual student
+  const handleOpenDemote = (student) => {
+    const prev = calculatePrevTerm(student);
+    if (!prev.canDemote) {
+      showToast(`Cannot demote: ${prev.reason}`, 'error');
+      return;
+    }
+    setDemoteStudent(student);
+    setDemoteTargetSemester(prev.prevSem);
+    setDemoteTargetClass(prev.prevClass);
+    setDemoteRemark(`Demoted from ${student.currentClass || `SEM-${student.currentSemester || 1}`} to ${prev.prevClass}`);
+  };
+
+  // Confirm Individual Student Demotion
+  const handleConfirmDemote = async (e) => {
+    if (e) e.preventDefault();
+    if (!demoteStudent) return;
+
+    setSubmitting(true);
+    const lookupKey = demoteStudent.rollNo || demoteStudent.enrollmentNo || demoteStudent.id;
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(lookupKey)}/demote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetSemester: demoteTargetSemester,
+          targetClass: demoteTargetClass,
+          remark: demoteRemark
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || `Student demoted to ${demoteTargetClass} successfully!`, 'success');
+        setDemoteStudent(null);
+        fetchStudents();
+        if (onRefreshCourses) onRefreshCourses();
+      } else {
+        showToast(data.message || 'Demotion failed! Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Error demoting student:', err);
+      showToast('Network error while demoting student: ' + err.message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Confirm Batch Demotion for Selected Students
+  const handleBatchDemote = async () => {
+    if (selectedRolls.length === 0) return;
+    if (!window.confirm(`क्या आप वाकई चुने गए ${selectedRolls.length} छात्रों को उनके पिछले सेमेस्टर / वर्ष में डिमोट (Demote) करना चाहते हैं?`)) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/students/batch-demote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rollNumbers: selectedRolls,
+          remark: `Batch demoted by Admin on ${new Date().toLocaleDateString('en-IN')}`
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || `Successfully demoted ${data.demotedCount || selectedRolls.length} students!`, 'success');
+        setSelectedRolls([]);
+        fetchStudents();
+        if (onRefreshCourses) onRefreshCourses();
+      } else {
+        showToast(data.message || 'Batch demote failed! Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Error in batch demote:', err);
+      showToast('Network error in batch demote: ' + err.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -701,9 +828,30 @@ export default function PromoteStudentsManager({
               {filteredStudents.length} Found
             </span>
             {selectedRolls.length > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-black border border-amber-300">
-                {selectedRolls.length} Selected
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-black border border-amber-300">
+                  {selectedRolls.length} Selected
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(true)}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white px-3 py-1 rounded-xl font-black text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  title="Promote selected students"
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Batch Promote ({selectedRolls.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBatchDemote}
+                  disabled={submitting}
+                  className="bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white px-3 py-1 rounded-xl font-black text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                  title="Demote selected students to their previous term"
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  <span>Batch Demote ({selectedRolls.length})</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -765,7 +913,7 @@ export default function PromoteStudentsManager({
                   <th className="p-3 min-w-[130px] max-w-[170px]">Course</th>
                   <th className="p-3 whitespace-nowrap">Session</th>
                   <th className="p-3 text-center min-w-[180px]">Progression (वर्तमान ➔ आगामी)</th>
-                  <th className="p-3 text-center sticky right-0 z-20 bg-slate-900 text-amber-300 shadow-[-4px_0_10px_rgba(0,0,0,0.3)] whitespace-nowrap min-w-[140px]">
+                  <th className="p-3 text-center sticky right-0 z-20 bg-slate-900 text-amber-300 shadow-[-4px_0_10px_rgba(0,0,0,0.3)] whitespace-nowrap min-w-[210px]">
                     Action
                   </th>
                 </tr>
@@ -777,6 +925,7 @@ export default function PromoteStudentsManager({
                   const curSem = student.currentSemester || 1;
                   const curClass = student.currentClass || `SEM-${curSem}`;
                   const { sem: nextSemNum, className: nextClsName } = calculateNextTerm(student);
+                  const prevTerm = calculatePrevTerm(student);
                   const serialNo = startIndex + sIdx + 1;
 
                   return (
@@ -872,21 +1021,39 @@ export default function PromoteStudentsManager({
                       {/* Action Column: Sticky Right */}
                       <td className="p-2.5 text-center sticky right-0 z-10 bg-white/95 backdrop-blur-xs shadow-[-6px_0_10px_rgba(0,0,0,0.06)] border-l border-slate-100 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 justify-center">
+                          {/* Promote Button */}
                           <button
                             type="button"
                             onClick={() => handleOpenPromote(student)}
-                            className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs px-3 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                            title={`Promote ${student.fullName} to next semester/year`}
+                            className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs px-2.5 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                            title={`Promote ${student.fullName || student.rollNo} to next semester/year`}
                           >
                             <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
                             <span>Promote</span>
                           </button>
 
+                          {/* Demote Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDemote(student)}
+                            disabled={!prevTerm.canDemote}
+                            className={`font-black text-xs px-2.5 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
+                              prevTerm.canDemote
+                                ? 'bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white border border-rose-300 hover:border-rose-600'
+                                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50'
+                            }`}
+                            title={prevTerm.canDemote ? `Demote to ${prevTerm.prevClass}` : `Cannot demote: ${prevTerm.reason}`}
+                          >
+                            <TrendingDown className="w-3.5 h-3.5" />
+                            <span>Demote</span>
+                          </button>
+
+                          {/* Complete Course Button */}
                           <button
                             type="button"
                             onClick={() => handleCompleteCourse(student)}
-                            className="bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/40 font-black text-xs px-2.5 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-                            title={`Mark course completed for ${student.fullName} and move to Document Return section`}
+                            className="bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/40 font-black text-xs px-2 py-1.5 rounded-xl shadow-2xs hover:shadow transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                            title={`Mark course completed for ${student.fullName || student.rollNo} and move to Document Return section`}
                           >
                             <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Complete</span>
@@ -1356,6 +1523,207 @@ export default function PromoteStudentsManager({
         </div>
       )}
 
+      {/* Floating Bottom Multi-Action Toolbar */}
+      {selectedRolls.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl border border-slate-700/80 flex flex-wrap items-center gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            <span className="text-xs font-black text-amber-300">
+              {selectedRolls.length} Students Selected
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700 hidden sm:block" />
+
+          <button
+            type="button"
+            onClick={() => setShowBatchModal(true)}
+            className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 transition-all"
+          >
+            <TrendingUp className="w-4 h-4 text-amber-300" />
+            <span>Batch Promote ({selectedRolls.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleBatchDemote}
+            disabled={submitting}
+            className="bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white font-black text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95 transition-all disabled:opacity-50"
+          >
+            <TrendingDown className="w-4 h-4" />
+            <span>Batch Demote ({selectedRolls.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedRolls([])}
+            className="text-slate-400 hover:text-white text-xs underline font-bold cursor-pointer ml-1"
+          >
+            Deselect All
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DEMOTE CONFIRMATION MODAL FOR INDIVIDUAL STUDENT */}
+      {/* ========================================================================= */}
+      {demoteStudent && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs overflow-y-auto p-3 sm:p-4 flex justify-center items-start sm:items-center animate-fadeIn"
+          onClick={() => setDemoteStudent(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl text-slate-900 shadow-2xl border-2 border-rose-200 flex flex-col max-h-[92vh] my-auto overflow-hidden animate-in fade-in zoom-in duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-3.5 bg-rose-950 text-white flex items-center justify-between shrink-0 border-b border-rose-900">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black shadow-sm shrink-0">
+                  <TrendingDown className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm sm:text-base text-white leading-tight">
+                    Demote Student (डिमोट करें)
+                  </h3>
+                  <p className="text-[10px] text-rose-200 mt-0.5">
+                    छात्र को पिछले सेमेस्टर / वर्ष में वापस भेजने की पुष्टि करें
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDemoteStudent(null)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleConfirmDemote} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 text-xs">
+                {/* Student Info */}
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Student Name</span>
+                      <strong className="text-sm font-black text-slate-900 block truncate mt-0.5">
+                        {demoteStudent.fullName || demoteStudent.studentName}
+                      </strong>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Roll Number</span>
+                      <span className="text-xs font-mono font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded block mt-0.5 border border-rose-200">
+                        {demoteStudent.rollNo || demoteStudent.enrollmentNo || 'NO-ROLL'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-slate-600 pt-1.5 border-t border-slate-200 flex justify-between">
+                    <span>Course: <strong className="text-slate-900">{demoteStudent.courseName}</strong></span>
+                    <span>Univ: <strong className="text-slate-900">{demoteStudent.universityName || '—'}</strong></span>
+                  </div>
+                </div>
+
+                {/* Demote Flow Visual */}
+                <div className="bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white p-3 rounded-xl flex items-center justify-between shadow-inner">
+                  <div className="text-center min-w-[70px]">
+                    <span className="text-[9px] text-slate-400 uppercase font-bold block">Current</span>
+                    <span className="text-xs font-black text-amber-300 block mt-0.5">
+                      {demoteStudent.currentClass || `SEM-${demoteStudent.currentSemester || 1}`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-rose-400 font-bold text-[11px] px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                    <span>Demoting</span>
+                    <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
+                  </div>
+
+                  <div className="text-center min-w-[70px]">
+                    <span className="text-[9px] text-slate-400 uppercase font-bold block">Demoted Target</span>
+                    <span className="text-xs font-black text-rose-400 block mt-0.5">
+                      {demoteTargetClass}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Target Class Selection */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Demoted Sem / Year *</label>
+                    <select
+                      value={demoteTargetSemester}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setDemoteTargetSemester(val);
+                        if (String(demoteStudent.currentClass || '').toUpperCase().includes('YEAR')) {
+                          const yrMap = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
+                          setDemoteTargetClass(yrMap[val] || `${val} Year`);
+                        } else {
+                          setDemoteTargetClass(`SEM-${val}`);
+                        }
+                      }}
+                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                      required
+                    >
+                      <option value={1}>1 (SEM-1 / 1st Year)</option>
+                      <option value={2}>2 (SEM-2 / 2nd Year)</option>
+                      <option value={3}>3 (SEM-3 / 3rd Year)</option>
+                      <option value={4}>4 (SEM-4 / 4th Year)</option>
+                      <option value={5}>5 (SEM-5)</option>
+                      <option value={6}>6 (SEM-6)</option>
+                      <option value={7}>7 (SEM-7)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Target Class Label *</label>
+                    <input
+                      type="text"
+                      value={demoteTargetClass}
+                      onChange={(e) => setDemoteTargetClass(e.target.value)}
+                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold block mb-1 text-slate-700 text-[11px]">Reason / Remark</label>
+                  <input
+                    type="text"
+                    value={demoteRemark}
+                    onChange={(e) => setDemoteRemark(e.target.value)}
+                    placeholder="e.g. Demoted due to year back / student request"
+                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDemoteStudent(null)}
+                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl font-bold border border-slate-200 transition-colors cursor-pointer text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white font-black px-5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 text-xs"
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  <span>{submitting ? 'Demoting...' : `Confirm & Demote`}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* BATCH PROMOTION MODAL (COMPACT & RESPONSIVE) */}
       {/* ========================================================================= */}
@@ -1402,60 +1770,105 @@ export default function PromoteStudentsManager({
                     ⚠️ {selectedRolls.length} छात्रों का चयन किया गया है
                   </span>
                   <span className="text-[11px] text-amber-800 block mt-0.5">
-                    यह सभी छात्र एक साथ नीचे चुने गए नए सेमेस्टर व क्लास में प्रमोट हो जाएंगे।
+                    नीचे प्रमोशन का तरीका चुनें (Auto +1 या एक निश्चित क्लास)।
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem / Year *</label>
-                    <select
-                      value={batchNextSemester}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setBatchNextSemester(val);
-                        if (val.startsWith('year-')) {
-                          const yrNum = val.replace('year-', '');
-                          const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
-                          setBatchNextClass(yrMap[yrNum] || `${yrNum} Year`);
-                        } else {
-                          setBatchNextClass(`SEM-${val}`);
-                        }
-                      }}
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                      required
+                {/* Batch Mode Selection (Auto vs Fixed) */}
+                <div className="space-y-2">
+                  <label className="font-bold block text-slate-700 text-[11px]">Promotion Mode (प्रमोशन का तरीका) *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBatchMode('auto')}
+                      className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                        batchMode === 'auto'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
+                      }`}
                     >
-                      <optgroup label="Annual / Yearly Pattern (वार्षिक)">
-                        <option value="year-1">1st Year (प्रथम वर्ष)</option>
-                        <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
-                        <option value="year-3">3rd Year (तृतीय वर्ष)</option>
-                        <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
-                      </optgroup>
-                      <optgroup label="Semester Pattern (सेमेस्टर)">
-                        <option value="1">SEM-1 (1st Sem)</option>
-                        <option value="2">SEM-2 (2nd Sem)</option>
-                        <option value="3">SEM-3 (3rd Sem)</option>
-                        <option value="4">SEM-4 (4th Sem)</option>
-                        <option value="5">SEM-5 (5th Sem)</option>
-                        <option value="6">SEM-6 (6th Sem)</option>
-                        <option value="7">SEM-7 (7th Sem)</option>
-                        <option value="8">SEM-8 (8th Sem)</option>
-                      </optgroup>
-                    </select>
-                  </div>
+                      <div className="font-black text-xs flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Auto Next (+1)</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1 leading-tight">
+                        प्रत्येक छात्र अपने अगले सेमेस्टर में स्वतः जाएगा (e.g. Sem-1 ➔ 2, Sem-2 ➔ 3)
+                      </p>
+                    </button>
 
-                  <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Class / Label *</label>
-                    <input
-                      type="text"
-                      value={batchNextClass}
-                      onChange={(e) => setBatchNextClass(e.target.value)}
-                      placeholder="e.g. SEM-2 or 2nd Year"
-                      className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
-                      required
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setBatchMode('fixed')}
+                      className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                        batchMode === 'fixed'
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-500/20'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white'
+                      }`}
+                    >
+                      <div className="font-black text-xs flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Fixed Class</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1 leading-tight">
+                        सभी छात्रों को एक समान टारगेट क्लास/सेमेस्टर में सेट करें
+                      </p>
+                    </button>
                   </div>
                 </div>
+
+                {/* If Fixed Mode, show Target inputs */}
+                {batchMode === 'fixed' && (
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    <div>
+                      <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Sem / Year *</label>
+                      <select
+                        value={batchNextSemester}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBatchNextSemester(val);
+                          if (val.startsWith('year-')) {
+                            const yrNum = val.replace('year-', '');
+                            const yrMap = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
+                            setBatchNextClass(yrMap[yrNum] || `${yrNum} Year`);
+                          } else {
+                            setBatchNextClass(`SEM-${val}`);
+                          }
+                        }}
+                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                        required
+                      >
+                        <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                          <option value="year-1">1st Year (प्रथम वर्ष)</option>
+                          <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
+                          <option value="year-3">3rd Year (तृतीय वर्ष)</option>
+                          <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
+                        </optgroup>
+                        <optgroup label="Semester Pattern (सेमेस्टर)">
+                          <option value="1">SEM-1 (1st Sem)</option>
+                          <option value="2">SEM-2 (2nd Sem)</option>
+                          <option value="3">SEM-3 (3rd Sem)</option>
+                          <option value="4">SEM-4 (4th Sem)</option>
+                          <option value="5">SEM-5 (5th Sem)</option>
+                          <option value="6">SEM-6 (6th Sem)</option>
+                          <option value="7">SEM-7 (7th Sem)</option>
+                          <option value="8">SEM-8 (8th Sem)</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold block mb-1 text-slate-700 text-[11px]">Next Class / Label *</label>
+                      <input
+                        type="text"
+                        value={batchNextClass}
+                        onChange={(e) => setBatchNextClass(e.target.value)}
+                        placeholder="e.g. SEM-2 or 2nd Year"
+                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="font-bold block mb-1 text-slate-700 text-[11px]">Academic Session (Optional)</label>

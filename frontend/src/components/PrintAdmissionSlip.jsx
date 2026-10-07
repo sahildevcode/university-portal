@@ -205,7 +205,17 @@ export default function PrintAdmissionSlip({ student, receipt, onClose }) {
 
           {/* Fee Summary */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-[11px]">
-            <div className="grid grid-cols-3 gap-2 pb-1.5 border-b border-slate-200">
+            <div className="grid grid-cols-4 gap-2 pb-1.5 border-b border-slate-200">
+              <div>
+                <span className="text-slate-500 block text-[10px]">Fee Category</span>
+                <strong className="text-indigo-950 font-bold">
+                  {student.feeCategory === 'full_scholarship'
+                    ? 'Full Scholarship Base'
+                    : student.feeCategory === 'course_fee_scholarship'
+                      ? 'Course Fees + Scholarship'
+                      : 'Full Course Fee Base'}
+                </strong>
+              </div>
               <div>
                 <span className="text-slate-500 block text-[10px]">Fee Head / Type</span>
                 <strong className="text-indigo-950 font-bold">{student.feeType || receipt?.feeType || 'Admission Fee'}</strong>

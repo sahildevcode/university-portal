@@ -1379,6 +1379,10 @@ app.post('/api/students/bulk-import', (req, res) => {
         currentSatra: row.admissionSatra || 'July',
         currentClass: row.currentClass || `SEM-${row.currentSemester || 1}`,
         currentSemester: Number(row.currentSemester) || 1,
+        feeCategory: row.feeCategory || (courseFee > 0 && schAmt > 0 ? 'course_fee_scholarship' : (courseFee > 0 ? 'full_course_fee' : 'full_scholarship')),
+        academicFeeYear1: courseFee,
+        feeYear1: courseFee,
+        scholarshipYear1: schAmt,
         studentFee: courseFee,
         courseFee: courseFee,
         admissionFee: 0,
@@ -1388,6 +1392,7 @@ app.post('/api/students/bulk-import', (req, res) => {
         courseFeePaid: paid,
         admissionFeePaid: 0,
         initialPayment: paid,
+        paidYear1: paid,
         totalPaid: paid,
         balanceDue: due,
         universityFee: 0,
@@ -1913,9 +1918,26 @@ app.post(
       }
 
       const courseFee = body.Student_fee !== undefined ? Number(body.Student_fee) : (body.courseFee !== undefined ? Number(body.courseFee) : (body.totalFee !== undefined ? Number(body.totalFee) : 0));
-      const admissionFee = Number(body.Admission_Fee) || Number(body.admissionFee) || 0;
+      const admissionFee = Number(body.Admission_Fee) || Number(body.admissionFee) || Number(body.registrationFee) || 0;
       const scholarshipAmt = Number(body.scholarshipAmount || body.Scholarship_Amount) || 0;
-      const grandTotalFee = courseFee + admissionFee + scholarshipAmt;
+
+      const rawCat = body.feeCategory || body.Fee_Category || 'full_course_fee';
+      const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+        ? 'full_course_fee'
+        : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+          ? 'course_fee_scholarship'
+          : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+            ? 'full_scholarship'
+            : ((courseFee > 0 && scholarshipAmt > 0)
+                ? 'course_fee_scholarship'
+                : (courseFee > 0 ? 'full_course_fee' : 'full_scholarship'));
+
+      let grandTotalFee = 0;
+      if (cat === 'full_course_fee') {
+        grandTotalFee = courseFee + admissionFee;
+      } else {
+        grandTotalFee = courseFee + scholarshipAmt + admissionFee;
+      }
 
       const courseFeePaid = Number(body.Course_Fee_Paid) || Number(body.courseFeePaid) || 0;
       const admissionFeePaid = Number(body.Admission_Fee_Paid) || Number(body.admissionFeePaid) || 0;
@@ -2002,17 +2024,23 @@ app.post(
         currentSatra: body.Current_satra || body.currentSatra || 'July',
         currentClass: body.Current_class || body.currentClass || 'SEM-1',
         currentSemester: Number(body.currentSemester) || (body.Current_class?.includes('SEM-') ? Number(body.Current_class.replace('SEM-', '')) : 1),
+        feeCategory: cat,
         academicFee: courseFee,
         studentFee: courseFee,
         courseFee: courseFee,
+        academicFeeYear1: courseFee,
+        feeYear1: courseFee,
         admissionFee: admissionFee,
+        registrationFee: admissionFee,
         scholarshipAmount: scholarshipAmt,
+        scholarshipYear1: scholarshipAmt,
         totalFee: grandTotalFee,
         netTotalFee: grandTotalFee,
         courseFeePaid: courseFeePaid,
         admissionFeePaid: admissionFeePaid,
         initialPayment: initialPaid,
         totalPaid: initialPaid,
+        paidYear1: initialPaid,
         balanceDue: Math.max(0, grandTotalFee - initialPaid),
         universityFee: Number(body.universityFee) || Number(body.University_Fee) || 0,
         universityPaid: Number(body.universityPaid) || 0,
@@ -2081,12 +2109,16 @@ app.post(
             ? `${body.Fee_Type || 'Admission Fee'} (₹${admissionFeePaid}) + Course Fee Installment (₹${courseFeePaid})`
             : (admissionFeePaid > 0 ? `${body.Fee_Type || 'Admission Fee'} Deposit (₹${admissionFeePaid})` : `Course Fee Installment (₹${courseFeePaid})`),
           paymentDate: new Date().toISOString(),
+          currentClass: newStudent.currentClass || 'SEM-1',
+          year: 'Year 1',
           totalFee: grandTotalFee,
           totalPaidToDate: initialPaid,
           balanceRemaining: balanceDue,
           receivedBy: body.Fee_Collected_By || body.feeCollectedBy || body.operatorName || 'Cashier'
         };
         db.fee_payments.unshift(initialReceipt);
+        newStudent.payments = [initialReceipt];
+        newStudent.feeHistory = [initialReceipt];
       }
 
       // Check if Secondary Course (Dual Enrollment) is requested in same form submission
@@ -2113,9 +2145,28 @@ app.post(
             secCandidateRoll = `${newStudent.rollNo}-${secCourseCode}${secCounter++}`;
           }
 
-          const secCourseFee = Number(sec.Student_fee || sec.courseFee || sec.totalFee || 0);
-          const secAdmissionFee = Number(sec.Admission_Fee || sec.admissionFee || 0);
-          const secGrandTotal = secCourseFee + secAdmissionFee;
+          const secCourseFee = Number(sec.Student_fee || sec.courseFee || sec.academicFee || sec.totalFee || 0);
+          const secAdmissionFee = Number(sec.Admission_Fee || sec.admissionFee || sec.registrationFee || 0);
+          const secScholarshipAmt = Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0;
+
+          const secRawCat = sec.feeCategory || body.feeCategory || 'full_course_fee';
+          const secCat = (secRawCat === 'full_course_fee' || secRawCat === 'fees_base')
+            ? 'full_course_fee'
+            : (secRawCat === 'course_fee_scholarship' || secRawCat === 'academics')
+              ? 'course_fee_scholarship'
+              : (secRawCat === 'full_scholarship' || secRawCat === 'scholarship')
+                ? 'full_scholarship'
+                : ((secCourseFee > 0 && secScholarshipAmt > 0)
+                    ? 'course_fee_scholarship'
+                    : (secCourseFee > 0 ? 'full_course_fee' : 'full_scholarship'));
+
+          let secGrandTotal = 0;
+          if (secCat === 'full_course_fee') {
+            secGrandTotal = secCourseFee + secAdmissionFee;
+          } else {
+            secGrandTotal = secCourseFee + secScholarshipAmt + secAdmissionFee;
+          }
+
           const secPaid = Number(sec.Initial_Payment || sec.Course_Fee_Paid || sec.totalPaid || 0);
           const secBalanceDue = Math.max(0, secGrandTotal - secPaid);
 
@@ -2132,14 +2183,23 @@ app.post(
             courseMode: sec.Course_Mode || sec.courseMode || 'Regular',
             currentClass: sec.Current_class || 'SEM-1',
             currentSemester: Number(sec.currentSemester) || 1,
+            feeCategory: secCat,
+            academicFee: secCourseFee,
             studentFee: secCourseFee,
             courseFee: secCourseFee,
+            academicFeeYear1: secCourseFee,
+            feeYear1: secCourseFee,
             admissionFee: secAdmissionFee,
+            registrationFee: secAdmissionFee,
+            scholarshipAmount: secScholarshipAmt,
+            scholarshipYear1: secScholarshipAmt,
             totalFee: secGrandTotal,
-            scholarshipAmount: Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0,
-            netTotalFee: Math.max(0, secGrandTotal - (Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0)),
+            netTotalFee: secGrandTotal,
+            courseFeePaid: secPaid,
+            initialPayment: secPaid,
             totalPaid: secPaid,
-            balanceDue: Math.max(0, Math.max(0, secGrandTotal - (Number(sec.scholarshipAmount || sec.Scholarship_Amount) || 0)) - secPaid),
+            paidYear1: secPaid,
+            balanceDue: secBalanceDue,
             isDualEnrollment: true,
             primaryRollNo: newStudent.rollNo,
             primaryStudentId: newStudent.id,
@@ -2174,12 +2234,16 @@ app.post(
               transactionRef: `ADM-SEC-${Math.floor(100000 + Math.random() * 900000)}`,
               paidFor: `Admission & Tuition Fee Deposit for ${secondaryStudent.courseName}`,
               paymentDate: new Date().toISOString(),
+              currentClass: secondaryStudent.currentClass || 'SEM-1',
+              year: 'Year 1',
               totalFee: secGrandTotal,
               totalPaidToDate: secPaid,
               balanceRemaining: secBalanceDue,
               receivedBy: body.Fee_Collected_By || body.operatorName || 'Cashier'
             };
             db.fee_payments.unshift(secondaryReceipt);
+            secondaryStudent.payments = [secondaryReceipt];
+            secondaryStudent.feeHistory = [secondaryReceipt];
           }
         }
       }
@@ -2762,7 +2826,7 @@ app.post('/api/students/:rollNo/promote', (req, res) => {
 app.post('/api/students/batch-promote', (req, res) => {
   try {
     const db = readDB();
-    const { rollNumbers, nextSemester, nextClass, nextSession, promotionDate, remark } = req.body;
+    const { rollNumbers, nextSemester, nextClass, nextSession, promotionDate, remark, autoAdvance } = req.body;
 
     if (!Array.isArray(rollNumbers) || rollNumbers.length === 0) {
       return res.status(400).json({ success: false, message: 'No students selected for promotion.' });
@@ -2775,18 +2839,44 @@ app.post('/api/students/batch-promote', (req, res) => {
       const idx = findStudentIndex(db.students, roll);
       if (idx !== -1) {
         const student = db.students[idx];
-        const prevClass = student.currentClass || `SEM-${student.currentSemester || 1}`;
+        const curSem = Number(student.currentSemester) || 1;
+        const curCls = (student.currentClass || '').toUpperCase();
+        const prevClass = student.currentClass || `SEM-${curSem}`;
         const prevSession = student.currentSession || student.admissionSession || '';
 
-        if (nextSemester !== undefined && nextSemester !== '') {
-          student.currentSemester = Number(nextSemester);
-          student.manualSemester = Number(nextSemester);
+        // If autoAdvance is requested or no fixed semester is given, advance each student to their own next term!
+        if (autoAdvance || !nextSemester || nextSemester === 'auto') {
+          if (curCls.includes('YEAR') || curCls.includes('YR')) {
+            if (curCls.includes('1ST') || curCls.includes('1')) {
+              student.currentClass = '2nd Year';
+              student.currentSemester = 2;
+            } else if (curCls.includes('2ND') || curCls.includes('2')) {
+              student.currentClass = '3rd Year';
+              student.currentSemester = 3;
+            } else if (curCls.includes('3RD') || curCls.includes('3')) {
+              student.currentClass = '4th Year';
+              student.currentSemester = 4;
+            } else {
+              student.currentSemester = curSem + 1;
+              student.currentClass = `SEM-${student.currentSemester}`;
+            }
+          } else {
+            student.currentSemester = curSem + 1;
+            student.currentClass = `SEM-${student.currentSemester}`;
+          }
+          student.manualSemester = student.currentSemester;
+        } else {
+          if (nextSemester !== undefined && nextSemester !== '') {
+            student.currentSemester = Number(nextSemester);
+            student.manualSemester = Number(nextSemester);
+          }
+          if (nextClass) {
+            student.currentClass = String(nextClass).trim();
+          } else if (nextSemester) {
+            student.currentClass = `SEM-${nextSemester}`;
+          }
         }
-        if (nextClass) {
-          student.currentClass = String(nextClass).trim();
-        } else if (nextSemester) {
-          student.currentClass = `SEM-${nextSemester}`;
-        }
+
         if (nextSession) {
           student.currentSession = String(nextSession).trim();
         }
@@ -2801,8 +2891,23 @@ app.post('/api/students/batch-promote', (req, res) => {
           fromSession: prevSession,
           toSession: student.currentSession,
           promotedAt: new Date().toISOString(),
-          remark: remark || 'Batch promoted to next academic term'
+          remark: remark || `Batch promoted to ${student.currentClass}`
         });
+
+        // Also update any linked dual enrollment secondary student record if applicable
+        if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+          student.linkedCourses.forEach(l => {
+            if (l.rollNo) {
+              const lIdx = findStudentIndex(db.students, l.rollNo);
+              if (lIdx !== -1) {
+                db.students[lIdx].currentSemester = student.currentSemester;
+                db.students[lIdx].currentClass = student.currentClass;
+                db.students[lIdx].manualSemester = student.currentSemester;
+                if (nextSession) db.students[lIdx].currentSession = student.currentSession;
+              }
+            }
+          });
+        }
 
         promotedStudents.push(student);
         promotedCount++;
@@ -2813,13 +2918,203 @@ app.post('/api/students/batch-promote', (req, res) => {
 
     res.json({
       success: true,
-      message: `🎉 Successfully promoted ${promotedCount} students to ${nextClass || ('SEM-' + nextSemester)}!`,
+      message: `🎉 Successfully promoted ${promotedCount} students!`,
       promotedCount,
       students: promotedStudents
     });
   } catch (err) {
     console.error('Error in batch promote:', err);
     res.status(500).json({ success: false, message: 'Batch promotion failed: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to demote individual student to previous semester / year
+app.post('/api/students/:rollNo/demote', (req, res) => {
+  try {
+    const db = readDB();
+    const rawKey = (req.params.rollNo || '').trim();
+    const index = findStudentIndex(db.students, rawKey);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const student = db.students[index];
+    const curSem = Number(student.currentSemester) || 1;
+    const curCls = (student.currentClass || '').toUpperCase();
+
+    let targetSem = curSem - 1;
+    let targetClass = '';
+
+    if (req.body.targetClass) {
+      targetClass = req.body.targetClass;
+      targetSem = req.body.targetSemester !== undefined ? Number(req.body.targetSemester) : Math.max(1, curSem - 1);
+    } else if (curCls.includes('YEAR') || curCls.includes('YR')) {
+      if (curCls.includes('4TH') || curCls.includes('4')) {
+        targetClass = '3rd Year';
+        targetSem = 3;
+      } else if (curCls.includes('3RD') || curCls.includes('3')) {
+        targetClass = '2nd Year';
+        targetSem = 2;
+      } else if (curCls.includes('2ND') || curCls.includes('2')) {
+        targetClass = '1st Year';
+        targetSem = 1;
+      } else {
+        return res.status(400).json({ success: false, message: 'Student is already in 1st Year. Cannot demote further.' });
+      }
+    } else {
+      if (curSem <= 1 && (curCls === 'SEM-1' || !curCls)) {
+        return res.status(400).json({ success: false, message: 'Student is already in SEM-1. Cannot demote further.' });
+      }
+      targetSem = Math.max(1, curSem - 1);
+      targetClass = `SEM-${targetSem}`;
+    }
+
+    const prevClass = student.currentClass || `SEM-${curSem}`;
+    const prevSession = student.currentSession || student.admissionSession || '';
+    const demotionDate = req.body.demotionDate || new Date().toISOString().split('T')[0];
+    const remark = req.body.remark || `Demoted from ${prevClass} to ${targetClass}`;
+
+    student.currentSemester = targetSem;
+    student.manualSemester = targetSem;
+    student.currentClass = targetClass;
+    student.updatedAt = new Date().toISOString();
+
+    if (!Array.isArray(student.promotionHistory)) student.promotionHistory = [];
+    student.promotionHistory.push({
+      id: 'DEMO-' + Date.now(),
+      type: 'demotion',
+      date: demotionDate,
+      fromClass: prevClass,
+      toClass: targetClass,
+      fromSession: prevSession,
+      toSession: student.currentSession,
+      promotedAt: new Date().toISOString(),
+      remark
+    });
+
+    if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+      student.linkedCourses.forEach(l => {
+        if (l.rollNo) {
+          const lIdx = findStudentIndex(db.students, l.rollNo);
+          if (lIdx !== -1) {
+            db.students[lIdx].currentSemester = targetSem;
+            db.students[lIdx].currentClass = targetClass;
+            db.students[lIdx].manualSemester = targetSem;
+          }
+        }
+      });
+    }
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Student ${student.fullName || student.studentName} demoted to ${targetClass}!`,
+      student
+    });
+  } catch (err) {
+    console.error('Error demoting student:', err);
+    res.status(500).json({ success: false, message: 'Failed to demote student: ' + err.message });
+  }
+});
+
+// Dedicated endpoint to batch demote multiple students
+app.post('/api/students/batch-demote', (req, res) => {
+  try {
+    const db = readDB();
+    const { rollNumbers, remark } = req.body;
+
+    if (!Array.isArray(rollNumbers) || rollNumbers.length === 0) {
+      return res.status(400).json({ success: false, message: 'No students selected for demotion.' });
+    }
+
+    let demotedCount = 0;
+    const demotedStudents = [];
+
+    rollNumbers.forEach(roll => {
+      const idx = findStudentIndex(db.students, roll);
+      if (idx !== -1) {
+        const student = db.students[idx];
+        const curSem = Number(student.currentSemester) || 1;
+        const curCls = (student.currentClass || '').toUpperCase();
+
+        let targetSem = curSem - 1;
+        let targetClass = '';
+
+        if (curCls.includes('YEAR') || curCls.includes('YR')) {
+          if (curCls.includes('4TH') || curCls.includes('4')) {
+            targetClass = '3rd Year';
+            targetSem = 3;
+          } else if (curCls.includes('3RD') || curCls.includes('3')) {
+            targetClass = '2nd Year';
+            targetSem = 2;
+          } else if (curCls.includes('2ND') || curCls.includes('2')) {
+            targetClass = '1st Year';
+            targetSem = 1;
+          } else {
+            return; // skip already in 1st year
+          }
+        } else {
+          if (curSem <= 1 && (curCls === 'SEM-1' || !curCls)) {
+            return; // skip already in SEM-1
+          }
+          targetSem = Math.max(1, curSem - 1);
+          targetClass = `SEM-${targetSem}`;
+        }
+
+        const prevClass = student.currentClass || `SEM-${curSem}`;
+        const prevSession = student.currentSession || student.admissionSession || '';
+        const demotionDate = new Date().toISOString().split('T')[0];
+
+        student.currentSemester = targetSem;
+        student.manualSemester = targetSem;
+        student.currentClass = targetClass;
+        student.updatedAt = new Date().toISOString();
+
+        if (!student.promotionHistory) student.promotionHistory = [];
+        student.promotionHistory.push({
+          id: 'DEMO-' + Date.now() + '-' + demotedCount,
+          type: 'demotion',
+          date: demotionDate,
+          fromClass: prevClass,
+          toClass: targetClass,
+          fromSession: prevSession,
+          toSession: student.currentSession,
+          promotedAt: new Date().toISOString(),
+          remark: remark || `Batch demoted to ${targetClass}`
+        });
+
+        // Also update linked dual courses
+        if (student.linkedCourses && Array.isArray(student.linkedCourses)) {
+          student.linkedCourses.forEach(l => {
+            if (l.rollNo) {
+              const lIdx = findStudentIndex(db.students, l.rollNo);
+              if (lIdx !== -1) {
+                db.students[lIdx].currentSemester = targetSem;
+                db.students[lIdx].currentClass = targetClass;
+                db.students[lIdx].manualSemester = targetSem;
+              }
+            }
+          });
+        }
+
+        demotedStudents.push(student);
+        demotedCount++;
+      }
+    });
+
+    writeDB(db);
+
+    res.json({
+      success: true,
+      message: `Successfully demoted ${demotedCount} students!`,
+      demotedCount,
+      students: demotedStudents
+    });
+  } catch (err) {
+    console.error('Error in batch demote:', err);
+    res.status(500).json({ success: false, message: 'Batch demotion failed: ' + err.message });
   }
 });
 

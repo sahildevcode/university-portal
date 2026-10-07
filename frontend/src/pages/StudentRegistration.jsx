@@ -577,11 +577,12 @@ const getDefaultFormData = (staffUser, adminUser) => ({
   Current_satra: 'July',
   Current_class: 'SEM-1',
 
-  // 5. Fees & Administration (Default 0 - fees collected separately)
+  // 5. Fees & Administration (Default fee structure & category)
+  feeCategory: 'full_course_fee', // 'full_scholarship', 'course_fee_scholarship', 'full_course_fee'
   Student_fee: '0',              // Total Course Fee (e.g. 30000 or 0)
   Scholarship_Amount: '0',       // Government / Institutional Scholarship
   Course_Fee_Paid: '0',          // Course fee paid at admission
-  Fee_Type: 'Admission Fee',     // Fee category
+  Fee_Type: 'Admission Fee',     // Fee category head
   Admission_Fee: '0',            // Admission / Extra Fee
   Admission_Fee_Paid: '0',       // Admission fee paid now
   Initial_Payment: '0',          // Combined total paid
@@ -605,11 +606,13 @@ const getDefaultSecFormData = () => ({
   Course_Type: 'Diploma',
   Course_Mode: 'Regular',
   Medium: 'Hindi Medium',
+  feeCategory: 'full_course_fee',
   Student_fee: '0',
   Scholarship_Amount: '0',
   Course_Fee_Paid: '0',
   Admission_Fee: '0',
   Admission_Fee_Paid: '0',
+  Initial_Payment: '0',
   Current_class: 'SEM-1',
   Current_session: '2026-2027',
   Current_satra: 'July'
@@ -1093,6 +1096,7 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       Course_Name: firstBranch?.fullName || `${targetDegree} - ${firstBranch?.name || 'General'}`,
       Branch: firstBranch?.name || 'General',
       Course_Type: prog.courseType || "Diploma",
+      feeCategory: student.feeCategory || 'full_course_fee',
       Student_fee: prev.Student_fee || "0",
       Scholarship_Amount: '0',
       Course_Fee_Paid: '',
@@ -1179,30 +1183,52 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       if (!formData.Admission_Satra) throw new Error('Admission_Satra is required.');
       if (!formData.University_Name) throw new Error('Please select a valid University.');
       if (!formData.College_Name) throw new Error('Please select an affiliated College.');
+      const rawCat = formData.feeCategory || 'full_course_fee';
+      const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+        ? 'full_course_fee'
+        : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+          ? 'course_fee_scholarship'
+          : 'full_scholarship';
+
       const courseFeeCalc = Number(formData.Student_fee) || 0;
-      const courseFeePaidCalc = 0;
-      const admissionFeeCalc = 0;
-      const admissionFeePaidCalc = 0;
-      const scholarshipCalc = 0;
-      const grandTotalFeeCalc = courseFeeCalc;
-      const netTotalFeeCalc = courseFeeCalc;
-      const totalPaidTodayCalc = 0;
-      const grandBalanceDueCalc = courseFeeCalc;
+      const schAmtCalc = Number(formData.Scholarship_Amount) || 0;
+      const admissionFeeCalc = Number(formData.Admission_Fee) || 0;
+      const initialPaidCalc = Number(formData.Initial_Payment) || 0;
+
+      let grandTotalFeeCalc = 0;
+      if (cat === 'full_course_fee') {
+        grandTotalFeeCalc = courseFeeCalc + admissionFeeCalc;
+      } else {
+        grandTotalFeeCalc = courseFeeCalc + schAmtCalc + admissionFeeCalc;
+      }
+      const netTotalFeeCalc = grandTotalFeeCalc;
+      const grandBalanceDueCalc = Math.max(0, grandTotalFeeCalc - initialPaidCalc);
 
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      data.set('feeCategory', cat);
       data.set('Student_fee', String(courseFeeCalc));
-      data.set('Course_Fee_Paid', '0');
-      data.set('Admission_Fee', '0');
+      data.set('courseFee', String(courseFeeCalc));
+      data.set('academicFee', String(courseFeeCalc));
+      data.set('academicFeeYear1', String(courseFeeCalc));
+      data.set('feeYear1', String(courseFeeCalc));
+      data.set('scholarshipAmount', String(schAmtCalc));
+      data.set('Scholarship_Amount', String(schAmtCalc));
+      data.set('scholarshipYear1', String(schAmtCalc));
+      data.set('Admission_Fee', String(admissionFeeCalc));
+      data.set('admissionFee', String(admissionFeeCalc));
+      data.set('registrationFee', String(admissionFeeCalc));
+      data.set('Course_Fee_Paid', String(initialPaidCalc));
       data.set('Admission_Fee_Paid', '0');
-      data.set('Initial_Payment', '0');
+      data.set('Initial_Payment', String(initialPaidCalc));
+      data.set('totalPaid', String(initialPaidCalc));
+      data.set('paidYear1', String(initialPaidCalc));
       data.set('totalFee', String(grandTotalFeeCalc));
-      data.set('scholarshipAmount', '0');
-      data.set('Scholarship_Amount', '0');
       data.set('netTotalFee', String(netTotalFeeCalc));
       data.set('balanceDue', String(grandBalanceDueCalc));
       data.set('Payment_Mode', formData.Payment_Mode || 'Cash / Desk');
-      data.set('Fee_Collected_By', formData.Fee_Collected_By || 'Cashier');
+      data.set('Fee_Collected_By', formData.Fee_Collected_By || formData.operatorName || 'Cashier');
+      data.set('Transaction_Ref', formData.Transaction_Ref || '');
       data.set('Remark', formData.Remark || '');
       data.set('remark', formData.Remark || '');
       data.append('Document_Submit', JSON.stringify(submittedDocs));
@@ -1248,14 +1274,45 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
       }
 
       if (hasSecondaryCourse) {
+        const secRawCat = secFormData.feeCategory || 'full_course_fee';
+        const secCat = (secRawCat === 'full_course_fee' || secRawCat === 'fees_base')
+          ? 'full_course_fee'
+          : (secRawCat === 'course_fee_scholarship' || secRawCat === 'academics')
+            ? 'course_fee_scholarship'
+            : 'full_scholarship';
+        const secCourseFeeCalc = Number(secFormData.Student_fee) || 0;
+        const secSchCalc = Number(secFormData.Scholarship_Amount) || 0;
+        const secAdmCalc = Number(secFormData.Admission_Fee) || 0;
+        const secPaidCalc = Number(secFormData.Initial_Payment || secFormData.Course_Fee_Paid) || 0;
+        let secTotalCalc = 0;
+        if (secCat === 'full_course_fee') {
+          secTotalCalc = secCourseFeeCalc + secAdmCalc;
+        } else {
+          secTotalCalc = secCourseFeeCalc + secSchCalc + secAdmCalc;
+        }
+
         data.append('secondaryCourse', JSON.stringify({
           ...secFormData,
           degree: secSelectedDegree,
-          Student_fee: secFormData.Student_fee || 0,
-          Course_Fee_Paid: 0,
-          Admission_Fee: 0,
-          Admission_Fee_Paid: 0,
-          Initial_Payment: 0
+          feeCategory: secCat,
+          Student_fee: secCourseFeeCalc,
+          courseFee: secCourseFeeCalc,
+          academicFee: secCourseFeeCalc,
+          academicFeeYear1: secCourseFeeCalc,
+          feeYear1: secCourseFeeCalc,
+          scholarshipAmount: secSchCalc,
+          Scholarship_Amount: secSchCalc,
+          scholarshipYear1: secSchCalc,
+          Admission_Fee: secAdmCalc,
+          admissionFee: secAdmCalc,
+          registrationFee: secAdmCalc,
+          Course_Fee_Paid: secPaidCalc,
+          Initial_Payment: secPaidCalc,
+          totalPaid: secPaidCalc,
+          paidYear1: secPaidCalc,
+          totalFee: secTotalCalc,
+          netTotalFee: secTotalCalc,
+          balanceDue: Math.max(0, secTotalCalc - secPaidCalc)
         }));
       }
 
@@ -1305,23 +1362,44 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
     setSecFormData(getDefaultSecFormData());
   };
 
-  // Live Dual-Fee Calculations (Primary Course + Secondary Dual Course + Admission Fee - Scholarship)
+  // Live Fee Calculations based on Fee Category
+  const curFeeCategory = formData.feeCategory || 'full_course_fee';
   const courseFeeVal = Number(formData.Student_fee) || 0;
-  const courseFeePaidVal = Number(formData.Course_Fee_Paid) || 0;
-  const admissionFeeVal = Number(formData.Admission_Fee) || 0;
-  const admissionFeePaidVal = Number(formData.Admission_Fee_Paid) || 0;
   const scholarshipVal = Number(formData.Scholarship_Amount) || 0;
+  const admissionFeeVal = Number(formData.Admission_Fee) || 0;
+  const initialPaymentVal = Number(formData.Initial_Payment) || 0;
+
+  // Primary Course Fee calculation based on fee category
+  let primaryTotalFee = 0;
+  if (curFeeCategory === 'full_course_fee') {
+    primaryTotalFee = courseFeeVal + admissionFeeVal;
+  } else {
+    // course_fee_scholarship OR full_scholarship
+    primaryTotalFee = courseFeeVal + scholarshipVal + admissionFeeVal;
+  }
 
   // Secondary Course Fees (from Section 3B "+ Add Course")
+  const secFeeCategory = secFormData.feeCategory || 'full_course_fee';
   const secCourseFeeVal = hasSecondaryCourse ? (Number(secFormData.Student_fee) || 0) : 0;
-  const secCoursePaidVal = hasSecondaryCourse ? (Number(secFormData.Course_Fee_Paid) || 0) : 0;
+  const secScholarshipVal = hasSecondaryCourse ? (Number(secFormData.Scholarship_Amount) || 0) : 0;
+  const secAdmissionFeeVal = hasSecondaryCourse ? (Number(secFormData.Admission_Fee) || 0) : 0;
+  const secInitialPaidVal = hasSecondaryCourse ? (Number(secFormData.Initial_Payment || secFormData.Course_Fee_Paid) || 0) : 0;
+
+  let secTotalFee = 0;
+  if (hasSecondaryCourse) {
+    if (secFeeCategory === 'full_course_fee') {
+      secTotalFee = secCourseFeeVal + secAdmissionFeeVal;
+    } else {
+      secTotalFee = secCourseFeeVal + secScholarshipVal + secAdmissionFeeVal;
+    }
+  }
 
   // Combined totals across all enrolled programs
-  const totalCoursesFee = courseFeeVal + secCourseFeeVal; // Combined course fees (e.g. 50,000 + 25,000 = 75,000)
-  const grandTotalFee = totalCoursesFee + admissionFeeVal; // Total package fee (e.g. 75,000 + 2,000 = 77,000)
-  const netTotalFee = Math.max(0, grandTotalFee - scholarshipVal); // Deduct scholarship
-  const totalPaidToday = courseFeePaidVal + admissionFeePaidVal + secCoursePaidVal; // Total paid today across both courses
-  const grandBalanceDue = Math.max(0, netTotalFee - totalPaidToday); // Total remaining due across both courses
+  const totalCoursesFee = courseFeeVal + secCourseFeeVal;
+  const grandTotalFee = primaryTotalFee + secTotalFee;
+  const netTotalFee = grandTotalFee;
+  const totalPaidToday = initialPaymentVal + secInitialPaidVal;
+  const grandBalanceDue = Math.max(0, grandTotalFee - totalPaidToday);
 
   const standardDocuments = [
     '10th Marksheet',
@@ -2322,6 +2400,64 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
                   </select>
                 </div>
               </div>
+
+              {/* 2nd Course Fee Category & Amount */}
+              <div className="lg:col-span-3 pt-3 border-t border-rose-200">
+                <span className="font-extrabold text-rose-950 uppercase tracking-wider block text-xs mb-2">
+                  2nd Course Fee Category &amp; Fees (द्वितीय कोर्स शुल्क विवरण)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-rose-900 mb-1">Fee Category *</label>
+                    <select
+                      name="feeCategory"
+                      value={secFormData.feeCategory || 'full_course_fee'}
+                      onChange={handleSecInputChange}
+                      className="w-full p-2 bg-white border border-rose-300 rounded-xl text-xs font-bold text-rose-950 shadow-2xs"
+                    >
+                      <option value="full_scholarship">Full Scholarship Base</option>
+                      <option value="course_fee_scholarship">Course Fees + Scholarship</option>
+                      <option value="full_course_fee">Full Course Fee Base</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-rose-900 mb-1">2nd Course Fee ₹</label>
+                    <input
+                      type="number"
+                      name="Student_fee"
+                      value={secFormData.Student_fee}
+                      onChange={handleSecInputChange}
+                      placeholder="e.g. 15000"
+                      min="0"
+                      className="w-full p-2 bg-white border border-rose-300 rounded-xl font-mono font-bold text-rose-950"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-rose-900 mb-1">Scholarship Amount ₹</label>
+                    <input
+                      type="number"
+                      name="Scholarship_Amount"
+                      value={secFormData.Scholarship_Amount}
+                      onChange={handleSecInputChange}
+                      placeholder="0"
+                      min="0"
+                      className="w-full p-2 bg-white border border-rose-300 rounded-xl font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-rose-900 mb-1">2nd Course Paid Today ₹</label>
+                    <input
+                      type="number"
+                      name="Initial_Payment"
+                      value={secFormData.Initial_Payment}
+                      onChange={handleSecInputChange}
+                      placeholder="0"
+                      min="0"
+                      className="w-full p-2 bg-rose-50 border border-rose-300 rounded-xl font-mono font-bold text-rose-950"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -2453,12 +2589,328 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 5: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE REMOVE/CANCEL */}
+        {/* SECTION 5: FEE CATEGORY & FEE STRUCTURE (फीस श्रेणी एवं शुल्क विवरण) */}
+        {/* ========================================================================= */}
+        <div className="space-y-5 bg-gradient-to-br from-slate-50 via-white to-amber-50/20 p-5 sm:p-7 rounded-3xl border-2 border-indigo-200/80 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+            <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base">
+              <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
+                5
+              </span>
+              <span>Fee Category &amp; Fee Structure (फीस श्रेणी एवं शुल्क विवरण)</span>
+            </div>
+            <span className="text-xs bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5 text-indigo-700" />
+              <span>Live Dynamic Calculation</span>
+            </span>
+          </div>
+
+          {/* 1. FEE CATEGORY SELECTION (3 Options) */}
+          <div className="space-y-2.5">
+            <label className="block font-extrabold text-slate-800 uppercase tracking-wider text-xs">
+              Fee Category (फीस श्रेणी) *
+            </label>
+
+            {/* Visual 3 Interactive Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Option 1: Full Scholarship Base */}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, feeCategory: 'full_scholarship' }))}
+                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  curFeeCategory === 'full_scholarship'
+                    ? 'bg-purple-50/90 border-purple-500 ring-2 ring-purple-400/30 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-purple-300 hover:bg-purple-50/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-xs text-purple-900">Full Scholarship Base</span>
+                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    curFeeCategory === 'full_scholarship' ? 'border-purple-600 bg-purple-600' : 'border-slate-300'
+                  }`}>
+                    {curFeeCategory === 'full_scholarship' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[10px] text-purple-700 leading-snug">
+                  स्कॉलरशिप आधार — स्कॉलरशिप राशि छात्र देय फीस में जोड़ी जाती है।
+                </p>
+              </button>
+
+              {/* Option 2: Course Fees + Scholarship */}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, feeCategory: 'course_fee_scholarship' }))}
+                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  curFeeCategory === 'course_fee_scholarship'
+                    ? 'bg-blue-50/90 border-blue-500 ring-2 ring-blue-400/30 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-xs text-blue-900">Course Fees + Scholarship</span>
+                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    curFeeCategory === 'course_fee_scholarship' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                  }`}>
+                    {curFeeCategory === 'course_fee_scholarship' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[10px] text-blue-700 leading-snug">
+                  कोर्स फीस + स्कॉलरशिप — दोनों जुड़कर कुल फीस बनती है।
+                </p>
+              </button>
+
+              {/* Option 3: Full Course Fee Base */}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, feeCategory: 'full_course_fee' }))}
+                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  curFeeCategory === 'full_course_fee'
+                    ? 'bg-emerald-50/90 border-emerald-500 ring-2 ring-emerald-400/30 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-xs text-emerald-900">Full Course Fee Base</span>
+                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    curFeeCategory === 'full_course_fee' ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
+                  }`}>
+                    {curFeeCategory === 'full_course_fee' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <p className="text-[10px] text-emerald-700 leading-snug">
+                  पूर्ण कोर्स फीस आधार — केवल कोर्स फीस लागू (स्कॉलरशिप शामिल नहीं)।
+                </p>
+              </button>
+            </div>
+
+            {/* Standard Dropdown matching the table screenshot */}
+            <div className="mt-2">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                Category Dropdown (FEE_CATEGORY)
+              </label>
+              <select
+                name="feeCategory"
+                value={curFeeCategory}
+                onChange={handleInputChange}
+                className={`w-full p-2.5 rounded-xl border-2 font-black text-xs cursor-pointer focus:outline-none transition-all shadow-xs ${
+                  curFeeCategory === 'full_scholarship'
+                    ? 'bg-purple-50 text-purple-900 border-purple-400 focus:ring-2 focus:ring-purple-300'
+                    : curFeeCategory === 'course_fee_scholarship'
+                      ? 'bg-blue-50 text-blue-900 border-blue-400 focus:ring-2 focus:ring-blue-300'
+                      : 'bg-emerald-50 text-emerald-900 border-emerald-400 focus:ring-2 focus:ring-emerald-300'
+                }`}
+              >
+                <option value="full_scholarship">Full Scholarship Base</option>
+                <option value="course_fee_scholarship">Course Fees + Scholarship</option>
+                <option value="full_course_fee">Full Course Fee Base</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 2. FEE INPUTS GRID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs pt-2 border-t border-slate-200">
+            {/* Course Fee */}
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Course Fee (कोर्स फीस) ₹
+              </label>
+              <input
+                type="number"
+                name="Student_fee"
+                value={formData.Student_fee}
+                onChange={handleInputChange}
+                placeholder="e.g. 30000"
+                min="0"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-indigo-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <span className="text-[10px] text-slate-400 mt-0.5 block">Year 1 / Total Course Tuition Fee</span>
+            </div>
+
+            {/* Scholarship Amount */}
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Scholarship (छात्रवृत्ति) ₹</span>
+                {curFeeCategory === 'full_course_fee' && (
+                  <span className="text-[9px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.2 rounded">Not Added in Base</span>
+                )}
+              </label>
+              <input
+                type="number"
+                name="Scholarship_Amount"
+                value={formData.Scholarship_Amount}
+                onChange={handleInputChange}
+                placeholder="e.g. 20000"
+                min="0"
+                className={`w-full p-2.5 rounded-xl font-mono font-bold focus:outline-none ${
+                  curFeeCategory === 'full_course_fee'
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                    : 'bg-white border border-purple-300 text-purple-900 focus:ring-2 focus:ring-purple-300'
+                }`}
+              />
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                {curFeeCategory === 'full_course_fee'
+                  ? 'Full Course Fee Base me scholarship add nahi hoti'
+                  : 'Total fee me add hogi'}
+              </span>
+            </div>
+
+            {/* Admission / Registration Fee */}
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Registration / Adm Fee ₹
+              </label>
+              <input
+                type="number"
+                name="Admission_Fee"
+                value={formData.Admission_Fee}
+                onChange={handleInputChange}
+                placeholder="0 (Optional)"
+                min="0"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <span className="text-[10px] text-slate-400 mt-0.5 block">One-time admission charge</span>
+            </div>
+
+            {/* Initial Payment Paid Today */}
+            <div>
+              <label className="block font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                Paid Today (आज जमा शुल्क) ₹
+              </label>
+              <input
+                type="number"
+                name="Initial_Payment"
+                value={formData.Initial_Payment}
+                onChange={handleInputChange}
+                placeholder="0"
+                min="0"
+                className="w-full p-2.5 bg-emerald-50/50 border border-emerald-400 rounded-xl font-mono font-black text-emerald-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              />
+              <span className="text-[10px] text-emerald-700 mt-0.5 block">Cash/Online deposited at desk</span>
+            </div>
+          </div>
+
+          {/* Payment Mode & Reference */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Payment Mode (भुगतान माध्यम)
+              </label>
+              <select
+                name="Payment_Mode"
+                value={formData.Payment_Mode || 'Cash / Desk'}
+                onChange={handleInputChange}
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:bg-white focus:outline-none"
+              >
+                <option value="Cash / Desk">Cash / Desk (नगद)</option>
+                <option value="UPI / QR Code">UPI / QR Code (PhonePe, GPay, Paytm)</option>
+                <option value="Bank Transfer (NEFT/RTGS)">Bank Transfer (NEFT / RTGS / IMPS)</option>
+                <option value="Cheque / DD">Cheque / Demand Draft</option>
+                <option value="Online Portal">Online Portal / Gateway</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Receipt Note / Transaction Ref (UTR / रसीद क्रमांक)
+              </label>
+              <input
+                type="text"
+                name="Transaction_Ref"
+                value={formData.Transaction_Ref || ''}
+                onChange={handleInputChange}
+                placeholder="e.g. UTR-9823482, Receipt #104 (Optional)"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-medium focus:bg-white focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* 3. LIVE CALCULATION SUMMARY CARD */}
+          <div className={`rounded-2xl p-4 border-2 shadow-sm transition-all ${
+            curFeeCategory === 'full_scholarship'
+              ? 'bg-purple-50/60 border-purple-200'
+              : curFeeCategory === 'course_fee_scholarship'
+                ? 'bg-blue-50/60 border-blue-200'
+                : 'bg-emerald-50/60 border-emerald-200'
+          }`}>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                    curFeeCategory === 'full_scholarship'
+                      ? 'bg-purple-200 text-purple-900 border-purple-300'
+                      : curFeeCategory === 'course_fee_scholarship'
+                        ? 'bg-blue-200 text-blue-900 border-blue-300'
+                        : 'bg-emerald-200 text-emerald-900 border-emerald-300'
+                  }`}>
+                    {curFeeCategory === 'full_scholarship' && 'Full Scholarship Base'}
+                    {curFeeCategory === 'course_fee_scholarship' && 'Course Fees + Scholarship'}
+                    {curFeeCategory === 'full_course_fee' && 'Full Course Fee Base'}
+                  </span>
+                  <span className="text-xs font-bold text-slate-800">
+                    Calculated Student Fee Summary
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600">
+                  {curFeeCategory === 'full_course_fee' ? (
+                    <>Formula: Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + Adm Fee (₹{admissionFeeVal.toLocaleString('en-IN')}) = <strong className="text-emerald-900">₹{primaryTotalFee.toLocaleString('en-IN')}</strong></>
+                  ) : (
+                    <>Formula: Course Fee (₹{courseFeeVal.toLocaleString('en-IN')}) + Scholarship (₹{scholarshipVal.toLocaleString('en-IN')}) + Adm Fee (₹{admissionFeeVal.toLocaleString('en-IN')}) = <strong className="text-indigo-900">₹{primaryTotalFee.toLocaleString('en-IN')}</strong></>
+                  )}
+                  {hasSecondaryCourse && ` (+ 2nd Course: ₹${secTotalFee.toLocaleString('en-IN')})`}
+                </p>
+              </div>
+
+              {hasSecondaryCourse && (
+                <div className="text-xs text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-xl font-bold">
+                  + Dual Course Enrolled (Combined Total Included)
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
+              {/* Stat 1: Total Package Fee */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Total Fee (कुल देय शुल्क)</span>
+                <span className="text-base sm:text-lg font-black text-indigo-950 font-mono block mt-0.5">
+                  ₹{grandTotalFee.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  {curFeeCategory === 'full_course_fee' ? 'Course Fee Base' : 'Course + Scholarship Base'}
+                </span>
+              </div>
+
+              {/* Stat 2: Paid Today */}
+              <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs">
+                <span className="text-[10px] text-emerald-700 uppercase font-bold block">Paid Today (आज जमा)</span>
+                <span className="text-base sm:text-lg font-black text-emerald-800 font-mono block mt-0.5">
+                  ₹{totalPaidToday.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] text-emerald-600 block mt-0.5">
+                  {totalPaidToday > 0 ? `${formData.Payment_Mode || 'Cash'} Desk Deposit` : 'No initial payment'}
+                </span>
+              </div>
+
+              {/* Stat 3: Balance Due */}
+              <div className="bg-white p-3 rounded-xl border border-rose-200 shadow-2xs">
+                <span className="text-[10px] text-rose-700 uppercase font-bold block">Balance Due (शेष बाकी शुल्क)</span>
+                <span className="text-base sm:text-lg font-black text-rose-700 font-mono block mt-0.5">
+                  ₹{grandBalanceDue.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] text-rose-500 block mt-0.5">
+                  {grandBalanceDue === 0 ? 'Full Fee Cleared' : 'Remaining Payable Dues'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 6: DOCUMENT SUBMISSION (100% OPTIONAL) & STUDENT IMAGE REMOVE/CANCEL */}
         {/* ========================================================================= */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-extrabold text-xs">5</span>
+              <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center font-extrabold text-xs">6</span>
               <span>Document Submission (100% Optional) &amp; Student Photo Upload</span>
             </div>
             <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold px-3 py-1 rounded-full">
@@ -2610,11 +3062,11 @@ export default function StudentRegistration({ courses = [], onStudentCreated, de
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 6: ADMISSION REMARK & SPECIAL NOTES (रिमार्क) */}
+        {/* SECTION 7: ADMISSION REMARK & SPECIAL NOTES (रिमार्क) */}
         {/* ========================================================================= */}
         <div className="space-y-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2.5 text-indigo-950 font-bold text-base border-b border-slate-200 pb-3">
-            <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-extrabold text-xs">6</span>
+            <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-extrabold text-xs">7</span>
             <span>Admission Remark &amp; Fee Notes (रिमार्क / विशेष टिप्पणी)</span>
           </div>
 
