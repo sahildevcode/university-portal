@@ -1616,10 +1616,10 @@ export default function PromoteStudentsManager({
                 </div>
                 <div>
                   <h3 className="font-black text-sm sm:text-base text-white leading-tight">
-                    Demote Student (डिमोट करें)
+                    Demote Student
                   </h3>
                   <p className="text-[10px] text-rose-200 mt-0.5">
-                    छात्र को पिछले सेमेस्टर / वर्ष में वापस भेजने की पुष्टि करें
+                    Revert student to previous semester or academic year
                   </p>
                 </div>
               </div>
@@ -1683,7 +1683,7 @@ export default function PromoteStudentsManager({
                 {/* Target Class Selection */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Demoted Sem / Year *</label>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Target Sem / Year *</label>
                     <select
                       value={demoteTargetSemester}
                       onChange={(e) => {
@@ -1710,7 +1710,7 @@ export default function PromoteStudentsManager({
                   </div>
 
                   <div>
-                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Target Class Label *</label>
+                    <label className="font-bold block mb-1 text-slate-700 text-[11px]">Class Label *</label>
                     <input
                       type="text"
                       value={demoteTargetClass}
@@ -1722,7 +1722,7 @@ export default function PromoteStudentsManager({
                 </div>
 
                 <div>
-                  <label className="font-bold block mb-1 text-slate-700 text-[11px]">Reason / Remark</label>
+                  <label className="font-bold block mb-1 text-slate-700 text-[11px]">Reason / Remark (Optional)</label>
                   <input
                     type="text"
                     value={demoteRemark}
@@ -1779,7 +1779,7 @@ export default function PromoteStudentsManager({
                     Batch Promote ({selectedRolls.length} Students)
                   </h3>
                   <p className="text-[10px] text-slate-300 mt-0.5">
-                    चुने गए सभी छात्रों को एक साथ प्रमोट करें
+                    Promote all selected students together
                   </p>
                 </div>
               </div>
@@ -1799,10 +1799,10 @@ export default function PromoteStudentsManager({
                 
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900">
                   <span className="font-bold block">
-                    ⚠️ {selectedRolls.length} छात्रों का चयन किया गया है
+                    ⚠️ {selectedRolls.length} Students Selected
                   </span>
                   <span className="text-[11px] text-amber-800 block mt-0.5">
-                    नीचे प्रमोशन का तरीका चुनें (Auto +1 या एक निश्चित क्लास)।
+                    Select promotion pattern (Semester or Yearly) and target below.
                   </span>
                 </div>
 
@@ -1810,7 +1810,7 @@ export default function PromoteStudentsManager({
                 <div>
                   <label className="font-black block mb-1.5 text-slate-900 text-xs flex items-center gap-1.5">
                     <span className="text-amber-500">❖</span>
-                    <span>प्रमोशन पैटर्न (Semester या Yearly चुनें) *</span>
+                    <span>Promotion Pattern (Semester or Yearly) *</span>
                   </label>
                   <select
                     value={batchPattern}
@@ -1820,17 +1820,17 @@ export default function PromoteStudentsManager({
                       setBatchNextSemester('auto');
                       setBatchNextClass('');
                     }}
-                    className="w-full p-2.5 bg-indigo-50/70 border-2 border-indigo-200 focus:border-indigo-600 rounded-xl font-black text-indigo-950 text-xs focus:bg-white focus:outline-none transition-colors cursor-pointer"
+                    className="w-full p-2.5 bg-indigo-50/70 border-2 border-indigo-200 focus:border-indigo-600 rounded-xl font-bold text-indigo-950 text-xs focus:bg-white focus:outline-none transition-colors cursor-pointer"
                   >
-                    <option value="semester">📚 Semester Wise (सेमेस्टर अनुसार प्रमोट करें - SEM-1 ➔ SEM-2...)</option>
-                    <option value="yearly">🎓 Yearly / Annual Wise (इयरली / वार्षिक अनुसार प्रमोट करें - 1st Year ➔ 2nd Year...)</option>
+                    <option value="semester">Semester Wise (SEM-1, SEM-2, SEM-3...)</option>
+                    <option value="yearly">Yearly / Annual Wise (1st Year, 2nd Year, 3rd Year...)</option>
                   </select>
                 </div>
 
                 {/* 2. Dropdown: Target Semester or Year */}
                 <div>
                   <label className="font-bold block mb-1 text-slate-700 text-[11px]">
-                    {batchPattern === 'yearly' ? 'टारगेट वर्ष (Target Year) *' : 'टारगेट सेमेस्टर (Target Semester) *'}
+                    {batchPattern === 'yearly' ? 'Target Year *' : 'Target Semester *'}
                   </label>
                   <select
                     value={batchNextSemester}
@@ -1852,8 +1852,8 @@ export default function PromoteStudentsManager({
                   >
                     {batchPattern === 'semester' ? (
                       <>
-                        <option value="auto">⚡ Auto Next Semester (+1) (हर छात्र स्वतः अपने अगले सेमेस्टर में जाएगा)</option>
-                        <optgroup label="या निश्चित सेमेस्टर सेट करें (Fixed Semester):">
+                        <option value="auto">⚡ Auto Next Semester (+1) (Advances each student to their next semester)</option>
+                        <optgroup label="Or Select Fixed Semester:">
                           <option value="1">SEM-1 (1st Semester)</option>
                           <option value="2">SEM-2 (2nd Semester)</option>
                           <option value="3">SEM-3 (3rd Semester)</option>
@@ -1866,12 +1866,12 @@ export default function PromoteStudentsManager({
                       </>
                     ) : (
                       <>
-                        <option value="auto">⚡ Auto Next Year (+1) (हर छात्र स्वतः अपने अगले वर्ष में जाएगा)</option>
-                        <optgroup label="या निश्चित वर्ष सेट करें (Fixed Year):">
-                          <option value="year-1">1st Year (प्रथम वर्ष)</option>
-                          <option value="year-2">2nd Year (द्वितीय वर्ष)</option>
-                          <option value="year-3">3rd Year (तृतीय वर्ष)</option>
-                          <option value="year-4">4th Year (चतुर्थ वर्ष)</option>
+                        <option value="auto">⚡ Auto Next Year (+1) (Advances each student to their next year)</option>
+                        <optgroup label="Or Select Fixed Year:">
+                          <option value="year-1">1st Year</option>
+                          <option value="year-2">2nd Year</option>
+                          <option value="year-3">3rd Year</option>
+                          <option value="year-4">4th Year</option>
                         </optgroup>
                       </>
                     )}
@@ -1899,7 +1899,7 @@ export default function PromoteStudentsManager({
                     type="text"
                     value={batchNextSession}
                     onChange={(e) => setBatchNextSession(e.target.value)}
-                    placeholder="e.g. 2025-26 (वर्तमान सेशन रखने हेतु खाली छोड़ें)"
+                    placeholder="e.g. 2025-26 (Leave blank to keep current session)"
                     className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold focus:bg-white focus:outline-none font-mono"
                   />
                 </div>
