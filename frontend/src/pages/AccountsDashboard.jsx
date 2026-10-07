@@ -39,9 +39,47 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
   const [activeAccountsView, setActiveAccountsView] = useState('ledger');
 
   // Due Filter for Ledger
-  const [dueFilter, setDueFilter] = useState('all'); // 'all', 'due_only', 'sem_due_only', 'cleared'
+  const [dueFilter, setDueFilter] = useState('all'); // 'all', 'due_y1', 'due_y2', 'due_y3', 'due_y4', 'due_only', 'cleared'
   const [dualOnlyFilter, setDualOnlyFilter] = useState(false);
   const [ledgerSummary, setLedgerSummary] = useState(null);
+
+  // Timeframe & Calendar Filter State
+  const [timeframePreset, setTimeframePreset] = useState('all'); // 'all', 'today', 'week', 'month', 'year', 'custom'
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
+  const applyPreset = (preset) => {
+    setTimeframePreset(preset);
+    const now = new Date();
+    const formatYMD = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    if (preset === 'all') {
+      setFilterStartDate('');
+      setFilterEndDate('');
+    } else if (preset === 'today') {
+      const todayStr = formatYMD(now);
+      setFilterStartDate(todayStr);
+      setFilterEndDate(todayStr);
+    } else if (preset === 'week') {
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      setFilterStartDate(formatYMD(weekAgo));
+      setFilterEndDate(formatYMD(now));
+    } else if (preset === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      setFilterStartDate(formatYMD(startOfMonth));
+      setFilterEndDate(formatYMD(now));
+    } else if (preset === 'year') {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      setFilterStartDate(formatYMD(startOfYear));
+      setFilterEndDate(formatYMD(now));
+    }
+  };
 
   // Timeframe Collection State
   const [feeTimeframe, setFeeTimeframe] = useState('this_month'); // 'all', 'week', 'this_month', 'last_month', 'year'
@@ -123,6 +161,8 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
       const s = customSearch !== null ? customSearch : paymentSearch;
 
       let url = `/api/fees/payments?timeframe=${tf}`;
+      if (filterStartDate) url += `&startDate=${filterStartDate}`;
+      if (filterEndDate) url += `&endDate=${filterEndDate}`;
       if (s && s.trim()) url += `&search=${encodeURIComponent(s.trim())}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -142,7 +182,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
 
   useEffect(() => {
     fetchPaymentsData();
-  }, [feeTimeframe]);
+  }, [feeTimeframe, filterStartDate, filterEndDate]);
 
   const handleResetLedgerSearch = () => {
     setSearchTerm('');
@@ -335,62 +375,132 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
         </div>
       </div>
 
-      {/* Financial Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Expected Fees</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <Building className="w-5 h-5" />
-            </div>
+      {/* Timeframe & Calendar Custom Date Filter Bar (Replacing Amount Metric Boxes) */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          {/* Left: Quick Timeframe Preset Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <span>Timeframe (अवधि फ़िल्टर):</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => applyPreset('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'all' && !filterStartDate && !filterEndDate
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🌐 All Time (सभी)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('today')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'today'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              ⚡ Today (आज)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('week')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'week'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              📅 Weekly (7 दिन)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('month')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'month'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🗓️ Monthly (इस महीने)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('year')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'year'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              📆 Yearly (इस साल)
+            </button>
           </div>
-          <p className="text-2xl font-black text-slate-900">
-            ₹{Number(stats?.totalExpectedFee || 0).toLocaleString('en-IN')}
-          </p>
-          <span className="text-[11px] text-slate-400">Across {stats?.totalStudents || 0} enrolled students</span>
+
+          {/* Right: Custom Date Range Calendar Picker (Specific Date or 2 Days Date Range) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-emerald-600" />
+              <span>कैलेंडर (Custom Date):</span>
+            </span>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-bold text-slate-400">From:</span>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => {
+                  setFilterStartDate(e.target.value);
+                  setTimeframePreset('custom');
+                }}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-bold text-slate-400">To:</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => {
+                  setFilterEndDate(e.target.value);
+                  setTimeframePreset('custom');
+                }}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              />
+            </div>
+            {(filterStartDate || filterEndDate || timeframePreset !== 'all') && (
+              <button
+                type="button"
+                onClick={() => applyPreset('all')}
+                className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer border border-rose-200"
+                title="Clear Date Filter"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-emerald-200 shadow-sm space-y-2 bg-emerald-50/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Total Fees Collected</span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-              <Wallet className="w-5 h-5" />
-            </div>
+        {/* Active Filter Notification Ribbon */}
+        {(filterStartDate || filterEndDate) && (
+          <div className="text-[11px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-xl px-3.5 py-2 flex flex-wrap items-center justify-between gap-2">
+            <span>
+              🔍 सक्रिय दिनांक फ़िल्टर: केवल {filterStartDate ? `[ ${filterStartDate} ]` : ''} {filterEndDate ? `से [ ${filterEndDate} ]` : ''} के रिकॉर्ड्स व ट्रांजैक्शन दिखाए जा रहे हैं।
+            </span>
+            <button
+              type="button"
+              onClick={() => applyPreset('all')}
+              className="text-rose-600 hover:text-rose-800 cursor-pointer font-extrabold underline text-[11px]"
+            >
+              ✕ Remove Date Filter
+            </button>
           </div>
-          <p className="text-2xl font-black text-emerald-700">
-            ₹{Number(stats?.totalCollectedFee || 0).toLocaleString('en-IN')}
-          </p>
-          <span className="text-[11px] text-emerald-600 font-medium">Deposited in University Treasury</span>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-rose-200 shadow-sm space-y-2 bg-rose-50/20">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-700">Total Outstanding Dues</span>
-            <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
-              <CreditCard className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-rose-700">
-            ₹{Number(stats?.totalBalanceDue || 0).toLocaleString('en-IN')}
-          </p>
-          <span className="text-[11px] text-rose-600 font-medium">Pending balance to collect</span>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Payment Breakdown</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-              <Receipt className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-xs pt-1">
-            <span className="text-emerald-700 font-bold">{stats?.fullyPaidCount || 0} Fully Paid</span>
-            <span className="text-amber-700 font-bold">{stats?.partialPaidCount || 0} Partial</span>
-            <span className="text-rose-700 font-bold">{stats?.unpaidCount || 0} Unpaid</span>
-          </div>
-        </div>
-
+        )}
       </div>
 
       {/* Accounts Control Bar: Section Dropdown + Contextual Filter Dropdown */}
@@ -428,37 +538,44 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
         {/* Right: Contextual Filter Dropdown based on active sub-view */}
         <div className="flex flex-wrap items-center gap-3">
           {activeAccountsView === 'ledger' ? (
-            /* Dues Filter Dropdown */
+            /* Dues Filter Dropdown with Year-Wise Options */
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
               <label className="text-xs font-bold text-slate-500 whitespace-nowrap flex items-center gap-1.5">
                 <Filter className="w-4 h-4 text-rose-600" />
                 <span>Dues Filter (बकाया फ़िल्टर):</span>
               </label>
-              <div className="relative min-w-[240px] sm:min-w-[280px] flex-1 sm:flex-initial">
+              <div className="relative min-w-[260px] sm:min-w-[300px] flex-1 sm:flex-initial">
                 <select
                   value={dueFilter}
                   onChange={(e) => setDueFilter(e.target.value)}
                   className={`w-full appearance-none border font-extrabold text-xs py-2.5 pl-3.5 pr-9 rounded-2xl focus:outline-none cursor-pointer shadow-2xs ${
-                    dueFilter === 'due_only'
+                    dueFilter.startsWith('due_')
                       ? 'bg-rose-50 border-rose-300 text-rose-800'
-                      : dueFilter === 'sem_due_only'
-                      ? 'bg-amber-50 border-amber-300 text-amber-900'
                       : dueFilter === 'cleared'
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                       : 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-800'
                   }`}
                 >
                   <option value="all">
-                    📋 All Students ({stats?.totalStudents || ledger.length})
+                    📋 All Students (सभी छात्र - {stats?.totalStudents || ledger.length})
+                  </option>
+                  <option value="due_y1">
+                    ⚠️ 1st Year Dues Pending (प्रथम वर्ष बकाया छात्र)
+                  </option>
+                  <option value="due_y2">
+                    ⚠️ 2nd Year Dues Pending (द्वितीय वर्ष बकाया छात्र)
+                  </option>
+                  <option value="due_y3">
+                    ⚠️ 3rd Year Dues Pending (तृतीय वर्ष बकाया छात्र)
+                  </option>
+                  <option value="due_y4">
+                    ⚠️ 4th Year Dues Pending (चतुर्थ वर्ष बकाया छात्र)
                   </option>
                   <option value="due_only">
-                    ⚠️ Only Due Students (बाकी फीस - {(stats?.partialPaidCount || 0) + (stats?.unpaidCount || 0)})
-                  </option>
-                  <option value="sem_due_only">
-                    ⚡ Current Sem Due (चालू सेमेस्टर बकाया)
+                    🚨 Any Year Dues Pending (कुल बकाया छात्र - {(stats?.partialPaidCount || 0) + (stats?.unpaidCount || 0)})
                   </option>
                   <option value="cleared">
-                    ✓ Fully Paid Cleared (पूर्ण चुकता - {stats?.fullyPaidCount || 0})
+                    ✓ Fully Paid Cleared (पूर्ण चुकता छात्र - {stats?.fullyPaidCount || 0})
                   </option>
                 </select>
                 <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3 pointer-events-none" />
@@ -542,7 +659,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
         <div className="space-y-6 animate-fadeIn">
 
           {/* Due Summary Highlight Ribbon */}
-          {dueFilter === 'due_only' && (
+          {dueFilter !== 'all' && (
             <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs animate-fadeIn">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
@@ -550,10 +667,15 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
                 </div>
                 <div>
                   <h4 className="font-bold text-rose-900 text-sm">
-                    Total Outstanding Balance Due: ₹{Number(ledgerSummary?.totalBalanceDue || stats?.totalBalanceDue || 0).toLocaleString('en-IN')}
+                    {dueFilter === 'due_y1' ? '1st Year Dues Pending (प्रथम वर्ष बकाया छात्र)' :
+                     dueFilter === 'due_y2' ? '2nd Year Dues Pending (द्वितीय वर्ष बकाया छात्र)' :
+                     dueFilter === 'due_y3' ? '3rd Year Dues Pending (तृतीय वर्ष बकाया छात्र)' :
+                     dueFilter === 'due_y4' ? '4th Year Dues Pending (चतुर्थ वर्ष बकाया छात्र)' :
+                     dueFilter === 'cleared' ? 'Fully Paid Students (पूर्ण चुकता छात्र - शून्य बकाया)' :
+                     'Total Outstanding Dues (कुल बकाया छात्र)'}
                   </h4>
                   <p className="text-rose-700 text-[11px]">
-                    Showing only students with outstanding pending dues.
+                    Showing only students matching the selected year dues filter criteria.
                   </p>
                 </div>
               </div>
@@ -571,6 +693,8 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
           <StudentList 
             hideHeader={true} 
             dueFilter={dueFilter} 
+            filterStartDate={filterStartDate}
+            filterEndDate={filterEndDate}
             onFeeReceived={() => fetchAccountsData()} 
             lang={lang}
             toggleLang={toggleLang}

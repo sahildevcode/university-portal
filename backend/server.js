@@ -4612,7 +4612,7 @@ function parsePaymentDate(p) {
 // Filter collections by: 'all', 'week', 'this_month', 'last_month', 'year'
 app.get('/api/fees/payments', (req, res) => {
   const db = readDB();
-  const { timeframe = 'all', search } = req.query;
+  const { timeframe = 'all', search, startDate, endDate } = req.query;
   const now = new Date();
   const allPayments = db.fee_payments || [];
 
@@ -4651,7 +4651,16 @@ app.get('/api/fees/payments', (req, res) => {
   };
 
   let filtered = [...allPayments];
-  if (timeframe && timeframe !== 'all') {
+  if (startDate || endDate) {
+    filtered = filtered.filter(p => {
+      const pDate = parsePaymentDate(p);
+      if (!pDate) return false;
+      const d = pDate.toISOString().split('T')[0];
+      if (startDate && d < startDate) return false;
+      if (endDate && d > endDate) return false;
+      return true;
+    });
+  } else if (timeframe && timeframe !== 'all') {
     filtered = filtered.filter(p => isDateInTimeframe(parsePaymentDate(p), timeframe, now));
   }
 
@@ -6004,7 +6013,15 @@ app.post('/api/university/pay', (req, res) => {
 app.put('/api/university/student/:rollNo/fee', (req, res) => {
   try {
     const { rollNo } = req.params;
-    const { universityFee, universityName, collegeName } = req.body;
+    const { 
+      universityFee, 
+      universityFeeYear1, 
+      universityFeeYear2, 
+      universityFeeYear3, 
+      universityFeeYear4, 
+      universityName, 
+      collegeName 
+    } = req.body;
 
     const db = readDB();
     const student = findStudent(db.students, rollNo);
@@ -6012,8 +6029,16 @@ app.put('/api/university/student/:rollNo/fee', (req, res) => {
       return res.status(404).json({ success: false, message: `Student with identifier "${rollNo}" not found.` });
     }
 
+    if (universityFeeYear1 !== undefined) student.universityFeeYear1 = Number(universityFeeYear1) || 0;
+    if (universityFeeYear2 !== undefined) student.universityFeeYear2 = Number(universityFeeYear2) || 0;
+    if (universityFeeYear3 !== undefined) student.universityFeeYear3 = Number(universityFeeYear3) || 0;
+    if (universityFeeYear4 !== undefined) student.universityFeeYear4 = Number(universityFeeYear4) || 0;
+
     if (universityFee !== undefined) {
       student.universityFee = Number(universityFee) || 0;
+      student.universityDue = Math.max(0, student.universityFee - (Number(student.universityPaid) || 0));
+    } else if (student.universityFeeYear1 !== undefined || student.universityFeeYear2 !== undefined) {
+      student.universityFee = (Number(student.universityFeeYear1) || 0) + (Number(student.universityFeeYear2) || 0) + (Number(student.universityFeeYear3) || 0) + (Number(student.universityFeeYear4) || 0);
       student.universityDue = Math.max(0, student.universityFee - (Number(student.universityPaid) || 0));
     }
 

@@ -85,6 +85,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   // Modals State - Set Univ Fee Modal
   const [editFeeStudent, setEditFeeStudent] = useState(null);
   const [newUnivFee, setNewUnivFee] = useState('');
+  const [newUnivFeeYear1, setNewUnivFeeYear1] = useState('');
+  const [newUnivFeeYear2, setNewUnivFeeYear2] = useState('');
+  const [newUnivFeeYear3, setNewUnivFeeYear3] = useState('');
+  const [newUnivFeeYear4, setNewUnivFeeYear4] = useState('');
   const [newUnivName, setNewUnivName] = useState('');
   const [newCollegeName, setNewCollegeName] = useState('');
   const [editFeeLoading, setEditFeeLoading] = useState(false);
@@ -442,6 +446,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   const handleOpenEditFeeModal = (student) => {
     setEditFeeStudent(student);
     setNewUnivFee(String(student.universityFee || ''));
+    setNewUnivFeeYear1(String(student.universityFeeYear1 !== undefined ? student.universityFeeYear1 : ''));
+    setNewUnivFeeYear2(String(student.universityFeeYear2 !== undefined ? student.universityFeeYear2 : ''));
+    setNewUnivFeeYear3(String(student.universityFeeYear3 !== undefined ? student.universityFeeYear3 : ''));
+    setNewUnivFeeYear4(String(student.universityFeeYear4 !== undefined ? student.universityFeeYear4 : ''));
     setNewUnivName(student.universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)');
     setNewCollegeName(student.collegeName || 'Govt PG College Chhatarpur');
   };
@@ -449,8 +457,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   // Update Student Official University Fee & Affiliation Handler
   const handleSaveStudentFee = async (e) => {
     e.preventDefault();
-    if (!editFeeStudent || newUnivFee === '') {
-      showFeedback('कृपया मान्य यूनिवर्सिटी फीस दर्ज करें।', 'error');
+    if (!editFeeStudent) {
+      showFeedback('कृपया मान्य छात्र चुनें।', 'error');
       return;
     }
 
@@ -461,7 +469,11 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          universityFee: Number(newUnivFee),
+          universityFee: Number(newUnivFee) || 0,
+          universityFeeYear1: newUnivFeeYear1 !== '' ? Number(newUnivFeeYear1) : undefined,
+          universityFeeYear2: newUnivFeeYear2 !== '' ? Number(newUnivFeeYear2) : undefined,
+          universityFeeYear3: newUnivFeeYear3 !== '' ? Number(newUnivFeeYear3) : undefined,
+          universityFeeYear4: newUnivFeeYear4 !== '' ? Number(newUnivFeeYear4) : undefined,
           universityName: newUnivName,
           collegeName: newCollegeName
         })
@@ -527,6 +539,103 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     } finally {
       setRateLoading(false);
     }
+  };
+
+  // Helper to compute Year-Wise University Fee breakdown (1st, 2nd, 3rd, 4th Year)
+  const calculateUniversityYearBreakdown = (item) => {
+    if (!item) return {
+      feeY1: 0, recY1: 0, remY1: 0, hasY1: false,
+      feeY2: 0, recY2: 0, remY2: 0, hasY2: false,
+      feeY3: 0, recY3: 0, remY3: 0, hasY3: false,
+      feeY4: 0, recY4: 0, remY4: 0, hasY4: false,
+      totalFee: 0, totalPaid: 0, totalRem: 0
+    };
+
+    // 1. Base university fee per year
+    let feeY1 = Number(item.universityFeeYear1 !== undefined ? item.universityFeeYear1 : (item.universityFee || 0));
+    let feeY2 = Number(item.universityFeeYear2 || 0);
+    let feeY3 = Number(item.universityFeeYear3 || 0);
+    let feeY4 = Number(item.universityFeeYear4 || 0);
+
+    if (Array.isArray(item.universityFeeHistory) && item.universityFeeHistory.length > 0) {
+      feeY1 = 0; feeY2 = 0; feeY3 = 0; feeY4 = 0;
+      item.universityFeeHistory.forEach(entry => {
+        const cls = (entry.currentClass || entry.paidSemester || '').toUpperCase();
+        const amt = Number(entry.amount || entry.fee || 0);
+        if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+          feeY1 += amt;
+        } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+          feeY2 += amt;
+        } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+          feeY3 += amt;
+        } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+          feeY4 += amt;
+        } else {
+          feeY1 += amt;
+        }
+      });
+    }
+
+    // 2. Paid / Received fees to university per year
+    let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
+    const sRoll = (item.rollNo || item.enrollmentNo || '').toUpperCase();
+    const sId = item.id;
+    const matchedPayments = payments.filter(p => 
+      (sRoll && p.rollNo && p.rollNo.toUpperCase() === sRoll) ||
+      (sId && p.studentId && p.studentId === sId)
+    );
+
+    if (matchedPayments.length > 0) {
+      matchedPayments.forEach(p => {
+        const cls = (p.paidSemester || p.currentClass || '').toUpperCase();
+        const amt = Number(p.amountPaidToUniversity || p.amountPaid || p.amount || 0);
+        if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('YEAR 1') || cls.includes('1ST') || cls.includes('SEMESTER 1') || cls.includes('SEMESTER 2')) {
+          recY1 += amt;
+        } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('YEAR 2') || cls.includes('2ND') || cls.includes('SEMESTER 3') || cls.includes('SEMESTER 4')) {
+          recY2 += amt;
+        } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('YEAR 3') || cls.includes('3RD') || cls.includes('SEMESTER 5') || cls.includes('SEMESTER 6')) {
+          recY3 += amt;
+        } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('YEAR 4') || cls.includes('4TH') || cls.includes('SEMESTER 7') || cls.includes('SEMESTER 8')) {
+          recY4 += amt;
+        } else {
+          recY1 += amt;
+        }
+      });
+    } else {
+      recY1 = Number(item.universityPaidYear1 !== undefined ? item.universityPaidYear1 : (item.universityPaid || 0));
+      recY2 = Number(item.universityPaidYear2 || 0);
+      recY3 = Number(item.universityPaidYear3 || 0);
+      recY4 = Number(item.universityPaidYear4 || 0);
+    }
+
+    const totalFee = (feeY1 + feeY2 + feeY3 + feeY4) > 0 ? (feeY1 + feeY2 + feeY3 + feeY4) : Number(item.universityFee || 0);
+    const totalPaid = (recY1 + recY2 + recY3 + recY4) > 0 ? (recY1 + recY2 + recY3 + recY4) : Number(item.universityPaid || 0);
+    const totalRem = Math.max(0, totalFee - totalPaid);
+
+    const hasY1 = (feeY1 > 0 || recY1 > 0);
+    const hasY2 = (feeY2 > 0 || recY2 > 0);
+    const hasY3 = (feeY3 > 0 || recY3 > 0);
+    const hasY4 = (feeY4 > 0 || recY4 > 0);
+
+    const net1 = hasY1 ? (feeY1 - recY1) : 0;
+    const remY1 = hasY1 && net1 > 0 ? net1 : 0;
+
+    const net2 = hasY2 ? (feeY2 + net1 - recY2) : 0;
+    const remY2 = hasY2 && net2 > 0 ? net2 : 0;
+
+    const net3 = hasY3 ? (feeY3 + (hasY2 ? net2 : net1) - recY3) : 0;
+    const remY3 = hasY3 && net3 > 0 ? net3 : 0;
+
+    const net4 = hasY4 ? (feeY4 + (hasY3 ? net3 : hasY2 ? net2 : net1) - recY4) : 0;
+    const remY4 = hasY4 && net4 > 0 ? net4 : 0;
+
+    return {
+      feeY1, recY1, remY1, hasY1,
+      feeY2, recY2, remY2, hasY2,
+      feeY3, recY3, remY3, hasY3,
+      feeY4, recY4, remY4, hasY4,
+      totalFee, totalPaid, totalRem
+    };
   };
 
   // Top Filter Handlers
@@ -1075,9 +1184,32 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                         <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Status</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[170px]">Remark</th>
                         <th className="py-2.5 px-2 border-r border-slate-700 text-center whitespace-nowrap">Class</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">University_Fee</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Total_Paid_Amount</th>
-                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
+
+                        {/* 1st Year (3 Columns) */}
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">1st_Yr_Fee</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">1st_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">1st_Yr_Remaining</th>
+
+                        {/* 2nd Year (3 Columns) */}
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">2nd_Yr_Fee</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">2nd_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">2nd_Yr_Remaining</th>
+
+                        {/* 3rd Year (3 Columns) */}
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">3rd_Yr_Fee</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">3rd_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">3rd_Yr_Remaining</th>
+
+                        {/* 4th Year (3 Columns) */}
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-amber-200">4th_Yr_Fee</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-200">4th_Yr_Receive</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-200">4th_Yr_Remaining</th>
+
+                        {/* Overall Totals (3 Columns) */}
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-sky-200">Total_Univ_Fee</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-emerald-300">Total_Paid_Amount</th>
+                        <th className="py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-300">Remaining_Fee</th>
+
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Paid_University_Fee</th>
                         <th className="py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_University_Fee</th>
                       </tr>
@@ -1085,13 +1217,13 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                     <tbody className="divide-y divide-slate-200">
                       {loading ? (
                         <tr>
-                          <td colSpan="15" className="p-8 text-center text-slate-400 font-medium">
+                          <td colSpan="27" className="p-8 text-center text-slate-400 font-medium">
                             Loading university settlement ledger...
                           </td>
                         </tr>
                       ) : paginatedStudents.length === 0 ? (
                         <tr>
-                          <td colSpan="15" className="p-10 text-center bg-slate-50">
+                          <td colSpan="27" className="p-10 text-center bg-slate-50">
                             <div className="max-w-md mx-auto space-y-3">
                               <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
                                 <Search className="w-6 h-6" />
@@ -1126,9 +1258,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                             std.linkedCourses.forEach(lc => renderedSecondaryIds.add(lc.id));
                           }
 
-                          const uFee = Number(std.universityFee || 0);
-                          const uPaid = Number(std.universityPaid || 0);
-                          const uDue = Math.max(0, uFee - uPaid);
+                          const bd = calculateUniversityYearBreakdown(std);
 
                           return (
                             <React.Fragment key={std.id || std.rollNo}>
@@ -1192,14 +1322,60 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
                                   {std.currentClass || (std.currentSemester ? `SEM-${std.currentSemester}` : 'SEM-1')}
                                 </td>
-                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">
-                                  {uFee > 0 ? uFee : 0}
+
+                                {/* 1st Year (3 Columns) */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                  {bd.hasY1 ? bd.feeY1 : <span className="text-slate-300">-</span>}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
-                                  {uPaid > 0 ? uPaid : 0}
+                                  {bd.hasY1 ? bd.recY1 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                  {bd.hasY1 ? (bd.remY1 > 0 ? `${bd.remY1}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                </td>
+
+                                {/* 2nd Year (3 Columns) */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                  {bd.hasY2 ? bd.feeY2 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                  {bd.hasY2 ? bd.recY2 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                  {bd.hasY2 ? (bd.remY2 > 0 ? `${bd.remY2}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                </td>
+
+                                {/* 3rd Year (3 Columns) */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                  {bd.hasY3 ? bd.feeY3 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                  {bd.hasY3 ? bd.recY3 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                  {bd.hasY3 ? (bd.remY3 > 0 ? `${bd.remY3}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                </td>
+
+                                {/* 4th Year (3 Columns) */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                  {bd.hasY4 ? bd.feeY4 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                  {bd.hasY4 ? bd.recY4 : <span className="text-slate-300">-</span>}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                  {bd.hasY4 ? (bd.remY4 > 0 ? `${bd.remY4}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                </td>
+
+                                {/* Overall Totals (3 Columns) */}
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900 bg-sky-50/20">
+                                  {bd.totalFee > 0 ? bd.totalFee : 0}
+                                </td>
+                                <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700 bg-emerald-50/20">
+                                  {bd.totalPaid > 0 ? bd.totalPaid : 0}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
-                                  {uDue > 0 ? `${uDue}/-` : '0/-'}
+                                  {bd.totalRem > 0 ? `${bd.totalRem}/-` : '0/-'}
                                 </td>
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                   <button
@@ -1225,9 +1401,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
                               {/* Connected Sub-Rows for 2nd / Dual Program Enrollments */}
                               {std.linkedCourses && std.linkedCourses.map((linked, lcIdx) => {
-                                const luFee = Number(linked.universityFee || 0);
-                                const luPaid = Number(linked.universityPaid || 0);
-                                const luDue = Math.max(0, luFee - luPaid);
+                                const lbd = calculateUniversityYearBreakdown(linked);
                                 return (
                                   <tr key={`${std.id}-linked-${lcIdx}`} className="bg-amber-50/30 border-b border-amber-200/60 hover:bg-amber-100/40 transition-colors text-xs">
                                     <td className="py-2 px-2 text-center font-bold text-amber-800 border-r border-slate-200">
@@ -1268,14 +1442,60 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                                     <td className="py-2 px-2 border-r border-slate-200 text-center whitespace-nowrap font-bold text-slate-800">
                                       {linked.currentClass || (linked.currentSemester ? `SEM-${linked.currentSemester}` : 'SEM-1')}
                                     </td>
-                                    <td className="py-2 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900">
-                                      {luFee > 0 ? luFee : 0}
+
+                                    {/* 1st Year (3 Columns) */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                      {lbd.hasY1 ? lbd.feeY1 : <span className="text-slate-300">-</span>}
                                     </td>
-                                    <td className="py-2 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
-                                      {luPaid > 0 ? luPaid : 0}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                      {lbd.hasY1 ? lbd.recY1 : <span className="text-slate-300">-</span>}
                                     </td>
-                                    <td className="py-2 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
-                                      {luDue > 0 ? `${luDue}/-` : '0/-'}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                      {lbd.hasY1 ? (lbd.remY1 > 0 ? `${lbd.remY1}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* 2nd Year (3 Columns) */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                      {lbd.hasY2 ? lbd.feeY2 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                      {lbd.hasY2 ? lbd.recY2 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                      {lbd.hasY2 ? (lbd.remY2 > 0 ? `${lbd.remY2}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* 3rd Year (3 Columns) */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                      {lbd.hasY3 ? lbd.feeY3 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                      {lbd.hasY3 ? lbd.recY3 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                      {lbd.hasY3 ? (lbd.remY3 > 0 ? `${lbd.remY3}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* 4th Year (3 Columns) */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-800">
+                                      {lbd.hasY4 ? lbd.feeY4 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700">
+                                      {lbd.hasY4 ? lbd.recY4 : <span className="text-slate-300">-</span>}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700">
+                                      {lbd.hasY4 ? (lbd.remY4 > 0 ? `${lbd.remY4}/-` : '0/-') : <span className="text-slate-300">-</span>}
+                                    </td>
+
+                                    {/* Overall Totals (3 Columns) */}
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-slate-900 bg-sky-50/20">
+                                      {lbd.totalFee > 0 ? lbd.totalFee : 0}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-emerald-700 bg-emerald-50/20">
+                                      {lbd.totalPaid > 0 ? lbd.totalPaid : 0}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-bold font-mono text-rose-700 bg-rose-50/20">
+                                      {lbd.totalRem > 0 ? `${lbd.totalRem}/-` : '0/-'}
                                     </td>
                                     <td className="py-2 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                       <button
@@ -1938,9 +2158,78 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                 />
               </div>
 
+              {/* Year-Wise University Fee Breakdown Inputs */}
+              <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <span className="text-[11px] font-bold text-slate-700 block">
+                  Year-Wise Fee Setup (वर्ष अनुसार फीस):
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500">1st Year Univ Fee</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newUnivFeeYear1}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewUnivFeeYear1(val);
+                        const total = (Number(val) || 0) + (Number(newUnivFeeYear2) || 0) + (Number(newUnivFeeYear3) || 0) + (Number(newUnivFeeYear4) || 0);
+                        setNewUnivFee(String(total));
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500">2nd Year Univ Fee</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newUnivFeeYear2}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewUnivFeeYear2(val);
+                        const total = (Number(newUnivFeeYear1) || 0) + (Number(val) || 0) + (Number(newUnivFeeYear3) || 0) + (Number(newUnivFeeYear4) || 0);
+                        setNewUnivFee(String(total));
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500">3rd Year Univ Fee</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newUnivFeeYear3}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewUnivFeeYear3(val);
+                        const total = (Number(newUnivFeeYear1) || 0) + (Number(newUnivFeeYear2) || 0) + (Number(val) || 0) + (Number(newUnivFeeYear4) || 0);
+                        setNewUnivFee(String(total));
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500">4th Year Univ Fee</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newUnivFeeYear4}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewUnivFeeYear4(val);
+                        const total = (Number(newUnivFeeYear1) || 0) + (Number(newUnivFeeYear2) || 0) + (Number(newUnivFeeYear3) || 0) + (Number(val) || 0);
+                        setNewUnivFee(String(total));
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-1">
                 <label className="block text-slate-700 font-bold">
-                  Official Base University Fee (INR)*
+                  Total Official Base University Fee (INR)*
                 </label>
                 <input
                   type="number"

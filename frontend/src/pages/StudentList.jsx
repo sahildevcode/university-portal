@@ -25,6 +25,8 @@ export default function StudentList({
   toggleLang: propToggleLang,
   hideHeader = false,
   dueFilter = 'all',
+  filterStartDate = '',
+  filterEndDate = '',
   onFeeReceived,
   isRecordsDesk = false
 }) {
@@ -81,10 +83,10 @@ export default function StudentList({
   // Helper to compute Year-Wise fee, scholarship, and received fee breakdown (1st, 2nd, 3rd, 4th Year)
   const calculateStudentYearBreakdown = (item) => {
     if (!item) return {
-      feeY1: 0, schY1: 0, recY1: 0, totalY1: 0, dueY1: 0, advY1: 0,
-      feeY2: 0, schY2: 0, recY2: 0, totalY2: 0, dueY2: 0, advY2: 0,
-      feeY3: 0, schY3: 0, recY3: 0, totalY3: 0, dueY3: 0, advY3: 0,
-      feeY4: 0, schY4: 0, recY4: 0, totalY4: 0, dueY4: 0, advY4: 0,
+      feeY1: 0, schY1: 0, recY1: 0, totalY1: 0, dueY1: 0, advY1: 0, net1: 0, hasY1Activity: false,
+      feeY2: 0, schY2: 0, recY2: 0, totalY2: 0, dueY2: 0, advY2: 0, net2: 0, hasY2Activity: false,
+      feeY3: 0, schY3: 0, recY3: 0, totalY3: 0, dueY3: 0, advY3: 0, net3: 0, hasY3Activity: false,
+      feeY4: 0, schY4: 0, recY4: 0, totalY4: 0, dueY4: 0, advY4: 0, net4: 0, hasY4Activity: false,
       totalFee: 0, totalSch: 0, totalPaid: 0, totalRem: 0,
       advanceAmount: 0, isAdvance: false, nextFeeDueDate: null, cat: 'full_course_fee'
     };
@@ -197,21 +199,29 @@ export default function StudentList({
     const advanceAmount = totalPaid > totalFee ? (totalPaid - totalFee) : 0;
     const isAdvance = advanceAmount > 0;
 
-    const net1 = totalY1 - recY1;
-    const dueY1 = net1 > 0 ? net1 : 0;
-    const advY1 = net1 < 0 ? Math.abs(net1) : 0;
+    const hasY1Activity = (feeY1 > 0 || schY1 > 0 || recY1 > 0);
+    const hasY2Activity = (feeY2 > 0 || schY2 > 0 || recY2 > 0);
+    const hasY3Activity = (feeY3 > 0 || schY3 > 0 || recY3 > 0);
+    const hasY4Activity = (feeY4 > 0 || schY4 > 0 || recY4 > 0);
 
-    const net2 = totalY2 + net1 - recY2;
-    const dueY2 = net2 > 0 ? net2 : 0;
-    const advY2 = net2 < 0 ? Math.abs(net2) : 0;
+    const net1 = hasY1Activity ? (totalY1 - recY1) : 0;
+    const dueY1 = hasY1Activity && net1 > 0 ? net1 : 0;
+    const advY1 = hasY1Activity && net1 < 0 ? Math.abs(net1) : 0;
 
-    const net3 = totalY3 + net2 - recY3;
-    const dueY3 = net3 > 0 ? net3 : 0;
-    const advY3 = net3 < 0 ? Math.abs(net3) : 0;
+    // Year 2: Only calculate if Year 2 has activity!
+    const net2 = hasY2Activity ? (totalY2 + net1 - recY2) : 0;
+    const dueY2 = hasY2Activity && net2 > 0 ? net2 : 0;
+    const advY2 = hasY2Activity && net2 < 0 ? Math.abs(net2) : 0;
 
-    const net4 = totalY4 + net3 - recY4;
-    const dueY4 = net4 > 0 ? net4 : 0;
-    const advY4 = net4 < 0 ? Math.abs(net4) : 0;
+    // Year 3: Only calculate if Year 3 has activity! (Do not auto-extend Year 2 dues into Year 3!)
+    const net3 = hasY3Activity ? (totalY3 + (hasY2Activity ? net2 : net1) - recY3) : 0;
+    const dueY3 = hasY3Activity && net3 > 0 ? net3 : 0;
+    const advY3 = hasY3Activity && net3 < 0 ? Math.abs(net3) : 0;
+
+    // Year 4: Only calculate if Year 4 has activity!
+    const net4 = hasY4Activity ? (totalY4 + (hasY3Activity ? net3 : hasY2Activity ? net2 : net1) - recY4) : 0;
+    const dueY4 = hasY4Activity && net4 > 0 ? net4 : 0;
+    const advY4 = hasY4Activity && net4 < 0 ? Math.abs(net4) : 0;
 
     let nextFeeDueDate = item.nextFeeDueDate || null;
     if (!nextFeeDueDate && Array.isArray(item.promotionHistory) && item.promotionHistory.length > 0) {
@@ -224,10 +234,10 @@ export default function StudentList({
     }
 
     return {
-      feeY1, schY1, recY1, totalY1, dueY1, advY1, net1,
-      feeY2, schY2, recY2, totalY2, dueY2, advY2, net2,
-      feeY3, schY3, recY3, totalY3, dueY3, advY3, net3,
-      feeY4, schY4, recY4, totalY4, dueY4, advY4, net4,
+      feeY1, schY1, recY1, totalY1, dueY1, advY1, net1, hasY1Activity,
+      feeY2, schY2, recY2, totalY2, dueY2, advY2, net2, hasY2Activity,
+      feeY3, schY3, recY3, totalY3, dueY3, advY3, net3, hasY3Activity,
+      feeY4, schY4, recY4, totalY4, dueY4, advY4, net4, hasY4Activity,
       totalFee, totalSch, totalPaid, totalRem,
       advanceAmount, isAdvance, nextFeeDueDate,
       cat
@@ -1864,30 +1874,41 @@ export default function StudentList({
     if (s.status === 'Completed' || s.courseCompleted === 'Yes') return false;
 
     // Due Filter support (for Accounts Dashboard integration)
-    if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
-      const acadFee = Number(s.academicFee !== undefined && s.academicFee !== null ? s.academicFee : (s.studentFee !== undefined && s.studentFee !== null ? s.studentFee : 0));
-      const sch = Number(s.scholarshipAmount || 0);
-      const tot = acadFee + sch;
-      const paid = Number(s.totalPaid || 0);
-      const rem = Math.max(0, tot - paid);
-      const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
-        const lTot = Number(lc.academicFee !== undefined && lc.academicFee !== null ? lc.academicFee : (lc.studentFee !== undefined && lc.studentFee !== null ? lc.studentFee : 0)) + Number(lc.scholarshipAmount || 0);
-        const lPaid = Number(lc.totalPaid || 0);
-        return sum + Math.max(0, lTot - lPaid);
-      }, 0) || 0;
-      if (rem + linkedRem <= 0) return false;
-    } else if (dueFilter === 'cleared') {
-      const acadFee = Number(s.academicFee !== undefined && s.academicFee !== null ? s.academicFee : (s.studentFee !== undefined && s.studentFee !== null ? s.studentFee : 0));
-      const sch = Number(s.scholarshipAmount || 0);
-      const tot = acadFee + sch;
-      const paid = Number(s.totalPaid || 0);
-      const rem = Math.max(0, tot - paid);
-      const linkedRem = s.linkedCourses?.reduce((sum, lc) => {
-        const lTot = Number(lc.academicFee !== undefined && lc.academicFee !== null ? lc.academicFee : (lc.studentFee !== undefined && lc.studentFee !== null ? lc.studentFee : 0)) + Number(lc.scholarshipAmount || 0);
-        const lPaid = Number(lc.totalPaid || 0);
-        return sum + Math.max(0, lTot - lPaid);
-      }, 0) || 0;
-      if (rem + linkedRem > 0) return false;
+    if (dueFilter && dueFilter !== 'all') {
+      const bd = calculateStudentYearBreakdown(s);
+      if (dueFilter === 'due_only' || dueFilter === 'sem_due_only') {
+        if (bd.totalRem <= 0) return false;
+      } else if (dueFilter === 'due_y1') {
+        if (bd.dueY1 <= 0) return false;
+      } else if (dueFilter === 'due_y2') {
+        if (bd.dueY2 <= 0) return false;
+      } else if (dueFilter === 'due_y3') {
+        if (bd.dueY3 <= 0) return false;
+      } else if (dueFilter === 'due_y4') {
+        if (bd.dueY4 <= 0) return false;
+      } else if (dueFilter === 'cleared') {
+        if (bd.totalRem > 0) return false;
+      }
+    }
+
+    // Date Range Filter support (Calendar & timeframe filtering)
+    if (filterStartDate || filterEndDate) {
+      const matchesDate = (dStr) => {
+        if (!dStr) return false;
+        const d = String(dStr).split('T')[0];
+        if (filterStartDate && d < filterStartDate) return false;
+        if (filterEndDate && d > filterEndDate) return false;
+        return true;
+      };
+
+      const payList = (s.payments && s.payments.length > 0) ? s.payments : (s.feeHistory || []);
+      const hasMatchingPayment = payList.some(p => {
+        const pDate = p.feeDate || p.paymentDate || p.date || p.createdAt;
+        return matchesDate(pDate);
+      });
+      const hasMatchingAdmission = matchesDate(s.admissionDate) || matchesDate(s.createdAt);
+
+      if (!hasMatchingPayment && !hasMatchingAdmission) return false;
     }
 
     if (feeCategoryFilter !== 'all') {
@@ -2852,12 +2873,16 @@ export default function StudentList({
                                   {yd.recY1 > 0 ? `${yd.recY1}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
-                                  {yd.net1 > 0 ? (
-                                    <span className="text-rose-700 font-bold">{yd.net1}/-</span>
-                                  ) : yd.net1 < 0 ? (
-                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net1)}/-</span>
+                                  {yd.hasY1Activity ? (
+                                    yd.net1 > 0 ? (
+                                      <span className="text-rose-700 font-bold">{yd.net1}/-</span>
+                                    ) : yd.net1 < 0 ? (
+                                      <span className="text-emerald-700 font-bold">-{Math.abs(yd.net1)}/-</span>
+                                    ) : (
+                                      <span className="text-slate-400">0/-</span>
+                                    )
                                   ) : (
-                                    <span className="text-slate-400">0/-</span>
+                                    <span className="text-slate-300">-</span>
                                   )}
                                 </td>
 
@@ -2872,12 +2897,16 @@ export default function StudentList({
                                   {yd.recY2 > 0 ? `${yd.recY2}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
-                                  {yd.net2 > 0 ? (
-                                    <span className="text-rose-700 font-bold">{yd.net2}/-</span>
-                                  ) : yd.net2 < 0 ? (
-                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net2)}/-</span>
+                                  {yd.hasY2Activity ? (
+                                    yd.net2 > 0 ? (
+                                      <span className="text-rose-700 font-bold">{yd.net2}/-</span>
+                                    ) : yd.net2 < 0 ? (
+                                      <span className="text-emerald-700 font-bold">-{Math.abs(yd.net2)}/-</span>
+                                    ) : (
+                                      <span className="text-slate-400">0/-</span>
+                                    )
                                   ) : (
-                                    <span className="text-slate-400">0/-</span>
+                                    <span className="text-slate-300">-</span>
                                   )}
                                 </td>
 
@@ -2892,12 +2921,16 @@ export default function StudentList({
                                   {yd.recY3 > 0 ? `${yd.recY3}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
-                                  {yd.net3 > 0 ? (
-                                    <span className="text-rose-700 font-bold">{yd.net3}/-</span>
-                                  ) : yd.net3 < 0 ? (
-                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net3)}/-</span>
+                                  {yd.hasY3Activity ? (
+                                    yd.net3 > 0 ? (
+                                      <span className="text-rose-700 font-bold">{yd.net3}/-</span>
+                                    ) : yd.net3 < 0 ? (
+                                      <span className="text-emerald-700 font-bold">-{Math.abs(yd.net3)}/-</span>
+                                    ) : (
+                                      <span className="text-slate-400">0/-</span>
+                                    )
                                   ) : (
-                                    <span className="text-slate-400">0/-</span>
+                                    <span className="text-slate-300">-</span>
                                   )}
                                 </td>
 
@@ -2912,12 +2945,16 @@ export default function StudentList({
                                   {yd.recY4 > 0 ? `${yd.recY4}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
-                                  {yd.net4 > 0 ? (
-                                    <span className="text-rose-700 font-bold">{yd.net4}/-</span>
-                                  ) : yd.net4 < 0 ? (
-                                    <span className="text-emerald-700 font-bold">-{Math.abs(yd.net4)}/-</span>
+                                  {yd.hasY4Activity ? (
+                                    yd.net4 > 0 ? (
+                                      <span className="text-rose-700 font-bold">{yd.net4}/-</span>
+                                    ) : yd.net4 < 0 ? (
+                                      <span className="text-emerald-700 font-bold">-{Math.abs(yd.net4)}/-</span>
+                                    ) : (
+                                      <span className="text-slate-400">0/-</span>
+                                    )
                                   ) : (
-                                    <span className="text-slate-400">0/-</span>
+                                    <span className="text-slate-300">-</span>
                                   )}
                                 </td>
                               </>
@@ -3150,12 +3187,16 @@ export default function StudentList({
                                       {lyd.recY1 > 0 ? `${lyd.recY1}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
-                                      {lyd.net1 > 0 ? (
-                                        <span className="text-rose-700 font-bold">{lyd.net1}/-</span>
-                                      ) : lyd.net1 < 0 ? (
-                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net1)}/-</span>
+                                      {lyd.hasY1Activity ? (
+                                        lyd.net1 > 0 ? (
+                                          <span className="text-rose-700 font-bold">{lyd.net1}/-</span>
+                                        ) : lyd.net1 < 0 ? (
+                                          <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net1)}/-</span>
+                                        ) : (
+                                          <span className="text-slate-400">0/-</span>
+                                        )
                                       ) : (
-                                        <span className="text-slate-400">0/-</span>
+                                        <span className="text-slate-300">-</span>
                                       )}
                                     </td>
 
@@ -3170,12 +3211,16 @@ export default function StudentList({
                                       {lyd.recY2 > 0 ? `${lyd.recY2}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
-                                      {lyd.net2 > 0 ? (
-                                        <span className="text-rose-700 font-bold">{lyd.net2}/-</span>
-                                      ) : lyd.net2 < 0 ? (
-                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net2)}/-</span>
+                                      {lyd.hasY2Activity ? (
+                                        lyd.net2 > 0 ? (
+                                          <span className="text-rose-700 font-bold">{lyd.net2}/-</span>
+                                        ) : lyd.net2 < 0 ? (
+                                          <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net2)}/-</span>
+                                        ) : (
+                                          <span className="text-slate-400">0/-</span>
+                                        )
                                       ) : (
-                                        <span className="text-slate-400">0/-</span>
+                                        <span className="text-slate-300">-</span>
                                       )}
                                     </td>
 
@@ -3190,12 +3235,16 @@ export default function StudentList({
                                       {lyd.recY3 > 0 ? `${lyd.recY3}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
-                                      {lyd.net3 > 0 ? (
-                                        <span className="text-rose-700 font-bold">{lyd.net3}/-</span>
-                                      ) : lyd.net3 < 0 ? (
-                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net3)}/-</span>
+                                      {lyd.hasY3Activity ? (
+                                        lyd.net3 > 0 ? (
+                                          <span className="text-rose-700 font-bold">{lyd.net3}/-</span>
+                                        ) : lyd.net3 < 0 ? (
+                                          <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net3)}/-</span>
+                                        ) : (
+                                          <span className="text-slate-400">0/-</span>
+                                        )
                                       ) : (
-                                        <span className="text-slate-400">0/-</span>
+                                        <span className="text-slate-300">-</span>
                                       )}
                                     </td>
 
@@ -3210,12 +3259,16 @@ export default function StudentList({
                                       {lyd.recY4 > 0 ? `${lyd.recY4}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
-                                      {lyd.net4 > 0 ? (
-                                        <span className="text-rose-700 font-bold">{lyd.net4}/-</span>
-                                      ) : lyd.net4 < 0 ? (
-                                        <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net4)}/-</span>
+                                      {lyd.hasY4Activity ? (
+                                        lyd.net4 > 0 ? (
+                                          <span className="text-rose-700 font-bold">{lyd.net4}/-</span>
+                                        ) : lyd.net4 < 0 ? (
+                                          <span className="text-emerald-700 font-bold">-{Math.abs(lyd.net4)}/-</span>
+                                        ) : (
+                                          <span className="text-slate-400">0/-</span>
+                                        )
                                       ) : (
-                                        <span className="text-slate-400">0/-</span>
+                                        <span className="text-slate-300">-</span>
                                       )}
                                     </td>
                                   </>
