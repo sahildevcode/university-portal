@@ -80,12 +80,21 @@ export default function StudentList({
 
   // Helper to compute Year-Wise fee, scholarship, and received fee breakdown (1st, 2nd, 3rd, 4th Year)
   const calculateStudentYearBreakdown = (item) => {
-    if (!item) return { feeY1: 0, schY1: 0, recY1: 0, feeY2: 0, schY2: 0, recY2: 0, feeY3: 0, schY3: 0, recY3: 0, feeY4: 0, schY4: 0, recY4: 0, totalFee: 0, totalSch: 0, totalPaid: 0, totalRem: 0 };
+    if (!item) return {
+      feeY1: 0, schY1: 0, recY1: 0, totalY1: 0, dueY1: 0, advY1: 0,
+      feeY2: 0, schY2: 0, recY2: 0, totalY2: 0, dueY2: 0, advY2: 0,
+      feeY3: 0, schY3: 0, recY3: 0, totalY3: 0, dueY3: 0, advY3: 0,
+      feeY4: 0, schY4: 0, recY4: 0, totalY4: 0, dueY4: 0, advY4: 0,
+      totalFee: 0, totalSch: 0, totalPaid: 0, totalRem: 0,
+      advanceAmount: 0, isAdvance: false, nextFeeDueDate: null, cat: 'full_course_fee'
+    };
+
+    // 1. Academic Fee per Year
     let feeY1 = 0, feeY2 = 0, feeY3 = 0, feeY4 = 0;
     if (Array.isArray(item.academicFeeHistory) && item.academicFeeHistory.length > 0) {
       item.academicFeeHistory.forEach(entry => {
         const cls = (entry.currentClass || '').toUpperCase();
-        const amt = Number(entry.amount || entry.fee || 0);
+        const amt = Number(entry.amountPaid !== undefined ? entry.amountPaid : (entry.amount || entry.fee || 0));
         if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
           feeY1 += amt;
         } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
@@ -99,17 +108,55 @@ export default function StudentList({
         }
       });
     } else {
-      feeY1 = Number(item.academicFee !== undefined && item.academicFee !== null ? item.academicFee : (item.studentFee || 0));
-      feeY2 = Number(item.academicFeeYear2 || item.feeYear2 || 0);
-      feeY3 = Number(item.academicFeeYear3 || item.feeYear3 || 0);
-      feeY4 = Number(item.academicFeeYear4 || item.feeYear4 || 0);
+      feeY1 = Number(item.academicFeeYear1 !== undefined ? item.academicFeeYear1 : (item.feeYear1 !== undefined ? item.feeYear1 : (item.academicFee !== undefined && item.academicFee !== null ? item.academicFee : (item.studentFee || 0))));
+      feeY2 = Number(item.academicFeeYear2 !== undefined ? item.academicFeeYear2 : (item.feeYear2 || 0));
+      feeY3 = Number(item.academicFeeYear3 !== undefined ? item.academicFeeYear3 : (item.feeYear3 || 0));
+      feeY4 = Number(item.academicFeeYear4 !== undefined ? item.academicFeeYear4 : (item.feeYear4 || 0));
     }
 
+    const totalAcadFee = (feeY1 + feeY2 + feeY3 + feeY4) > 0
+      ? (feeY1 + feeY2 + feeY3 + feeY4)
+      : Number(item.academicFee !== undefined && item.academicFee !== null ? item.academicFee : (item.studentFee || 0));
+
+    // 2. Scholarship per Year
     const schY1 = Number(item.scholarshipYear1 !== undefined && item.scholarshipYear1 !== null ? item.scholarshipYear1 : (!item.scholarshipYear2 ? (item.scholarshipAmount || 0) : 0));
     const schY2 = Number(item.scholarshipYear2 || 0);
     const schY3 = Number(item.scholarshipYear3 || 0);
     const schY4 = Number(item.scholarshipYear4 || 0);
+    const totalSch = (schY1 + schY2 + schY3 + schY4) > 0 ? (schY1 + schY2 + schY3 + schY4) : Number(item.scholarshipAmount || 0);
 
+    // 3. Category & Year-wise Payable Fee
+    const rawCat = item.feeCategory;
+    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+      ? 'full_scholarship'
+      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+        ? 'course_fee_scholarship'
+        : 'full_course_fee';
+
+    const regFee = Number(item.registrationFee || item.regFee || 0);
+
+    const calcYrTotal = (yrAcad, yrSch, isY1 = false) => {
+      const extra = isY1 ? regFee : 0;
+      if (cat === 'course_fee_scholarship') return yrAcad + yrSch + extra;
+      if (cat === 'full_scholarship') return yrSch + extra;
+      return yrAcad + extra;
+    };
+
+    const totalY1 = calcYrTotal(feeY1, schY1, true);
+    const totalY2 = calcYrTotal(feeY2, schY2, false);
+    const totalY3 = calcYrTotal(feeY3, schY3, false);
+    const totalY4 = calcYrTotal(feeY4, schY4, false);
+
+    let totalFee = 0;
+    if (cat === 'course_fee_scholarship') {
+      totalFee = totalAcadFee + totalSch + regFee;
+    } else if (cat === 'full_scholarship') {
+      totalFee = totalSch + regFee;
+    } else {
+      totalFee = (totalAcadFee > 0 ? totalAcadFee : Number(item.totalFee || item.studentFee || 0)) + regFee;
+    }
+
+    // 4. Received Fees per Year
     let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
     const payList = (Array.isArray(item.payments) && item.payments.length > 0)
       ? item.payments
@@ -120,7 +167,7 @@ export default function StudentList({
     if (payList.length > 0) {
       payList.forEach(p => {
         const cls = (p.currentClass || p.year || p.semester || '').toUpperCase();
-        const amt = Number(p.amountPaid || p.amount || 0);
+        const amt = Number(p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0));
         if (cls.includes('YEAR1') || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
           recY1 += amt;
         } else if (cls.includes('YEAR2') || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
@@ -140,33 +187,26 @@ export default function StudentList({
       recY4 = Number(item.paidYear4 || 0);
     }
 
-    const totalSch = schY1 + schY2 + schY3 + schY4;
-    const totalAcadFee = feeY1 + feeY2 + feeY3 + feeY4;
-
-    // Fee calculation based on student feeCategory:
-    // 'full_course_fee': full course fee without scholarship deduction
-    // 'course_fee_scholarship': academic fee minus student scholarship
-    // 'full_scholarship': scholarship base
-    const rawCat = item.feeCategory;
-    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-      ? 'full_scholarship'
-      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
-        ? 'course_fee_scholarship'
-        : 'full_course_fee';
-
-    let totalFee = totalAcadFee;
-    if (cat === 'course_fee_scholarship') {
-      totalFee = Math.max(0, totalAcadFee - totalSch);
-    } else if (cat === 'full_scholarship') {
-      totalFee = totalSch;
-    } else {
-      totalFee = totalAcadFee > 0 ? totalAcadFee : (Number(item.totalFee || item.studentFee || 0));
-    }
-
-    const totalPaid = Number(item.totalPaid !== undefined ? item.totalPaid : (recY1 + recY2 + recY3 + recY4));
+    const totalPaid = payList.length > 0 ? (recY1 + recY2 + recY3 + recY4) : ((recY1 + recY2 + recY3 + recY4) > 0 ? (recY1 + recY2 + recY3 + recY4) : Number(item.totalPaid || 0));
     const totalRem = Math.max(0, totalFee - totalPaid);
     const advanceAmount = totalPaid > totalFee ? (totalPaid - totalFee) : 0;
     const isAdvance = advanceAmount > 0;
+
+    const net1 = totalY1 - recY1;
+    const dueY1 = net1 > 0 ? net1 : 0;
+    const advY1 = net1 < 0 ? Math.abs(net1) : 0;
+
+    const net2 = totalY2 + net1 - recY2;
+    const dueY2 = net2 > 0 ? net2 : 0;
+    const advY2 = net2 < 0 ? Math.abs(net2) : 0;
+
+    const net3 = totalY3 + net2 - recY3;
+    const dueY3 = net3 > 0 ? net3 : 0;
+    const advY3 = net3 < 0 ? Math.abs(net3) : 0;
+
+    const net4 = totalY4 + net3 - recY4;
+    const dueY4 = net4 > 0 ? net4 : 0;
+    const advY4 = net4 < 0 ? Math.abs(net4) : 0;
 
     let nextFeeDueDate = item.nextFeeDueDate || null;
     if (!nextFeeDueDate && Array.isArray(item.promotionHistory) && item.promotionHistory.length > 0) {
@@ -179,12 +219,13 @@ export default function StudentList({
     }
 
     return {
-      feeY1, schY1, recY1,
-      feeY2, schY2, recY2,
-      feeY3, schY3, recY3,
-      feeY4, schY4, recY4,
+      feeY1, schY1, recY1, totalY1, dueY1, advY1,
+      feeY2, schY2, recY2, totalY2, dueY2, advY2,
+      feeY3, schY3, recY3, totalY3, dueY3, advY3,
+      feeY4, schY4, recY4, totalY4, dueY4, advY4,
       totalFee, totalSch, totalPaid, totalRem,
-      advanceAmount, isAdvance, nextFeeDueDate
+      advanceAmount, isAdvance, nextFeeDueDate,
+      cat
     };
   };
 
@@ -865,11 +906,9 @@ export default function StudentList({
     setScholarshipYear4(String(y4 || 0));
     setScholarshipActiveYear('year1');
 
-    const acadFee = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee !== undefined && student.studentFee !== null ? student.studentFee : 0));
-    const sch = Number(student.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-    const tot = acadFee + sch;
-    const paid = Number(student.totalPaid || 0);
-    const rem = Math.max(0, tot - paid);
+    const bd = calculateStudentYearBreakdown(student);
+    const sch = bd.totalSch;
+    const rem = bd.totalRem;
 
     setIsCustomPurpose(false);
     if (initialMode === 'receive') {
@@ -927,15 +966,10 @@ export default function StudentList({
     setFeeDeskSuccess(null);
     setIsCustomPurpose(false);
 
-    const acadFee = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-    const y1 = Number(scholarshipYear1) || 0;
-    const y2 = Number(scholarshipYear2) || 0;
-    const y3 = Number(scholarshipYear3) || 0;
-    const y4 = Number(scholarshipYear4) || 0;
-    const sch = (y1 + y2 + y3 + y4 > 0) ? (y1 + y2 + y3 + y4) : Number(feeDeskStudent.scholarshipAmount || 0);
-    const tot = acadFee + sch;
-    const paid = Number(feeDeskStudent.totalPaid || 0);
-    const rem = Math.max(0, tot - paid);
+    const bd = calculateStudentYearBreakdown(feeDeskStudent);
+    const sch = bd.totalSch;
+    const rem = bd.totalRem;
+    const y1 = bd.schY1;
 
     if (newMode === 'receive') {
       setFeeDeskPurpose('Tuition Fee');
@@ -3420,6 +3454,7 @@ export default function StudentList({
                             <option value="Admission Fee">Admission Fee</option>
                             <option value="Examination Fee">Examination Fee</option>
                             <option value="Registration Fee">Registration Fee</option>
+                            <option value="Late Fee">Late Fee (विलंब शुल्क)</option>
                             <option value="Caution Money">Caution Money Deposit</option>
                             <option value="Library Fee">Library / Lab Fee</option>
                             <option value="Scholarship">Scholarship</option>
@@ -3529,14 +3564,22 @@ export default function StudentList({
                         <div>
                           <span className="text-[10px] font-bold uppercase text-blue-700">Total Academic / Center Fee</span>
                           <div className="text-base font-black text-blue-950 font-mono">
-                            ₹{Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)).toLocaleString('en-IN')}/-
+                            ₹{(() => {
+                              const sumFromHistory = (Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0)
+                                ? feeDeskStudent.academicFeeHistory.reduce((sum, h) => sum + Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0)), 0)
+                                : 0;
+                              const displayTotal = sumFromHistory > 0
+                                ? sumFromHistory
+                                : Number(feeDeskStudent.studentFee || feeDeskStudent.courseFee || feeDeskStudent.academicFee || 0);
+                              return displayTotal.toLocaleString('en-IN');
+                            })()}/-
                           </div>
                         </div>
                         {Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0 && (
                           <div className="flex flex-wrap items-center gap-1.5 max-w-full">
                             {feeDeskStudent.academicFeeHistory.map((h, i) => (
                               <span key={h.id || i} className="px-2.5 py-1 bg-white border border-blue-300 shadow-2xs rounded-lg text-[11px] font-bold text-blue-950 flex items-center gap-1">
-                                <span className="text-blue-700 font-semibold">{h.purpose || 'Center Fee'}:</span>
+                                <span className="text-blue-700 font-semibold">{h.currentClass ? `${h.currentClass} - ` : ''}{h.purpose || 'Center Fee'}:</span>
                                 <span className="font-mono font-extrabold text-blue-900">₹{Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0)).toLocaleString('en-IN')}/-</span>
                               </span>
                             ))}
@@ -3615,6 +3658,7 @@ export default function StudentList({
                             <option value="Admission Fee">Admission Fee</option>
                             <option value="Registration Fee">Registration Fee</option>
                             <option value="Examination Fee">Examination Fee</option>
+                            <option value="Late Fee">Late Fee (विलंब शुल्क)</option>
                             <option value="Other Fee">Other Fee</option>
                             <option value="__OTHER__">Other (Type custom purpose... / अन्य शुल्क)</option>
                           </select>
@@ -3710,6 +3754,7 @@ export default function StudentList({
                                 <option value="Admission Fee">Admission Fee</option>
                                 <option value="Registration Fee">Registration Fee</option>
                                 <option value="Examination Fee">Examination Fee</option>
+                                <option value="Late Fee">Late Fee (विलंब शुल्क)</option>
                                 <option value="Other Fee">Other Fee</option>
                                 <option value="__OTHER__">Other (Type custom... / अन्य शुल्क)</option>
                               </select>
@@ -4016,95 +4061,28 @@ export default function StudentList({
               {feeDeskMode === 'receive' && (
                 <>
                   {(() => {
-                    const acad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee !== undefined && feeDeskStudent.studentFee !== null ? feeDeskStudent.studentFee : 0));
-                    const y1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
-                    const y2 = Number(feeDeskStudent.scholarshipYear2 || 0);
-                    const y3 = Number(feeDeskStudent.scholarshipYear3 || 0);
-                    const y4 = Number(feeDeskStudent.scholarshipYear4 || 0);
-                    const sch = Number(feeDeskStudent.scholarshipAmount || (y1 + y2 + y3 + y4) || 0);
-                    const rawCat = feeDeskStudent.feeCategory;
-                    const cat = (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-                      ? 'full_scholarship'
-                      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
-                        ? 'course_fee_scholarship'
-                        : 'full_course_fee';
-                    let tot = acad;
-                    if (cat === 'course_fee_scholarship') {
-                      tot = Math.max(0, acad - sch);
-                    } else if (cat === 'full_scholarship') {
-                      tot = sch;
-                    } else {
-                      tot = acad;
-                    }
-                    const paid = Number(feeDeskStudent.totalPaid || 0);
-                    const rem = Math.max(0, tot - paid);
+                    const payList = (Array.isArray(feeDeskPayments) && feeDeskPayments.length > 0)
+                      ? feeDeskPayments
+                      : (feeDeskStudent.feeHistory || feeDeskStudent.payments || []);
 
-                    // Compute Year-wise Breakdown (1st Year, 2nd Year, 3rd Year, 4th Year)
-                    let acadY1 = 0, acadY2 = 0, acadY3 = 0, acadY4 = 0;
-                    if (Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0) {
-                      feeDeskStudent.academicFeeHistory.forEach(entry => {
-                        const cls = (entry.currentClass || '').toUpperCase();
-                        const amt = Number(entry.amount || entry.fee || 0);
-                        if (cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
-                          acadY1 += amt;
-                        } else if (cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
-                          acadY2 += amt;
-                        } else if (cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
-                          acadY3 += amt;
-                        } else if (cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
-                          acadY4 += amt;
-                        } else {
-                          acadY1 += amt;
-                        }
-                      });
-                    } else {
-                      acadY1 = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
-                    }
+                    const bd = calculateStudentYearBreakdown({
+                      ...feeDeskStudent,
+                      payments: payList
+                    });
 
-                    const schY1 = Number(feeDeskStudent.scholarshipYear1 !== undefined ? feeDeskStudent.scholarshipYear1 : (!feeDeskStudent.scholarshipYear2 ? (feeDeskStudent.scholarshipAmount || 0) : 0));
-                    const schY2 = Number(feeDeskStudent.scholarshipYear2 || 0);
-                    const schY3 = Number(feeDeskStudent.scholarshipYear3 || 0);
-                    const schY4 = Number(feeDeskStudent.scholarshipYear4 || 0);
-
-                    let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
-                    const payList = Array.isArray(feeDeskPayments) && feeDeskPayments.length > 0 ? feeDeskPayments : (feeDeskStudent.feeHistory || []);
-                    if (payList.length > 0) {
-                      payList.forEach(p => {
-                        const cls = (p.currentClass || p.year || '').toUpperCase();
-                        const amt = Number(p.amountPaid || p.amount || 0);
-                        if (cls.includes('YEAR1') || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
-                          recY1 += amt;
-                        } else if (cls.includes('YEAR2') || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
-                          recY2 += amt;
-                        } else if (cls.includes('YEAR3') || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
-                          recY3 += amt;
-                        } else if (cls.includes('YEAR4') || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
-                          recY4 += amt;
-                        } else {
-                          recY1 += amt;
-                        }
-                      });
-                    } else {
-                      recY1 = Number(feeDeskStudent.paidYear1 || 0);
-                      recY2 = Number(feeDeskStudent.paidYear2 || 0);
-                      recY3 = Number(feeDeskStudent.paidYear3 || 0);
-                      recY4 = Number(feeDeskStudent.paidYear4 || 0);
-                    }
-
-                    const isProfileAdvance = paid > tot;
-                    const profileAdvanceAmt = isProfileAdvance ? (paid - tot) : 0;
-
-                    const calcYrTotal = (yrAcad, yrSch) => {
-                      if (cat === 'course_fee_scholarship') return Math.max(0, yrAcad - yrSch);
-                      if (cat === 'full_scholarship') return yrSch;
-                      return yrAcad;
-                    };
+                    const acad = bd.feeY1 + bd.feeY2 + bd.feeY3 + bd.feeY4;
+                    const sch = bd.totalSch;
+                    const tot = bd.totalFee;
+                    const paid = bd.totalPaid;
+                    const rem = bd.totalRem;
+                    const isProfileAdvance = bd.isAdvance;
+                    const profileAdvanceAmt = bd.advanceAmount;
 
                     const yearRows = [
-                      { label: '1st Year', sub: 'SEM-1 & 2', acad: acadY1, sch: schY1, total: calcYrTotal(acadY1, schY1), rec: recY1, due: Math.max(0, calcYrTotal(acadY1, schY1) - recY1), adv: Math.max(0, recY1 - calcYrTotal(acadY1, schY1)) },
-                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: acadY2, sch: schY2, total: calcYrTotal(acadY2, schY2), rec: recY2, due: Math.max(0, calcYrTotal(acadY2, schY2) - recY2), adv: Math.max(0, recY2 - calcYrTotal(acadY2, schY2)) },
-                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: acadY3, sch: schY3, total: calcYrTotal(acadY3, schY3), rec: recY3, due: Math.max(0, calcYrTotal(acadY3, schY3) - recY3), adv: Math.max(0, recY3 - calcYrTotal(acadY3, schY3)) },
-                      { label: '4th Year', sub: 'SEM-7 & 8', acad: acadY4, sch: schY4, total: calcYrTotal(acadY4, schY4), rec: recY4, due: Math.max(0, calcYrTotal(acadY4, schY4) - recY4), adv: Math.max(0, recY4 - calcYrTotal(acadY4, schY4)) }
+                      { label: '1st Year', sub: 'SEM-1 & 2', acad: bd.feeY1, sch: bd.schY1, total: bd.totalY1, rec: bd.recY1, due: bd.dueY1, adv: bd.advY1 },
+                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: bd.feeY2, sch: bd.schY2, total: bd.totalY2, rec: bd.recY2, due: bd.dueY2, adv: bd.advY2 },
+                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: bd.feeY3, sch: bd.schY3, total: bd.totalY3, rec: bd.recY3, due: bd.dueY3, adv: bd.advY3 },
+                      { label: '4th Year', sub: 'SEM-7 & 8', acad: bd.feeY4, sch: bd.schY4, total: bd.totalY4, rec: bd.recY4, due: bd.dueY4, adv: bd.advY4 }
                     ];
 
                     return (
@@ -4500,10 +4478,10 @@ export default function StudentList({
 
               {/* 2. SET FEE MODE: Center Fee Entry Table with Date, Print, Edit, Delete */}
               {feeDeskMode === 'set_fee' && (() => {
-                const currentAcad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
+                const fallbackAcad = Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0));
                 const centerFeeEntries = (Array.isArray(feeDeskStudent.academicFeeHistory) && feeDeskStudent.academicFeeHistory.length > 0)
                   ? feeDeskStudent.academicFeeHistory
-                  : (currentAcad > 0 ? [{
+                  : (fallbackAcad > 0 ? [{
                       id: 'CF-' + (feeDeskStudent.id || feeDeskStudent.rollNo || '1'),
                       receiptNo: `CF-${feeDeskStudent.rollNo || '001'}`,
                       date: feeDeskStudent.academicFeeDate || (feeDeskStudent.createdAt ? feeDeskStudent.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
@@ -4513,10 +4491,11 @@ export default function StudentList({
                       paymentMode: 'Official Record',
                       refNo: '-',
                       receivedBy: 'Admin Desk',
-                      amount: currentAcad,
-                      amountPaid: currentAcad,
+                      amount: fallbackAcad,
+                      amountPaid: fallbackAcad,
                       remark: feeDeskStudent.remark || 'Center Fee'
                     }] : []);
+                const currentAcad = centerFeeEntries.reduce((sum, e) => sum + Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0)), 0);
 
                 return (
                   <div className="space-y-2 pt-2">
