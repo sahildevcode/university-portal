@@ -28,7 +28,8 @@ export default function StudentList({
   filterStartDate = '',
   filterEndDate = '',
   onFeeReceived,
-  isRecordsDesk = false
+  isRecordsDesk = false,
+  canEdit = true
 }) {
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
@@ -2117,17 +2118,39 @@ export default function StudentList({
               <span>📥 Bulk Import Data</span>
             </button>
 
-            <button
-              onClick={() => {
-                if (onOpenNewAdmission) onOpenNewAdmission();
-                else if (setActiveTab) setActiveTab('register');
-              }}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer"
-            >
-              <Users className="w-4 h-4" />
-              <span>+ Enroll New Student</span>
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => {
+                  if (onOpenNewAdmission) onOpenNewAdmission();
+                  else if (setActiveTab) setActiveTab('register');
+                }}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all whitespace-nowrap cursor-pointer"
+              >
+                <Users className="w-4 h-4" />
+                <span>+ Enroll New Student</span>
+              </button>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* View-Only Alert Banner if Staff has Read-Only Access */}
+      {!canEdit && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-center justify-between gap-3 text-amber-950 shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0 text-base">
+              🔒
+            </div>
+            <div>
+              <p className="text-xs font-black">View-Only Mode Active (सिर्फ देखने की अनुमति)</p>
+              <p className="text-[11px] text-amber-800">
+                Admin द्वारा इस अकाउंट को सिर्फ डेटा व रिपोर्ट्स देखने की अनुमति दी गई है। छात्र जोड़ना, एडिट, डिलीट, डिग्री कम्प्लीट एवं फीस रसीद में बदलाव अक्षम (disabled) है।
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-lg bg-amber-200/80 text-amber-900 text-[10px] font-extrabold uppercase shrink-0">
+            Read Only
+          </span>
         </div>
       )}
 
@@ -3084,7 +3107,7 @@ export default function StudentList({
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                 </button>
-                                {!isRecordsDesk && (
+                                {!isRecordsDesk && canEdit && (
                                   <button
                                     type="button"
                                     onClick={() => handleOpenEditModal(std)}
@@ -3094,14 +3117,16 @@ export default function StudentList({
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenCompleteCourseModal(std)}
-                                  className="p-1 rounded hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
-                                  title="Complete Degree (डिग्री पूर्ण मार्क करें एवं दस्तावेज वापसी में भेजें)"
-                                >
-                                  <GraduationCap className="w-3.5 h-3.5" />
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCompleteCourseModal(std)}
+                                    className="p-1 rounded hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                                    title="Complete Degree (डिग्री पूर्ण मार्क करें एवं दस्तावेज वापसी में भेजें)"
+                                  >
+                                    <GraduationCap className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => setPrintSlipStudent(std)}
@@ -3110,7 +3135,7 @@ export default function StudentList({
                                 >
                                   <Printer className="w-3.5 h-3.5" />
                                 </button>
-                                {!isRecordsDesk && (
+                                {!isRecordsDesk && canEdit && (
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteStudent(std)}
@@ -3395,7 +3420,7 @@ export default function StudentList({
                                     >
                                       <Eye className="w-3.5 h-3.5" />
                                     </button>
-                                    {!isRecordsDesk && (
+                                    {!isRecordsDesk && canEdit && (
                                       <button
                                         type="button"
                                         onClick={() => handleOpenEditModal(linked)}
@@ -3413,7 +3438,7 @@ export default function StudentList({
                                     >
                                       <Printer className="w-3.5 h-3.5" />
                                     </button>
-                                    {!isRecordsDesk && (
+                                    {!isRecordsDesk && canEdit && (
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteStudent(linked)}
@@ -3542,6 +3567,26 @@ export default function StudentList({
                 <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-xl flex items-center gap-2 font-medium">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span>{feeDeskSuccess}</span>
+                </div>
+              )}
+
+              {/* View-Only Alert Banner if Staff has Read-Only Access */}
+              {!canEdit && (
+                <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-center justify-between gap-3 text-amber-950 font-medium animate-fadeIn">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0">
+                      🔒
+                    </div>
+                    <div>
+                      <p className="text-xs font-black">Fee Desk View-Only Mode (सिर्फ देखने की अनुमति)</p>
+                      <p className="text-[11px] text-amber-800">
+                        इस अकाउंट को सिर्फ फीस विवरण देखने एवं रसीद प्रिंट करने की अनुमति है। नई फीस जमा करना, सेंटर फीस जोड़ना, स्कॉलरशिप बदलना व रसीद डिलीट करना बंद है।
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-amber-200/80 text-amber-900 text-[10px] font-extrabold uppercase shrink-0">
+                    Read Only
+                  </span>
                 </div>
               )}
 
@@ -3703,12 +3748,14 @@ export default function StudentList({
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-                      <button type="submit" disabled={feeDeskLoading} onClick={(e) => handleFeeDeskSubmit(e, 'add')} className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" title="Add new fee installment entry">
-                        <PlusCircle className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Saving...' : 'Receive Fees (Add Payment)'}</span>
-                      </button>
-                    </div>
+                    {canEdit && (
+                      <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
+                        <button type="submit" disabled={feeDeskLoading} onClick={(e) => handleFeeDeskSubmit(e, 'add')} className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2" title="Add new fee installment entry">
+                          <PlusCircle className="w-4 h-4" />
+                          <span>{feeDeskLoading ? 'Saving...' : 'Receive Fees (Add Payment)'}</span>
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -4008,15 +4055,17 @@ export default function StudentList({
                         <span>+ Add Another Purpose (साथ में दूसरी एंट्री जोड़ें)</span>
                       </button>
 
-                      <button
-                        type="submit"
-                        disabled={feeDeskLoading}
-                        className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-7 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                        title="Add fee entry"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Adding...' : 'Add'}</span>
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="submit"
+                          disabled={feeDeskLoading}
+                          className="bg-[#28a745] hover:bg-[#218838] text-white font-black px-7 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                          title="Add fee entry"
+                        >
+                          <PlusCircle className="w-4 h-4" />
+                          <span>{feeDeskLoading ? 'Adding...' : 'Add'}</span>
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
@@ -4216,16 +4265,18 @@ export default function StudentList({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 pt-1">
-                      <button
-                        type="submit"
-                        disabled={feeDeskLoading}
-                        className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                      >
-                        <Award className="w-4 h-4" />
-                        <span>{feeDeskLoading ? 'Saving...' : 'Set Scholarship (Save Years)'}</span>
-                      </button>
-                    </div>
+                    {canEdit && (
+                      <div className="flex items-center justify-end gap-3 pt-1">
+                        <button
+                          type="submit"
+                          disabled={feeDeskLoading}
+                          className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <Award className="w-4 h-4" />
+                          <span>{feeDeskLoading ? 'Saving...' : 'Set Scholarship (Save Years)'}</span>
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </form>
@@ -4592,51 +4643,55 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditPaymentError(null);
-                                          const rawDate = p.feeDate || p.paymentDate || p.date || '';
-                                          let formattedDate = new Date().toISOString().split('T')[0];
-                                          if (rawDate) {
-                                            try {
-                                              const d = new Date(rawDate);
-                                              if (!isNaN(d.getTime())) {
-                                                formattedDate = d.toISOString().split('T')[0];
+                                      {canEdit && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditPaymentError(null);
+                                              const rawDate = p.feeDate || p.paymentDate || p.date || '';
+                                              let formattedDate = new Date().toISOString().split('T')[0];
+                                              if (rawDate) {
+                                                try {
+                                                  const d = new Date(rawDate);
+                                                  if (!isNaN(d.getTime())) {
+                                                    formattedDate = d.toISOString().split('T')[0];
+                                                  }
+                                                } catch (e) {}
                                               }
-                                            } catch (e) {}
-                                          }
-                                          setEditingPaymentModal({
-                                            ...p,
-                                            id: p.id || p.receiptNo,
-                                            receiptNo: p.receiptNo || '',
-                                            amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
-                                            feeDate: formattedDate,
-                                            paymentMode: p.paymentMode || 'Cash',
-                                            purpose: p.purpose || p.feeType || 'Tuition Fee',
-                                            currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1',
-                                            refNo: p.refNo || p.transactionRef || '',
-                                            receivedBy: p.receivedBy || 'Admin Desk',
-                                            remark: p.remark || '',
-                                            yearKey: p.yearKey
-                                          });
-                                        }}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit this Payment Entry"
-                                      >
-                                        <Edit3 className="w-3 h-3" />
-                                        <span>Edit</span>
-                                      </button>
+                                              setEditingPaymentModal({
+                                                ...p,
+                                                id: p.id || p.receiptNo,
+                                                receiptNo: p.receiptNo || '',
+                                                amountPaid: p.amountPaid !== undefined ? p.amountPaid : (p.amount || 0),
+                                                feeDate: formattedDate,
+                                                paymentMode: p.paymentMode || 'Cash',
+                                                purpose: p.purpose || p.feeType || 'Tuition Fee',
+                                                currentClass: p.currentClass || feeDeskStudent.currentClass || 'SEM-1',
+                                                refNo: p.refNo || p.transactionRef || '',
+                                                receivedBy: p.receivedBy || 'Admin Desk',
+                                                remark: p.remark || '',
+                                                yearKey: p.yearKey
+                                              });
+                                            }}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Edit this Payment Entry"
+                                          >
+                                            <Edit3 className="w-3 h-3" />
+                                            <span>Edit</span>
+                                          </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
-                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete this Payment Entry"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                        <span>Delete</span>
-                                      </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeletePayment(p.id || p.receiptNo, p.amountPaid || p.amount)}
+                                            className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Delete this Payment Entry"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                            <span>Delete</span>
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -4753,47 +4808,51 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditPaymentError(null);
-                                          const rawDate = c.feeDate || c.date || '';
-                                          let formattedDate = new Date().toISOString().split('T')[0];
-                                          if (rawDate) {
-                                            try {
-                                              const d = new Date(rawDate);
-                                              if (!isNaN(d.getTime())) {
-                                                formattedDate = d.toISOString().split('T')[0];
+                                      {canEdit && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditPaymentError(null);
+                                              const rawDate = c.feeDate || c.date || '';
+                                              let formattedDate = new Date().toISOString().split('T')[0];
+                                              if (rawDate) {
+                                                try {
+                                                  const d = new Date(rawDate);
+                                                  if (!isNaN(d.getTime())) {
+                                                    formattedDate = d.toISOString().split('T')[0];
+                                                  }
+                                                } catch (e) {}
                                               }
-                                            } catch (e) {}
-                                          }
-                                          setEditingPaymentModal({
-                                            ...c,
-                                            isCenterFee: true,
-                                            id: c.id,
-                                            receiptNo: c.receiptNo || `CF-${feeDeskStudent.rollNo || '001'}`,
-                                            amountPaid: cAmt,
-                                            feeDate: formattedDate,
-                                            purpose: c.purpose || 'Center Fee',
-                                            currentClass: c.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                          });
-                                        }}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit Center Fee"
-                                      >
-                                        <Edit3 className="w-3 h-3" />
-                                        <span>Edit</span>
-                                      </button>
+                                              setEditingPaymentModal({
+                                                ...c,
+                                                isCenterFee: true,
+                                                id: c.id,
+                                                receiptNo: c.receiptNo || `CF-${feeDeskStudent.rollNo || '001'}`,
+                                                amountPaid: cAmt,
+                                                feeDate: formattedDate,
+                                                purpose: c.purpose || 'Center Fee',
+                                                currentClass: c.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                              });
+                                            }}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Edit Center Fee"
+                                          >
+                                            <Edit3 className="w-3 h-3" />
+                                            <span>Edit</span>
+                                          </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteCenterFee(c.id, cAmt, c.purpose)}
-                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete Center Fee"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                        <span>Delete</span>
-                                      </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteCenterFee(c.id, cAmt, c.purpose)}
+                                            className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Delete Center Fee"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                            <span>Delete</span>
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -4990,47 +5049,51 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditPaymentError(null);
-                                          const rawDate = sEntry.feeDate || sEntry.date || '';
-                                          let formattedDate = new Date().toISOString().split('T')[0];
-                                          if (rawDate) {
-                                            try {
-                                              const d = new Date(rawDate);
-                                              if (!isNaN(d.getTime())) {
-                                                formattedDate = d.toISOString().split('T')[0];
+                                      {canEdit && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditPaymentError(null);
+                                              const rawDate = sEntry.feeDate || sEntry.date || '';
+                                              let formattedDate = new Date().toISOString().split('T')[0];
+                                              if (rawDate) {
+                                                try {
+                                                  const d = new Date(rawDate);
+                                                  if (!isNaN(d.getTime())) {
+                                                    formattedDate = d.toISOString().split('T')[0];
+                                                  }
+                                                } catch (e) {}
                                               }
-                                            } catch (e) {}
-                                          }
-                                          setEditingPaymentModal({
-                                            ...sEntry,
-                                            isScholarship: true,
-                                            year: sEntry.year || 'year1',
-                                            receiptNo: sEntry.receiptNo,
-                                            amountPaid: sAmt,
-                                            feeDate: formattedDate,
-                                            purpose: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
-                                            currentClass: sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'
-                                          });
-                                        }}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Edit Scholarship Entry"
-                                      >
-                                        <Edit3 className="w-3 h-3" />
-                                        <span>Edit</span>
-                                      </button>
+                                              setEditingPaymentModal({
+                                                ...sEntry,
+                                                isScholarship: true,
+                                                year: sEntry.year || 'year1',
+                                                receiptNo: sEntry.receiptNo,
+                                                amountPaid: sAmt,
+                                                feeDate: formattedDate,
+                                                purpose: sEntry.purpose || sEntry.yearLabel || 'Scholarship',
+                                                currentClass: sEntry.currentClass || feeDeskStudent.currentClass || 'SEM-1'
+                                              });
+                                            }}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Edit Scholarship Entry"
+                                          >
+                                            <Edit3 className="w-3 h-3" />
+                                            <span>Edit</span>
+                                          </button>
 
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteScholarship(sEntry.id || sEntry.receiptNo, sAmt, sEntry.purpose || sEntry.yearLabel)}
-                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
-                                        title="Delete Scholarship Entry"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                        <span>Delete</span>
-                                      </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteScholarship(sEntry.id || sEntry.receiptNo, sAmt, sEntry.purpose || sEntry.yearLabel)}
+                                            className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                            title="Delete Scholarship Entry"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                            <span>Delete</span>
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -5370,7 +5433,7 @@ export default function StudentList({
               </div>
 
               <div className="flex items-center gap-2">
-                {!isRecordsDesk && (
+                {!isRecordsDesk && canEdit && (
                   <button
                     type="button"
                     onClick={() => handleOpenEditModal(selectedStudent)}

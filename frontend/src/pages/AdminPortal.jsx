@@ -238,6 +238,11 @@ export default function AdminPortal({
         : ['cashcounter', 'admissions', 'documents', 'records'])
     : null;
 
+  // 2-Tier Staff Access Control:
+  // If master admin (no activeStaff), canEdit is always true.
+  // If staff member, canEdit is true ONLY if explicitly granted by Admin (activeStaff.canEdit === true).
+  const canEdit = !activeStaff || activeStaff.canEdit === true;
+
   const getInitialAdminTab = () => {
     let chosen = 'records';
     if (typeof window !== 'undefined') {
@@ -509,7 +514,18 @@ export default function AdminPortal({
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
               {activeStaff ? (
-                <>Logged in as Staff: <strong className="text-amber-300 font-mono">{activeStaff.name}</strong> ({adminModules.length} Modules Authorized)</>
+                <span className="flex items-center gap-2 flex-wrap">
+                  <span>Logged in as Staff: <strong className="text-amber-300 font-mono">{activeStaff.name}</strong> ({adminModules.length} Modules)</span>
+                  {canEdit ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                      ✏️ Edit Power Granted
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-400/40">
+                      🔒 View Only Mode
+                    </span>
+                  )}
+                </span>
               ) : (
                 <>Logged in: <strong className="text-white font-mono">{adminUser?.name || 'Administrator'}</strong></>
               )}
@@ -519,14 +535,16 @@ export default function AdminPortal({
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Bulk Import Data */}
-          <button
-            onClick={() => setShowBulkImportModal(true)}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white border border-emerald-400/40 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
-            title="Bulk Import Students & Past Fees from Excel or PDF"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
-            <span>📥 Bulk Import Data</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowBulkImportModal(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white border border-emerald-400/40 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+              title="Bulk Import Students & Past Fees from Excel or PDF"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
+              <span>📥 Bulk Import Data</span>
+            </button>
+          )}
 
           {/* Language Switcher Button */}
           <button
@@ -898,24 +916,28 @@ export default function AdminPortal({
               >
                 👥 Enrolled Students Directory & KYC
               </button>
-              <button
-                onClick={() => setAdmissionSubTab('new')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  admissionSubTab === 'new' 
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold' 
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                ➕ New Student Admission Form (39 Fields)
-              </button>
-              <button
-                onClick={() => setShowBulkImportModal(true)}
-                className="px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5"
-                title="Bulk Import Students & Past Fees from Excel or PDF"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
-                <span>📥 Bulk Import (Excel / PDF)</span>
-              </button>
+              {canEdit && (
+                <>
+                  <button
+                    onClick={() => setAdmissionSubTab('new')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      admissionSubTab === 'new' 
+                        ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold' 
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    ➕ New Student Admission Form (39 Fields)
+                  </button>
+                  <button
+                    onClick={() => setShowBulkImportModal(true)}
+                    className="px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5"
+                    title="Bulk Import Students & Past Fees from Excel or PDF"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
+                    <span>📥 Bulk Import (Excel / PDF)</span>
+                  </button>
+                </>
+              )}
             </div>
             <span className="text-[11px] font-semibold text-slate-500">
               Active Mode: <strong className="text-indigo-950">{admissionSubTab === 'directory' ? 'Student Records & Verification' : 'MP Govt Higher Education Admission Desk'}</strong>
@@ -925,7 +947,8 @@ export default function AdminPortal({
           {admissionSubTab === 'directory' ? (
             <StudentList 
               courses={localCourses} 
-              onOpenNewAdmission={() => setAdmissionSubTab('new')} 
+              canEdit={canEdit}
+              onOpenNewAdmission={() => canEdit && setAdmissionSubTab('new')} 
               lang={lang}
               toggleLang={toggleLang}
             />
@@ -948,12 +971,15 @@ export default function AdminPortal({
       {activeTab === 'records' && (
         <StudentList 
           courses={localCourses} 
+          canEdit={canEdit}
           lang={lang}
           toggleLang={toggleLang}
           isRecordsDesk={true}
           onOpenNewAdmission={() => {
-            setActiveTab('admissions');
-            setAdmissionSubTab('new');
+            if (canEdit) {
+              setActiveTab('admissions');
+              setAdmissionSubTab('new');
+            }
           }}
         />
       )}
@@ -962,6 +988,7 @@ export default function AdminPortal({
       {activeTab === 'promote' && (
         <PromoteStudentsManager 
           courses={localCourses} 
+          canEdit={canEdit}
           lang={lang} 
           toggleLang={toggleLang} 
           onRefreshCourses={onRefreshCourses}
@@ -987,7 +1014,7 @@ export default function AdminPortal({
 
       {/* TAB 2: CASH COUNTER & TREASURY FEED (WITH ADMIN EDIT POWER) */}
       {activeTab === 'cashcounter' && (
-        <AccountsDashboard isAdmin={true} lang={lang} toggleLang={toggleLang} />
+        <AccountsDashboard isAdmin={canEdit} canEdit={canEdit} lang={lang} toggleLang={toggleLang} />
       )}
 
       {/* TAB: STUDENT DOCUMENTS TRACKER & VERIFICATION */}

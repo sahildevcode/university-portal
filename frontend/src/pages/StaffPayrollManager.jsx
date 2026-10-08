@@ -56,6 +56,7 @@ export default function StaffPayrollManager({ adminUser }) {
     role: 'Cash Counter & Admission Desk',
     department: 'Accounts & Admissions',
     status: 'Active',
+    canEdit: false,
     allowedModules: ['cashcounter', 'admissions', 'documents', 'records'],
 
     // Personal & Family Details
@@ -349,6 +350,7 @@ export default function StaffPayrollManager({ adminUser }) {
     setEditingStaffId(null);
     setStaffForm({
       ...initialStaffForm,
+      canEdit: false,
       allowedModules: ['cashcounter', 'admissions', 'documents', 'records']
     });
     setShowStaffModal(true);
@@ -359,6 +361,7 @@ export default function StaffPayrollManager({ adminUser }) {
     setStaffForm({
       ...initialStaffForm,
       ...stf,
+      canEdit: stf.canEdit === true,
       experienceMonths: stf.experienceMonths !== undefined ? String(stf.experienceMonths) : '',
       salary: stf.salary !== undefined ? String(stf.salary) : '',
       allowedModules: Array.isArray(stf.allowedModules) && stf.allowedModules.length > 0
@@ -379,6 +382,7 @@ export default function StaffPayrollManager({ adminUser }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...staffForm,
+          canEdit: staffForm.canEdit === true,
           salary: Number(staffForm.salary) || 0,
           experienceMonths: Number(staffForm.experienceMonths) || 0,
           allowedModules: Array.isArray(staffForm.allowedModules) ? staffForm.allowedModules : []
@@ -396,6 +400,7 @@ export default function StaffPayrollManager({ adminUser }) {
             const updatedCurStaff = {
               ...curStaff,
               ...staffForm,
+              canEdit: staffForm.canEdit === true,
               allowedModules: Array.isArray(staffForm.allowedModules) ? staffForm.allowedModules : []
             };
             localStorage.setItem('pkc_staff_user', JSON.stringify(updatedCurStaff));
@@ -647,6 +652,17 @@ export default function StaffPayrollManager({ adminUser }) {
                                       : `${(Array.isArray(stf.allowedModules) ? stf.allowedModules : ['cashcounter', 'admissions', 'documents', 'records']).length} Pages Allowed`}
                                   </span>
                                 </span>
+                                {stf.canEdit ? (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 shadow-xs">
+                                    <span>✏️</span>
+                                    <span>Edit Power</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200 flex items-center gap-1">
+                                    <span>🔒</span>
+                                    <span>View Only</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1204,6 +1220,101 @@ export default function StaffPayrollManager({ adminUser }) {
                 </div>
               </div>
 
+              {/* SECTION: 2-TIER DATA ACCESS POWER (VIEW-ONLY VS EDIT-ALLOWED) */}
+              <div className="bg-gradient-to-r from-slate-900 via-[#102d4a] to-slate-900 text-white p-4 sm:p-5 rounded-2xl border-2 border-amber-400/60 shadow-md space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950">
+                        2-Tier Access Control
+                      </span>
+                      <span className="text-xs font-bold text-amber-300">
+                        स्टाफ डेटा एक्सेस लेवल (ऑपरेशनल पावर)
+                      </span>
+                    </div>
+                    <h4 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-amber-400" />
+                      <span>Data Access & Modification Power (डेटा देखने व एडिट की अनुमति)</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      चुनें कि क्या यह स्टाफ सिर्फ डेटा देख सकेगा (View Only) या एडमिन द्वारा डेटा एडिट/बदलाव की पावर दी जाएगी (Allow Edit)।
+                    </p>
+                  </div>
+
+                  <div className="shrink-0">
+                    {staffForm.canEdit ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/50">
+                        <span>✏️</span>
+                        <span>Full Edit Power Enabled</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/50">
+                        <span>🔒</span>
+                        <span>View Only Mode Active</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Option 1: View Only */}
+                  <label className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                    !staffForm.canEdit 
+                      ? 'bg-amber-500/15 border-amber-400 shadow-md ring-1 ring-amber-400/40 text-white' 
+                      : 'bg-white/5 border-white/10 hover:border-white/30 text-slate-300 opacity-75'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="staffAccessPower"
+                      checked={!staffForm.canEdit}
+                      onChange={() => setStaffForm(prev => ({ ...prev, canEdit: false }))}
+                      className="w-4 h-4 mt-1 text-amber-500 focus:ring-amber-400 cursor-pointer shrink-0"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-white flex items-center gap-1.5">
+                          🔒 View Only (सिर्फ डेटा देख पाए)
+                        </span>
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                          Recommended Default
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                        स्टाफ सिर्फ डेटा, छात्र सूची और रिपोर्ट्स देख सकता है। कोई भी बदलाव, नया छात्र जोड़ना, एडिट, डिलीट, फीस रिसीव करना या डिस्काउंट बदलना <strong>सख्ती से बंद</strong> रहेगा।
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Option 2: Full Edit Power */}
+                  <label className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                    staffForm.canEdit 
+                      ? 'bg-emerald-500/20 border-emerald-400 shadow-md ring-1 ring-emerald-400/40 text-white' 
+                      : 'bg-white/5 border-white/10 hover:border-white/30 text-slate-300 opacity-75'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="staffAccessPower"
+                      checked={staffForm.canEdit}
+                      onChange={() => setStaffForm(prev => ({ ...prev, canEdit: true }))}
+                      className="w-4 h-4 mt-1 text-emerald-400 focus:ring-emerald-400 cursor-pointer shrink-0"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-white flex items-center gap-1.5">
+                          ✏️ Allow Edit & Modify (एडिट की पावर दें)
+                        </span>
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
+                          Admin Special Grant
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                        एडमिन इस स्टाफ को डेटा में बदलाव की पूरी अनुमति देता है: नया छात्र जोड़ना, छात्र रिकॉर्ड एडिट करना, फीस रिसीव/काटना, स्कॉलरशिप अपडेट करना और प्रमोट करना <strong>चालू रहेगा</strong>।
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               {/* SECTION: Portal Pages & Module Access Permissions (Select Single or Multiple) */}
               <div className="bg-gradient-to-br from-indigo-50/70 via-white to-amber-50/40 p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
@@ -1678,7 +1789,7 @@ export default function StaffPayrollManager({ adminUser }) {
             <div className="p-6 overflow-y-auto max-h-[75vh] space-y-4 text-xs">
               
               {/* Credentials & Salary */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-emerald-950">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-emerald-950">
                 <div>
                   <p className="text-[10px] text-emerald-700 font-bold">MONTHLY FIXED SALARY</p>
                   <p className="font-black text-base text-emerald-900">₹{Number(viewingStaff.salary || 0).toLocaleString('en-IN')}</p>
@@ -1690,6 +1801,16 @@ export default function StaffPayrollManager({ adminUser }) {
                 <div>
                   <p className="text-[10px] text-emerald-700 font-bold">STATUS</p>
                   <p className="font-bold text-emerald-800">{viewingStaff.status || 'Active'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-700 font-bold">ACCESS LEVEL</p>
+                  <p className="font-black text-xs mt-0.5">
+                    {viewingStaff.canEdit ? (
+                      <span className="text-emerald-800">✏️ Edit Power</span>
+                    ) : (
+                      <span className="text-amber-800">🔒 View Only</span>
+                    )}
+                  </p>
                 </div>
               </div>
 

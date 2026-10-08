@@ -439,6 +439,7 @@ app.post('/api/auth/staff-login', (req, res) => {
       role: staff.role,
       department: staff.department,
       post: staff.post || staff.role || 'Staff Member',
+      canEdit: staff.canEdit === true,
       allowedModules: Array.isArray(staff.allowedModules) && staff.allowedModules.length > 0
         ? staff.allowedModules
         : ['cashcounter', 'admissions', 'documents', 'records']
@@ -462,6 +463,7 @@ app.get('/api/staff', (req, res) => {
       status: s.status || 'Active',
       salary: Number(s.salary || 0),
       spouseName: s.spouseName || 'NA',
+      canEdit: s.canEdit === true,
       allowedModules: Array.isArray(s.allowedModules) && s.allowedModules.length > 0
         ? s.allowedModules
         : ['cashcounter', 'admissions', 'documents', 'records']
@@ -483,6 +485,7 @@ app.post('/api/staff', (req, res) => {
       dateOfJoining, address, pincode, email, mobile, salary, pfNo,
       religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
       bankAccountNo, bankName, bankIfsc,
+      canEdit,
       allowedModules
     } = req.body;
 
@@ -504,6 +507,7 @@ app.post('/api/staff', (req, res) => {
       role: role || 'Cash Counter & Admission Desk',
       department: department || 'Accounts & Admissions',
       status: status || 'Active',
+      canEdit: canEdit === true,
       allowedModules: Array.isArray(allowedModules) && allowedModules.length > 0
         ? allowedModules
         : ['cashcounter', 'admissions', 'documents', 'records'],
@@ -579,6 +583,7 @@ app.put('/api/staff/:id', (req, res) => {
       dateOfJoining, address, pincode, email, mobile, salary, pfNo,
       religion, socialClass, samagraId, aadhaarNo, panNo, otherDetail,
       bankAccountNo, bankName, bankIfsc,
+      canEdit,
       allowedModules
     } = req.body;
 
@@ -596,6 +601,7 @@ app.put('/api/staff/:id', (req, res) => {
     if (role !== undefined) staff.role = role.trim();
     if (department !== undefined) staff.department = department.trim();
     if (status !== undefined) staff.status = status.trim();
+    if (canEdit !== undefined) staff.canEdit = Boolean(canEdit);
     if (allowedModules !== undefined) {
       staff.allowedModules = Array.isArray(allowedModules) ? allowedModules : [];
     }
@@ -651,6 +657,7 @@ app.get('/api/staff/:id', (req, res) => {
     }
     const safeStaff = {
       ...staff,
+      canEdit: staff.canEdit === true,
       allowedModules: Array.isArray(staff.allowedModules) && staff.allowedModules.length > 0
         ? staff.allowedModules
         : ['cashcounter', 'admissions', 'documents', 'records']

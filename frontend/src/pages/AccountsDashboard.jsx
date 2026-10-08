@@ -28,7 +28,7 @@ import {
 import PrintFeeReceipt from '../components/PrintFeeReceipt';
 import StudentList from './StudentList';
 
-export default function AccountsDashboard({ preSelectedStudent, isAdmin = false, staffUser, lang, toggleLang }) {
+export default function AccountsDashboard({ preSelectedStudent, isAdmin = false, staffUser, canEdit = true, lang, toggleLang }) {
   const [stats, setStats] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -692,6 +692,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
           {/* Student Directory Table with identical searchbar, filters, and actions as Enrolled section */}
           <StudentList 
             hideHeader={true} 
+            canEdit={canEdit}
             dueFilter={dueFilter} 
             filterStartDate={filterStartDate}
             filterEndDate={filterEndDate}
