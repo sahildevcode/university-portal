@@ -1346,7 +1346,17 @@ export default function StudentList({
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (editingPaymentModal.isScholarship) {
-        const yKey = editingPaymentModal.year || 'year1';
+        let yKey = editingPaymentModal.year || 'year1';
+        const cls = String(editingPaymentModal.currentClass || '').toUpperCase();
+        if (cls.includes('1ST') || cls.includes('SEM-1') || cls.includes('SEM-2')) {
+          yKey = 'year1';
+        } else if (cls.includes('2ND') || cls.includes('SEM-3') || cls.includes('SEM-4')) {
+          yKey = 'year2';
+        } else if (cls.includes('3RD') || cls.includes('SEM-5') || cls.includes('SEM-6')) {
+          yKey = 'year3';
+        } else if (cls.includes('4TH') || cls.includes('5TH') || cls.includes('SEM-7') || cls.includes('SEM-8')) {
+          yKey = 'year4';
+        }
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -5155,14 +5165,76 @@ export default function StudentList({
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Class / Semester
+                    Class / Semester / Year*
                   </label>
-                  <input
-                    type="text"
-                    value={editingPaymentModal.currentClass}
-                    onChange={(e) => setEditingPaymentModal(prev => ({ ...prev, currentClass: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-300"
-                  />
+                  <select
+                    value={editingPaymentModal.currentClass || ''}
+                    onChange={(e) => {
+                      const newClass = e.target.value;
+                      setEditingPaymentModal(prev => {
+                        let updatedYear = prev.year;
+                        let updatedPurpose = prev.purpose;
+                        if (prev.isScholarship) {
+                          const cls = String(newClass).toUpperCase();
+                          if (cls.includes('1ST') || cls.includes('SEM-1') || cls.includes('SEM-2')) {
+                            updatedYear = 'year1';
+                            if (!prev.purpose || prev.purpose.includes('Year Scholarship') || prev.purpose === 'Scholarship') {
+                              updatedPurpose = '1st Year Scholarship';
+                            }
+                          } else if (cls.includes('2ND') || cls.includes('SEM-3') || cls.includes('SEM-4')) {
+                            updatedYear = 'year2';
+                            if (!prev.purpose || prev.purpose.includes('Year Scholarship') || prev.purpose === 'Scholarship') {
+                              updatedPurpose = '2nd Year Scholarship';
+                            }
+                          } else if (cls.includes('3RD') || cls.includes('SEM-5') || cls.includes('SEM-6')) {
+                            updatedYear = 'year3';
+                            if (!prev.purpose || prev.purpose.includes('Year Scholarship') || prev.purpose === 'Scholarship') {
+                              updatedPurpose = '3rd Year Scholarship';
+                            }
+                          } else if (cls.includes('4TH') || cls.includes('5TH') || cls.includes('SEM-7') || cls.includes('SEM-8')) {
+                            updatedYear = 'year4';
+                            if (!prev.purpose || prev.purpose.includes('Year Scholarship') || prev.purpose === 'Scholarship') {
+                              updatedPurpose = '4th Year Scholarship';
+                            }
+                          }
+                        }
+                        return {
+                          ...prev,
+                          currentClass: newClass,
+                          year: updatedYear,
+                          purpose: updatedPurpose
+                        };
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-indigo-400 focus:outline-none cursor-pointer"
+                  >
+                    <option value="" disabled>Select Class / Semester / Year</option>
+                    {editingPaymentModal.currentClass && ![
+                      '1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year',
+                      'SEM-1', 'SEM-2', 'SEM-3', 'SEM-4', 'SEM-5', 'SEM-6', 'SEM-7', 'SEM-8'
+                    ].includes(editingPaymentModal.currentClass) && (
+                      <option value={editingPaymentModal.currentClass}>
+                        Current: {editingPaymentModal.currentClass}
+                      </option>
+                    )}
+                    <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                      <option value="1st Year">1st Year (1st Year Annual)</option>
+                      <option value="2nd Year">2nd Year (2nd Year Annual)</option>
+                      <option value="3rd Year">3rd Year (3rd Year Annual)</option>
+                      <option value="4th Year">4th Year (4th Year Annual)</option>
+                      <option value="5th Year">5th Year (5th Year Annual)</option>
+                    </optgroup>
+                    <optgroup label="Semester Pattern (सेमेस्टर)">
+                      <option value="SEM-1">SEM-1 (1st Semester)</option>
+                      <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                      <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                      <option value="SEM-4">SEM-4 (4th Semester)</option>
+                      <option value="SEM-5">SEM-5 (5th Semester)</option>
+                      <option value="SEM-6">SEM-6 (6th Semester)</option>
+                      <option value="SEM-7">SEM-7 (7th Semester)</option>
+                      <option value="SEM-8">SEM-8 (8th Semester)</option>
+                    </optgroup>
+                  </select>
                 </div>
 
                 {!(editingPaymentModal.isCenterFee || editingPaymentModal.isScholarship) && (

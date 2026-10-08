@@ -4063,6 +4063,29 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     purpose
   } = req.body;
 
+  // If editing an existing receipt entry in scholarshipHistory
+  if (!Array.isArray(student.scholarshipHistory)) {
+    student.scholarshipHistory = [];
+  }
+  const rNo = receiptNo || `SCH-${student.rollNo || getNextReceiptNumber(db)}`;
+  const existingIdx = student.scholarshipHistory.findIndex(h => h.receiptNo === rNo || (h.id && h.id === rNo));
+
+  if (existingIdx !== -1) {
+    const oldEntry = student.scholarshipHistory[existingIdx];
+    // If the year changed (e.g. from year1 to year2), adjust the old year's amount!
+    if (oldEntry.year && oldEntry.year !== year) {
+      if (oldEntry.year === 'year1' || oldEntry.year === '1') {
+        student.scholarshipYear1 = Math.max(0, (student.scholarshipYear1 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
+      } else if (oldEntry.year === 'year2' || oldEntry.year === '2') {
+        student.scholarshipYear2 = Math.max(0, (student.scholarshipYear2 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
+      } else if (oldEntry.year === 'year3' || oldEntry.year === '3') {
+        student.scholarshipYear3 = Math.max(0, (student.scholarshipYear3 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
+      } else if (oldEntry.year === 'year4' || oldEntry.year === '4') {
+        student.scholarshipYear4 = Math.max(0, (student.scholarshipYear4 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
+      }
+    }
+  }
+
   // If specific year update was sent
   if (year && amount !== undefined) {
     const amt = Math.max(0, Number(amount) || 0);
@@ -4095,15 +4118,10 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
   student.scholarshipDate = dateStr;
 
-  // Maintain audit history of scholarship adjustments
-  if (!Array.isArray(student.scholarshipHistory)) {
-    student.scholarshipHistory = [];
-  }
-  const rNo = receiptNo || `SCH-${student.rollNo || getNextReceiptNumber(db)}`;
   const entryAmt = (year && amount !== undefined) ? Math.max(0, Number(amount) || 0) : totalSch;
 
-  student.scholarshipHistory.push({
-    id: 'SCH-' + Date.now(),
+  const historyItem = {
+    id: existingIdx !== -1 ? student.scholarshipHistory[existingIdx].id : 'SCH-' + Date.now(),
     receiptNo: rNo,
     date: dateStr,
     feeDate: dateStr,
@@ -4123,7 +4141,13 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     total: totalSch,
     remark: remark || 'Scholarship updated by admin',
     updatedAt: new Date().toISOString()
-  });
+  };
+
+  if (existingIdx !== -1) {
+    student.scholarshipHistory[existingIdx] = historyItem;
+  } else {
+    student.scholarshipHistory.push(historyItem);
+  }
 
   const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
   student.totalFee = acadFee + totalSch;
