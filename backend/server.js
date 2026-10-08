@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -5943,10 +5943,17 @@ app.get('/api/home-cms', (req, res) => {
   res.json({ success: true, homeCms: db.home_cms || null });
 });
 
-app.put('/api/home-cms', (req, res) => {
+app.put('/api/home-cms', async (req, res) => {
   const db = readDB();
   db.home_cms = { ...(db.home_cms || {}), ...req.body };
   writeDB(db);
+  try {
+    if (isMongoConnected()) {
+      await HomeCmsModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...db.home_cms }, { upsert: true });
+    }
+  } catch (mErr) {
+    console.error('Mongo Home CMS direct update error:', mErr.message);
+  }
   res.json({ success: true, message: 'Home CMS settings updated successfully!', homeCms: db.home_cms });
 });
 
@@ -7835,6 +7842,10 @@ app.post('/api/vocational-students', (req, res) => {
       branch: (sector || trade || 'Vocational Skills').trim(),
       courseType: 'Vocational Certification',
       courseMode: 'Regular',
+      duration: (duration || req.body.courseDuration || '3 Months').trim(),
+      courseDuration: (duration || req.body.courseDuration || '3 Months').trim(),
+      courseEndDate: req.body.courseEndDate || '',
+      completionDate: req.body.completionDate || req.body.courseEndDate || '',
       currentSemester: 1,
       currentClass: 'Year-1 / Cert',
       academicFee: feeVal,
@@ -8090,7 +8101,11 @@ app.put('/api/vocational-students/:id', (req, res) => {
       collegeName: body.parentCenter || existing.collegeName || 'PKC Institute',
       courseName: body.courseName || existing.courseName,
       branch: body.branch || body.sector || existing.branch,
-      duration: body.duration || existing.duration,
+      duration: body.duration || body.courseDuration || existing.duration || '3 Months',
+      courseDuration: body.courseDuration || body.duration || existing.courseDuration || existing.duration || '3 Months',
+      courseEndDate: body.courseEndDate !== undefined ? body.courseEndDate : (existing.courseEndDate || ''),
+      completionDate: body.completionDate !== undefined ? body.completionDate : (existing.completionDate || ''),
+      admissionDate: body.admissionDate || existing.admissionDate || new Date().toISOString().split('T')[0],
       totalFee: feeVal,
       academicFee: feeVal,
       studentFee: feeVal,

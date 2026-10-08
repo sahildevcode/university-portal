@@ -267,6 +267,26 @@ export const VocationalCourseModel = mongoose.model('VocationalCourse', new mong
   status: String
 }, { strict: false, timestamps: true }));
 
+export const HomeCmsModel = mongoose.model('HomeCms', new mongoose.Schema({
+  key: { type: String, default: 'main', unique: true },
+  heroTitleEn: String,
+  heroTitleHi: String,
+  heroTaglineEn: String,
+  heroTaglineHi: String,
+  campusBgImage: String,
+  sirHeroImage: String,
+  honorBadgeTitle: String,
+  honorBadgeEst: String,
+  honorBadgeReg: String,
+  tickerTextEn: String,
+  tickerTextHi: String,
+  counterStudents: Number,
+  counterAffiliations: Number,
+  counterDegrees: Number,
+  counterYears: Number,
+  counterCareerRate: Number
+}, { strict: false, timestamps: true }));
+
 function cleanDoc(doc) {
   if (!doc) return doc;
   const { _id, __v, ...rest } = doc;
@@ -350,7 +370,8 @@ export async function hydrateFromMongo() {
       staff_salary_payments,
       job_applications,
       vocational_institutes,
-      vocational_courses
+      vocational_courses,
+      home_cms
     ] = await Promise.all([
       StudentModel.find({}).lean(),
       CourseModel.find({}).lean(),
@@ -369,6 +390,7 @@ export async function hydrateFromMongo() {
       JobApplicationModel.find({}).lean(),
       VocationalInstituteModel.find({}).lean(),
       VocationalCourseModel.find({}).lean(),
+      HomeCmsModel.findOne({ key: 'main' }).lean(),
     ]);
 
     let localDb = {};
@@ -401,6 +423,9 @@ export async function hydrateFromMongo() {
       }
       if (vocational_courses && vocational_courses.length > 0) {
         localDb.vocationalCourses = vocational_courses.map(cleanDoc);
+      }
+      if (home_cms) {
+        localDb.home_cms = cleanDoc(home_cms);
       }
 
       // If Atlas doesn't have staff data yet, auto-seed from local database.json
@@ -495,6 +520,10 @@ async function diffAndSync(current) {
     await AboutModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...current.about }, { upsert: true });
   }
 
+  if (current.home_cms && JSON.stringify(current.home_cms) !== JSON.stringify(previousDbState.home_cms)) {
+    await HomeCmsModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...current.home_cms }, { upsert: true });
+  }
+
   previousDbState = JSON.parse(JSON.stringify(current));
 }
 
@@ -554,6 +583,7 @@ async function diffCollection(Model, prevList, currentList, idKey = 'id') {
 async function seedMongoFromDb(data) {
   if (data.settings) await SettingModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...data.settings }, { upsert: true });
   if (data.about) await AboutModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...data.about }, { upsert: true });
+  if (data.home_cms) await HomeCmsModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...data.home_cms }, { upsert: true });
   if (Array.isArray(data.users) && data.users.length) {
     await UserModel.deleteMany({});
     await UserModel.insertMany(data.users);

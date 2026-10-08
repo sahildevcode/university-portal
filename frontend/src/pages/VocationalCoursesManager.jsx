@@ -70,6 +70,108 @@ const ELIGIBILITY_OPTIONS = [
   'ITI / Diploma'
 ];
 
+// Auto-calculation of Vocational Course End Date & Duration Progress
+export const calculateCourseTimeline = (admissionDate, durationStr = '3 Months') => {
+  if (!admissionDate) {
+    admissionDate = new Date().toISOString().split('T')[0];
+  }
+
+  let start = new Date(admissionDate);
+  if (isNaN(start.getTime())) {
+    const parts = String(admissionDate).split(/[-/]/);
+    if (parts.length === 3) {
+      if (parts[0].length === 4) start = new Date(parts[0], Number(parts[1]) - 1, parts[2]);
+      else start = new Date(parts[2], Number(parts[1]) - 1, parts[0]);
+    }
+  }
+  if (isNaN(start.getTime())) start = new Date();
+
+  const str = String(durationStr || '3 Months').toLowerCase();
+  let monthsToAdd = 3;
+  let daysToAdd = 0;
+
+  if (str.includes('year') || str.includes('yr')) {
+    const num = parseFloat(str.match(/[\d.]+/)?.[0] || '1');
+    monthsToAdd = Math.round(num * 12);
+  } else if (str.includes('month') || str.includes('mo') || str.includes('माह') || str.includes('महीने')) {
+    const num = parseFloat(str.match(/[\d.]+/)?.[0] || '3');
+    monthsToAdd = Math.round(num);
+  } else if (str.includes('day') || str.includes('दिन')) {
+    const num = parseFloat(str.match(/[\d.]+/)?.[0] || '90');
+    daysToAdd = Math.round(num);
+    monthsToAdd = 0;
+  } else if (str.includes('week') || str.includes('सप्ताह')) {
+    const num = parseFloat(str.match(/[\d.]+/)?.[0] || '12');
+    daysToAdd = Math.round(num * 7);
+    monthsToAdd = 0;
+  }
+
+  const end = new Date(start);
+  if (monthsToAdd > 0) {
+    end.setMonth(end.getMonth() + monthsToAdd);
+  }
+  if (daysToAdd > 0) {
+    end.setDate(end.getDate() + daysToAdd);
+  }
+
+  const endYear = end.getFullYear();
+  const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+  const endDay = String(end.getDate()).padStart(2, '0');
+  const endDateFormatted = `${endDay}/${endMonth}/${endYear}`;
+  const endDateISO = `${endYear}-${endMonth}-${endDay}`;
+
+  const startYear = start.getFullYear();
+  const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+  const startDay = String(start.getDate()).padStart(2, '0');
+  const startDateFormatted = `${startDay}/${startMonth}/${startYear}`;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startZero = new Date(start);
+  startZero.setHours(0, 0, 0, 0);
+  const endZero = new Date(end);
+  endZero.setHours(0, 0, 0, 0);
+
+  const totalDurationDays = Math.max(1, Math.round((endZero - startZero) / (1000 * 60 * 60 * 24)));
+  const daysPassed = Math.round((today - startZero) / (1000 * 60 * 60 * 24));
+  const daysRemaining = Math.round((endZero - today) / (1000 * 60 * 60 * 24));
+
+  const isCompleted = today >= endZero;
+  const isStarted = today >= startZero;
+
+  let statusLabel = '';
+  let statusBadgeClass = '';
+  const durationDesc = monthsToAdd > 0 ? `${monthsToAdd} Months (${totalDurationDays} Days)` : `${totalDurationDays} Days`;
+
+  if (!isStarted) {
+    statusLabel = `भविष्य का प्रवेश (${Math.abs(daysPassed)} दिन बाद प्रारंभ)`;
+    statusBadgeClass = 'bg-slate-100 text-slate-700 border-slate-300';
+  } else if (isCompleted) {
+    const completedDays = Math.max(0, daysPassed - totalDurationDays);
+    const completedLabel = monthsToAdd > 0 ? `${monthsToAdd} महिने पूर्ण` : `${totalDurationDays} दिन पूर्ण`;
+    statusLabel = `✓ ${completedLabel}${completedDays > 0 ? ` (+${completedDays}d)` : ''}`;
+    statusBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black';
+  } else {
+    statusLabel = `⏳ प्रगति पर (${daysRemaining} दिन शेष / ${Math.min(100, Math.round((daysPassed / totalDurationDays) * 100))}%)`;
+    statusBadgeClass = 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
+  }
+
+  return {
+    startDate: admissionDate,
+    startDateFormatted,
+    endDateISO,
+    endDateFormatted,
+    totalDurationDays,
+    daysPassed,
+    daysRemaining,
+    isCompleted,
+    statusLabel,
+    statusBadgeClass,
+    durationDesc,
+    durationText: durationStr
+  };
+};
+
 // Pre-seeded Default Vocational Institutes (English)
 const INITIAL_DEMO_INSTITUTES = [
   {
@@ -191,6 +293,10 @@ export default function VocationalCoursesManager({
     description: 'Skill development and vocational trade certifications.',
     status: 'Active'
   });
+
+  // View Courses Modal for specific institute
+  const [viewingInstituteCourses, setViewingInstituteCourses] = useState(null);
+  const [instCourseSearchQuery, setInstCourseSearchQuery] = useState('');
 
   // Excel Upload Modal state
   const [showExcelModal, setShowExcelModal] = useState(false);
@@ -633,7 +739,7 @@ export default function VocationalCoursesManager({
       courseId: student.courseId || '',
       sector: student.sector || '',
       branch: student.branch || '',
-      duration: student.duration || '1 Year',
+      duration: student.courseDuration || student.duration || '3 Months',
       totalFee: feeVal,
       totalPaid: paidVal,
       initialPaid: 0,
@@ -670,10 +776,17 @@ export default function VocationalCoursesManager({
     setEditStudentSubmitting(true);
     try {
       const key = editingStudent.id || editingStudent.rollNo;
+      const timeline = calculateCourseTimeline(editStudentForm.admissionDate, editStudentForm.duration);
+      const payload = {
+        ...editStudentForm,
+        courseDuration: editStudentForm.duration,
+        courseEndDate: timeline.endDateISO,
+        completionDate: timeline.endDateFormatted
+      };
       const res = await fetch(`/api/vocational-students/${encodeURIComponent(key)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editStudentForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {
@@ -924,7 +1037,7 @@ export default function VocationalCoursesManager({
 
   // Lock background scroll when any modal is active
   useEffect(() => {
-    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData || editingStudent || cancellingStudent || deletingStudent || receiptToPrint || feeDeskStudent) {
+    if (showAddCourseModal || showInstituteModal || showExcelModal || showEnrollModal || editingEnrollmentStudent || enrollSuccessData || editingStudent || cancellingStudent || deletingStudent || receiptToPrint || feeDeskStudent || viewingInstituteCourses) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -932,7 +1045,7 @@ export default function VocationalCoursesManager({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData, editingStudent, cancellingStudent, deletingStudent, receiptToPrint, feeDeskStudent]);
+  }, [showAddCourseModal, showInstituteModal, showExcelModal, showEnrollModal, editingEnrollmentStudent, enrollSuccessData, editingStudent, cancellingStudent, deletingStudent, receiptToPrint, feeDeskStudent, viewingInstituteCourses]);
 
   // Update default course when opening Add Course
   const handleOpenAddCourse = (targetInst = null) => {
@@ -1242,10 +1355,17 @@ export default function VocationalCoursesManager({
 
     setEnrollSubmitting(true);
     try {
+      const timeline = calculateCourseTimeline(enrollForm.admissionDate, enrollForm.duration);
+      const payload = {
+        ...enrollForm,
+        courseDuration: enrollForm.duration,
+        courseEndDate: timeline.endDateISO,
+        completionDate: timeline.endDateFormatted
+      };
       const res = await fetch('/api/vocational-students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(enrollForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
 
@@ -1670,8 +1790,11 @@ export default function VocationalCoursesManager({
     return courses.filter(c => {
       // Institute filter
       if (selectedInstituteFilter !== 'all') {
-        const cInstId = c.instituteId || (c.instituteName?.toLowerCase().includes('teacher') || c.instituteName?.includes('टीचर्स') ? 'inst-mdette' : 'inst-mdvti');
-        if (cInstId !== selectedInstituteFilter) return false;
+        const selInst = institutes.find(i => i.id === selectedInstituteFilter);
+        const matchesId = c.instituteId === selectedInstituteFilter;
+        const matchesName = selInst && c.instituteName && c.instituteName.toLowerCase() === selInst.name.toLowerCase();
+        const matchesFallback = (!c.instituteId && !c.instituteName && selectedInstituteFilter === institutes[0]?.id);
+        if (!matchesId && !matchesName && !matchesFallback) return false;
       }
       // Sector / Course filter
       if (selectedSector !== 'all') {
@@ -1694,7 +1817,7 @@ export default function VocationalCoursesManager({
       }
       return true;
     });
-  }, [courses, selectedInstituteFilter, selectedSector, selectedDuration, searchQuery]);
+  }, [courses, institutes, selectedInstituteFilter, selectedSector, selectedDuration, searchQuery]);
 
   // Student status counts
   const activeStudentCount = useMemo(() => {
@@ -2187,12 +2310,24 @@ export default function VocationalCoursesManager({
 
                     {/* Stats Pill Row */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-indigo-50/60 rounded-2xl p-3 border border-indigo-100 flex items-center gap-3">
-                        <BookOpen className="w-5 h-5 text-indigo-600 shrink-0" />
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-bold block">Active Courses</span>
-                          <span className="text-base font-black text-slate-900">{instCourses.length} Programs</span>
+                      <div
+                        onClick={() => {
+                          setViewingInstituteCourses(inst);
+                          setInstCourseSearchQuery('');
+                        }}
+                        className="bg-indigo-50/70 hover:bg-indigo-100/90 rounded-2xl p-3 border border-indigo-200 hover:border-indigo-400 flex items-center justify-between transition-all cursor-pointer group/stat"
+                        title="Click to view all courses of this institute"
+                      >
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-5 h-5 text-indigo-600 shrink-0" />
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold block">Active Courses</span>
+                            <span className="text-base font-black text-slate-900">{instCourses.length} Programs</span>
+                          </div>
                         </div>
+                        <span className="text-[10px] font-black text-indigo-600 bg-white border border-indigo-200 px-2 py-0.5 rounded-lg shadow-xs group-hover/stat:bg-indigo-600 group-hover/stat:text-white transition-all">
+                          View ➔
+                        </span>
                       </div>
 
                       <div className="bg-emerald-50/60 rounded-2xl p-3 border border-emerald-100 flex items-center gap-3">
@@ -2208,6 +2343,20 @@ export default function VocationalCoursesManager({
                   {/* Actions for this Institute */}
                   <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* 0. View Courses specifically for this Institute */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewingInstituteCourses(inst);
+                          setInstCourseSearchQuery('');
+                        }}
+                        className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-amber-300 hover:text-amber-200 font-black px-3.5 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer ring-1 ring-slate-800 hover:scale-102"
+                        title="View all courses of this institute"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View Courses ({instCourses.length})</span>
+                      </button>
+
                       {/* 1. Upload Excel specifically for this Institute */}
                       <button
                         type="button"
@@ -2804,6 +2953,7 @@ export default function VocationalCoursesManager({
                     <tr>
                       <th className="p-3 cursor-pointer select-none">Roll / Reg No</th>
                       <th className="p-3">Student Name</th>
+                      <th className="p-3">Course & Timeline</th>
                       <th className="p-3 text-center">Status</th>
                       <th className="p-3 text-center">Fee Details</th>
                       <th className="p-3 text-center">Paid_Fee</th>
@@ -2819,6 +2969,7 @@ export default function VocationalCoursesManager({
                       const totalFeeVal = Number(st.totalFee !== undefined && st.totalFee !== null ? st.totalFee : (st.academicFee || st.courseFee || 0));
                       const totalPaidVal = Number(st.totalPaid || 0);
                       const dueVal = Math.max(0, totalFeeVal - totalPaidVal);
+                      const timeline = calculateCourseTimeline(st.admissionDate || st.createdAt, st.courseDuration || st.duration || '3 Months');
                       return (
                         <React.Fragment key={stKey}>
                           {/* ── Main Compact Row ── */}
@@ -2837,6 +2988,30 @@ export default function VocationalCoursesManager({
                             <td className="p-3">
                               <span className="font-black text-slate-900 block">{st.fullName || st.studentName}</span>
                               <span className="text-[10px] text-slate-400 font-normal">{st.phone || st.contact}</span>
+                            </td>
+
+                            {/* Course & Timeline (Auto Calculated 3 Months / Duration) */}
+                            <td className="p-3">
+                              <div className="space-y-1 min-w-[200px]">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-black text-slate-900 text-xs">
+                                    {st.courseName || 'Vocational Course'}
+                                  </span>
+                                  <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                                    {st.courseDuration || st.duration || '3 Months'}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                                  <span>Adm: <strong className="text-slate-800">{timeline.startDateFormatted}</strong></span>
+                                  <span>➔</span>
+                                  <span>End: <strong className="text-slate-900 font-black">{timeline.endDateFormatted}</strong></span>
+                                </div>
+                                <div>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border inline-flex items-center gap-1 font-bold ${timeline.statusBadgeClass}`}>
+                                    {timeline.statusLabel}
+                                  </span>
+                                </div>
+                              </div>
                             </td>
 
                             {/* Status */}
@@ -2952,7 +3127,7 @@ export default function VocationalCoursesManager({
                           {/* ── Expandable Detail Row ── */}
                           {isExpanded && (
                             <tr className="bg-gradient-to-br from-indigo-50 to-slate-50">
-                              <td colSpan={8} className="p-0">
+                              <td colSpan={9} className="p-0">
                                 <div className="px-4 py-3 border-t border-indigo-100">
                                   {/* Horizontal Card Grid */}
                                   <div className="flex flex-wrap gap-3">
@@ -3052,12 +3227,15 @@ export default function VocationalCoursesManager({
                                     </div>
 
 
-                                    {/* Card 3: Course & Institute */}
-                                    <div className="flex-1 min-w-[180px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
-                                      <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                                        🎓 Course & Institute
+                                    {/* Card 3: Course & Institute + Auto Timeline */}
+                                    <div className="flex-1 min-w-[210px] bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
+                                      <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                        <span className="flex items-center gap-1">🎓 Course & Timeline</span>
+                                        <span className={`text-[9px] px-1.5 py-0.2 rounded-full border font-bold ${timeline.statusBadgeClass}`}>
+                                          {timeline.statusLabel}
+                                        </span>
                                       </div>
-                                      <div className="space-y-1">
+                                      <div className="space-y-1.5">
                                         <div>
                                           <span className="text-[9px] text-slate-400 uppercase font-semibold">Institute</span>
                                           <p className="text-[11px] font-bold text-slate-800">
@@ -3073,16 +3251,24 @@ export default function VocationalCoursesManager({
                                           <p className="text-[12px] font-black text-slate-900">{st.courseName || '-'}</p>
                                         </div>
                                         <div>
-                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Branch / Stream</span>
-                                          <p className="text-[11px] text-slate-600">{st.branch || '-'}</p>
-                                        </div>
-                                        <div>
                                           <span className="text-[9px] text-slate-400 uppercase font-semibold">Duration</span>
-                                          <p className="text-[11px] text-slate-700">{st.courseDuration || st.duration || '-'}</p>
+                                          <p className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded inline-block">
+                                            {st.courseDuration || st.duration || '3 Months'} ({timeline.daysTotal} Days)
+                                          </p>
                                         </div>
-                                        <div>
-                                          <span className="text-[9px] text-slate-400 uppercase font-semibold">Admission Date</span>
-                                          <p className="text-[11px] font-mono text-slate-700">{st.admissionDate || '-'}</p>
+                                        <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-100">
+                                          <div>
+                                            <span className="text-[8px] text-slate-400 uppercase font-semibold block">Admission Date</span>
+                                            <span className="text-[10px] font-mono font-bold text-slate-700 block">{timeline.startDateFormatted}</span>
+                                          </div>
+                                          <div>
+                                            <span className="text-[8px] text-emerald-700 uppercase font-bold block">🎯 Auto End Date</span>
+                                            <span className="text-[10px] font-mono font-black text-emerald-900 block">{timeline.endDateFormatted}</span>
+                                          </div>
+                                        </div>
+                                        <div className="text-[9px] font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 flex items-center justify-between">
+                                          <span>Passed: <strong>{timeline.daysPassed} days</strong></span>
+                                          <span>{timeline.isCompleted ? <strong className="text-emerald-700">✓ Completed</strong> : <strong className="text-amber-700">{timeline.daysRemaining} days left</strong>}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -3385,7 +3571,7 @@ export default function VocationalCoursesManager({
 
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Session & Admission Date
+                    Session & Admission Date *
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
@@ -3401,11 +3587,79 @@ export default function VocationalCoursesManager({
                       type="date"
                       value={enrollForm.admissionDate}
                       onChange={(e) => setEnrollForm({ ...enrollForm, admissionDate: e.target.value })}
-                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none"
+                      className="p-2 bg-white border-2 border-emerald-400 rounded-xl font-bold font-mono text-slate-900 focus:outline-none shadow-xs"
                     />
                   </div>
                 </div>
               </div>
+
+              {/* Course Duration & Live Auto End Date Calculator (3 Months / 90 Days Auto-Calculation) */}
+              {(() => {
+                const liveTimeline = calculateCourseTimeline(enrollForm.admissionDate, enrollForm.duration || '3 Months');
+                return (
+                  <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-emerald-50/90 p-3.5 rounded-2xl border-2 border-indigo-200 shadow-xs space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-indigo-700" />
+                        <span className="font-black text-indigo-950 text-xs sm:text-sm">
+                          Course Duration & Auto End Date Calculator
+                        </span>
+                        <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-md">
+                          Auto-Fixed
+                        </span>
+                      </div>
+                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold inline-flex items-center gap-1 ${liveTimeline.statusBadgeClass}`}>
+                        {liveTimeline.statusLabel}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                          Select Duration
+                        </label>
+                        <select
+                          value={enrollForm.duration || '3 Months'}
+                          onChange={(e) => setEnrollForm({ ...enrollForm, duration: e.target.value })}
+                          className="w-full p-2 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-900 text-xs focus:ring-2 focus:ring-indigo-400 cursor-pointer"
+                        >
+                          <option value="3 Months">3 Months (90 Days - Fixed)</option>
+                          <option value="6 Months">6 Months (180 Days)</option>
+                          <option value="1 Year">1 Year (12 Months)</option>
+                          <option value="2 Years">2 Years (24 Months)</option>
+                          <option value="1 Month">1 Month (30 Days)</option>
+                          <option value="45 Days">45 Days Crash Course</option>
+                        </select>
+                        <span className="text-[9px] text-indigo-600 mt-0.5 block font-medium">Calculates end date from admission date</span>
+                      </div>
+
+                      <div className="bg-white/90 p-2.5 rounded-xl border border-indigo-100 flex flex-col justify-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">1. Admission Date</span>
+                        <span className="text-xs font-black font-mono text-slate-800">
+                          {liveTimeline.startDateFormatted}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {liveTimeline.daysPassed >= 0 ? `${liveTimeline.daysPassed} days passed` : `Starts in ${Math.abs(liveTimeline.daysPassed)} days`}
+                        </span>
+                      </div>
+
+                      <div className="bg-emerald-500/10 border-2 border-emerald-400 p-2.5 rounded-xl flex flex-col justify-center">
+                        <span className="text-[9px] font-black text-emerald-800 uppercase flex items-center gap-1">
+                          <span>2. 🎯 Auto Fixed End Date</span>
+                        </span>
+                        <span className="text-xs font-black font-mono text-emerald-950">
+                          {liveTimeline.endDateFormatted}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700">
+                          {liveTimeline.isCompleted
+                            ? `✓ Duration Complete (${liveTimeline.daysPassed}d)`
+                            : `⏳ ${liveTimeline.daysRemaining} days remaining`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Row 6: Fee Details & Payment */}
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -4344,6 +4598,268 @@ export default function VocationalCoursesManager({
       )}
 
       {/* ========================================================================= */}
+      {/* MODAL: VIEW INSTITUTE COURSES (List, Search & Actions for selected institute) */}
+      {/* ========================================================================= */}
+      {viewingInstituteCourses && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-5 flex items-center justify-center">
+          <div className="bg-white w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border-2 border-slate-300 overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* ── Modal Header ── */}
+            <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md shrink-0">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black text-amber-300 bg-amber-400/20 border border-amber-300/30 px-2 py-0.5 rounded-lg">
+                      {viewingInstituteCourses.shortName || viewingInstituteCourses.code || 'INSTITUTE'}
+                    </span>
+                    <h3 className="font-black text-base sm:text-lg text-white">
+                      {viewingInstituteCourses.name}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5 flex items-center gap-2">
+                    <span>Center: <strong className="text-amber-300">{viewingInstituteCourses.parentCenter || 'PKC Institute'}</strong></span>
+                    <span>•</span>
+                    <span>{viewingInstituteCourses.type || 'Vocational Training'}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingInstituteCourses(null)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ── Action & Search Bar ── */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={instCourseSearchQuery}
+                  onChange={(e) => setInstCourseSearchQuery(e.target.value)}
+                  placeholder="Search course name, trade code, duration (e.g. 3 Months, Electrician)..."
+                  className="w-full pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                {instCourseSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setInstCourseSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const inst = viewingInstituteCourses;
+                    setViewingInstituteCourses(null);
+                    handleOpenAddCourse(inst);
+                  }}
+                  className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-3 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Course</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const inst = viewingInstituteCourses;
+                    setViewingInstituteCourses(null);
+                    setTargetExcelInstituteId(inst.id);
+                    setExcelFile(null);
+                    setExcelParsedRows([]);
+                    setShowExcelModal(true);
+                  }}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Upload Excel</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ── Scrollable Courses Content ── */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+              {(() => {
+                const instCourses = courses.filter(c => {
+                  const matchesInst = (!c.instituteId || c.instituteId === viewingInstituteCourses.id || 
+                    (c.instituteName && c.instituteName.toLowerCase() === viewingInstituteCourses.name.toLowerCase()));
+                  if (!matchesInst) return false;
+                  if (!instCourseSearchQuery.trim()) return true;
+                  const q = instCourseSearchQuery.toLowerCase();
+                  return (
+                    (c.courseName && c.courseName.toLowerCase().includes(q)) ||
+                    (c.courseCode && c.courseCode.toLowerCase().includes(q)) ||
+                    (c.duration && c.duration.toLowerCase().includes(q)) ||
+                    (c.sector && c.sector.toLowerCase().includes(q)) ||
+                    (c.eligibility && c.eligibility.toLowerCase().includes(q))
+                  );
+                });
+
+                if (instCourses.length === 0) {
+                  return (
+                    <div className="text-center py-12 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                      <div className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <BookOpen className="w-7 h-7" />
+                      </div>
+                      <h4 className="font-black text-slate-800 text-sm">
+                        {instCourseSearchQuery ? 'No courses match your search' : 'No courses registered under this institute yet'}
+                      </h4>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
+                        Add courses individually or import multiple courses at once using Excel.
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const inst = viewingInstituteCourses;
+                            setViewingInstituteCourses(null);
+                            handleOpenAddCourse(inst);
+                          }}
+                          className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Add First Course</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const inst = viewingInstituteCourses;
+                            setViewingInstituteCourses(null);
+                            setTargetExcelInstituteId(inst.id);
+                            setExcelFile(null);
+                            setExcelParsedRows([]);
+                            setShowExcelModal(true);
+                          }}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Upload className="w-4 h-4 text-amber-300" />
+                          <span>Upload Excel</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {instCourses.map(course => (
+                      <div
+                        key={course.id}
+                        className="bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md inline-block mb-1">
+                                {course.courseCode || 'VOC-COURSE'}
+                              </span>
+                              <h4 className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                                {course.courseName}
+                              </h4>
+                            </div>
+                            <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0">
+                              {Number(course.fee || 0) > 0 ? `₹${Number(course.fee).toLocaleString('en-IN')}/-` : 'Free / Subsidized'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <span className="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-indigo-500" />
+                              <span>{course.duration || '3 Months'}</span>
+                            </span>
+                            {course.sector && (
+                              <span className="text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                                {course.sector}
+                              </span>
+                            )}
+                            {course.eligibility && (
+                              <span className="text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                                Eligibility: {course.eligibility}
+                              </span>
+                            )}
+                          </div>
+
+                          {course.description && (
+                            <p className="text-[11px] text-slate-500 line-clamp-2">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const inst = viewingInstituteCourses;
+                              setViewingInstituteCourses(null);
+                              handleOpenEnrollStudent(inst.id, course);
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-xs flex items-center gap-1 cursor-pointer transition-all hover:scale-102"
+                          >
+                            <GraduationCap className="w-3.5 h-3.5" />
+                            <span>Enroll Student</span>
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setViewingInstituteCourses(null);
+                                handleOpenEditCourse(course);
+                              }}
+                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors cursor-pointer"
+                              title="Edit Course"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCourse(course.id, course.courseName)}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer"
+                              title="Delete Course"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* ── Modal Footer ── */}
+            <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+              <span className="text-xs font-bold text-slate-500">
+                Total Courses: <strong className="text-slate-900">{courses.filter(c => !c.instituteId || c.instituteId === viewingInstituteCourses.id || (c.instituteName && c.instituteName.toLowerCase() === viewingInstituteCourses.name.toLowerCase())).length}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setViewingInstituteCourses(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
       {/* MODAL: EDIT VOCATIONAL STUDENT DETAILS & FEE MANAGEMENT */}
       {/* ========================================================================= */}
       {editingStudent && createPortal(
@@ -4551,11 +5067,79 @@ export default function VocationalCoursesManager({
                       type="date"
                       value={editStudentForm.admissionDate}
                       onChange={(e) => setEditStudentForm({ ...editStudentForm, admissionDate: e.target.value })}
-                      className="p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:outline-none"
+                      className="p-2 bg-white border-2 border-indigo-400 rounded-xl font-bold font-mono text-slate-900 focus:outline-none shadow-xs"
                     />
                   </div>
                 </div>
               </div>
+
+              {/* Course Duration & Live Auto End Date Calculator (3 Months / 90 Days Auto-Calculation) */}
+              {(() => {
+                const liveTimeline = calculateCourseTimeline(editStudentForm.admissionDate, editStudentForm.duration || '3 Months');
+                return (
+                  <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-emerald-50/90 p-3.5 rounded-2xl border-2 border-indigo-200 shadow-xs space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-indigo-700" />
+                        <span className="font-black text-indigo-950 text-xs sm:text-sm">
+                          Course Duration & Auto End Date Calculator
+                        </span>
+                        <span className="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.2 rounded-md">
+                          Auto-Fixed
+                        </span>
+                      </div>
+                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold inline-flex items-center gap-1 ${liveTimeline.statusBadgeClass}`}>
+                        {liveTimeline.statusLabel}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
+                          Select Duration
+                        </label>
+                        <select
+                          value={editStudentForm.duration || '3 Months'}
+                          onChange={(e) => setEditStudentForm({ ...editStudentForm, duration: e.target.value })}
+                          className="w-full p-2 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-900 text-xs focus:ring-2 focus:ring-indigo-400 cursor-pointer"
+                        >
+                          <option value="3 Months">3 Months (90 Days - Fixed)</option>
+                          <option value="6 Months">6 Months (180 Days)</option>
+                          <option value="1 Year">1 Year (12 Months)</option>
+                          <option value="2 Years">2 Years (24 Months)</option>
+                          <option value="1 Month">1 Month (30 Days)</option>
+                          <option value="45 Days">45 Days Crash Course</option>
+                        </select>
+                        <span className="text-[9px] text-indigo-600 mt-0.5 block font-medium">Calculates end date from admission date</span>
+                      </div>
+
+                      <div className="bg-white/90 p-2.5 rounded-xl border border-indigo-100 flex flex-col justify-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">1. Admission Date</span>
+                        <span className="text-xs font-black font-mono text-slate-800">
+                          {liveTimeline.startDateFormatted}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {liveTimeline.daysPassed >= 0 ? `${liveTimeline.daysPassed} days passed` : `Starts in ${Math.abs(liveTimeline.daysPassed)} days`}
+                        </span>
+                      </div>
+
+                      <div className="bg-emerald-500/10 border-2 border-emerald-400 p-2.5 rounded-xl flex flex-col justify-center">
+                        <span className="text-[9px] font-black text-emerald-800 uppercase flex items-center gap-1">
+                          <span>2. 🎯 Auto Fixed End Date</span>
+                        </span>
+                        <span className="text-xs font-black font-mono text-emerald-950">
+                          {liveTimeline.endDateFormatted}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700">
+                          {liveTimeline.isCompleted
+                            ? `✓ Duration Complete (${liveTimeline.daysPassed}d)`
+                            : `⏳ ${liveTimeline.daysRemaining} days remaining`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Row 6: Fee Details */}
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">

@@ -128,6 +128,7 @@ export default function WebsiteCmsManager({
       heroTaglineEn: 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.',
       heroTaglineHi: 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।',
       campusBgImage: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop',
+      sirHeroImage: '/sir_director_cutout.png',
       honorBadgeTitle: 'Ranked Among Top Educational Consultancies in MP',
       honorBadgeEst: '15+ YEARS OF TRUST • EST. 2011',
       honorBadgeReg: 'Approved & Registered Educational Society • Reg. No. 06/03/01/12345/18',
@@ -715,13 +716,22 @@ export default function WebsiteCmsManager({
                 />
               </div>
 
-              {/* Direct Image File Upload for Campus Background */}
-              <ImageUploadField
-                label="Campus Background Banner Photo"
-                value={homeCms.campusBgImage}
-                onChange={val => setHomeCms({ ...homeCms, campusBgImage: val })}
-                placeholder="Click to upload Campus Background Photo from computer / phone"
-              />
+              {/* Direct Image File Upload for Campus Background & Sir Director Front Photo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ImageUploadField
+                  label="Campus Background Banner Photo"
+                  value={homeCms.campusBgImage}
+                  onChange={val => setHomeCms({ ...homeCms, campusBgImage: val })}
+                  placeholder="Click to upload Campus Background Photo from computer / phone"
+                />
+
+                <ImageUploadField
+                  label="Sir Director Hero Photo (Front Banner)"
+                  value={homeCms.sirHeroImage || '/sir_director_cutout.png'}
+                  onChange={val => setHomeCms({ ...homeCms, sirHeroImage: val })}
+                  placeholder="Click to upload Sir Photo"
+                />
+              </div>
             </div>
 
             {/* Live Ticker & Floating Badge */}

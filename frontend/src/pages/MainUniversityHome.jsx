@@ -445,15 +445,15 @@ export default function MainUniversityHome({
       {/* SECTION 1: HERO & LEGACY */}
       {/* ========================================================================= */}
       <section className="relative min-h-[85vh] flex flex-col justify-center bg-[#071530] text-white py-16 sm:py-24 overflow-hidden border-b border-[#C59B27]/30">
-        {/* Campus Background Image with Deep Overlay */}
+        {/* Campus Background Image with Balanced Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
             src={homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"} 
             alt="University Campus" 
-            className="w-full h-full object-cover object-center opacity-40 scale-105"
+            className="w-full h-full object-cover object-center opacity-60 scale-105 transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071530] via-[#071530]/95 to-[#071530]/80" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071530] via-transparent to-black/50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/90 via-[#071530]/80 to-[#071530]/65" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071530] via-transparent to-black/40" />
         </div>
 
         {/* Ambient Floating Glowing Particle Orbs */}
@@ -523,37 +523,46 @@ export default function MainUniversityHome({
                 </button>
               </div>
 
-
-
             </div>
 
-            {/* Right: Floating Interactive Honor Badge */}
-            <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            {/* Right: Sir Photo with Ambient Glowing Shadow & Floating Animation */}
+            <div className="lg:col-span-4 flex justify-center lg:justify-end items-end relative pt-6 lg:pt-0">
               <div 
-                onClick={() => fireCelebration({ x: 0.8, y: 0.4 })}
-                className="bg-[#0A1931]/95 border-2 border-[#C59B27] rounded-3xl p-7 sm:p-8 shadow-2xl backdrop-blur-md max-w-sm text-center space-y-4 animate-float hover:scale-105 transition-all duration-300 cursor-pointer relative group overflow-hidden"
-                title="Click for celebration! 🎓"
+                onClick={() => fireCelebration({ x: 0.85, y: 0.45 })}
+                className="relative cursor-pointer group flex flex-col items-center select-none"
+                title="PKC Education Director & Academic Mentor 🎓"
               >
-                {/* Shimmer sweep */}
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+                {/* 1. Multi-layer Glowing Background Aura & Ambient Golden / Blue Shadow */}
+                <div className="absolute inset-0 -top-10 w-72 sm:w-80 h-72 sm:h-80 mx-auto rounded-full bg-gradient-to-tr from-[#C59B27]/40 via-blue-600/30 to-amber-300/35 blur-3xl opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 pointer-events-none" />
+                <div className="absolute bottom-4 w-64 h-24 rounded-full bg-[#C59B27]/30 blur-2xl pointer-events-none" />
 
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-[#C59B27]/15 border border-[#C59B27]/40 flex items-center justify-center text-[#C59B27] shadow-md group-hover:rotate-6 transition-transform">
-                  <GraduationCap className="w-9 h-9" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#C59B27] block flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
-                  <span>15+ YEARS OF TRUST • EST. 2011</span>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" />
-                </span>
-                <h3 className="font-serif-academic text-xl font-bold text-white leading-snug group-hover:text-[#C59B27] transition-colors">
-                  Ranked Among Top Educational Consultancies in MP
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Approved &amp; Registered Educational Society • Reg. No. 06/03/01/12345/18
-                </p>
-                <div className="pt-3 border-t border-slate-800 text-xs text-[#C59B27] font-semibold flex items-center justify-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>UGC &amp; MP Higher Education Partner</span>
+                {/* 2. Sir's Photo with Float Animation and Rich Drop Shadow */}
+                <div className="relative z-10 animate-float transition-transform duration-500 group-hover:scale-[1.03]">
+                  <img
+                    src={homeCms?.sirHeroImage || "/sir_director_cutout.png"}
+                    alt="Director - PKC Education"
+                    className="max-h-[380px] sm:max-h-[460px] lg:max-h-[510px] w-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] drop-shadow-[0_10px_25px_rgba(197,155,39,0.35)] filter transition-all duration-300"
+                  />
+
+                  {/* 3. Floating Glassmorphism Badge Pills on Sir */}
+                  {/* Floating Pill Top Right */}
+                  <div className="absolute -top-3 right-0 sm:-right-4 bg-[#0A1931]/90 backdrop-blur-md border border-[#C59B27]/60 text-white rounded-2xl px-3.5 py-1.5 shadow-2xl flex items-center gap-2 group-hover:border-[#C59B27] transition-all">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-[11px] font-black text-[#C59B27] uppercase tracking-wider">
+                      ★ 15+ Years Trust
+                    </span>
+                  </div>
+
+                  {/* Floating Pill Bottom Center / Left */}
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 sm:left-2 sm:translate-x-0 bg-gradient-to-r from-[#071530]/95 via-[#0A1931]/95 to-[#071530]/95 backdrop-blur-md border border-[#C59B27]/70 text-white rounded-2xl px-4 py-2 shadow-2xl flex items-center gap-2.5 whitespace-nowrap group-hover:scale-105 transition-all">
+                    <div className="w-7 h-7 rounded-xl bg-[#C59B27] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-md">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-[9px] font-bold text-amber-300 block uppercase tracking-wider">Director &amp; Chief Mentor</span>
+                      <strong className="text-xs font-black text-white block">PKC Education Academy</strong>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
