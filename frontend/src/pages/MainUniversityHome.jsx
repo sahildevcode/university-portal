@@ -48,6 +48,19 @@ export default function MainUniversityHome({
   });
 
   useEffect(() => {
+    // Fetch live Home CMS from server so changes made by admin show on all student devices
+    fetch('/api/home-cms')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.success && d.homeCms) {
+          setHomeCms(d.homeCms);
+          try {
+            localStorage.setItem('pkc_home_cms', JSON.stringify(d.homeCms));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+
     const checkCms = () => {
       try {
         const saved = localStorage.getItem('pkc_home_cms');

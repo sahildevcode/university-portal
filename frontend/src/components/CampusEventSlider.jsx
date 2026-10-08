@@ -138,6 +138,8 @@ export default function CampusEventSlider({ lang = 'en' }) {
             alt={photo.title || 'Campus Event'} 
             className="w-full h-full object-cover object-center transform transition-transform duration-1000 ease-out group-hover:scale-105"
             onError={(e) => {
+              if (e.target.dataset.errorHandled) return;
+              e.target.dataset.errorHandled = true;
               e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop';
             }}
           />

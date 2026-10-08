@@ -5936,6 +5936,21 @@ app.put('/api/about', (req, res) => {
 });
 
 // ----------------------------------------------------
+// HOME PAGE CMS APIS (Hero, Live Ticker, Stats, Banners)
+// ----------------------------------------------------
+app.get('/api/home-cms', (req, res) => {
+  const db = readDB();
+  res.json({ success: true, homeCms: db.home_cms || null });
+});
+
+app.put('/api/home-cms', (req, res) => {
+  const db = readDB();
+  db.home_cms = { ...(db.home_cms || {}), ...req.body };
+  writeDB(db);
+  res.json({ success: true, message: 'Home CMS settings updated successfully!', homeCms: db.home_cms });
+});
+
+// ----------------------------------------------------
 // INQUIRY APIS (Student Leads Desk)
 // ----------------------------------------------------
 app.get('/api/inquiries', (req, res) => {

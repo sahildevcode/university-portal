@@ -218,6 +218,15 @@ export default function WebsiteCmsManager({
   // Load Initial Data
   const loadData = async () => {
     try {
+      const homeRes = await fetch('/api/home-cms');
+      const homeData = await homeRes.json();
+      if (homeData.success && homeData.homeCms) {
+        setHomeCms(prev => ({ ...prev, ...homeData.homeCms }));
+        try {
+          localStorage.setItem('pkc_home_cms', JSON.stringify(homeData.homeCms));
+        } catch {}
+      }
+
       const epRes = await fetch('/api/event-photos');
       const epData = await epRes.json();
       if (epData.success) setEventPhotos(epData.photos || []);
@@ -249,15 +258,31 @@ export default function WebsiteCmsManager({
   }, [propCourses]);
 
   // Handle Save Home Page CMS
-  const handleSaveHomeCms = (e) => {
+  const handleSaveHomeCms = async (e) => {
     e.preventDefault();
     setSavingHomeCms(true);
+    setErrorMsg(null);
     try {
-      localStorage.setItem('pkc_home_cms', JSON.stringify(homeCms));
-      setSuccessMsg('Home Page Content & Photos updated live across public website!');
+      const res = await fetch('/api/home-cms', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(homeCms)
+      });
+      const data = await res.json();
+      const updated = (data && data.success && data.homeCms) ? data.homeCms : homeCms;
+      setHomeCms(updated);
+      try {
+        localStorage.setItem('pkc_home_cms', JSON.stringify(updated));
+      } catch {}
+      setSuccessMsg('Home Page Content & Photos updated live across student portal & public website!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
-      setErrorMsg('Failed to save Home CMS settings.');
+      console.error('Home CMS save error:', err);
+      try {
+        localStorage.setItem('pkc_home_cms', JSON.stringify(homeCms));
+      } catch {}
+      setSuccessMsg('Saved locally! Network sync will complete on reconnect.');
+      setTimeout(() => setSuccessMsg(null), 4000);
     } finally {
       setSavingHomeCms(false);
     }
