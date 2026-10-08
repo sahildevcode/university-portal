@@ -1290,17 +1290,14 @@ export default function StudentList({
       }
 
       const updatedStudent = data.student;
+      const freshBd = calculateStudentYearBreakdown(updatedStudent);
       setFeeDeskStudent(updatedStudent);
-      const sy1 = Number(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : 0);
-      const sy2 = Number(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : 0);
-      const sy3 = Number(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : 0);
-      const sy4 = Number(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : 0);
-      setScholarshipYear1(String(sy1));
-      setScholarshipYear2(String(sy2));
-      setScholarshipYear3(String(sy3));
-      setScholarshipYear4(String(sy4));
+      setScholarshipYear1(String(freshBd.schY1));
+      setScholarshipYear2(String(freshBd.schY2));
+      setScholarshipYear3(String(freshBd.schY3));
+      setScholarshipYear4(String(freshBd.schY4));
       setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-      setFeeDeskSuccess(`${yearLabel || 'Scholarship'} entry deleted successfully!`);
+      setFeeDeskSuccess(`${yearLabel || 'Scholarship'} entry deleted successfully! Remaining 1st Year: ₹${freshBd.schY1.toLocaleString('en-IN')}, Total Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
       fetchStudents();
       if (onFeeReceived) onFeeReceived();
     } catch (err) {
@@ -5023,6 +5020,16 @@ export default function StudentList({
                                       >
                                         <Edit3 className="w-3 h-3" />
                                         <span>Edit</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteScholarship(sEntry.id || sEntry.receiptNo, sAmt, sEntry.purpose || sEntry.yearLabel)}
+                                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
+                                        title="Delete Scholarship Entry"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                        <span>Delete</span>
                                       </button>
                                     </div>
                                   </td>

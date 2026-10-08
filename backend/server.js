@@ -4260,16 +4260,17 @@ app.delete('/api/students/:rollNo/scholarships/:idOrYear', (req, res) => {
       const yr = String(h.year || '').toLowerCase();
       return !(yr === 'year4' || yr === '4' || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('4TH') || cls.includes('YEAR-4') || cls.includes('YEAR 4'));
     });
-  } else if (idOrYear.startsWith('sch-')) {
-    student.scholarshipHistory = student.scholarshipHistory.filter(h => 
-      String(h.id || '').toLowerCase() !== idOrYear && String(h.receiptNo || '').toLowerCase() !== idOrYear
-    );
-  } else {
+  } else if (idOrYear === 'all' || idOrYear === 'reset') {
     student.scholarshipYear1 = 0;
     student.scholarshipYear2 = 0;
     student.scholarshipYear3 = 0;
     student.scholarshipYear4 = 0;
     student.scholarshipHistory = [];
+  } else {
+    // Delete individual scholarship entry by id or receiptNo
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => 
+      String(h.id || '').toLowerCase() !== idOrYear && String(h.receiptNo || '').toLowerCase() !== idOrYear
+    );
   }
 
   // Recalculate balances after deletion
