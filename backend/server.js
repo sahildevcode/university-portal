@@ -32,12 +32,71 @@ if (process.env.MONGODB_URI) {
   }
 }
 
-// Sanitize student records (dual enrollment linkages, N/A strings, legacy remarks)
+// Helper: Recalculate multi-year scholarship balances from scholarshipHistory
+export function recalculateStudentScholarships(student) {
+  if (!student) return;
+  if (Array.isArray(student.scholarshipHistory) && student.scholarshipHistory.length > 0) {
+    let y1 = 0, y2 = 0, y3 = 0, y4 = 0;
+    student.scholarshipHistory.forEach(h => {
+      const amt = Number(h.amountPaid !== undefined ? h.amountPaid : (h.amount || 0));
+      const cls = String(h.currentClass || '').toUpperCase();
+      const yr = String(h.year || '').toLowerCase();
+      if (yr === 'year1' || yr === '1' || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('1ST') || cls.includes('YEAR-1') || cls.includes('YEAR 1')) {
+        y1 += amt;
+      } else if (yr === 'year2' || yr === '2' || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('2ND') || cls.includes('YEAR-2') || cls.includes('YEAR 2')) {
+        y2 += amt;
+      } else if (yr === 'year3' || yr === '3' || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('3RD') || cls.includes('YEAR-3') || cls.includes('YEAR 3')) {
+        y3 += amt;
+      } else if (yr === 'year4' || yr === '4' || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('4TH') || cls.includes('YEAR-4') || cls.includes('YEAR 4')) {
+        y4 += amt;
+      } else {
+        y1 += amt;
+      }
+    });
+    student.scholarshipYear1 = y1;
+    student.scholarshipYear2 = y2;
+    student.scholarshipYear3 = y3;
+    student.scholarshipYear4 = y4;
+    student.scholarshipAmount = y1 + y2 + y3 + y4;
+  } else {
+    const y1 = Number(student.scholarshipYear1 || 0);
+    const y2 = Number(student.scholarshipYear2 || 0);
+    const y3 = Number(student.scholarshipYear3 || 0);
+    const y4 = Number(student.scholarshipYear4 || 0);
+    const total = y1 + y2 + y3 + y4;
+    if (total > 0) {
+      student.scholarshipAmount = total;
+    }
+  }
+
+  const sch = Number(student.scholarshipAmount || 0);
+  const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
+  const rawCat = student.feeCategory;
+  const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+    ? 'full_course_fee'
+    : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+      ? 'course_fee_scholarship'
+      : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+        ? 'full_scholarship'
+        : ((acadFee > 0 && sch > 0) ? 'course_fee_scholarship' : (acadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
+
+  const regFee = Number(student.registrationFee || student.regFee || 0);
+  if (cat === 'full_course_fee') {
+    student.totalFee = acadFee + regFee;
+  } else {
+    student.totalFee = acadFee + sch + regFee;
+  }
+  student.netTotalFee = student.totalFee;
+  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
+}
+
+// Sanitize student records (dual enrollment linkages, N/A strings, legacy remarks, scholarship balances)
 try {
   const db = readDB();
   let dbChanged = false;
   if (Array.isArray(db.students)) {
     db.students.forEach(s => {
+      recalculateStudentScholarships(s);
       const r = (s.rollNo || '').toUpperCase();
       if (r && !r.includes('-')) {
         if (s.primaryRollNo || s.primaryStudentId || s.isSecondaryCourse) {
@@ -4070,55 +4129,39 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   const rNo = receiptNo || `SCH-${student.rollNo || getNextReceiptNumber(db)}`;
   const existingIdx = student.scholarshipHistory.findIndex(h => h.receiptNo === rNo || (h.id && h.id === rNo));
 
-  if (existingIdx !== -1) {
-    const oldEntry = student.scholarshipHistory[existingIdx];
-    // If the year changed (e.g. from year1 to year2), adjust the old year's amount!
-    if (oldEntry.year && oldEntry.year !== year) {
-      if (oldEntry.year === 'year1' || oldEntry.year === '1') {
-        student.scholarshipYear1 = Math.max(0, (student.scholarshipYear1 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
-      } else if (oldEntry.year === 'year2' || oldEntry.year === '2') {
-        student.scholarshipYear2 = Math.max(0, (student.scholarshipYear2 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
-      } else if (oldEntry.year === 'year3' || oldEntry.year === '3') {
-        student.scholarshipYear3 = Math.max(0, (student.scholarshipYear3 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
-      } else if (oldEntry.year === 'year4' || oldEntry.year === '4') {
-        student.scholarshipYear4 = Math.max(0, (student.scholarshipYear4 || 0) - (Number(oldEntry.amountPaid || oldEntry.amount) || 0));
-      }
-    }
-  }
-
-  // If specific year update was sent
-  if (year && amount !== undefined) {
-    const amt = Math.max(0, Number(amount) || 0);
-    if (year === 'year1' || year === '1') student.scholarshipYear1 = amt;
-    else if (year === 'year2' || year === '2') student.scholarshipYear2 = amt;
-    else if (year === 'year3' || year === '3') student.scholarshipYear3 = amt;
-    else if (year === 'year4' || year === '4') student.scholarshipYear4 = amt;
-  } else {
-    // If multi-year individual values were sent
-    if (scholarshipYear1 !== undefined) student.scholarshipYear1 = Math.max(0, Number(scholarshipYear1) || 0);
-    if (scholarshipYear2 !== undefined) student.scholarshipYear2 = Math.max(0, Number(scholarshipYear2) || 0);
-    if (scholarshipYear3 !== undefined) student.scholarshipYear3 = Math.max(0, Number(scholarshipYear3) || 0);
-    if (scholarshipYear4 !== undefined) student.scholarshipYear4 = Math.max(0, Number(scholarshipYear4) || 0);
-
-    // If only generic scholarshipAmount was passed and no year fields exist yet
-    if (scholarshipAmount !== undefined && scholarshipYear1 === undefined && scholarshipYear2 === undefined) {
-      const schAmt = Math.max(0, Number(scholarshipAmount) || 0);
-      student.scholarshipYear1 = schAmt;
-    }
-  }
-
-  // Auto calculate total scholarship from all years
-  const y1 = Number(student.scholarshipYear1) || 0;
-  const y2 = Number(student.scholarshipYear2) || 0;
-  const y3 = Number(student.scholarshipYear3) || 0;
-  const y4 = Number(student.scholarshipYear4) || 0;
-  const totalSch = y1 + y2 + y3 + y4;
-  student.scholarshipAmount = totalSch;
-
   const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
   student.scholarshipDate = dateStr;
 
-  const entryAmt = (year && amount !== undefined) ? Math.max(0, Number(amount) || 0) : totalSch;
+  // Derive target year from currentClass or year parameter
+  let effectiveYear = year || 'year1';
+  const clsUpper = String(currentClass || '').toUpperCase();
+  if (clsUpper.includes('1ST') || clsUpper.includes('SEM-1') || clsUpper.includes('SEM-2')) {
+    effectiveYear = 'year1';
+  } else if (clsUpper.includes('2ND') || clsUpper.includes('SEM-3') || clsUpper.includes('SEM-4')) {
+    effectiveYear = 'year2';
+  } else if (clsUpper.includes('3RD') || clsUpper.includes('SEM-5') || clsUpper.includes('SEM-6')) {
+    effectiveYear = 'year3';
+  } else if (clsUpper.includes('4TH') || clsUpper.includes('5TH') || clsUpper.includes('SEM-7') || clsUpper.includes('SEM-8')) {
+    effectiveYear = 'year4';
+  }
+
+  // Determine entry amount
+  let entryAmt = 0;
+  if (amount !== undefined && amount !== null && amount !== '') {
+    entryAmt = Math.max(0, Number(amount) || 0);
+  } else if (effectiveYear === 'year1' && scholarshipYear1 !== undefined) {
+    entryAmt = Math.max(0, Number(scholarshipYear1) || 0);
+  } else if (effectiveYear === 'year2' && scholarshipYear2 !== undefined) {
+    entryAmt = Math.max(0, Number(scholarshipYear2) || 0);
+  } else if (effectiveYear === 'year3' && scholarshipYear3 !== undefined) {
+    entryAmt = Math.max(0, Number(scholarshipYear3) || 0);
+  } else if (effectiveYear === 'year4' && scholarshipYear4 !== undefined) {
+    entryAmt = Math.max(0, Number(scholarshipYear4) || 0);
+  } else if (scholarshipAmount !== undefined) {
+    entryAmt = Math.max(0, Number(scholarshipAmount) || 0);
+  }
+
+  const defaultPurpose = effectiveYear === 'year1' ? 'First Year Scholarship' : effectiveYear === 'year2' ? 'Second Year Scholarship' : effectiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship';
 
   const historyItem = {
     id: existingIdx !== -1 ? student.scholarshipHistory[existingIdx].id : 'SCH-' + Date.now(),
@@ -4126,19 +4169,14 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
     date: dateStr,
     feeDate: dateStr,
     currentClass: currentClass || student.currentClass || 'SEM-1',
-    purpose: purpose || yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
-    year: year || 'All Years',
-    yearLabel: yearLabel || (year === 'year1' ? 'First Year Scholarship' : year === 'year2' ? 'Second Year Scholarship' : year === 'year3' ? 'Third Year Scholarship' : year === 'year4' ? 'Fourth Year Scholarship' : 'Annual Scholarship Breakdown'),
+    purpose: purpose || yearLabel || defaultPurpose,
+    year: effectiveYear,
+    yearLabel: yearLabel || purpose || defaultPurpose,
     paymentMode: paymentMode || 'Govt Scholarship Grant',
     refNo: refNo || '-',
     receivedBy: receivedBy || 'Admin Desk',
     amount: entryAmt,
     amountPaid: entryAmt,
-    year1: y1,
-    year2: y2,
-    year3: y3,
-    year4: y4,
-    total: totalSch,
     remark: remark || 'Scholarship updated by admin',
     updatedAt: new Date().toISOString()
   };
@@ -4146,20 +4184,35 @@ app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   if (existingIdx !== -1) {
     student.scholarshipHistory[existingIdx] = historyItem;
   } else {
-    student.scholarshipHistory.push(historyItem);
+    if (entryAmt > 0 || receiptNo) {
+      student.scholarshipHistory.push(historyItem);
+    }
   }
 
-  const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
-  student.totalFee = acadFee + totalSch;
-  student.netTotalFee = student.totalFee;
-  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
-  student.updatedAt = new Date().toISOString();
+  // Recalculate year balances by summing all entries in scholarshipHistory
+  recalculateStudentScholarships(student);
 
+  // If scholarshipHistory was empty and multi-year values were passed directly
+  if (student.scholarshipHistory.length === 0) {
+    if (scholarshipYear1 !== undefined) student.scholarshipYear1 = Math.max(0, Number(scholarshipYear1) || 0);
+    if (scholarshipYear2 !== undefined) student.scholarshipYear2 = Math.max(0, Number(scholarshipYear2) || 0);
+    if (scholarshipYear3 !== undefined) student.scholarshipYear3 = Math.max(0, Number(scholarshipYear3) || 0);
+    if (scholarshipYear4 !== undefined) student.scholarshipYear4 = Math.max(0, Number(scholarshipYear4) || 0);
+    recalculateStudentScholarships(student);
+  }
+
+  student.updatedAt = new Date().toISOString();
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+    } catch (_) {}
+  }
 
   res.json({
     success: true,
-    message: `Scholarship for ${student.fullName || student.rollNo || 'Student'} updated. Total: ₹${totalSch.toLocaleString('en-IN')}`,
+    message: `Scholarship for ${student.fullName || student.rollNo || 'Student'} updated. Total: ₹${Number(student.scholarshipAmount || 0).toLocaleString('en-IN')}`,
     student
   });
 });
@@ -4175,37 +4228,42 @@ app.delete('/api/students/:rollNo/scholarships/:idOrYear', (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
+  if (!Array.isArray(student.scholarshipHistory)) {
+    student.scholarshipHistory = [];
+  }
+
   if (idOrYear === 'year1' || idOrYear === '1') {
     student.scholarshipYear1 = 0;
-    if (Array.isArray(student.scholarshipHistory)) {
-      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year1' && h.year !== '1');
-    }
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => {
+      const cls = String(h.currentClass || '').toUpperCase();
+      const yr = String(h.year || '').toLowerCase();
+      return !(yr === 'year1' || yr === '1' || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('1ST') || cls.includes('YEAR-1') || cls.includes('YEAR 1'));
+    });
   } else if (idOrYear === 'year2' || idOrYear === '2') {
     student.scholarshipYear2 = 0;
-    if (Array.isArray(student.scholarshipHistory)) {
-      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year2' && h.year !== '2');
-    }
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => {
+      const cls = String(h.currentClass || '').toUpperCase();
+      const yr = String(h.year || '').toLowerCase();
+      return !(yr === 'year2' || yr === '2' || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('2ND') || cls.includes('YEAR-2') || cls.includes('YEAR 2'));
+    });
   } else if (idOrYear === 'year3' || idOrYear === '3') {
     student.scholarshipYear3 = 0;
-    if (Array.isArray(student.scholarshipHistory)) {
-      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year3' && h.year !== '3');
-    }
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => {
+      const cls = String(h.currentClass || '').toUpperCase();
+      const yr = String(h.year || '').toLowerCase();
+      return !(yr === 'year3' || yr === '3' || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('3RD') || cls.includes('YEAR-3') || cls.includes('YEAR 3'));
+    });
   } else if (idOrYear === 'year4' || idOrYear === '4') {
     student.scholarshipYear4 = 0;
-    if (Array.isArray(student.scholarshipHistory)) {
-      student.scholarshipHistory = student.scholarshipHistory.filter(h => h.year !== 'year4' && h.year !== '4');
-    }
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => {
+      const cls = String(h.currentClass || '').toUpperCase();
+      const yr = String(h.year || '').toLowerCase();
+      return !(yr === 'year4' || yr === '4' || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('4TH') || cls.includes('YEAR-4') || cls.includes('YEAR 4'));
+    });
   } else if (idOrYear.startsWith('sch-')) {
-    if (Array.isArray(student.scholarshipHistory)) {
-      const target = student.scholarshipHistory.find(h => String(h.id || '').toLowerCase() === idOrYear || String(h.receiptNo || '').toLowerCase() === idOrYear);
-      if (target && target.year) {
-        if (target.year === 'year1' || target.year === '1') student.scholarshipYear1 = 0;
-        if (target.year === 'year2' || target.year === '2') student.scholarshipYear2 = 0;
-        if (target.year === 'year3' || target.year === '3') student.scholarshipYear3 = 0;
-        if (target.year === 'year4' || target.year === '4') student.scholarshipYear4 = 0;
-      }
-      student.scholarshipHistory = student.scholarshipHistory.filter(h => String(h.id || '').toLowerCase() !== idOrYear && String(h.receiptNo || '').toLowerCase() !== idOrYear);
-    }
+    student.scholarshipHistory = student.scholarshipHistory.filter(h => 
+      String(h.id || '').toLowerCase() !== idOrYear && String(h.receiptNo || '').toLowerCase() !== idOrYear
+    );
   } else {
     student.scholarshipYear1 = 0;
     student.scholarshipYear2 = 0;
@@ -4214,20 +4272,17 @@ app.delete('/api/students/:rollNo/scholarships/:idOrYear', (req, res) => {
     student.scholarshipHistory = [];
   }
 
-  const y1 = Number(student.scholarshipYear1) || 0;
-  const y2 = Number(student.scholarshipYear2) || 0;
-  const y3 = Number(student.scholarshipYear3) || 0;
-  const y4 = Number(student.scholarshipYear4) || 0;
-  const totalSch = y1 + y2 + y3 + y4;
-  student.scholarshipAmount = totalSch;
+  // Recalculate balances after deletion
+  recalculateStudentScholarships(student);
 
-  const acadFee = Number(student.academicFee !== undefined ? student.academicFee : (student.studentFee || 0));
-  student.totalFee = acadFee + totalSch;
-  student.netTotalFee = student.totalFee;
-  student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
   student.updatedAt = new Date().toISOString();
-
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      StudentModel.findOneAndUpdate({ id: student.id }, student).catch(() => {});
+    } catch (_) {}
+  }
 
   res.json({
     success: true,
@@ -4235,6 +4290,7 @@ app.delete('/api/students/:rollNo/scholarships/:idOrYear', (req, res) => {
     student
   });
 });
+
 
 // Receive Student Fee / Set Paid Fee
 app.post('/api/students/:rollNo/receive-fee', (req, res) => {

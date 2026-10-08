@@ -121,10 +121,30 @@ export default function StudentList({
       : Number(item.academicFee !== undefined && item.academicFee !== null ? item.academicFee : (item.studentFee || 0));
 
     // 2. Scholarship per Year
-    const schY1 = Number(item.scholarshipYear1 !== undefined && item.scholarshipYear1 !== null ? item.scholarshipYear1 : (!item.scholarshipYear2 ? (item.scholarshipAmount || 0) : 0));
-    const schY2 = Number(item.scholarshipYear2 || 0);
-    const schY3 = Number(item.scholarshipYear3 || 0);
-    const schY4 = Number(item.scholarshipYear4 || 0);
+    let schY1 = 0, schY2 = 0, schY3 = 0, schY4 = 0;
+    if (Array.isArray(item.scholarshipHistory) && item.scholarshipHistory.length > 0) {
+      item.scholarshipHistory.forEach(entry => {
+        const amt = Number(entry.amountPaid !== undefined ? entry.amountPaid : (entry.amount || entry.fee || 0));
+        const cls = String(entry.currentClass || '').toUpperCase();
+        const yStr = String(entry.year || '').toLowerCase();
+        if (yStr === 'year1' || yStr === '1' || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST') || cls.includes('YEAR 1')) {
+          schY1 += amt;
+        } else if (yStr === 'year2' || yStr === '2' || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND') || cls.includes('YEAR 2')) {
+          schY2 += amt;
+        } else if (yStr === 'year3' || yStr === '3' || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD') || cls.includes('YEAR 3')) {
+          schY3 += amt;
+        } else if (yStr === 'year4' || yStr === '4' || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH') || cls.includes('YEAR 4')) {
+          schY4 += amt;
+        } else {
+          schY1 += amt;
+        }
+      });
+    } else {
+      schY1 = Number(item.scholarshipYear1 !== undefined && item.scholarshipYear1 !== null ? item.scholarshipYear1 : (!item.scholarshipYear2 ? (item.scholarshipAmount || 0) : 0));
+      schY2 = Number(item.scholarshipYear2 || 0);
+      schY3 = Number(item.scholarshipYear3 || 0);
+      schY4 = Number(item.scholarshipYear4 || 0);
+    }
     const totalSch = (schY1 + schY2 + schY3 + schY4) > 0 ? (schY1 + schY2 + schY3 + schY4) : Number(item.scholarshipAmount || 0);
 
     // 3. Category & Year-wise Payable Fee
@@ -911,17 +931,17 @@ export default function StudentList({
     setFeeDeskReceivedBy('Admin Desk');
     setFeeDeskRemark(student.remark || '');
 
-    const y1 = Number(student.scholarshipYear1 !== undefined && student.scholarshipYear1 !== null ? student.scholarshipYear1 : (!student.scholarshipYear2 ? (student.scholarshipAmount || 0) : 0));
-    const y2 = Number(student.scholarshipYear2 || 0);
-    const y3 = Number(student.scholarshipYear3 || 0);
-    const y4 = Number(student.scholarshipYear4 || 0);
+    const bd = calculateStudentYearBreakdown(student);
+    const y1 = bd.schY1;
+    const y2 = bd.schY2;
+    const y3 = bd.schY3;
+    const y4 = bd.schY4;
     setScholarshipYear1(String(y1 || 0));
     setScholarshipYear2(String(y2 || 0));
     setScholarshipYear3(String(y3 || 0));
     setScholarshipYear4(String(y4 || 0));
     setScholarshipActiveYear('year1');
 
-    const bd = calculateStudentYearBreakdown(student);
     const sch = bd.totalSch;
     const rem = bd.totalRem;
 
@@ -951,10 +971,11 @@ export default function StudentList({
               : [];
           setFeeDeskPayments(loadedPayments);
           setFeeDeskStudent(data.student);
-          const sy1 = Number(data.student.scholarshipYear1 !== undefined ? data.student.scholarshipYear1 : (!data.student.scholarshipYear2 ? (data.student.scholarshipAmount || 0) : 0));
-          const sy2 = Number(data.student.scholarshipYear2 || 0);
-          const sy3 = Number(data.student.scholarshipYear3 || 0);
-          const sy4 = Number(data.student.scholarshipYear4 || 0);
+          const freshBd = calculateStudentYearBreakdown(data.student);
+          const sy1 = freshBd.schY1;
+          const sy2 = freshBd.schY2;
+          const sy3 = freshBd.schY3;
+          const sy4 = freshBd.schY4;
           setScholarshipYear1(String(sy1 || 0));
           setScholarshipYear2(String(sy2 || 0));
           setScholarshipYear3(String(sy3 || 0));
@@ -1122,11 +1143,23 @@ export default function StudentList({
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
+        let activeYr = scholarshipActiveYear || 'year1';
+        const cls = String(feeDeskClass || '').toUpperCase();
+        if (cls.includes('1ST') || cls.includes('SEM-1') || cls.includes('SEM-2')) {
+          activeYr = 'year1';
+        } else if (cls.includes('2ND') || cls.includes('SEM-3') || cls.includes('SEM-4')) {
+          activeYr = 'year2';
+        } else if (cls.includes('3RD') || cls.includes('SEM-5') || cls.includes('SEM-6')) {
+          activeYr = 'year3';
+        } else if (cls.includes('4TH') || cls.includes('5TH') || cls.includes('SEM-7') || cls.includes('SEM-8')) {
+          activeYr = 'year4';
+        }
+
         const y1Val = (scholarshipYear1 === '' || scholarshipYear1 === null || scholarshipYear1 === undefined) ? 0 : Math.max(0, Number(scholarshipYear1) || 0);
         const y2Val = (scholarshipYear2 === '' || scholarshipYear2 === null || scholarshipYear2 === undefined) ? 0 : Math.max(0, Number(scholarshipYear2) || 0);
         const y3Val = (scholarshipYear3 === '' || scholarshipYear3 === null || scholarshipYear3 === undefined) ? 0 : Math.max(0, Number(scholarshipYear3) || 0);
         const y4Val = (scholarshipYear4 === '' || scholarshipYear4 === null || scholarshipYear4 === undefined) ? 0 : Math.max(0, Number(scholarshipYear4) || 0);
-        const totalSch = y1Val + y2Val + y3Val + y4Val;
+        const inputAmt = activeYr === 'year1' ? y1Val : activeYr === 'year2' ? y2Val : activeYr === 'year3' ? y3Val : y4Val;
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
           method: 'PUT',
@@ -1136,11 +1169,10 @@ export default function StudentList({
             scholarshipYear2: y2Val,
             scholarshipYear3: y3Val,
             scholarshipYear4: y4Val,
-            scholarshipAmount: totalSch,
             purpose: feeDeskPurpose || 'Scholarship',
-            year: scholarshipActiveYear,
-            yearLabel: feeDeskPurpose || (scholarshipActiveYear === 'year1' ? 'First Year Scholarship' : scholarshipActiveYear === 'year2' ? 'Second Year Scholarship' : scholarshipActiveYear === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship'),
-            amount: scholarshipActiveYear === 'year1' ? y1Val : scholarshipActiveYear === 'year2' ? y2Val : scholarshipActiveYear === 'year3' ? y3Val : y4Val,
+            year: activeYr,
+            yearLabel: feeDeskPurpose || (activeYr === 'year1' ? 'First Year Scholarship' : activeYr === 'year2' ? 'Second Year Scholarship' : activeYr === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship'),
+            amount: inputAmt,
             feeDate: feeDeskDate,
             currentClass: feeDeskClass
           })
@@ -1151,13 +1183,14 @@ export default function StudentList({
         }
 
         const updatedStudent = data.student;
+        const freshBd = calculateStudentYearBreakdown(updatedStudent);
         setFeeDeskStudent(updatedStudent);
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-        setScholarshipYear1(String(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : y1Val));
-        setScholarshipYear2(String(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : y2Val));
-        setScholarshipYear3(String(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : y3Val));
-        setScholarshipYear4(String(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : y4Val));
-        setFeeDeskSuccess(`Scholarship updated successfully! Total: ₹${totalSch.toLocaleString('en-IN')} (1st: ₹${y1Val.toLocaleString('en-IN')}, 2nd: ₹${y2Val.toLocaleString('en-IN')}, 3rd: ₹${y3Val.toLocaleString('en-IN')}, 4th: ₹${y4Val.toLocaleString('en-IN')})`);
+        setScholarshipYear1(String(freshBd.schY1));
+        setScholarshipYear2(String(freshBd.schY2));
+        setScholarshipYear3(String(freshBd.schY3));
+        setScholarshipYear4(String(freshBd.schY4));
+        setFeeDeskSuccess(`Scholarship entry of ₹${inputAmt.toLocaleString('en-IN')} (${feeDeskClass}) saved successfully! Total 1st Year: ₹${freshBd.schY1.toLocaleString('en-IN')}, Total Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       }
