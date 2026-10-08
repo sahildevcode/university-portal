@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel, UniversityModel, CollegeModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -6738,7 +6738,7 @@ app.get('/api/universities', (req, res) => {
 });
 
 // 9.2 Add New University
-app.post('/api/universities', (req, res) => {
+app.post('/api/universities', async (req, res) => {
   try {
     const { name, shortName, code, city, state, approvedBy, website, description, establishedYear } = req.body;
     if (!name || !name.trim()) {
@@ -6766,6 +6766,14 @@ app.post('/api/universities', (req, res) => {
     db.universities.push(newUniv);
     writeDB(db);
 
+    if (isMongoConnected()) {
+      try {
+        await UniversityModel.findOneAndUpdate({ id: newUniv.id }, newUniv, { upsert: true });
+      } catch (mErr) {
+        console.warn('Mongo direct university save notice:', mErr.message);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: `University "${newUniv.name}" added successfully!`,
@@ -6777,7 +6785,7 @@ app.post('/api/universities', (req, res) => {
 });
 
 // 9.3 Update University
-app.put('/api/universities/:id', (req, res) => {
+app.put('/api/universities/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const db = readDB();
@@ -6795,6 +6803,15 @@ app.put('/api/universities/:id', (req, res) => {
     };
 
     writeDB(db);
+
+    if (isMongoConnected()) {
+      try {
+        await UniversityModel.findOneAndUpdate({ id }, db.universities[index], { upsert: true });
+      } catch (mErr) {
+        console.warn('Mongo direct university update notice:', mErr.message);
+      }
+    }
+
     res.json({
       success: true,
       message: 'University details updated successfully!',
@@ -6806,7 +6823,7 @@ app.put('/api/universities/:id', (req, res) => {
 });
 
 // 9.4 Delete University
-app.delete('/api/universities/:id', (req, res) => {
+app.delete('/api/universities/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const db = readDB();
@@ -6819,6 +6836,14 @@ app.delete('/api/universities/:id', (req, res) => {
 
     db.universities = db.universities.filter(u => u.id !== id);
     writeDB(db);
+
+    if (isMongoConnected()) {
+      try {
+        await UniversityModel.deleteOne({ id });
+      } catch (mErr) {
+        console.warn('Mongo direct university delete notice:', mErr.message);
+      }
+    }
 
     res.json({ success: true, message: `University "${univ.name}" removed.` });
   } catch (err) {
@@ -6908,7 +6933,7 @@ app.get('/api/colleges', (req, res) => {
 });
 
 // 9.6 Add College
-app.post('/api/colleges', (req, res) => {
+app.post('/api/colleges', async (req, res) => {
   try {
     const { name, shortName, code, universityId, universityName, district, state, address } = req.body;
     if (!name || !name.trim()) {
@@ -6935,6 +6960,14 @@ app.post('/api/colleges', (req, res) => {
     db.colleges.push(newCol);
     writeDB(db);
 
+    if (isMongoConnected()) {
+      try {
+        await CollegeModel.findOneAndUpdate({ id: newCol.id }, newCol, { upsert: true });
+      } catch (mErr) {
+        console.warn('Mongo direct college save notice:', mErr.message);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: `College "${newCol.shortName}" registered successfully!`,
@@ -6946,7 +6979,7 @@ app.post('/api/colleges', (req, res) => {
 });
 
 // 9.7 Update College
-app.put('/api/colleges/:id', (req, res) => {
+app.put('/api/colleges/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, shortName, code, universityId, universityName, district, state, address, status } = req.body;
@@ -6976,6 +7009,14 @@ app.put('/api/colleges/:id', (req, res) => {
     db.colleges[index] = updatedCol;
     writeDB(db);
 
+    if (isMongoConnected()) {
+      try {
+        await CollegeModel.findOneAndUpdate({ id }, updatedCol, { upsert: true });
+      } catch (mErr) {
+        console.warn('Mongo direct college update notice:', mErr.message);
+      }
+    }
+
     res.json({
       success: true,
       message: `College "${updatedCol.shortName || updatedCol.name}" updated successfully!`,
@@ -6987,7 +7028,7 @@ app.put('/api/colleges/:id', (req, res) => {
 });
 
 // 9.8 Delete College
-app.delete('/api/colleges/:id', (req, res) => {
+app.delete('/api/colleges/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const db = readDB();
@@ -7000,6 +7041,14 @@ app.delete('/api/colleges/:id', (req, res) => {
 
     db.colleges = db.colleges.filter(c => c.id !== id);
     writeDB(db);
+
+    if (isMongoConnected()) {
+      try {
+        await CollegeModel.deleteOne({ id });
+      } catch (mErr) {
+        console.warn('Mongo direct college delete notice:', mErr.message);
+      }
+    }
 
     res.json({ success: true, message: `College "${college.shortName || college.name}" deleted.` });
   } catch (err) {

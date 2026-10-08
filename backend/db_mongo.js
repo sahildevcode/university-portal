@@ -287,6 +287,66 @@ export const HomeCmsModel = mongoose.model('HomeCms', new mongoose.Schema({
   counterCareerRate: Number
 }, { strict: false, timestamps: true }));
 
+export const UniversityModel = mongoose.model('University', new mongoose.Schema({
+  id: String,
+  name: String,
+  shortName: String,
+  code: String,
+  city: String,
+  state: String,
+  approvedBy: String,
+  website: String,
+  description: String,
+  establishedYear: Number,
+  status: String,
+  createdAt: String
+}, { strict: false, timestamps: true }));
+
+export const CollegeModel = mongoose.model('College', new mongoose.Schema({
+  id: String,
+  name: String,
+  shortName: String,
+  code: String,
+  universityId: String,
+  universityName: String,
+  district: String,
+  state: String,
+  address: String,
+  status: String,
+  createdAt: String
+}, { strict: false, timestamps: true }));
+
+export const FeedbackModel = mongoose.model('Feedback', new mongoose.Schema({
+  id: String,
+  name: String,
+  studentName: String,
+  rollNo: String,
+  message: String,
+  rating: Number,
+  status: String,
+  date: String
+}, { strict: false, timestamps: true }));
+
+export const StudentUserModel = mongoose.model('StudentUser', new mongoose.Schema({
+  id: String,
+  rollNo: String,
+  password: String,
+  studentName: String,
+  phone: String,
+  status: String
+}, { strict: false, timestamps: true }));
+
+export const FeeAdjustmentModel = mongoose.model('FeeAdjustment', new mongoose.Schema({
+  id: String,
+  studentId: String,
+  rollNo: String,
+  studentName: String,
+  amount: Number,
+  type: String,
+  reason: String,
+  date: String
+}, { strict: false, timestamps: true }));
+
 function cleanDoc(doc) {
   if (!doc) return doc;
   const { _id, __v, ...rest } = doc;
@@ -371,7 +431,14 @@ export async function hydrateFromMongo() {
       job_applications,
       vocational_institutes,
       vocational_courses,
-      home_cms
+      home_cms,
+      universities,
+      colleges,
+      results,
+      entrance_exams,
+      feedbacks,
+      student_users,
+      fee_adjustments
     ] = await Promise.all([
       StudentModel.find({}).lean(),
       CourseModel.find({}).lean(),
@@ -391,6 +458,13 @@ export async function hydrateFromMongo() {
       VocationalInstituteModel.find({}).lean(),
       VocationalCourseModel.find({}).lean(),
       HomeCmsModel.findOne({ key: 'main' }).lean(),
+      UniversityModel.find({}).lean(),
+      CollegeModel.find({}).lean(),
+      ResultModel.find({}).lean(),
+      EntranceExamModel.find({}).lean(),
+      FeedbackModel.find({}).lean(),
+      StudentUserModel.find({}).lean(),
+      FeeAdjustmentModel.find({}).lean(),
     ]);
 
     let localDb = {};
@@ -427,6 +501,27 @@ export async function hydrateFromMongo() {
       if (home_cms) {
         localDb.home_cms = cleanDoc(home_cms);
       }
+      if (universities && universities.length > 0) {
+        localDb.universities = universities.map(cleanDoc);
+      }
+      if (colleges && colleges.length > 0) {
+        localDb.colleges = colleges.map(cleanDoc);
+      }
+      if (results && results.length > 0) {
+        localDb.results = results.map(cleanDoc);
+      }
+      if (entrance_exams && entrance_exams.length > 0) {
+        localDb.entrance_exams = entrance_exams.map(cleanDoc);
+      }
+      if (feedbacks && feedbacks.length > 0) {
+        localDb.feedbacks = feedbacks.map(cleanDoc);
+      }
+      if (student_users && student_users.length > 0) {
+        localDb.student_users = student_users.map(cleanDoc);
+      }
+      if (fee_adjustments && fee_adjustments.length > 0) {
+        localDb.fee_adjustments = fee_adjustments.map(cleanDoc);
+      }
 
       // If Atlas doesn't have staff data yet, auto-seed from local database.json
       if ((!staff_users || staff_users.length === 0) && localDb.staff_users && localDb.staff_users.length > 0) {
@@ -453,9 +548,37 @@ export async function hydrateFromMongo() {
         await VocationalCourseModel.deleteMany({});
         await VocationalCourseModel.insertMany(localDb.vocationalCourses);
       }
+      if ((!universities || universities.length === 0) && localDb.universities && localDb.universities.length > 0) {
+        await UniversityModel.deleteMany({});
+        await UniversityModel.insertMany(localDb.universities);
+      }
+      if ((!colleges || colleges.length === 0) && localDb.colleges && localDb.colleges.length > 0) {
+        await CollegeModel.deleteMany({});
+        await CollegeModel.insertMany(localDb.colleges);
+      }
+      if ((!results || results.length === 0) && localDb.results && localDb.results.length > 0) {
+        await ResultModel.deleteMany({});
+        await ResultModel.insertMany(localDb.results);
+      }
+      if ((!entrance_exams || entrance_exams.length === 0) && localDb.entrance_exams && localDb.entrance_exams.length > 0) {
+        await EntranceExamModel.deleteMany({});
+        await EntranceExamModel.insertMany(localDb.entrance_exams);
+      }
+      if ((!feedbacks || feedbacks.length === 0) && localDb.feedbacks && localDb.feedbacks.length > 0) {
+        await FeedbackModel.deleteMany({});
+        await FeedbackModel.insertMany(localDb.feedbacks);
+      }
+      if ((!student_users || student_users.length === 0) && localDb.student_users && localDb.student_users.length > 0) {
+        await StudentUserModel.deleteMany({});
+        await StudentUserModel.insertMany(localDb.student_users);
+      }
+      if ((!fee_adjustments || fee_adjustments.length === 0) && localDb.fee_adjustments && localDb.fee_adjustments.length > 0) {
+        await FeeAdjustmentModel.deleteMany({});
+        await FeeAdjustmentModel.insertMany(localDb.fee_adjustments);
+      }
 
       fs.writeFileSync(DB_FILE, JSON.stringify(localDb, null, 2), 'utf8');
-      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.vocationalCourses?.length || 0} vocational courses synced into memory/cache.`);
+      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.universities?.length || 0} universities, ${localDb.vocationalCourses?.length || 0} vocational courses synced into memory/cache.`);
     } else if (localDb.students && localDb.students.length > 0) {
       console.log('⚠️ MongoDB Atlas is empty. Auto-seeding from local database.json...');
       await seedMongoFromDb(localDb);
@@ -509,7 +632,14 @@ async function diffAndSync(current) {
     diffCollection(StaffSalaryPaymentModel, previousDbState.staff_salary_payments || [], current.staff_salary_payments || [], 'id'),
     diffCollection(JobApplicationModel, previousDbState.jobApplications || [], current.jobApplications || [], 'id'),
     diffCollection(VocationalInstituteModel, previousDbState.vocationalInstitutes || [], current.vocationalInstitutes || [], 'id'),
-    diffCollection(VocationalCourseModel, previousDbState.vocationalCourses || [], current.vocationalCourses || [], 'id')
+    diffCollection(VocationalCourseModel, previousDbState.vocationalCourses || [], current.vocationalCourses || [], 'id'),
+    diffCollection(UniversityModel, previousDbState.universities || [], current.universities || [], 'id'),
+    diffCollection(CollegeModel, previousDbState.colleges || [], current.colleges || [], 'id'),
+    diffCollection(ResultModel, previousDbState.results || [], current.results || [], 'id'),
+    diffCollection(EntranceExamModel, previousDbState.entrance_exams || [], current.entrance_exams || [], 'id'),
+    diffCollection(FeedbackModel, previousDbState.feedbacks || [], current.feedbacks || [], 'id'),
+    diffCollection(StudentUserModel, previousDbState.student_users || [], current.student_users || [], 'id'),
+    diffCollection(FeeAdjustmentModel, previousDbState.fee_adjustments || [], current.fee_adjustments || [], 'id')
   ]);
 
   if (current.settings && JSON.stringify(current.settings) !== JSON.stringify(previousDbState.settings)) {
@@ -652,5 +782,33 @@ async function seedMongoFromDb(data) {
     for (let i = 0; i < data.vocationalCourses.length; i += chunkSize) {
       await VocationalCourseModel.insertMany(data.vocationalCourses.slice(i, i + chunkSize));
     }
+  }
+  if (Array.isArray(data.universities) && data.universities.length) {
+    await UniversityModel.deleteMany({});
+    await UniversityModel.insertMany(data.universities);
+  }
+  if (Array.isArray(data.colleges) && data.colleges.length) {
+    await CollegeModel.deleteMany({});
+    await CollegeModel.insertMany(data.colleges);
+  }
+  if (Array.isArray(data.results) && data.results.length) {
+    await ResultModel.deleteMany({});
+    await ResultModel.insertMany(data.results);
+  }
+  if (Array.isArray(data.entrance_exams) && data.entrance_exams.length) {
+    await EntranceExamModel.deleteMany({});
+    await EntranceExamModel.insertMany(data.entrance_exams);
+  }
+  if (Array.isArray(data.feedbacks) && data.feedbacks.length) {
+    await FeedbackModel.deleteMany({});
+    await FeedbackModel.insertMany(data.feedbacks);
+  }
+  if (Array.isArray(data.student_users) && data.student_users.length) {
+    await StudentUserModel.deleteMany({});
+    await StudentUserModel.insertMany(data.student_users);
+  }
+  if (Array.isArray(data.fee_adjustments) && data.fee_adjustments.length) {
+    await FeeAdjustmentModel.deleteMany({});
+    await FeeAdjustmentModel.insertMany(data.fee_adjustments);
   }
 }
