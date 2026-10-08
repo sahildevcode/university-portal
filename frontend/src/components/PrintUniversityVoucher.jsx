@@ -99,12 +99,10 @@ export default function PrintUniversityVoucher({ voucher, onClose }) {
             <div>
               <span className="text-slate-500 font-medium block text-[10px]">Payment Settlement Date:</span>
               <p className="font-semibold text-slate-800">
-                {new Date(voucher.paymentDate || Date.now()).toLocaleString('en-IN', {
+                {new Date(voucher.paymentDate || Date.now()).toLocaleDateString('en-IN', {
                   day: '2-digit',
                   month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
+                  year: 'numeric'
                 })}
               </p>
             </div>
@@ -115,6 +113,10 @@ export default function PrintUniversityVoucher({ voucher, onClose }) {
             <div>
               <span className="text-slate-500 font-medium block text-[10px]">Bank UTR / Challan / Ref No:</span>
               <p className="font-mono font-bold text-slate-900">{voucher.transactionRef || 'BANK-DIRECT-DEPOSIT'}</p>
+            </div>
+            <div className="col-span-2 pt-2 border-t border-amber-200/60">
+              <span className="text-slate-500 font-medium block text-[10px]">Paid Into Bank / Account:</span>
+              <p className="font-bold text-slate-900">{voucher.paidToAccount || 'University Official Bank Account'}</p>
             </div>
           </div>
 

@@ -6347,6 +6347,8 @@ app.post('/api/university/pay', (req, res) => {
       rollNo,
       amountPaidToUniversity,
       paidSemester,
+      paymentDate,
+      paidToAccount,
       paymentMode,
       transactionRef,
       purpose,
@@ -6374,10 +6376,25 @@ app.post('/api/university/pay', (req, res) => {
     if (!db.university_payments) db.university_payments = [];
     const voucherNo = `UVCH-2026-${String(db.university_payments.length + 1).padStart(4, '0')}`;
 
+    let resolvedPaymentDate = new Date().toISOString();
+    if (paymentDate && typeof paymentDate === 'string' && paymentDate.trim()) {
+      const cleanDate = paymentDate.trim();
+      if (cleanDate.includes('T')) {
+        resolvedPaymentDate = new Date(cleanDate).toISOString();
+      } else {
+        resolvedPaymentDate = new Date(`${cleanDate}T12:00:00Z`).toISOString();
+      }
+    }
+
+    const resolvedAccount = (paidToAccount && typeof paidToAccount === 'string' && paidToAccount.trim())
+      ? paidToAccount.trim()
+      : 'University Official Bank Account';
+
     const paymentRecord = {
       id: `univ-pay-${Date.now()}`,
       voucherNo,
-      paymentDate: new Date().toISOString(),
+      paymentDate: resolvedPaymentDate,
+      paidToAccount: resolvedAccount,
       rollNo: student.rollNo || student.enrollmentNo || student.id,
       studentId: student.id,
       studentName: student.fullName || student.studentName,
@@ -6506,6 +6523,7 @@ app.put('/api/university/payments/:id', (req, res) => {
       amountPaidToUniversity,
       paymentDate,
       paidSemester,
+      paidToAccount,
       paymentMode,
       transactionRef,
       purpose,
@@ -6527,7 +6545,15 @@ app.put('/api/university/payments/:id', (req, res) => {
 
     // Update payment record fields
     if (amountPaidToUniversity !== undefined && amountPaidToUniversity !== '') existingPayment.amountPaidToUniversity = newAmount;
-    if (paymentDate) existingPayment.paymentDate = new Date(paymentDate).toISOString();
+    if (paymentDate && typeof paymentDate === 'string' && paymentDate.trim()) {
+      const cleanDate = paymentDate.trim();
+      if (cleanDate.includes('T')) {
+        existingPayment.paymentDate = new Date(cleanDate).toISOString();
+      } else {
+        existingPayment.paymentDate = new Date(`${cleanDate}T12:00:00Z`).toISOString();
+      }
+    }
+    if (paidToAccount !== undefined && typeof paidToAccount === 'string') existingPayment.paidToAccount = paidToAccount.trim();
     if (paidSemester) existingPayment.paidSemester = paidSemester.trim();
     if (paymentMode) existingPayment.paymentMode = paymentMode.trim();
     if (transactionRef !== undefined) existingPayment.transactionRef = transactionRef.trim();

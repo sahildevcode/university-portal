@@ -36,6 +36,22 @@ import {
 import PrintUniversityVoucher from '../components/PrintUniversityVoucher';
 import { useLanguage } from '../context/LanguageContext';
 
+// Helper to format date cleanly without timezone day-shift
+const formatPaymentDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+      const [yyyy, mm, dd] = dateVal.split('-');
+      return `${Number(dd)}/${Number(mm)}/${yyyy}`;
+    }
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleDateString('en-IN');
+  } catch {
+    return String(dateVal);
+  }
+};
+
 export default function UniversityPaidManager({ lang: propLang, toggleLang: propToggleLang }) {
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
@@ -75,7 +91,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   const [payAmount, setPayAmount] = useState('');
   const [paidSemester, setPaidSemester] = useState('SEM-1');
   const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
-  const [paymentMode, setPaymentMode] = useState('Bank NEFT / RTGS');
+  const [paymentMode, setPaymentMode] = useState('Online / UPI');
+  const [paidToAccount, setPaidToAccount] = useState('University Official Main Bank A/c');
+  const [isOtherAccount, setIsOtherAccount] = useState(false);
+  const [otherAccountText, setOtherAccountText] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
   const [paymentPurpose, setPaymentPurpose] = useState('Official University Fee Settlement');
   const [paymentRemark, setPaymentRemark] = useState('');
@@ -110,7 +129,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     amountPaidToUniversity: '',
     paymentDate: '',
     paidSemester: 'SEM-1',
-    paymentMode: 'Bank NEFT / RTGS',
+    paymentMode: 'Online / UPI',
+    paidToAccount: 'University Official Main Bank A/c',
+    isOtherAccount: false,
+    otherAccountText: '',
     transactionRef: '',
     purpose: 'Official University Fee Settlement',
     remark: ''
@@ -262,7 +284,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setPayAmount(uDue > 0 ? String(uDue) : '');
     setPaidSemester(student.currentClass || (student.currentSemester ? `SEM-${student.currentSemester}` : 'SEM-1'));
     setPayDate(new Date().toISOString().split('T')[0]);
-    setPaymentMode('Bank NEFT / RTGS');
+    setPaymentMode('Online / UPI');
+    setPaidToAccount(`${student.universityName || 'University'} - Official Main A/c`);
+    setIsOtherAccount(false);
+    setOtherAccountText('');
     setTransactionRef('');
     setPaymentPurpose('Official University Fee Settlement');
     setPaymentRemark('');
@@ -277,6 +302,10 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       return;
     }
 
+    const resolvedAccount = isOtherAccount && otherAccountText.trim()
+      ? otherAccountText.trim()
+      : (paidToAccount === 'OTHER' ? (otherAccountText.trim() || 'Personal Account') : paidToAccount);
+
     setPayLoading(true);
     try {
       const studentIdKey = (payModalStudent.rollNo && payModalStudent.rollNo.trim()) || payModalStudent.id || payModalStudent.enrollmentNo || '';
@@ -288,6 +317,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
           amountPaidToUniversity: Number(payAmount),
           paidSemester,
           paymentDate: payDate,
+          paidToAccount: resolvedAccount,
           paymentMode,
           transactionRef,
           purpose: paymentPurpose,
@@ -326,6 +356,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
         setPayAmount('');
         setTransactionRef('');
         setPaymentRemark('');
+        setIsOtherAccount(false);
+        setOtherAccountText('');
 
         fetchStats();
         fetchLedger();
@@ -343,11 +375,17 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   // Open Edit Payment Voucher Modal
   const handleOpenEditPayment = (payment) => {
     setEditingUnivPayment(payment);
+    const pDate = payment.paymentDate ? payment.paymentDate.split('T')[0] : new Date().toISOString().split('T')[0];
+    const acc = payment.paidToAccount || 'University Official Main A/c';
+    const isCustom = !acc.includes(' - ') && !acc.includes('PKC') && !acc.includes('Cash');
     setEditPaymentForm({
       amountPaidToUniversity: String(payment.amountPaidToUniversity || payment.amountPaid || ''),
-      paymentDate: (payment.paymentDate || '').split('T')[0] || new Date().toISOString().split('T')[0],
+      paymentDate: pDate,
       paidSemester: payment.paidSemester || 'SEM-1',
-      paymentMode: payment.paymentMode || 'Bank NEFT / RTGS',
+      paymentMode: payment.paymentMode || 'Online / UPI',
+      paidToAccount: isCustom ? 'OTHER' : acc,
+      isOtherAccount: isCustom,
+      otherAccountText: isCustom ? acc : '',
       transactionRef: payment.transactionRef || '',
       purpose: payment.purpose || 'Official University Fee Settlement',
       remark: payment.remark || ''
@@ -362,12 +400,19 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
       return;
     }
 
+    const resolvedAccount = editPaymentForm.isOtherAccount && editPaymentForm.otherAccountText.trim()
+      ? editPaymentForm.otherAccountText.trim()
+      : (editPaymentForm.paidToAccount === 'OTHER' ? (editPaymentForm.otherAccountText.trim() || 'Personal Account') : editPaymentForm.paidToAccount);
+
     setEditPaymentLoading(true);
     try {
       const res = await fetch(`/api/university/payments/${editingUnivPayment.id || editingUnivPayment.voucherNo}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editPaymentForm)
+        body: JSON.stringify({
+          ...editPaymentForm,
+          paidToAccount: resolvedAccount
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -1614,12 +1659,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                         <span className="font-mono font-bold text-amber-950 block text-xs">
                           {p.voucherNo}
                         </span>
-                        <span className="text-[10px] text-slate-500">
-                          {new Date(p.paymentDate).toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {formatPaymentDate(p.paymentDate)}
                         </span>
                       </td>
 
@@ -1653,6 +1694,11 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                         <span className="font-mono text-[10px] text-slate-500 block">
                           Ref: {p.transactionRef || 'BANK-DIRECT'}
                         </span>
+                        {p.paidToAccount && (
+                          <span className="text-[10.5px] text-indigo-800 font-semibold block mt-0.5 truncate max-w-[200px]" title={p.paidToAccount}>
+                            A/c: {p.paidToAccount}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
@@ -1848,6 +1894,104 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
 
             {/* Payment Form */}
             <form onSubmit={handlePaySubmit} className="space-y-4 text-xs font-medium">
+              {/* University Bank / Account Selector (Right under University Context) */}
+              <div className="bg-amber-50/70 border-2 border-amber-300 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Landmark className="w-4 h-4 text-amber-700" />
+                    <span>Select University Bank / Account (यूनिवर्सिटी बैंक / खाता चुनें)*</span>
+                  </label>
+                  <span className="text-[11px] font-bold text-indigo-900 bg-white px-2 py-0.5 rounded-lg border border-amber-200">
+                    🏛️ {payModalStudent.universityName || 'University'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Left: University Bank Dropdown */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-700">
+                      यूनिवर्सिटी बैंक खाता (Bank Account Dropdown):
+                    </label>
+                    <select
+                      value={isOtherAccount ? 'OTHER' : paidToAccount}
+                      onChange={(e) => {
+                        if (e.target.value === 'OTHER') {
+                          setIsOtherAccount(true);
+                        } else {
+                          setIsOtherAccount(false);
+                          setPaidToAccount(e.target.value);
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                    >
+                      <option value={`${payModalStudent.universityName || 'University'} - Official Main A/c`}>
+                        {payModalStudent.universityName || 'University'} - Official Main Bank A/c
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - State Bank of India (SBI)`}>
+                        {payModalStudent.universityName || 'University'} - State Bank of India (SBI)
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - Punjab National Bank (PNB)`}>
+                        {payModalStudent.universityName || 'University'} - Punjab National Bank (PNB)
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - HDFC Bank`}>
+                        {payModalStudent.universityName || 'University'} - HDFC Bank
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - Bank of Baroda`}>
+                        {payModalStudent.universityName || 'University'} - Bank of Baroda
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - Union Bank of India`}>
+                        {payModalStudent.universityName || 'University'} - Union Bank of India
+                      </option>
+                      <option value={`${payModalStudent.universityName || 'University'} - Official Portal Challan`}>
+                        {payModalStudent.universityName || 'University'} - Official Portal Challan
+                      </option>
+                      <option value="PKC Institute Central A/c">
+                        PKC Institute Central Account
+                      </option>
+                      <option value="Cash Counter / Office Cash">
+                        Cash Counter / Office Cash (नकद काउंटर)
+                      </option>
+                      <option value="OTHER">
+                        ➕ Other / Personal Account (पर्सनल खाता / अन्य बैंक)...
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Right: Other / Personal Account Name & Details */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                      <span>Other / Personal Account (व्यक्तिगत खाता):</span>
+                      <span className="text-[10px] text-amber-700 font-semibold">(Type A/c or Bank Name)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="लिखें: Personal A/c holder name, SBI 3482..., या Bank name"
+                      value={otherAccountText}
+                      onChange={(e) => {
+                        setOtherAccountText(e.target.value);
+                        if (e.target.value.trim()) {
+                          setIsOtherAccount(true);
+                        }
+                      }}
+                      onFocus={() => {
+                        setIsOtherAccount(true);
+                      }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs transition-all ${
+                        isOtherAccount 
+                          ? 'bg-amber-50/60 border-2 border-amber-500 font-bold text-slate-900 shadow-xs' 
+                          : 'bg-white border border-slate-300 font-medium text-slate-700'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {isOtherAccount && (
+                  <p className="text-[11px] text-amber-900 font-medium bg-amber-100/80 px-2.5 py-1 rounded-lg border border-amber-300">
+                    ✍️ <strong>Personal / Other A/c Selected:</strong> {otherAccountText ? `"${otherAccountText}"` : 'कृपया यहाँ पर्सनल खाते का नाम या बैंक दर्ज करें'}
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-slate-700 font-bold">Class / Semester*</label>
@@ -2008,6 +2152,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                               <th className="p-2">Class</th>
                               <th className="p-2">Voucher No</th>
                               <th className="p-2">Mode</th>
+                              <th className="p-2">Paid Account</th>
                               <th className="p-2 text-right">Amount</th>
                               <th className="p-2 text-center">Action</th>
                             </tr>
@@ -2015,10 +2160,13 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                           <tbody className="divide-y divide-slate-100">
                             {pastPayments.map((pp, pIdx) => (
                               <tr key={pp.id || pIdx} className="hover:bg-slate-50 font-medium">
-                                <td className="p-2 whitespace-nowrap">{new Date(pp.paymentDate).toLocaleDateString('en-IN')}</td>
+                                <td className="p-2 whitespace-nowrap font-medium text-slate-900">{formatPaymentDate(pp.paymentDate)}</td>
                                 <td className="p-2 whitespace-nowrap">{pp.paidSemester || 'SEM-1'}</td>
                                 <td className="p-2 font-mono text-slate-700 whitespace-nowrap">{pp.voucherNo}</td>
                                 <td className="p-2 whitespace-nowrap">{pp.paymentMode}</td>
+                                <td className="p-2 whitespace-nowrap text-indigo-900 font-semibold text-[10.5px] max-w-[130px] truncate" title={pp.paidToAccount || 'Univ Official A/c'}>
+                                  {pp.paidToAccount || 'Univ Official A/c'}
+                                </td>
                                 <td className="p-2 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">₹{Number(pp.amountPaidToUniversity || pp.amountPaid || 0).toLocaleString('en-IN')}</td>
                                 <td className="p-2 text-center whitespace-nowrap">
                                   <div className="flex items-center justify-center gap-1">
@@ -2503,6 +2651,80 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                   onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amountPaidToUniversity: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600 focus:outline-none font-mono"
                 />
+              </div>
+
+              {/* Edit University Bank / Account Selector */}
+              <div className="bg-amber-50/70 border border-amber-300 rounded-2xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+                    <Landmark className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Bank / Payment Account (यूनिवर्सिटी बैंक / खाता)*</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-indigo-900 bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                    {editingUnivPayment.universityName || 'University'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <select
+                      value={editPaymentForm.isOtherAccount ? 'OTHER' : editPaymentForm.paidToAccount}
+                      onChange={(e) => {
+                        if (e.target.value === 'OTHER') {
+                          setEditPaymentForm({ ...editPaymentForm, isOtherAccount: true, paidToAccount: 'OTHER' });
+                        } else {
+                          setEditPaymentForm({ ...editPaymentForm, isOtherAccount: false, paidToAccount: e.target.value });
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-600 focus:outline-none cursor-pointer"
+                    >
+                      <option value={`${editingUnivPayment.universityName || 'University'} - Official Main A/c`}>
+                        {editingUnivPayment.universityName || 'University'} - Official Main A/c
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - State Bank of India (SBI)`}>
+                        {editingUnivPayment.universityName || 'University'} - State Bank of India (SBI)
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - Punjab National Bank (PNB)`}>
+                        {editingUnivPayment.universityName || 'University'} - Punjab National Bank (PNB)
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - HDFC Bank`}>
+                        {editingUnivPayment.universityName || 'University'} - HDFC Bank
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - Bank of Baroda`}>
+                        {editingUnivPayment.universityName || 'University'} - Bank of Baroda
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - Union Bank of India`}>
+                        {editingUnivPayment.universityName || 'University'} - Union Bank of India
+                      </option>
+                      <option value={`${editingUnivPayment.universityName || 'University'} - Official Portal Challan`}>
+                        {editingUnivPayment.universityName || 'University'} - Official Portal Challan
+                      </option>
+                      <option value="PKC Institute Central A/c">
+                        PKC Institute Central Account
+                      </option>
+                      <option value="Cash Counter / Office Cash">
+                        Cash Counter / Office Cash (नकद काउंटर)
+                      </option>
+                      <option value="OTHER">
+                        ➕ Other / Personal Account (पर्सनल खाता)...
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Other / Personal A/c details..."
+                      value={editPaymentForm.otherAccountText}
+                      onChange={(e) => setEditPaymentForm({ ...editPaymentForm, otherAccountText: e.target.value, isOtherAccount: true })}
+                      onFocus={() => setEditPaymentForm({ ...editPaymentForm, isOtherAccount: true })}
+                      className={`w-full px-2.5 py-1.5 rounded-lg text-xs ${
+                        editPaymentForm.isOtherAccount 
+                          ? 'bg-white border-2 border-amber-500 font-bold text-slate-900 shadow-xs' 
+                          : 'bg-white border border-slate-300 font-medium text-slate-700'
+                      }`}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
