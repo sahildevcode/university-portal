@@ -7643,12 +7643,28 @@ app.post('/api/vocational-courses/bulk-import', (req, res) => {
     });
 
     if (mode === 'replace') {
-      db.vocationalCourses = formatted;
+      const otherCourses = db.vocationalCourses.filter(c => c.instituteId !== targetInstId);
+      db.vocationalCourses = [...formatted, ...otherCourses];
+      addedCount = formatted.length;
     } else {
-      const existingNames = new Set(db.vocationalCourses.map(c => (c.courseName || '').toLowerCase()));
-      const toAdd = formatted.filter(c => !existingNames.has(c.courseName.toLowerCase()));
-      db.vocationalCourses = [...toAdd, ...db.vocationalCourses];
-      addedCount = toAdd.length;
+      const existingForInst = new Set(
+        db.vocationalCourses
+          .filter(c => c.instituteId === targetInstId)
+          .map(c => (c.courseCode || c.courseName || '').toLowerCase().trim())
+      );
+      const toAdd = formatted.filter(c => {
+        const key = (c.courseCode || c.courseName || '').toLowerCase().trim();
+        return !existingForInst.has(key);
+      });
+
+      if (toAdd.length === 0 && formatted.length > 0) {
+        const otherCourses = db.vocationalCourses.filter(c => c.instituteId !== targetInstId);
+        db.vocationalCourses = [...formatted, ...otherCourses];
+        addedCount = formatted.length;
+      } else {
+        db.vocationalCourses = [...toAdd, ...db.vocationalCourses];
+        addedCount = toAdd.length;
+      }
     }
 
     writeDB(db);

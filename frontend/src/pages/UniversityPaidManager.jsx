@@ -75,9 +75,13 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   const [filterSession, setFilterSession] = useState('all');
   const [filterSatra, setFilterSatra] = useState('all');
   const [filterUniversity, setFilterUniversity] = useState('all');
+  const [filterCollege, setFilterCollege] = useState('all');
+  const [filterCourse, setFilterCourse] = useState('all');
   const [appliedSession, setAppliedSession] = useState('all');
   const [appliedSatra, setAppliedSatra] = useState('all');
   const [appliedUniversity, setAppliedUniversity] = useState('all');
+  const [appliedCollege, setAppliedCollege] = useState('all');
+  const [appliedCourse, setAppliedCourse] = useState('all');
 
   // Secondary Controls States (Pagination, Due Filter, Dual course toggle, Search)
   const [dueFilter, setDueFilter] = useState('all'); // 'all' | 'due_only' | 'cleared'
@@ -767,6 +771,8 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setAppliedSession(filterSession);
     setAppliedSatra(filterSatra);
     setAppliedUniversity(filterUniversity);
+    setAppliedCollege(filterCollege);
+    setAppliedCourse(filterCourse);
     setCurrentPage(1);
   };
 
@@ -779,9 +785,13 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setFilterSession('all');
     setFilterSatra('all');
     setFilterUniversity('all');
+    setFilterCollege('all');
+    setFilterCourse('all');
     setAppliedSession('all');
     setAppliedSatra('all');
     setAppliedUniversity('all');
+    setAppliedCollege('all');
+    setAppliedCourse('all');
     setSearchQuery('');
     setDueFilter('all');
     setDualOnly(false);
@@ -825,6 +835,18 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     if (appliedUniversity !== 'all') {
       const univ = (s.universityName || s.collegeName || '').toLowerCase();
       if (univ && !univ.includes(appliedUniversity.toLowerCase())) return false;
+    }
+
+    // College Filter
+    if (appliedCollege !== 'all') {
+      const col = (s.collegeName || s.centerName || s.college_name || '').toLowerCase();
+      if (col && !col.includes(appliedCollege.toLowerCase())) return false;
+    }
+
+    // Course Filter
+    if (appliedCourse !== 'all') {
+      const crs = (s.course || s.courseName || s.course_name || '').toLowerCase();
+      if (crs && !crs.includes(appliedCourse.toLowerCase())) return false;
     }
 
     if (!q) return true;
@@ -1069,7 +1091,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
           
           {/* Top University, Session & Satra Filter Form */}
           <div className="bg-[#f0f7f9] p-4 rounded-xl border border-[#bce0ee] shadow-sm space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Select Session:
@@ -1122,8 +1144,40 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               </div>
 
               <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Select College:
+                </label>
+                <select
+                  value={filterCollege}
+                  onChange={(e) => setFilterCollege(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+                >
+                  <option value="all">Select College (All)</option>
+                  {colleges.map((c, i) => (
+                    <option key={i} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Select Course:
+                </label>
+                <select
+                  value={filterCourse}
+                  onChange={(e) => setFilterCourse(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium cursor-pointer"
+                >
+                  <option value="all">Select Course (All)</option>
+                  {Array.from(new Set(students.map(s => s.course || s.courseName || s.course_name).filter(Boolean))).sort().map((c, i) => (
+                    <option key={i} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Search Particular Student:</span>
+                  <span className="truncate">Search Student:</span>
                   {searchQuery && (
                     <button
                       type="button"
@@ -1139,7 +1193,7 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Name, Roll No, Mobile, Aadhaar..."
+                    placeholder="Name, Roll No, Mobile..."
                     className="w-full pl-8 pr-7 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium"
                   />
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
@@ -1160,28 +1214,44 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
               <button
                 type="button"
                 onClick={handleApplyFilters}
-                className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2 px-4 rounded-md shadow-sm transition-colors text-sm cursor-pointer"
+                className="w-full bg-[#1b5e20] hover:bg-[#144718] text-white font-bold py-2.5 px-4 rounded-md shadow-sm transition-colors text-sm cursor-pointer"
               >
-                Show Students
+                Show Students Record ({displayedStudents.length} Students Matching)
               </button>
             </div>
           </div>
 
           {/* Dark Active Filter Status Strip */}
-          <div className="bg-[#0b1f33] text-white py-2.5 px-4 rounded-lg border border-slate-700 shadow-md grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs font-bold items-center">
+          <div className="bg-[#0b1f33] text-white py-2.5 px-4 rounded-lg border border-slate-700 shadow-md flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-slate-400 font-normal">Session:</span>
               <span className="text-emerald-400 font-mono tracking-wide">{appliedSession === 'all' ? 'All Sessions' : appliedSession}</span>
             </div>
-            <div className="flex items-center gap-2 sm:justify-center">
+            <div className="flex items-center gap-2">
               <span className="text-slate-400 font-normal">Current Satra:</span>
               <span className="text-cyan-300 tracking-wide">{appliedSatra === 'all' ? 'All Satras' : appliedSatra}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-normal">University_Name:</span>
-              <span className="text-amber-300 truncate max-w-[280px]" title={appliedUniversity === 'all' ? 'All Partner Universities' : appliedUniversity}>
-                {appliedUniversity === 'all' ? 'All Partner Universities' : appliedUniversity}
+              <span className="text-slate-400 font-normal">University:</span>
+              <span className="text-amber-300 truncate max-w-[200px]" title={appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}>
+                {appliedUniversity === 'all' ? 'All Universities' : appliedUniversity}
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-normal">College:</span>
+              <span className="text-teal-300 truncate max-w-[200px]" title={appliedCollege === 'all' ? 'All Colleges' : appliedCollege}>
+                {appliedCollege === 'all' ? 'All Colleges' : appliedCollege}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-normal">Course:</span>
+              <span className="text-purple-300 truncate max-w-[180px]" title={appliedCourse === 'all' ? 'All Courses' : appliedCourse}>
+                {appliedCourse === 'all' ? 'All Courses' : appliedCourse}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-normal">Matching:</span>
+              <span className="text-emerald-400 font-mono">{displayedStudents.length} Records</span>
             </div>
             <div className="flex items-center gap-2 lg:justify-end">
               <span className="text-slate-400 font-normal">Search:</span>
