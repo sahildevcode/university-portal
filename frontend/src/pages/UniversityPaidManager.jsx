@@ -90,6 +90,44 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
   const [currentPage, setCurrentPage] = useState(1);
   const [dualOnly, setDualOnly] = useState(false);
 
+  // Timeframe & Calendar Filter State (Matching Fees section)
+  const [timeframePreset, setTimeframePreset] = useState('all'); // 'all', 'today', 'week', 'month', 'year', 'custom'
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
+  const applyPreset = (preset) => {
+    setTimeframePreset(preset);
+    const now = new Date();
+    const formatYMD = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    if (preset === 'all') {
+      setFilterStartDate('');
+      setFilterEndDate('');
+    } else if (preset === 'today') {
+      const todayStr = formatYMD(now);
+      setFilterStartDate(todayStr);
+      setFilterEndDate(todayStr);
+    } else if (preset === 'week') {
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      setFilterStartDate(formatYMD(weekAgo));
+      setFilterEndDate(formatYMD(now));
+    } else if (preset === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      setFilterStartDate(formatYMD(startOfMonth));
+      setFilterEndDate(formatYMD(now));
+    } else if (preset === 'year') {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      setFilterStartDate(formatYMD(startOfYear));
+      setFilterEndDate(formatYMD(now));
+    }
+  };
+
   // Modals State - Paid University Fee Modal
   const [payModalStudent, setPayModalStudent] = useState(null);
   const [payAmount, setPayAmount] = useState('');
@@ -795,18 +833,31 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
     setSearchQuery('');
     setDueFilter('all');
     setDualOnly(false);
+    setTimeframePreset('all');
+    setFilterStartDate('');
+    setFilterEndDate('');
     setCurrentPage(1);
   };
 
   // Filtered Students List
   const q = (searchQuery || '').trim().toLowerCase();
-  const cleanNum = q.replace(/[\\s-]/g, '');
+  const cleanNum = q.replace(/[\s-]/g, '');
 
   const displayedStudents = (dualOnly 
     ? students.filter(s => s.isDualEnrolled)
     : students
   ).filter(s => {
     if (s.isSecondaryCourse) return false;
+
+    // Date Range Filter (Custom Date Calendar & Timeframe)
+    if (filterStartDate || filterEndDate) {
+      const sDate = s.admissionDate || s.createdAt || s.paymentDate || s.date || '';
+      if (sDate) {
+        const itemDate = sDate.slice(0, 10);
+        if (filterStartDate && itemDate < filterStartDate) return false;
+        if (filterEndDate && itemDate > filterEndDate) return false;
+      }
+    }
 
     // Due Filter
     const uFee = Number(s.universityFee || 0);
@@ -885,201 +936,218 @@ export default function UniversityPaidManager({ lang: propLang, toggleLang: prop
         </div>
       )}
 
-      {/* Main Section Header */}
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-amber-700/50 relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Educational Consultancy &amp; University Liaison Desk</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
-              <span>🏛️ University Paid &amp; Settlement Ledger</span>
-            </h2>
-            <p className="text-sm text-amber-100/80 max-w-2xl font-medium">
-              {isHindi ? (
-                <>हम विभिन्न यूनिवर्सिटीज (<span className="text-amber-300 font-bold">MCBU, Barkatullah, Gyanveer University</span>) के लिए अधिकृत यूनिवर्सिटी फीस जमा करने, बकाया भुगतान व कंसल्टेंसी मुनाफे का केंद्रीय हिसाब रखते हैं।</>
-              ) : (
-                <>Educational Consultancy &amp; University Fee Ledger — Track student packages, authorized university fee deposits, pending balances, and retained counselor margins.</>
-              )}
-            </p>
-          </div>
+      {/* Clean Header (Matching Finance & Accounts Division from img2) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            {isHindi ? 'शैक्षणिक परामर्श एवं यूनिवर्सिटी संपर्क प्रभाग' : 'Educational Consultancy & University Liaison Desk'}
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            {isHindi ? 'यूनिवर्सिटी पेड एवं सेटलमेंट लेजर' : 'University Paid & Settlement Ledger'}
+          </h1>
+          <p className="text-xs text-slate-500">
+            {isHindi ? 'छात्र पैकेज, अधिकृत यूनिवर्सिटी फीस जमा, बकाया राशि एवं काउंसलर मार्जिन ट्रैकिंग।' : 'Educational Consultancy & University Fee Ledger — Track student packages, authorized university fee deposits, pending balances, and retained counselor margins.'}
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof toggleLang === 'function') toggleLang();
-              }}
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm cursor-pointer"
-              title="Toggle Language"
-            >
-              <Globe className="w-3.5 h-3.5 text-amber-300" />
-              <span>{isHindi ? 'English' : 'हिन्दी'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRefreshTrigger(prev => prev + 1)}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-white/20 shadow-sm cursor-pointer"
-              title="Refresh Data"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>{isHindi ? 'रीलोड' : 'Refresh'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRateModal(true)}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{isHindi ? '+ नई यूनिवर्सिटी दर' : '+ Add University Rate'}</span>
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof toggleLang === 'function') toggleLang();
+            }}
+            className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-300 shadow-xs cursor-pointer"
+            title="Toggle Language"
+          >
+            <Globe className="w-3.5 h-3.5 text-indigo-600" />
+            <span>{isHindi ? 'English' : 'हिन्दी'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-300 shadow-xs cursor-pointer"
+            title="Refresh Data"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+            <span>{isHindi ? 'रीलोड' : 'Refresh'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowRateModal(true)}
+            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{isHindi ? '+ नई यूनिवर्सिटी दर' : '+ Add University Rate'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Top Metrics Cards Ribbon */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: Total University Payable */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-amber-300 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide">Univ Total Fee</span>
-            <div className="p-2 bg-amber-50 rounded-xl text-amber-700">
-              <Landmark className="w-4 h-4" />
-            </div>
+      {/* Timeframe & Calendar Custom Date Filter Bar (Matching img2) */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          {/* Left: Quick Timeframe Preset Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <span>Timeframe (अवधि फ़िल्टर):</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => applyPreset('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'all' && !filterStartDate && !filterEndDate
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🌐 All Time (सभी)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('today')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'today'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              ⚡ Today (आज)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('week')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'week'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              📅 Weekly (7 दिन)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('month')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'month'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              🗓️ Monthly (इस महीने)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset('year')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                timeframePreset === 'year'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+            >
+              📆 Yearly (इस साल)
+            </button>
           </div>
-          <div>
-            <div className="text-2xl font-black text-slate-900 font-mono">
-              ₹{stats ? Number(stats.totalUniversityFee).toLocaleString('en-IN') : '...'}
+
+          {/* Right: Custom Date Range Calendar Picker */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-emerald-600" />
+              <span>कैलेंडर (Custom Date):</span>
+            </span>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-bold text-slate-400">From:</span>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => {
+                  setFilterStartDate(e.target.value);
+                  setTimeframePreset('custom');
+                }}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              />
             </div>
-            <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              {isHindi ? 'यूनिवर्सिटी फीस कुल देय' : 'Total Univ Payable'}
-            </p>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-bold text-slate-400">To:</span>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => {
+                  setFilterEndDate(e.target.value);
+                  setTimeframePreset('custom');
+                }}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              />
+            </div>
+            {(filterStartDate || filterEndDate || timeframePreset !== 'all') && (
+              <button
+                type="button"
+                onClick={() => applyPreset('all')}
+                className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer border border-rose-200"
+                title="Clear Date Filter"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Clear</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Card 2: Paid to University */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide">Paid to Univ</span>
-            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-700">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
+        {/* Active Filter Notification Ribbon */}
+        {(filterStartDate || filterEndDate) && (
+          <div className="text-[11px] font-bold text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-xl px-3.5 py-2 flex flex-wrap items-center justify-between gap-2">
+            <span>
+              🔍 सक्रिय दिनांक फ़िल्टर: केवल {filterStartDate ? `[ ${filterStartDate} ]` : ''} {filterEndDate ? `से [ ${filterEndDate} ]` : ''} के रिकॉर्ड्स दिखाए जा रहे हैं।
+            </span>
+            <button
+              type="button"
+              onClick={() => applyPreset('all')}
+              className="text-rose-600 hover:text-rose-800 cursor-pointer font-extrabold underline text-[11px]"
+            >
+              ✕ Remove Date Filter
+            </button>
           </div>
-          <div>
-            <div className="text-2xl font-black text-emerald-700 font-mono">
-              ₹{stats ? Number(stats.totalUniversityPaid).toLocaleString('en-IN') : '...'}
-            </div>
-            <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              {isHindi ? `यूनिवर्सिटी को जमा किया (${stats ? stats.totalPaymentsCount : 0} वाउचर)` : `Paid to University (${stats ? stats.totalPaymentsCount : 0} Vouchers)`}
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: Due to University */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-rose-300 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide">Univ Due Balance</span>
-            <div className="p-2 bg-rose-50 rounded-xl text-rose-700">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-rose-600 font-mono">
-              ₹{stats ? Number(stats.totalUniversityDue).toLocaleString('en-IN') : '...'}
-            </div>
-            <p className="text-[11px] font-semibold text-slate-500 mt-1">
-              {isHindi ? 'यूनिवर्सिटी का कुल बकाया' : 'Total Outstanding Balance'}
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: Retained Cash Margin in Hand */}
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50/80 rounded-2xl p-5 border border-emerald-200 shadow-sm flex flex-col justify-between hover:border-emerald-400 transition-all">
-          <div className="flex items-center justify-between text-emerald-800 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide">Retained Margin</span>
-            <div className="p-2 bg-emerald-100/70 rounded-xl text-emerald-800">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-emerald-800 font-mono">
-              ₹{stats ? Number(stats.retainedMargin).toLocaleString('en-IN') : '...'}
-            </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 mt-1">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{isHindi ? 'कंसल्टेंसी हाथ में शुद्ध बचत' : 'Counselor Retained Margin'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5: Expected Total Profit */}
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50/80 rounded-2xl p-5 border border-indigo-200 shadow-sm flex flex-col justify-between hover:border-indigo-400 transition-all">
-          <div className="flex items-center justify-between text-indigo-800 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide">Projected Profit</span>
-            <div className="p-2 bg-indigo-100/70 rounded-xl text-indigo-800">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-indigo-900 font-mono">
-              ₹{stats ? Number(stats.expectedMargin).toLocaleString('en-IN') : '...'}
-            </div>
-            <p className="text-[11px] font-bold text-indigo-700 mt-1">
-              {isHindi ? 'कुल अनुमानित कंसल्टेंसी लाभ' : 'Projected Counselor Margin'}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Sub-Views Selector Navigation Tabs */}
-      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          <button
-            type="button"
-            onClick={() => setSubView('ledger')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-              subView === 'ledger'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>{isHindi ? '1. छात्र यूनिवर्सिटी लेजर (Student Ledger)' : '1. Student University Settlement Ledger'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubView('payments')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-              subView === 'payments'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Printer className="w-4 h-4" />
-            <span>{isHindi ? '2. भुगतान रसीदें व इतिहास (Payment History)' : '2. University Payment Vouchers & History'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubView('rates')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-              subView === 'rates'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>{isHindi ? '3. यूनिवर्सिटी मानक दरें (Course Rates)' : '3. University Course Fee Rates Master'}</span>
-          </button>
+      {/* Accounts Control Bar: Section Dropdown + Contextual Filter Dropdown (Matching img2) */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Left: Accounts View Mode Dropdown */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <label className="text-xs font-bold text-slate-500 whitespace-nowrap flex items-center gap-1.5">
+            <CreditCard className="w-4 h-4 text-indigo-600" />
+            <span>Accounts View (खाता अनुभाग):</span>
+          </label>
+          <div className="relative min-w-[280px] sm:min-w-[340px]">
+            <select
+              value={subView}
+              onChange={(e) => setSubView(e.target.value)}
+              className="w-full bg-slate-50 border-2 border-indigo-200 hover:border-indigo-400 font-extrabold text-xs text-indigo-950 px-3.5 py-2 rounded-2xl focus:outline-none cursor-pointer transition-all shadow-xs"
+            >
+              <option value="ledger">💳 Student Accounts &amp; Dues Ledger (छात्र फीस व बकाया सूची)</option>
+              <option value="payments">🏛️ University Payment Vouchers &amp; History (यूनिवर्सिटी भुगतान रसीदें)</option>
+              <option value="rates">⚙️ University Course Fee Rates Master (यूनिवर्सिटी मानक दरें)</option>
+            </select>
+          </div>
         </div>
 
-        <div className="text-xs font-semibold text-slate-500 shrink-0">
-          {subView === 'ledger' && `Showing ${displayedStudents.length} of ${students.length} Student Records`}
-          {subView === 'payments' && `Showing ${payments.length} University Payment Vouchers`}
-          {subView === 'rates' && `Showing ${courseFees.length} Standard University Course Rates`}
+        {/* Right: Dues Filter Dropdown */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <label className="text-xs font-bold text-slate-500 whitespace-nowrap flex items-center gap-1.5">
+            <Filter className="w-4 h-4 text-rose-500" />
+            <span>Dues Filter (बकाया फ़िल्टर):</span>
+          </label>
+          <div className="relative min-w-[240px] sm:min-w-[280px]">
+            <select
+              value={dueFilter}
+              onChange={(e) => setDueFilter(e.target.value)}
+              className="w-full bg-slate-50 border-2 border-rose-200 hover:border-rose-400 font-extrabold text-xs text-rose-950 px-3.5 py-2 rounded-2xl focus:outline-none cursor-pointer transition-all shadow-xs"
+            >
+              <option value="all">📋 All Students (सभी छात्र - {students.length})</option>
+              <option value="due_only">⚠️ University Dues Pending (बकाया वाले छात्र)</option>
+              <option value="cleared">✅ Fully Cleared (पूर्ण चुकता)</option>
+            </select>
+          </div>
         </div>
       </div>
 
