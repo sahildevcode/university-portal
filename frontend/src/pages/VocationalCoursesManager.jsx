@@ -134,17 +134,12 @@ export default function VocationalCoursesManager({
     }
   });
 
-  // Courses State - starts empty so user can add or upload their own courses!
+  // Courses State - safely restored from localStorage or backend
   const [courses, setCourses] = useState(() => {
     try {
       const cached = localStorage.getItem('pkc_vocational_courses');
       if (cached) {
         const parsed = JSON.parse(cached);
-        // If it was the old demo courses (e.g. contains VOC-ELE-101), clear it
-        if (Array.isArray(parsed) && parsed.some(c => c.courseCode === 'VOC-ELE-101' || c.courseName?.includes('Electrician'))) {
-          localStorage.removeItem('pkc_vocational_courses');
-          return [];
-        }
         return Array.isArray(parsed) ? parsed : [];
       }
       return [];
@@ -830,10 +825,26 @@ export default function VocationalCoursesManager({
       const res = await fetch('/api/vocational-courses');
       const data = await res.json();
       if (data.success && Array.isArray(data.courses)) {
-        setCourses(data.courses);
-        try {
-          localStorage.setItem('pkc_vocational_courses', JSON.stringify(data.courses));
-        } catch {}
+        if (data.courses.length > 0) {
+          setCourses(data.courses);
+          try {
+            localStorage.setItem('pkc_vocational_courses', JSON.stringify(data.courses));
+          } catch {}
+        } else {
+          // If server restarted and returned 0 courses, restore from localStorage and sync to server
+          const cached = localStorage.getItem('pkc_vocational_courses');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCourses(parsed);
+              fetch('/api/vocational-courses/bulk-import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ courses: parsed, mode: 'append' })
+              }).catch(() => {});
+            }
+          }
+        }
       }
     } catch (err) {
       console.warn('Could not fetch vocational courses:', err);
@@ -3726,30 +3737,6 @@ export default function VocationalCoursesManager({
 
             {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
-              {/* Fast 1-Click Presets for the 2 user-requested Institutes */}
-              {!editingInstitute && (
-                <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 space-y-2">
-                  <span className="text-[11px] font-black text-amber-900 block uppercase tracking-wider">
-                    ⚡ 1-Click Fast Presets:
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => applyInstitutePreset(1)}
-                      className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>🛠️ Maharishi Dayanand Vocational Training (MDVTI)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyInstitutePreset(2)}
-                      className="p-2 text-left bg-white hover:bg-amber-100 rounded-xl border border-amber-300 transition-colors text-[11px] font-bold text-slate-900 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>👩‍🏫 Maharishi Dayanand Early Teachers Training (MDETTE)</span>
-                    </button>
-                  </div>
-                </div>
-              )}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   Institute Name *

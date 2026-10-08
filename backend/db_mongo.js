@@ -239,6 +239,33 @@ export const StaffUserModel = mongoose.model('StaffUser', staffUserSchema);
 export const StaffAttendanceModel = mongoose.model('StaffAttendance', staffAttendanceSchema);
 export const StaffSalaryPaymentModel = mongoose.model('StaffSalaryPayment', staffSalaryPaymentSchema);
 export const JobApplicationModel = mongoose.model('JobApplication', jobApplicationSchema);
+export const VocationalInstituteModel = mongoose.model('VocationalInstitute', new mongoose.Schema({
+  id: String,
+  name: String,
+  shortName: String,
+  code: String,
+  parentCenter: String,
+  type: String,
+  address: String,
+  contact: String,
+  description: String,
+  status: String
+}, { strict: false, timestamps: true }));
+export const VocationalCourseModel = mongoose.model('VocationalCourse', new mongoose.Schema({
+  id: String,
+  instituteId: String,
+  instituteName: String,
+  courseName: String,
+  courseCode: String,
+  sector: String,
+  duration: String,
+  eligibility: String,
+  fee: Number,
+  certification: String,
+  mode: String,
+  description: String,
+  status: String
+}, { strict: false, timestamps: true }));
 
 function cleanDoc(doc) {
   if (!doc) return doc;
@@ -321,7 +348,9 @@ export async function hydrateFromMongo() {
       staff_users,
       staff_attendance,
       staff_salary_payments,
-      job_applications
+      job_applications,
+      vocational_institutes,
+      vocational_courses
     ] = await Promise.all([
       StudentModel.find({}).lean(),
       CourseModel.find({}).lean(),
@@ -338,6 +367,8 @@ export async function hydrateFromMongo() {
       StaffAttendanceModel.find({}).lean(),
       StaffSalaryPaymentModel.find({}).lean(),
       JobApplicationModel.find({}).lean(),
+      VocationalInstituteModel.find({}).lean(),
+      VocationalCourseModel.find({}).lean(),
     ]);
 
     let localDb = {};
@@ -365,6 +396,12 @@ export async function hydrateFromMongo() {
       if (job_applications && job_applications.length > 0) {
         localDb.jobApplications = job_applications.map(cleanDoc);
       }
+      if (vocational_institutes && vocational_institutes.length > 0) {
+        localDb.vocationalInstitutes = vocational_institutes.map(cleanDoc);
+      }
+      if (vocational_courses && vocational_courses.length > 0) {
+        localDb.vocationalCourses = vocational_courses.map(cleanDoc);
+      }
 
       // If Atlas doesn't have staff data yet, auto-seed from local database.json
       if ((!staff_users || staff_users.length === 0) && localDb.staff_users && localDb.staff_users.length > 0) {
@@ -383,9 +420,17 @@ export async function hydrateFromMongo() {
         await JobApplicationModel.deleteMany({});
         await JobApplicationModel.insertMany(localDb.jobApplications);
       }
+      if ((!vocational_institutes || vocational_institutes.length === 0) && localDb.vocationalInstitutes && localDb.vocationalInstitutes.length > 0) {
+        await VocationalInstituteModel.deleteMany({});
+        await VocationalInstituteModel.insertMany(localDb.vocationalInstitutes);
+      }
+      if ((!vocational_courses || vocational_courses.length === 0) && localDb.vocationalCourses && localDb.vocationalCourses.length > 0) {
+        await VocationalCourseModel.deleteMany({});
+        await VocationalCourseModel.insertMany(localDb.vocationalCourses);
+      }
 
       fs.writeFileSync(DB_FILE, JSON.stringify(localDb, null, 2), 'utf8');
-      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.staff_users?.length || 0} staff members, ${localDb.jobApplications?.length || 0} job applications synced into memory/cache.`);
+      console.log(`✅ MongoDB Atlas Hydration complete: ${localDb.students.length} students, ${localDb.vocationalCourses?.length || 0} vocational courses synced into memory/cache.`);
     } else if (localDb.students && localDb.students.length > 0) {
       console.log('⚠️ MongoDB Atlas is empty. Auto-seeding from local database.json...');
       await seedMongoFromDb(localDb);
@@ -437,7 +482,9 @@ async function diffAndSync(current) {
     diffCollection(StaffUserModel, previousDbState.staff_users || [], current.staff_users || [], 'id'),
     diffCollection(StaffAttendanceModel, previousDbState.staff_attendance || [], current.staff_attendance || [], 'id'),
     diffCollection(StaffSalaryPaymentModel, previousDbState.staff_salary_payments || [], current.staff_salary_payments || [], 'id'),
-    diffCollection(JobApplicationModel, previousDbState.jobApplications || [], current.jobApplications || [], 'id')
+    diffCollection(JobApplicationModel, previousDbState.jobApplications || [], current.jobApplications || [], 'id'),
+    diffCollection(VocationalInstituteModel, previousDbState.vocationalInstitutes || [], current.vocationalInstitutes || [], 'id'),
+    diffCollection(VocationalCourseModel, previousDbState.vocationalCourses || [], current.vocationalCourses || [], 'id')
   ]);
 
   if (current.settings && JSON.stringify(current.settings) !== JSON.stringify(previousDbState.settings)) {
@@ -564,5 +611,16 @@ async function seedMongoFromDb(data) {
   if (Array.isArray(data.jobApplications) && data.jobApplications.length) {
     await JobApplicationModel.deleteMany({});
     await JobApplicationModel.insertMany(data.jobApplications);
+  }
+  if (Array.isArray(data.vocationalInstitutes) && data.vocationalInstitutes.length) {
+    await VocationalInstituteModel.deleteMany({});
+    await VocationalInstituteModel.insertMany(data.vocationalInstitutes);
+  }
+  if (Array.isArray(data.vocationalCourses) && data.vocationalCourses.length) {
+    await VocationalCourseModel.deleteMany({});
+    const chunkSize = 100;
+    for (let i = 0; i < data.vocationalCourses.length; i += chunkSize) {
+      await VocationalCourseModel.insertMany(data.vocationalCourses.slice(i, i + chunkSize));
+    }
   }
 }
