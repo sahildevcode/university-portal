@@ -544,14 +544,6 @@ export default function MainUniversityHome({
                     className="max-h-[380px] sm:max-h-[460px] lg:max-h-[510px] w-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] drop-shadow-[0_10px_25px_rgba(197,155,39,0.35)] filter transition-all duration-300"
                   />
 
-                  {/* 3. Floating Glassmorphism Badge Pills on Sir */}
-                  {/* Floating Pill Top Right */}
-                  <div className="absolute -top-3 right-0 sm:-right-4 bg-[#0A1931]/90 backdrop-blur-md border border-[#C59B27]/60 text-white rounded-2xl px-3.5 py-1.5 shadow-2xl flex items-center gap-2 group-hover:border-[#C59B27] transition-all">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="text-[11px] font-black text-[#C59B27] uppercase tracking-wider">
-                      ★ 15+ Years Trust
-                    </span>
-                  </div>
 
                   {/* Floating Pill Bottom Center / Left */}
                   <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 sm:left-2 sm:translate-x-0 bg-gradient-to-r from-[#071530]/95 via-[#0A1931]/95 to-[#071530]/95 backdrop-blur-md border border-[#C59B27]/70 text-white rounded-2xl px-4 py-2 shadow-2xl flex items-center gap-2.5 whitespace-nowrap group-hover:scale-105 transition-all">
