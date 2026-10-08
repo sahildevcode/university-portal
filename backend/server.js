@@ -6259,6 +6259,43 @@ app.get('/api/university/universities', (req, res) => {
   }
 });
 
+// 8.1.1 Configurable University Bank Accounts List
+app.get('/api/university/bank-accounts', (req, res) => {
+  try {
+    const db = readDB();
+    const defaultBanks = [
+      'Official Main Bank A/c',
+      'State Bank of India (SBI)',
+      'Punjab National Bank (PNB)',
+      'HDFC Bank',
+      'Bank of Baroda',
+      'Union Bank of India',
+      'Official Portal Challan'
+    ];
+    const bankAccounts = Array.isArray(db.university_bank_accounts) && db.university_bank_accounts.length > 0
+      ? db.university_bank_accounts
+      : defaultBanks;
+    res.json({ success: true, bankAccounts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/university/bank-accounts', (req, res) => {
+  try {
+    const { bankAccounts } = req.body;
+    if (!Array.isArray(bankAccounts)) {
+      return res.status(400).json({ success: false, message: 'bankAccounts must be an array.' });
+    }
+    const db = readDB();
+    db.university_bank_accounts = bankAccounts.map(b => String(b || '').trim()).filter(Boolean);
+    writeDB(db);
+    res.json({ success: true, message: 'Bank accounts list updated successfully.', bankAccounts: db.university_bank_accounts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 8.2 University Summary Stats & Margin
 app.get('/api/university/stats', (req, res) => {
   try {
