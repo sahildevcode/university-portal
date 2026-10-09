@@ -207,9 +207,38 @@ export default function PublicCourseCatalog({
     }
   ];
 
-  const courseCategories = ['all', 'Scholarship Benefit', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
-
   const activeCatalog = courses.length > 0 ? courses : allCourses;
+
+  const catImages = {
+    Arts:     'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80',
+    Science:  'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=600&q=80',
+    Commerce: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80',
+    Computer: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80',
+    Law:      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+    Research: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80',
+  };
+
+  // Resolve dynamic course photos uploaded in CMS for the 8 Scholarship programs
+  const resolvedScholarshipPrograms = scholarship8Programs.map(prog => {
+    const pName = (prog.name || '').toLowerCase().trim();
+    const pFull = (prog.fullName || '').toLowerCase().trim();
+    const matched = activeCatalog.find(c => {
+      const cName = (c.name || '').toLowerCase().trim();
+      const cCode = (c.code || '').toLowerCase().trim();
+      return (
+        cName === pName ||
+        cName.includes(pName) ||
+        pName.includes(cName) ||
+        (cCode && (cCode === prog.code?.toLowerCase() || cCode.includes(pName))) ||
+        (pFull && cName.includes(pFull))
+      );
+    });
+    const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
+    return {
+      ...prog,
+      image: dynamicImg || prog.image
+    };
+  });
 
   const isScholarshipCourse = (course) => {
     if (!course) return false;
@@ -401,7 +430,7 @@ export default function PublicCourseCatalog({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {scholarship8Programs.map((prog) => (
+              {resolvedScholarshipPrograms.map((prog) => (
                 <div
                   key={prog.id}
                   onClick={() => {
@@ -588,6 +617,22 @@ export default function PublicCourseCatalog({
                     }}
                     className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 p-5 flex flex-col justify-between space-y-4 cursor-pointer group relative overflow-hidden"
                   >
+                    {/* Top Image Banner */}
+                    <div className="relative h-36 overflow-hidden bg-slate-900 rounded-t-xl -m-5 mb-1">
+                      <img
+                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Arts}
+                        alt={course.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
+                        onError={(e) => {
+                          e.target.src = catImages[course.category] || catImages.Arts;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                      <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-xs text-amber-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30">
+                        {course.category}
+                      </span>
+                    </div>
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded">

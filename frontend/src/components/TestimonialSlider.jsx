@@ -46,8 +46,7 @@ export default function TestimonialSlider({ lang = 'en' }) {
   ];
 
   useEffect(() => {
-    const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://pkc-university-api.onrender.com';
-    fetch(`${apiBase}/api/testimonials`)
+    fetch('/api/testimonials')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
@@ -57,7 +56,18 @@ export default function TestimonialSlider({ lang = 'en' }) {
           setSlides(defaultSlides);
         }
       })
-      .catch(() => setSlides(defaultSlides));
+      .catch(() => {
+        const fallbackUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api/testimonials' : 'https://pkc-university-api.onrender.com/api/testimonials';
+        fetch(fallbackUrl)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+              const activeOnly = data.testimonials.filter(t => t.active !== false && t.imageUrl);
+              setSlides(activeOnly.length > 0 ? activeOnly : defaultSlides);
+            }
+          })
+          .catch(() => setSlides(defaultSlides));
+      });
   }, []);
 
   const activeSlides = slides.length > 0 ? slides : defaultSlides;

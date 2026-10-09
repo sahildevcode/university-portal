@@ -37,20 +37,55 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
-// Reusable Direct Image File Upload Component (NO URL typing needed!)
+// Reusable Direct Image File Upload Component (Fast direct upload + device support)
 function ImageUploadField({ label, value, onChange, placeholder = "Click to upload image file from device" }) {
-  const handleFileChange = (e) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 15 * 1024 * 1024) {
-      alert('File size exceeds 15MB limit. Please select a smaller photo.');
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size exceeds 25MB limit. Please select a smaller photo.');
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      onChange(reader.result);
-    };
-    reader.readAsDataURL(file);
+
+    setUploading(true);
+    let uploadedUrl = '';
+
+    // Attempt 1: Upload directly to server upload endpoint for permanent static URL
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data && data.success && (data.imageUrl || data.url)) {
+        uploadedUrl = data.imageUrl || data.url;
+      }
+    } catch (err) {
+      console.warn('Direct upload notice, falling back to data URL:', err);
+    }
+
+    // Attempt 2: Fallback to Base64 Data URL if server upload was unreachable
+    if (!uploadedUrl) {
+      try {
+        uploadedUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } catch (fErr) {
+        alert('Could not read image file: ' + fErr.message);
+      }
+    }
+
+    setUploading(false);
+    if (uploadedUrl) {
+      onChange(uploadedUrl);
+    }
   };
 
   return (
@@ -60,13 +95,28 @@ function ImageUploadField({ label, value, onChange, placeholder = "Click to uplo
           <UploadCloud className="w-3.5 h-3.5 text-[#C59B27]" />
           <span>{label} *</span>
         </span>
-        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">Direct Device Upload</span>
+        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+          {uploading ? '⏳ Uploading...' : 'Direct Device Upload'}
+        </span>
       </label>
 
-      {value ? (
+      {uploading ? (
+        <div className="bg-amber-50/60 border-2 border-dashed border-amber-300 rounded-2xl p-5 text-center flex flex-col items-center justify-center animate-pulse">
+          <div className="w-7 h-7 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mb-2" />
+          <span className="text-xs font-bold text-slate-800">Uploading image to website server...</span>
+          <span className="text-[10.5px] text-slate-500 mt-0.5">Please wait a moment</span>
+        </div>
+      ) : value ? (
         <div className="bg-white border-2 border-emerald-300 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3 overflow-hidden">
-            <img src={value} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 shadow-xs" />
+            <img 
+              src={value} 
+              alt="Preview" 
+              className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 shadow-xs" 
+              onError={(e) => {
+                e.target.src = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=600&auto=format&fit=crop';
+              }}
+            />
             <div className="truncate">
               <strong className="text-xs font-bold text-slate-900 block truncate">{label} Photo</strong>
               <span className="text-[10.5px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
@@ -75,14 +125,14 @@ function ImageUploadField({ label, value, onChange, placeholder = "Click to uplo
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-[#C59B27] text-xs font-bold rounded-xl cursor-pointer shadow-xs">
+            <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-[#C59B27] text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95">
               <span>Change Photo</span>
               <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             </label>
             <button
               type="button"
               onClick={() => onChange('')}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
               title="Remove photo"
             >
               <X className="w-4 h-4" />
@@ -300,7 +350,11 @@ export default function WebsiteCmsManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(aboutForm)
       });
-      localStorage.setItem('pkc_about_data', JSON.stringify(aboutForm));
+      try {
+        localStorage.setItem('pkc_about_data', JSON.stringify(aboutForm));
+      } catch (lErr) {
+        console.warn('localStorage warning:', lErr);
+      }
       setSuccessMsg('About Us page details & Director photo updated live on website!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
@@ -319,6 +373,7 @@ export default function WebsiteCmsManager({
 
   const handleOpenEditCourse = (course) => {
     setEditingCourse(course);
+    const photo = course.imageUrl || course.catImage || course.image || '';
     setCourseForm({
       name: course.name || '',
       code: course.code || '',
@@ -333,7 +388,9 @@ export default function WebsiteCmsManager({
       feePerSemester: course.feePerSemester || 0,
       eligibility: course.eligibility || '10+2 with minimum 50% aggregate marks',
       description: course.description || '',
-      catImage: course.catImage || course.imageUrl || ''
+      catImage: photo,
+      imageUrl: photo,
+      image: photo
     });
     setShowCourseModal(true);
   };
@@ -346,13 +403,20 @@ export default function WebsiteCmsManager({
     }
 
     try {
-      const url = editingCourse ? `/api/courses/${editingCourse.id}` : '/api/courses';
+      const url = editingCourse ? `/api/courses/${editingCourse.id || editingCourse.code}` : '/api/courses';
       const method = editingCourse ? 'PUT' : 'POST';
+      const photo = courseForm.catImage || courseForm.imageUrl || courseForm.image || '';
+      const payload = {
+        ...courseForm,
+        catImage: photo,
+        imageUrl: photo,
+        image: photo
+      };
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courseForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       setShowCourseModal(false);
@@ -360,6 +424,103 @@ export default function WebsiteCmsManager({
       loadData();
       if (typeof onRefreshCourses === 'function') onRefreshCourses();
       setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  // Direct 1-Click Course Photo Upload from Table
+  const handleQuickUploadCoursePhoto = async (course, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size exceeds 25MB limit.');
+      return;
+    }
+
+    try {
+      setSuccessMsg(`Uploading photo for "${course.name}"...`);
+      let uploadedUrl = '';
+
+      // 1. Upload file to server
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const upRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        const upData = await upRes.json();
+        if (upData && upData.success && (upData.imageUrl || upData.url)) {
+          uploadedUrl = upData.imageUrl || upData.url;
+        }
+      } catch (uErr) {
+        console.warn('Direct upload notice, falling back:', uErr);
+      }
+
+      // Fallback to data URL
+      if (!uploadedUrl) {
+        uploadedUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // 2. PUT to course
+      const targetId = course.id || course.code;
+      const res = await fetch(`/api/courses/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...course,
+          imageUrl: uploadedUrl,
+          catImage: uploadedUrl,
+          image: uploadedUrl
+        })
+      });
+      const data = await res.json();
+
+      // 3. Update local state immediately
+      setCourses(prev => prev.map(c => 
+        (c.id === course.id || c.code === course.code)
+          ? { ...c, imageUrl: uploadedUrl, catImage: uploadedUrl, image: uploadedUrl }
+          : c
+      ));
+
+      setSuccessMsg(`Course photo for "${course.name}" updated successfully & visible live on student portal!`);
+      if (typeof onRefreshCourses === 'function') onRefreshCourses();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setErrorMsg('Failed to upload course photo: ' + err.message);
+    }
+  };
+
+  // Remove Course Photo
+  const handleRemoveCoursePhoto = async (course) => {
+    if (!window.confirm(`Are you sure you want to remove the photo for "${course.name}"?`)) return;
+    try {
+      const targetId = course.id || course.code;
+      await fetch(`/api/courses/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...course,
+          imageUrl: '',
+          catImage: '',
+          image: ''
+        })
+      });
+
+      setCourses(prev => prev.map(c => 
+        (c.id === course.id || c.code === course.code)
+          ? { ...c, imageUrl: '', catImage: '', image: '' }
+          : c
+      ));
+
+      setSuccessMsg(`Photo removed for "${course.name}".`);
+      if (typeof onRefreshCourses === 'function') onRefreshCourses();
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err) {
       setErrorMsg(err.message);
     }
@@ -971,6 +1132,7 @@ export default function WebsiteCmsManager({
                 <thead>
                   <tr className="bg-[#071530] text-[#C59B27] font-black uppercase text-[10.5px] tracking-wider">
                     <th className="p-4">#</th>
+                    <th className="p-4">Photo / Banner</th>
                     <th className="p-4">Course Name &amp; Code</th>
                     <th className="p-4">Category</th>
                     <th className="p-4">Duration</th>
@@ -979,33 +1141,103 @@ export default function WebsiteCmsManager({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {courses.filter(c => (c.name || '').toLowerCase().includes(courseSearch.toLowerCase())).map((c, i) => (
-                    <tr key={c.id || i} className="hover:bg-amber-50/20">
-                      <td className="p-4 text-slate-400 font-bold">{c.id || i + 1}</td>
-                      <td className="p-4 font-bold text-slate-900">{c.name}</td>
-                      <td className="p-4">
-                        <span className="bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full text-[10px]">
-                          {c.category || 'General'}
-                        </span>
-                      </td>
-                      <td className="p-4 font-bold text-slate-700">{c.duration || '3 Years'}</td>
-                      <td className="p-4 text-slate-500 max-w-xs truncate">{c.eligibility}</td>
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => handleOpenEditCourse(c)}
-                          className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-bold hover:bg-indigo-100 cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCourse(c)}
-                          className="p-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {courses.filter(c => (c.name || '').toLowerCase().includes(courseSearch.toLowerCase())).map((c, i) => {
+                    const currentImg = c.imageUrl || c.catImage || c.image;
+                    return (
+                      <tr key={c.id || i} className="hover:bg-amber-50/20 transition-colors">
+                        <td className="p-4 text-slate-400 font-bold">{c.id || i + 1}</td>
+                        
+                        {/* Direct Photo Preview & 1-Click Upload */}
+                        <td className="p-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-16 h-12 rounded-xl overflow-hidden bg-slate-950 border border-slate-200 shrink-0 shadow-xs relative group">
+                              {currentImg ? (
+                                <img
+                                  src={currentImg}
+                                  alt={c.name}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  onError={(e) => {
+                                    e.target.src = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=400&auto=format&fit=crop';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100 text-[8.5px] font-bold">
+                                  <ImageIcon className="w-4 h-4 text-slate-400 mb-0.5" />
+                                  <span>No Photo</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <label className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-[#C59B27] rounded-lg text-[10px] font-bold shadow-xs transition-all hover:scale-105 active:scale-95">
+                                <Camera className="w-3 h-3 text-amber-400" />
+                                <span>{currentImg ? 'Change' : '+ Upload'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleQuickUploadCoursePhoto(c, e)}
+                                />
+                              </label>
+                              {currentImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCoursePhoto(c)}
+                                  className="text-[9.5px] text-rose-600 hover:text-rose-800 font-bold hover:underline text-left cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-4">
+                          <div className="font-bold text-slate-900">{c.name}</div>
+                          {c.code && (
+                            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase">
+                              #{c.code}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full text-[10px]">
+                            {c.category || 'General'}
+                          </span>
+                        </td>
+                        <td className="p-4 font-bold text-slate-700">{c.duration || '3 Years'}</td>
+                        <td className="p-4 text-slate-500 max-w-xs truncate">{c.eligibility}</td>
+                        <td className="p-4 text-right space-x-1.5 shrink-0">
+                          {/* Quick Camera Upload Action */}
+                          <label
+                            className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-bold cursor-pointer inline-flex items-center shadow-xs transition-colors"
+                            title="Upload / Change Course Photo"
+                          >
+                            <Camera className="w-4 h-4 text-amber-700" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleQuickUploadCoursePhoto(c, e)}
+                            />
+                          </label>
+                          <button
+                            onClick={() => handleOpenEditCourse(c)}
+                            className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-bold hover:bg-indigo-100 cursor-pointer shadow-xs transition-colors"
+                            title="Edit Course Details"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCourse(c)}
+                            className="p-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 cursor-pointer shadow-xs transition-colors"
+                            title="Delete Course"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1227,8 +1459,8 @@ export default function WebsiteCmsManager({
               {/* Direct Image File Upload for Course Banner */}
               <ImageUploadField
                 label="Course Banner / Category Photo"
-                value={courseForm.catImage}
-                onChange={val => setCourseForm({ ...courseForm, catImage: val, imageUrl: val })}
+                value={courseForm.catImage || courseForm.imageUrl || courseForm.image || ''}
+                onChange={val => setCourseForm({ ...courseForm, catImage: val, imageUrl: val, image: val })}
                 placeholder="Click to upload Course Banner Photo from computer / phone"
               />
 

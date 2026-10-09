@@ -103,8 +103,7 @@ export default function MainUniversityHome({
   const [selectedCourseModal, setSelectedCourseModal] = useState(null);
 
   useEffect(() => {
-    const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://pkc-university-api.onrender.com';
-    fetch(`${apiBase}/api/courses`)
+    fetch('/api/courses')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.courses) && data.courses.length > 0) {
@@ -113,6 +112,12 @@ export default function MainUniversityHome({
       })
       .catch(err => console.log('Live courses fetch:', err));
   }, []);
+
+  useEffect(() => {
+    if (Array.isArray(courses) && courses.length > 0) {
+      setDbCourses(courses);
+    }
+  }, [courses]);
 
   // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
   const [cardsInView, setCardsInView] = useState(false);
@@ -360,6 +365,28 @@ export default function MainUniversityHome({
       highlights: ['Full Stack Dev', 'Java / Python / SQL', '100% MPTASS/NSP Scholarship']
     }
   ];
+
+  // Resolve dynamic course photos uploaded in CMS for the 8 Scholarship programs
+  const resolvedScholarshipPrograms = scholarship8Programs.map(prog => {
+    const pName = (prog.name || '').toLowerCase().trim();
+    const pFull = (prog.fullName || '').toLowerCase().trim();
+    const matched = activeCourseCatalog.find(c => {
+      const cName = (c.name || '').toLowerCase().trim();
+      const cCode = (c.code || '').toLowerCase().trim();
+      return (
+        cName === pName ||
+        cName.includes(pName) ||
+        pName.includes(cName) ||
+        (cCode && (cCode === prog.code?.toLowerCase() || cCode.includes(pName))) ||
+        (pFull && cName.includes(pFull))
+      );
+    });
+    const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
+    return {
+      ...prog,
+      image: dynamicImg || prog.image
+    };
+  });
 
   const filteredCourses = activeCourseCatalog.filter(c => {
     let matchCat = false;
@@ -896,7 +923,7 @@ export default function MainUniversityHome({
           ) : courseCategory === 'Scholarship Benefit' ? (
             /* ================= DEDICATED 8 SCHOLARSHIP BENEFIT CARDS (4 COLUMNS PER ROW) ================= */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeIn">
-              {scholarship8Programs.map((prog) => (
+              {resolvedScholarshipPrograms.map((prog) => (
                 <div
                   key={prog.id}
                   onClick={() => {
@@ -1033,9 +1060,12 @@ export default function MainUniversityHome({
                     {/* Top Image Banner */}
                     <div className="relative h-36 overflow-hidden bg-slate-900">
                       <img
-                        src={catImages[course.category] || catImages.Arts}
+                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Arts}
                         alt={course.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
+                        onError={(e) => {
+                          e.target.src = catImages[course.category] || catImages.Arts;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 

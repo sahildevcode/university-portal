@@ -79,8 +79,9 @@ export default function GalleryPage({ lang = 'en' }) {
     fetch('/api/event-photos')
       .then(res => res.json())
       .then(data => {
-        if (data.success && Array.isArray(data.eventPhotos) && data.eventPhotos.length > 0) {
-          const activeOnly = data.eventPhotos.filter(p => p.active !== false);
+        const photoList = data.photos || data.eventPhotos || [];
+        if (data.success && Array.isArray(photoList) && photoList.length > 0) {
+          const activeOnly = photoList.filter(p => p.active !== false && p.imageUrl);
           if (activeOnly.length > 0) {
             setPhotos(activeOnly.map(p => ({
               id: p.id,

@@ -127,14 +127,36 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
             {t.ourStoryText2}
           </p>
 
-          {/* Director Quote Box */}
-          <div className="bg-slate-50 border-l-4 border-[#C59B27] p-4 rounded-r-lg space-y-1 mt-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#071530]">
-              {t.directorWord} • {aboutData?.directorName || 'Er. P.K. Chaurasia'}
-            </span>
-            <p className="text-xs text-slate-700 italic font-serif-academic">
-              {t.directorQuote}
-            </p>
+          {/* Executive Leadership & Director Spotlight */}
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center gap-5 shadow-xs">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 border-2 border-[#C59B27] shadow-md bg-slate-900">
+              <img
+                src={aboutData?.directorPhoto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop'}
+                alt={aboutData?.directorName || 'Er. P.K. Chaurasia'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop';
+                }}
+              />
+            </div>
+            <div className="space-y-1.5 flex-1 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <div>
+                  <h4 className="font-serif-academic font-bold text-base text-[#071530]">
+                    {aboutData?.directorName || 'Er. P.K. Chaurasia'}
+                  </h4>
+                  <p className="text-[11px] font-bold text-[#C59B27] uppercase tracking-wider">
+                    {aboutData?.directorTitle || 'Founder & Managing Director'}
+                  </p>
+                </div>
+                <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full self-center sm:self-auto">
+                  Est. {aboutData?.establishedYear || 2011}
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 italic font-serif-academic border-l-2 border-[#C59B27] pl-3 py-0.5 mt-1">
+                "{aboutData?.mission || t.directorQuote}"
+              </p>
+            </div>
           </div>
         </div>
 

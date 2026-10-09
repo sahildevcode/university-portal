@@ -347,6 +347,32 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Universal CMS, Courses & Banner Image Upload Endpoint
+app.post('/api/upload-image', (req, res) => {
+  const uploadMiddleware = galleryUpload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'photo', maxCount: 1 },
+    { name: 'file', maxCount: 1 }
+  ]);
+  uploadMiddleware(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    const uploadedFile = req.files?.image?.[0] || req.files?.photo?.[0] || req.files?.file?.[0] || req.file;
+    if (!uploadedFile) {
+      return res.status(400).json({ success: false, message: 'No image file uploaded.' });
+    }
+    const imageUrl = `/uploads/gallery/${uploadedFile.filename}`;
+    res.json({ 
+      success: true, 
+      imageUrl, 
+      url: imageUrl, 
+      filename: uploadedFile.filename,
+      message: 'Image uploaded successfully.' 
+    });
+  });
+});
+
 // ----------------------------------------------------
 // 0. AUTHENTICATION & SETTINGS
 // ----------------------------------------------------
@@ -5928,10 +5954,17 @@ app.get('/api/about', (req, res) => {
   res.json({ success: true, about: db.about || {} });
 });
 
-app.put('/api/about', (req, res) => {
+app.put('/api/about', async (req, res) => {
   const db = readDB();
   db.about = { ...db.about, ...req.body };
   writeDB(db);
+  try {
+    if (isMongoConnected()) {
+      await AboutModel.findOneAndUpdate({ key: 'main' }, { key: 'main', ...db.about }, { upsert: true });
+    }
+  } catch (mErr) {
+    console.warn('Mongo direct About save notice:', mErr.message);
+  }
   res.json({ success: true, message: 'About details and stats updated successfully!', about: db.about });
 });
 
@@ -6021,7 +6054,8 @@ app.delete('/api/inquiries/:id', (req, res) => {
 // ----------------------------------------------------
 app.get('/api/event-photos', (req, res) => {
   const db = readDB();
-  res.json({ success: true, photos: db.event_photos || [] });
+  const photos = db.event_photos || [];
+  res.json({ success: true, photos, eventPhotos: photos });
 });
 
 app.post('/api/event-photos/upload', galleryUpload.single('photo'), (req, res) => {
@@ -6029,7 +6063,7 @@ app.post('/api/event-photos/upload', galleryUpload.single('photo'), (req, res) =
     return res.status(400).json({ success: false, message: 'No photo file uploaded' });
   }
   const imageUrl = `/uploads/gallery/${req.file.filename}`;
-  res.json({ success: true, imageUrl, message: 'Photo uploaded successfully!' });
+  res.json({ success: true, imageUrl, url: imageUrl, message: 'Photo uploaded successfully!' });
 });
 
 app.post('/api/event-photos', (req, res) => {
@@ -6056,6 +6090,12 @@ app.post('/api/event-photos', (req, res) => {
   db.event_photos.unshift(newPhoto);
   writeDB(db);
 
+  if (isMongoConnected()) {
+    try {
+      EventPhotoModel.findOneAndUpdate({ id: newPhoto.id }, newPhoto, { upsert: true }).catch(() => {});
+    } catch {}
+  }
+
   res.status(201).json({ success: true, message: 'Event photo added successfully!', photo: newPhoto });
 });
 
@@ -6068,6 +6108,13 @@ app.put('/api/event-photos/:id', (req, res) => {
 
   db.event_photos[index] = { ...db.event_photos[index], ...req.body };
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      EventPhotoModel.findOneAndUpdate({ id: req.params.id }, db.event_photos[index], { upsert: true }).catch(() => {});
+    } catch {}
+  }
+
   res.json({ success: true, message: 'Event photo updated successfully!', photo: db.event_photos[index] });
 });
 
@@ -6080,6 +6127,13 @@ app.delete('/api/event-photos/:id', (req, res) => {
 
   const deleted = db.event_photos.splice(index, 1);
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      EventPhotoModel.deleteOne({ id: req.params.id }).catch(() => {});
+    } catch {}
+  }
+
   res.json({ success: true, message: 'Event photo deleted successfully', photo: deleted[0] });
 });
 
@@ -6110,6 +6164,8 @@ app.post('/api/courses', async (req, res) => {
       category,
       duration,
       imageUrl,
+      catImage,
+      image,
       badge,
       universityName, 
       collegeName, 
@@ -6127,6 +6183,7 @@ app.post('/api/courses', async (req, res) => {
 
     const courseCode = (code || name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8)).toUpperCase();
     const finalId = `crs-${Date.now()}`;
+    const photoUrl = imageUrl || catImage || image || '';
 
     const newCourse = {
       id: finalId,
@@ -6134,7 +6191,9 @@ app.post('/api/courses', async (req, res) => {
       code: courseCode,
       category: category || 'Computer',
       duration: duration || (durationYears ? `${durationYears} Years` : '3 Years'),
-      imageUrl: imageUrl || '',
+      imageUrl: photoUrl,
+      catImage: photoUrl,
+      image: photoUrl,
       badge: badge || 'NEW PROGRAM',
       department: department || 'School of Academic Studies',
       universityName: universityName || 'Maharaja Chhatrasal Bundelkhand University (MCBU)',
@@ -6171,22 +6230,37 @@ app.put('/api/courses/:id', async (req, res) => {
   try {
     const { id } = req.params;
     let updatedCourse = null;
+    const updatePayload = { ...req.body };
+
+    // Synchronize all image alias properties
+    const photoUrl = updatePayload.imageUrl || updatePayload.catImage || updatePayload.image;
+    if (photoUrl !== undefined) {
+      updatePayload.imageUrl = photoUrl;
+      updatePayload.catImage = photoUrl;
+      updatePayload.image = photoUrl;
+    }
 
     if (process.env.MONGODB_URI) {
       updatedCourse = await CourseModel.findOneAndUpdate(
-        { $or: [{ id }, { code: id }] },
-        { ...req.body, updatedAt: new Date().toISOString() },
+        { $or: [{ id }, { code: id }, { name: new RegExp(`^${id}$`, 'i') }] },
+        { ...updatePayload, updatedAt: new Date().toISOString() },
         { new: true }
       );
     }
 
     const db = readDB();
     if (!db.courses) db.courses = [];
-    const index = db.courses.findIndex(c => c.id === id || c.code === id);
+    const idLower = String(id).toLowerCase().trim();
+    const index = db.courses.findIndex(c => 
+      String(c.id).toLowerCase().trim() === idLower || 
+      String(c.code).toLowerCase().trim() === idLower ||
+      String(c.name).toLowerCase().trim() === idLower
+    );
+
     if (index !== -1) {
       db.courses[index] = {
         ...db.courses[index],
-        ...req.body,
+        ...updatePayload,
         updatedAt: new Date().toISOString()
       };
       writeDB(db);
