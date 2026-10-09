@@ -21,17 +21,47 @@ import { fireCelebration } from '../utils/confetti';
 
 export default function AboutPage({ lang = 'en', onNavigateTab }) {
   const t = translations[lang] || translations.en;
-  const [aboutData, setAboutData] = useState(null);
+  const [aboutData, setAboutData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkc_about_data');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
-    fetch('/api/about')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.about) {
-          setAboutData(data.about);
-        }
-      })
-      .catch(() => {});
+    const loadAbout = () => {
+      fetch('/api/about')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.about) {
+            setAboutData(data.about);
+            try {
+              localStorage.setItem('pkc_about_data', JSON.stringify(data.about));
+            } catch {}
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadAbout();
+
+    const onSync = () => {
+      try {
+        const saved = localStorage.getItem('pkc_about_data');
+        if (saved) setAboutData(JSON.parse(saved));
+      } catch {}
+      loadAbout();
+    };
+
+    window.addEventListener('storage', onSync);
+    window.addEventListener('focus', onSync);
+    const interval = setInterval(loadAbout, 2000);
+
+    return () => {
+      window.removeEventListener('storage', onSync);
+      window.removeEventListener('focus', onSync);
+      clearInterval(interval);
+    };
   }, []);
 
   const stats = [
@@ -131,11 +161,11 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
           <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 mt-4 flex flex-col sm:flex-row items-center gap-5 shadow-xs">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 border-2 border-[#C59B27] shadow-md bg-slate-900">
               <img
-                src={aboutData?.directorPhoto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop'}
+                src={aboutData?.directorPhoto || aboutData?.photo || aboutData?.imageUrl || '/sir_director_cutout.png'}
                 alt={aboutData?.directorName || 'Er. P.K. Chaurasia'}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop';
+                  e.target.src = '/sir_director_cutout.png';
                 }}
               />
             </div>

@@ -239,7 +239,7 @@ export default function App() {
 
   useEffect(() => {
     fetchGlobalData();
-  }, [studentUser?.rollNo, staffUser?.id]);
+  }, [studentUser?.rollNo, staffUser?.id, activeView, publicTab]);
 
   // Student Handlers
   const handleStudentLoginSuccess = (user, student) => {

@@ -308,6 +308,59 @@ export default function WebsiteCmsManager({
     }
   }, [propCourses]);
 
+  // Instant Auto-Save for Home CMS Images on Upload
+  const handleHomeImageChange = async (key, val) => {
+    const updated = { ...homeCms, [key]: val };
+    setHomeCms(updated);
+    setSavingHomeCms(true);
+    try {
+      const res = await fetch('/api/home-cms', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      const data = await res.json();
+      const finalData = (data && data.success && data.homeCms) ? data.homeCms : updated;
+      try {
+        localStorage.setItem('pkc_home_cms', JSON.stringify(finalData));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
+      setSuccessMsg(`✅ ${key === 'sirHeroImage' ? 'Sir Hero Photo' : 'Campus Background Photo'} saved live to website!`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      console.warn('Home image auto-save error:', err);
+    } finally {
+      setSavingHomeCms(false);
+    }
+  };
+
+  // Instant Auto-Save for Director Photo on Upload
+  const handleDirectorPhotoChange = async (val) => {
+    const updated = { ...aboutForm, directorPhoto: val };
+    setAboutForm(updated);
+    setSavingAbout(true);
+    try {
+      const res = await fetch('/api/about', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      const data = await res.json();
+      const finalData = (data && data.success && data.about) ? data.about : updated;
+      try {
+        localStorage.setItem('pkc_about_data', JSON.stringify(finalData));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
+      setSuccessMsg('✅ Director Photo saved live & updated across public website!');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      console.warn('Director photo save error:', err);
+      setErrorMsg('Failed to save Director Photo: ' + err.message);
+    } finally {
+      setSavingAbout(false);
+    }
+  };
+
   // Handle Save Home Page CMS
   const handleSaveHomeCms = async (e) => {
     e.preventDefault();
@@ -345,17 +398,20 @@ export default function WebsiteCmsManager({
     setSavingAbout(true);
     setErrorMsg(null);
     try {
-      await fetch('/api/about', {
+      const res = await fetch('/api/about', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(aboutForm)
       });
+      const data = await res.json();
+      const finalAbout = (data && data.success && data.about) ? data.about : aboutForm;
       try {
-        localStorage.setItem('pkc_about_data', JSON.stringify(aboutForm));
+        localStorage.setItem('pkc_about_data', JSON.stringify(finalAbout));
+        window.dispatchEvent(new Event('storage'));
       } catch (lErr) {
         console.warn('localStorage warning:', lErr);
       }
-      setSuccessMsg('About Us page details & Director photo updated live on website!');
+      setSuccessMsg('✅ About Us page details & Director photo updated live on website!');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setErrorMsg(err.message);
@@ -468,8 +524,8 @@ export default function WebsiteCmsManager({
       }
 
       // 2. PUT to course
-      const targetId = course.id || course.code;
-      const res = await fetch(`/api/courses/${targetId}`, {
+      const targetId = course.id || course.code || course._id || course.name;
+      const res = await fetch(`/api/courses/${encodeURIComponent(targetId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -483,7 +539,7 @@ export default function WebsiteCmsManager({
 
       // 3. Update local state immediately
       setCourses(prev => prev.map(c => 
-        (c.id === course.id || c.code === course.code)
+        (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
           ? { ...c, imageUrl: uploadedUrl, catImage: uploadedUrl, image: uploadedUrl }
           : c
       ));
@@ -500,8 +556,8 @@ export default function WebsiteCmsManager({
   const handleRemoveCoursePhoto = async (course) => {
     if (!window.confirm(`Are you sure you want to remove the photo for "${course.name}"?`)) return;
     try {
-      const targetId = course.id || course.code;
-      await fetch(`/api/courses/${targetId}`, {
+      const targetId = course.id || course.code || course._id || course.name;
+      await fetch(`/api/courses/${encodeURIComponent(targetId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -513,7 +569,7 @@ export default function WebsiteCmsManager({
       });
 
       setCourses(prev => prev.map(c => 
-        (c.id === course.id || c.code === course.code)
+        (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
           ? { ...c, imageUrl: '', catImage: '', image: '' }
           : c
       ));
@@ -882,14 +938,14 @@ export default function WebsiteCmsManager({
                 <ImageUploadField
                   label="Campus Background Banner Photo"
                   value={homeCms.campusBgImage}
-                  onChange={val => setHomeCms({ ...homeCms, campusBgImage: val })}
+                  onChange={val => handleHomeImageChange('campusBgImage', val)}
                   placeholder="Click to upload Campus Background Photo from computer / phone"
                 />
 
                 <ImageUploadField
                   label="Sir Director Hero Photo (Front Banner)"
                   value={homeCms.sirHeroImage || '/sir_director_cutout.png'}
-                  onChange={val => setHomeCms({ ...homeCms, sirHeroImage: val })}
+                  onChange={val => handleHomeImageChange('sirHeroImage', val)}
                   placeholder="Click to upload Sir Photo"
                 />
               </div>
@@ -1055,7 +1111,7 @@ export default function WebsiteCmsManager({
               <ImageUploadField
                 label="Director / Founder Photo"
                 value={aboutForm.directorPhoto}
-                onChange={val => setAboutForm({ ...aboutForm, directorPhoto: val })}
+                onChange={handleDirectorPhotoChange}
                 placeholder="Click to upload Director Photo from device"
               />
             </div>
@@ -1088,6 +1144,18 @@ export default function WebsiteCmsManager({
                 onChange={e => setAboutForm({ ...aboutForm, mission: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
               />
+            </div>
+
+            {/* Bottom Save Button for Instant Convenience */}
+            <div className="md:col-span-2 flex justify-end pt-4 border-t border-slate-100">
+              <button
+                type="submit"
+                disabled={savingAbout}
+                className="bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-lg cursor-pointer flex items-center gap-2 border border-amber-600/20 active:scale-95 transition-all"
+              >
+                <Save className="w-4 h-4 text-slate-950" />
+                <span>{savingAbout ? 'Saving About Details...' : 'SAVE ABOUT DETAILS'}</span>
+              </button>
             </div>
           </div>
         </form>

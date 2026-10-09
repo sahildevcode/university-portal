@@ -6242,7 +6242,7 @@ app.put('/api/courses/:id', async (req, res) => {
 
     if (process.env.MONGODB_URI) {
       updatedCourse = await CourseModel.findOneAndUpdate(
-        { $or: [{ id }, { code: id }, { name: new RegExp(`^${id}$`, 'i') }] },
+        { $or: [{ id }, { code: id }, { name: new RegExp(`^${id}$`, 'i') }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : undefined }] },
         { ...updatePayload, updatedAt: new Date().toISOString() },
         { new: true }
       );
@@ -6254,7 +6254,8 @@ app.put('/api/courses/:id', async (req, res) => {
     const index = db.courses.findIndex(c => 
       String(c.id).toLowerCase().trim() === idLower || 
       String(c.code).toLowerCase().trim() === idLower ||
-      String(c.name).toLowerCase().trim() === idLower
+      String(c.name).toLowerCase().trim() === idLower ||
+      (c._id && String(c._id).toLowerCase().trim() === idLower)
     );
 
     if (index !== -1) {
