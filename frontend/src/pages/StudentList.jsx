@@ -84,10 +84,10 @@ export default function StudentList({
   // Helper to compute Year-Wise fee, scholarship, and received fee breakdown (1st, 2nd, 3rd, 4th Year)
   const calculateStudentYearBreakdown = (item) => {
     if (!item) return {
-      feeY1: 0, schY1: 0, recY1: 0, totalY1: 0, dueY1: 0, advY1: 0, net1: 0, hasY1Activity: false,
-      feeY2: 0, schY2: 0, recY2: 0, totalY2: 0, dueY2: 0, advY2: 0, net2: 0, hasY2Activity: false,
-      feeY3: 0, schY3: 0, recY3: 0, totalY3: 0, dueY3: 0, advY3: 0, net3: 0, hasY3Activity: false,
-      feeY4: 0, schY4: 0, recY4: 0, totalY4: 0, dueY4: 0, advY4: 0, net4: 0, hasY4Activity: false,
+      feeY1: 0, schY1: 0, recY1: 0, totalY1: 0, dueY1: 0, advY1: 0, net1: 0, hasY1Activity: false, effectiveRecY1: 0, advAppliedY1: 0,
+      feeY2: 0, schY2: 0, recY2: 0, totalY2: 0, dueY2: 0, advY2: 0, net2: 0, hasY2Activity: false, effectiveRecY2: 0, advAppliedY2: 0,
+      feeY3: 0, schY3: 0, recY3: 0, totalY3: 0, dueY3: 0, advY3: 0, net3: 0, hasY3Activity: false, effectiveRecY3: 0, advAppliedY3: 0,
+      feeY4: 0, schY4: 0, recY4: 0, totalY4: 0, dueY4: 0, advY4: 0, net4: 0, hasY4Activity: false, effectiveRecY4: 0, advAppliedY4: 0,
       totalFee: 0, totalSch: 0, totalPaid: 0, totalRem: 0,
       advanceAmount: 0, isAdvance: false, nextFeeDueDate: null, cat: 'full_course_fee'
     };
@@ -244,6 +244,24 @@ export default function StudentList({
     const dueY4 = hasY4Activity && net4 > 0 ? net4 : 0;
     const advY4 = hasY4Activity && net4 < 0 ? Math.abs(net4) : 0;
 
+    // Calculate advance roll-over into subsequent years (for display)
+    const effectiveRecY1 = recY1;
+    const advAppliedY1 = 0;
+
+    // Advance applied to Year 2
+    const advAppliedY2 = (hasY2Activity && advY1 > 0) ? Math.min(Math.max(0, totalY2 - recY2), advY1) : 0;
+    const effectiveRecY2 = recY2 + advAppliedY2;
+
+    // Advance applied to Year 3
+    const advEnteringY3 = hasY2Activity ? advY2 : advY1;
+    const advAppliedY3 = (hasY3Activity && advEnteringY3 > 0) ? Math.min(Math.max(0, totalY3 - recY3), advEnteringY3) : 0;
+    const effectiveRecY3 = recY3 + advAppliedY3;
+
+    // Advance applied to Year 4
+    const advEnteringY4 = hasY3Activity ? advY3 : (hasY2Activity ? advY2 : advY1);
+    const advAppliedY4 = (hasY4Activity && advEnteringY4 > 0) ? Math.min(Math.max(0, totalY4 - recY4), advEnteringY4) : 0;
+    const effectiveRecY4 = recY4 + advAppliedY4;
+
     let nextFeeDueDate = item.nextFeeDueDate || null;
     if (!nextFeeDueDate && Array.isArray(item.promotionHistory) && item.promotionHistory.length > 0) {
       for (let i = item.promotionHistory.length - 1; i >= 0; i--) {
@@ -255,10 +273,10 @@ export default function StudentList({
     }
 
     return {
-      feeY1, schY1, recY1, totalY1, dueY1, advY1, net1, hasY1Activity,
-      feeY2, schY2, recY2, totalY2, dueY2, advY2, net2, hasY2Activity,
-      feeY3, schY3, recY3, totalY3, dueY3, advY3, net3, hasY3Activity,
-      feeY4, schY4, recY4, totalY4, dueY4, advY4, net4, hasY4Activity,
+      feeY1, schY1, recY1, totalY1, dueY1, advY1, net1, hasY1Activity, effectiveRecY1, advAppliedY1,
+      feeY2, schY2, recY2, totalY2, dueY2, advY2, net2, hasY2Activity, effectiveRecY2, advAppliedY2,
+      feeY3, schY3, recY3, totalY3, dueY3, advY3, net3, hasY3Activity, effectiveRecY3, advAppliedY3,
+      feeY4, schY4, recY4, totalY4, dueY4, advY4, net4, hasY4Activity, effectiveRecY4, advAppliedY4,
       totalFee, totalSch, totalPaid, totalRem,
       advanceAmount, isAdvance, nextFeeDueDate,
       cat
@@ -796,16 +814,16 @@ export default function StudentList({
         'Satra (July/Jan)': s.currentSatra || s.admissionSatra || '',
         'Current Class / Year': s.currentClass || (s.currentSemester ? `Semester ${s.currentSemester}` : '1st Year'),
         '1st Year Fee (₹)': breakdown.feeY1,
-        '1st Year Paid (₹)': breakdown.recY1,
+        '1st Year Paid (₹)': breakdown.effectiveRecY1,
         '1st Year Scholarship (₹)': breakdown.schY1,
         '2nd Year Fee (₹)': breakdown.feeY2,
-        '2nd Year Paid (₹)': breakdown.recY2,
+        '2nd Year Paid (₹)': breakdown.effectiveRecY2,
         '2nd Year Scholarship (₹)': breakdown.schY2,
         '3rd Year Fee (₹)': breakdown.feeY3,
-        '3rd Year Paid (₹)': breakdown.recY3,
+        '3rd Year Paid (₹)': breakdown.effectiveRecY3,
         '3rd Year Scholarship (₹)': breakdown.schY3,
         '4th Year Fee (₹)': breakdown.feeY4,
-        '4th Year Paid (₹)': breakdown.recY4,
+        '4th Year Paid (₹)': breakdown.effectiveRecY4,
         '4th Year Scholarship (₹)': breakdown.schY4,
         'Total Course Fee (₹)': breakdown.totalFee,
         'Total Scholarship (₹)': breakdown.totalSch,
@@ -2944,7 +2962,19 @@ export default function StudentList({
                                   {yd.schY2 > 0 ? `${yd.schY2}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
-                                  {yd.recY2 > 0 ? `${yd.recY2}/-` : '-'}
+                                  {yd.effectiveRecY2 > 0 ? (
+                                    <span>
+                                      {yd.effectiveRecY2}/-
+                                      {yd.advAppliedY2 > 0 && (
+                                        <span 
+                                          className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                          title={yd.recY2 > 0 ? `Direct Paid: ${yd.recY2} + Advance: ${yd.advAppliedY2}` : `Advance adjusted: ${yd.advAppliedY2}/-`}
+                                        >
+                                          Adv
+                                        </span>
+                                      )}
+                                    </span>
+                                  ) : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
                                   {yd.hasY2Activity ? (
@@ -2968,7 +2998,19 @@ export default function StudentList({
                                   {yd.schY3 > 0 ? `${yd.schY3}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
-                                  {yd.recY3 > 0 ? `${yd.recY3}/-` : '-'}
+                                  {yd.effectiveRecY3 > 0 ? (
+                                    <span>
+                                      {yd.effectiveRecY3}/-
+                                      {yd.advAppliedY3 > 0 && (
+                                        <span 
+                                          className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                          title={yd.recY3 > 0 ? `Direct Paid: ${yd.recY3} + Advance: ${yd.advAppliedY3}` : `Advance adjusted: ${yd.advAppliedY3}/-`}
+                                        >
+                                          Adv
+                                        </span>
+                                      )}
+                                    </span>
+                                  ) : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
                                   {yd.hasY3Activity ? (
@@ -2992,7 +3034,19 @@ export default function StudentList({
                                   {yd.schY4 > 0 ? `${yd.schY4}/-` : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/20">
-                                  {yd.recY4 > 0 ? `${yd.recY4}/-` : '-'}
+                                  {yd.effectiveRecY4 > 0 ? (
+                                    <span>
+                                      {yd.effectiveRecY4}/-
+                                      {yd.advAppliedY4 > 0 && (
+                                        <span 
+                                          className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                          title={yd.recY4 > 0 ? `Direct Paid: ${yd.recY4} + Advance: ${yd.advAppliedY4}` : `Advance adjusted: ${yd.advAppliedY4}/-`}
+                                        >
+                                          Adv
+                                        </span>
+                                      )}
+                                    </span>
+                                  ) : '-'}
                                 </td>
                                 <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/20">
                                   {yd.hasY4Activity ? (
@@ -3260,7 +3314,19 @@ export default function StudentList({
                                       {lyd.schY2 > 0 ? `${lyd.schY2}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
-                                      {lyd.recY2 > 0 ? `${lyd.recY2}/-` : '-'}
+                                      {lyd.effectiveRecY2 > 0 ? (
+                                        <span>
+                                          {lyd.effectiveRecY2}/-
+                                          {lyd.advAppliedY2 > 0 && (
+                                            <span 
+                                              className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                              title={lyd.recY2 > 0 ? `Direct Paid: ${lyd.recY2} + Advance: ${lyd.advAppliedY2}` : `Advance adjusted: ${lyd.advAppliedY2}/-`}
+                                            >
+                                              Adv
+                                            </span>
+                                          )}
+                                        </span>
+                                      ) : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
                                       {lyd.hasY2Activity ? (
@@ -3284,7 +3350,19 @@ export default function StudentList({
                                       {lyd.schY3 > 0 ? `${lyd.schY3}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
-                                      {lyd.recY3 > 0 ? `${lyd.recY3}/-` : '-'}
+                                      {lyd.effectiveRecY3 > 0 ? (
+                                        <span>
+                                          {lyd.effectiveRecY3}/-
+                                          {lyd.advAppliedY3 > 0 && (
+                                            <span 
+                                              className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                              title={lyd.recY3 > 0 ? `Direct Paid: ${lyd.recY3} + Advance: ${lyd.advAppliedY3}` : `Advance adjusted: ${lyd.advAppliedY3}/-`}
+                                            >
+                                              Adv
+                                            </span>
+                                          )}
+                                        </span>
+                                      ) : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
                                       {lyd.hasY3Activity ? (
@@ -3308,7 +3386,19 @@ export default function StudentList({
                                       {lyd.schY4 > 0 ? `${lyd.schY4}/-` : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono text-emerald-700 bg-emerald-50/30">
-                                      {lyd.recY4 > 0 ? `${lyd.recY4}/-` : '-'}
+                                      {lyd.effectiveRecY4 > 0 ? (
+                                        <span>
+                                          {lyd.effectiveRecY4}/-
+                                          {lyd.advAppliedY4 > 0 && (
+                                            <span 
+                                              className="text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded ml-1 font-sans" 
+                                              title={lyd.recY4 > 0 ? `Direct Paid: ${lyd.recY4} + Advance: ${lyd.advAppliedY4}` : `Advance adjusted: ${lyd.advAppliedY4}/-`}
+                                            >
+                                              Adv
+                                            </span>
+                                          )}
+                                        </span>
+                                      ) : '-'}
                                     </td>
                                     <td className="py-2.5 px-2.5 border-r border-slate-200 text-right whitespace-nowrap font-semibold font-mono bg-rose-50/30">
                                       {lyd.hasY4Activity ? (
@@ -4291,10 +4381,10 @@ export default function StudentList({
                     const profileAdvanceAmt = bd.advanceAmount;
 
                     const yearRows = [
-                      { label: '1st Year', sub: 'SEM-1 & 2', acad: bd.feeY1, sch: bd.schY1, total: bd.totalY1, rec: bd.recY1, due: bd.dueY1, adv: bd.advY1 },
-                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: bd.feeY2, sch: bd.schY2, total: bd.totalY2, rec: bd.recY2, due: bd.dueY2, adv: bd.advY2 },
-                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: bd.feeY3, sch: bd.schY3, total: bd.totalY3, rec: bd.recY3, due: bd.dueY3, adv: bd.advY3 },
-                      { label: '4th Year', sub: 'SEM-7 & 8', acad: bd.feeY4, sch: bd.schY4, total: bd.totalY4, rec: bd.recY4, due: bd.dueY4, adv: bd.advY4 }
+                      { label: '1st Year', sub: 'SEM-1 & 2', acad: bd.feeY1, sch: bd.schY1, total: bd.totalY1, rec: bd.recY1, effectiveRec: bd.effectiveRecY1, advApplied: bd.advAppliedY1, due: bd.dueY1, adv: bd.advY1 },
+                      { label: '2nd Year', sub: 'SEM-3 & 4', acad: bd.feeY2, sch: bd.schY2, total: bd.totalY2, rec: bd.recY2, effectiveRec: bd.effectiveRecY2, advApplied: bd.advAppliedY2, due: bd.dueY2, adv: bd.advY2 },
+                      { label: '3rd Year', sub: 'SEM-5 & 6', acad: bd.feeY3, sch: bd.schY3, total: bd.totalY3, rec: bd.recY3, effectiveRec: bd.effectiveRecY3, advApplied: bd.advAppliedY3, due: bd.dueY3, adv: bd.advY3 },
+                      { label: '4th Year', sub: 'SEM-7 & 8', acad: bd.feeY4, sch: bd.schY4, total: bd.totalY4, rec: bd.recY4, effectiveRec: bd.effectiveRecY4, advApplied: bd.advAppliedY4, due: bd.dueY4, adv: bd.advY4 }
                     ];
 
                     return (
@@ -4387,7 +4477,21 @@ export default function StudentList({
                                     </td>
                                     <td className="py-2 px-3 border-r border-slate-200 text-right font-mono font-bold text-emerald-700 bg-emerald-50/30">
                                       <div className="flex items-center justify-end gap-1.5">
-                                        <span>₹{yr.rec.toLocaleString('en-IN')}/-</span>
+                                        {yr.effectiveRec > 0 ? (
+                                          <div className="flex items-center gap-1">
+                                            <span>₹{yr.effectiveRec.toLocaleString('en-IN')}/-</span>
+                                            {yr.advApplied > 0 && (
+                                              <span 
+                                                className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1 py-0.2 rounded font-sans" 
+                                                title={yr.rec > 0 ? `Direct Paid: ₹${yr.rec.toLocaleString('en-IN')} + Advance Adjusted: ₹${yr.advApplied.toLocaleString('en-IN')}` : `Advance adjusted from previous year: ₹${yr.advApplied.toLocaleString('en-IN')}/-`}
+                                              >
+                                                Adv
+                                              </span>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <span>₹0/-</span>
+                                        )}
                                         {yr.rec > 0 && (
                                           <div className="flex items-center gap-1 ml-1.5">
                                             <button
