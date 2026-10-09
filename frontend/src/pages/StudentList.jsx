@@ -1144,36 +1144,21 @@ export default function StudentList({
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       } else if (feeDeskMode === 'set_scholarship') {
-        let activeYr = scholarshipActiveYear || 'year1';
-        const cls = String(feeDeskClass || '').toUpperCase();
-        if (cls.includes('1ST') || cls.includes('SEM-1') || cls.includes('SEM-2')) {
-          activeYr = 'year1';
-        } else if (cls.includes('2ND') || cls.includes('SEM-3') || cls.includes('SEM-4')) {
-          activeYr = 'year2';
-        } else if (cls.includes('3RD') || cls.includes('SEM-5') || cls.includes('SEM-6')) {
-          activeYr = 'year3';
-        } else if (cls.includes('4TH') || cls.includes('5TH') || cls.includes('SEM-7') || cls.includes('SEM-8')) {
-          activeYr = 'year4';
-        }
-
         const y1Val = (scholarshipYear1 === '' || scholarshipYear1 === null || scholarshipYear1 === undefined) ? 0 : Math.max(0, Number(scholarshipYear1) || 0);
         const y2Val = (scholarshipYear2 === '' || scholarshipYear2 === null || scholarshipYear2 === undefined) ? 0 : Math.max(0, Number(scholarshipYear2) || 0);
         const y3Val = (scholarshipYear3 === '' || scholarshipYear3 === null || scholarshipYear3 === undefined) ? 0 : Math.max(0, Number(scholarshipYear3) || 0);
         const y4Val = (scholarshipYear4 === '' || scholarshipYear4 === null || scholarshipYear4 === undefined) ? 0 : Math.max(0, Number(scholarshipYear4) || 0);
-        const inputAmt = activeYr === 'year1' ? y1Val : activeYr === 'year2' ? y2Val : activeYr === 'year3' ? y3Val : y4Val;
 
         const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-scholarship`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'save_multi_year',
             scholarshipYear1: y1Val,
             scholarshipYear2: y2Val,
             scholarshipYear3: y3Val,
             scholarshipYear4: y4Val,
             purpose: feeDeskPurpose || 'Scholarship',
-            year: activeYr,
-            yearLabel: feeDeskPurpose || (activeYr === 'year1' ? 'First Year Scholarship' : activeYr === 'year2' ? 'Second Year Scholarship' : activeYr === 'year3' ? 'Third Year Scholarship' : 'Fourth Year Scholarship'),
-            amount: inputAmt,
             feeDate: feeDeskDate,
             currentClass: feeDeskClass
           })
@@ -1191,7 +1176,7 @@ export default function StudentList({
         setScholarshipYear2(String(freshBd.schY2));
         setScholarshipYear3(String(freshBd.schY3));
         setScholarshipYear4(String(freshBd.schY4));
-        setFeeDeskSuccess(`Scholarship entry of ₹${inputAmt.toLocaleString('en-IN')} (${feeDeskClass}) saved successfully! Total 1st Year: ₹${freshBd.schY1.toLocaleString('en-IN')}, Total Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
+        setFeeDeskSuccess(`Scholarship updated successfully! Total Multi-Year Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
       }
@@ -1271,7 +1256,7 @@ export default function StudentList({
     }
   };
 
-  const handleDeleteScholarship = async (idOrYear, amount, yearLabel) => {
+  const handleDeleteScholarship = async (idOrYear, amount, yearLabel, yearKey) => {
     if (!feeDeskStudent || !idOrYear) return;
     const confirmDelete = window.confirm(`Are you sure you want to delete this scholarship entry of ₹${Number(amount || 0).toLocaleString('en-IN')} (${yearLabel || 'Scholarship'})?`);
     if (!confirmDelete) return;
@@ -1282,7 +1267,8 @@ export default function StudentList({
 
     try {
       const studentLookupKey = getStudentKey(feeDeskStudent);
-      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/scholarships/${encodeURIComponent(idOrYear)}`, {
+      const url = `/api/students/${encodeURIComponent(studentLookupKey)}/scholarships/${encodeURIComponent(idOrYear)}${yearKey ? `?year=${encodeURIComponent(yearKey)}` : ''}`;
+      const res = await fetch(url, {
         method: 'DELETE'
       });
       const data = await res.json();
@@ -1298,7 +1284,7 @@ export default function StudentList({
       setScholarshipYear3(String(freshBd.schY3));
       setScholarshipYear4(String(freshBd.schY4));
       setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
-      setFeeDeskSuccess(`${yearLabel || 'Scholarship'} entry deleted successfully! Remaining 1st Year: ₹${freshBd.schY1.toLocaleString('en-IN')}, Total Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
+      setFeeDeskSuccess(`${yearLabel || 'Scholarship'} entry deleted successfully! Remaining Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
       fetchStudents();
       if (onFeeReceived) onFeeReceived();
     } catch (err) {
@@ -1344,6 +1330,7 @@ export default function StudentList({
   };
 
   const handleUpdatePayment = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!feeDeskStudent || !editingPaymentModal) return;
 
     setEditPaymentLoading(true);
@@ -1392,27 +1379,27 @@ export default function StudentList({
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'update_single_entry',
+            id: editingPaymentModal.id,
+            receiptNo: editingPaymentModal.receiptNo,
             year: yKey,
             yearLabel: editingPaymentModal.purpose || editingPaymentModal.yearLabel,
             purpose: editingPaymentModal.purpose,
             amount: Number(editingPaymentModal.amountPaid) || 0,
             feeDate: editingPaymentModal.feeDate,
             currentClass: editingPaymentModal.currentClass,
-            receiptNo: editingPaymentModal.receiptNo
+            remark: editingPaymentModal.remark
           })
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update scholarship');
         const updatedStudent = data.student;
         setFeeDeskStudent(updatedStudent);
-        const sy1 = Number(updatedStudent.scholarshipYear1 !== undefined ? updatedStudent.scholarshipYear1 : 0);
-        const sy2 = Number(updatedStudent.scholarshipYear2 !== undefined ? updatedStudent.scholarshipYear2 : 0);
-        const sy3 = Number(updatedStudent.scholarshipYear3 !== undefined ? updatedStudent.scholarshipYear3 : 0);
-        const sy4 = Number(updatedStudent.scholarshipYear4 !== undefined ? updatedStudent.scholarshipYear4 : 0);
-        setScholarshipYear1(String(sy1));
-        setScholarshipYear2(String(sy2));
-        setScholarshipYear3(String(sy3));
-        setScholarshipYear4(String(sy4));
+        const freshBd = calculateStudentYearBreakdown(updatedStudent);
+        setScholarshipYear1(String(freshBd.schY1));
+        setScholarshipYear2(String(freshBd.schY2));
+        setScholarshipYear3(String(freshBd.schY3));
+        setScholarshipYear4(String(freshBd.schY4));
         setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
         setFeeDeskSuccess(`Scholarship updated successfully!`);
         setEditingPaymentModal(null);
@@ -5096,7 +5083,7 @@ export default function StudentList({
 
                                           <button
                                             type="button"
-                                            onClick={() => handleDeleteScholarship(sEntry.id || sEntry.receiptNo, sAmt, sEntry.purpose || sEntry.yearLabel)}
+                                            onClick={() => handleDeleteScholarship(sEntry.id || sEntry.receiptNo, sAmt, sEntry.purpose || sEntry.yearLabel, sEntry.year)}
                                             className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"
                                             title="Delete Scholarship Entry"
                                           >
