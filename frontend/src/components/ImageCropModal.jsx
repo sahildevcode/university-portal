@@ -147,8 +147,19 @@ export default function ImageCropModal({
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Background white fill
-    ctx.fillStyle = '#ffffff';
+    // 1. Draw Ambient Blurred Background (eliminates harsh cuts / blank bars when zooming out)
+    ctx.save();
+    try {
+      ctx.filter = 'blur(25px)';
+      ctx.drawImage(img, -outW * 0.1, -outH * 0.1, outW * 1.2, outH * 1.2);
+    } catch {
+      ctx.fillStyle = '#071530';
+      ctx.fillRect(0, 0, outW, outH);
+    }
+    ctx.restore();
+
+    // Soft dark tint over background for contrast
+    ctx.fillStyle = 'rgba(7, 21, 48, 0.4)';
     ctx.fillRect(0, 0, outW, outH);
 
     // Coordinate mapping: from screen container to output canvas
@@ -250,7 +261,7 @@ export default function ImageCropModal({
         </div>
 
         {/* Aspect Ratio Selector Pills */}
-        <div className="px-5 py-3 bg-slate-950/60 border-b border-slate-800 flex items-center gap-2 overflow-x-auto text-xs font-bold scrollbar-none">
+        <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center gap-2 text-xs font-bold">
           <span className="text-slate-400 text-[11px] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
             <ImageIcon className="w-3.5 h-3.5 text-amber-400" /> Format:
           </span>
@@ -292,6 +303,17 @@ export default function ImageCropModal({
             className={`relative w-full ${getCropBoxAspectClass()} border-2 border-amber-400 rounded-2xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing bg-slate-900 ring-4 ring-amber-400/20`}
             style={{ touchAction: 'none' }}
           >
+            {/* Ambient blur behind image inside frame */}
+            <div 
+              className="absolute inset-0 pointer-events-none opacity-40 blur-xl scale-110"
+              style={{
+                backgroundImage: `url(${imageSrc})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+            <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
+
             {/* Dark Mask Rule of Thirds Guide Lines */}
             <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none z-10 opacity-30">
               <div className="border-r border-b border-white" />
@@ -313,7 +335,7 @@ export default function ImageCropModal({
 
             {/* Image Subject */}
             <div 
-              className="absolute inset-0 flex items-center justify-center transition-transform duration-75"
+              className="absolute inset-0 flex items-center justify-center transition-transform duration-75 z-10"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${flipH ? -zoom : zoom}, ${zoom})`,
                 transformOrigin: 'center center'
@@ -351,7 +373,7 @@ export default function ImageCropModal({
             </span>
             <button
               type="button"
-              onClick={() => setZoom(z => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
+              onClick={() => setZoom(z => Math.max(0.3, Number((z - 0.1).toFixed(2))))}
               className="w-7 h-7 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-white"
               title="Zoom out"
             >
@@ -359,7 +381,7 @@ export default function ImageCropModal({
             </button>
             <input
               type="range"
-              min="0.5"
+              min="0.3"
               max="3"
               step="0.05"
               value={zoom}
@@ -377,6 +399,17 @@ export default function ImageCropModal({
             <span className="font-mono text-slate-300 text-[11px] min-w-8">
               {Math.round(zoom * 100)}%
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                setZoom(1);
+                setPan({ x: 0, y: 0 });
+              }}
+              className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg text-[10.5px] font-bold border border-amber-500/30 cursor-pointer transition-colors ml-1"
+              title="Reset Zoom to 100% and Center"
+            >
+              Fit 100%
+            </button>
           </div>
 
           {/* Action buttons: Rotate, Flip, Reset */}
