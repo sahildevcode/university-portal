@@ -17,7 +17,7 @@ const DEFAULT_EVENT_PHOTOS = [
     category: 'Convocation 2024',
     date: '2024',
     description: 'Proud PKC students receiving authorized UGC university degrees, marksheets, and honors.',
-    imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop',
+    imageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=75',
     active: true
   },
   {
@@ -140,7 +140,7 @@ export default function CampusEventSlider({ lang = 'en' }) {
             onError={(e) => {
               if (e.target.dataset.errorHandled) return;
               e.target.dataset.errorHandled = true;
-              e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop';
+              e.target.src = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=75';
             }}
           />
           {/* Subtle Dark Vignette & Bottom Gradient Overlay */}

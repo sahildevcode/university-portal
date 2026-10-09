@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel, UniversityModel, CollegeModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel, UniversityModel, CollegeModel, UploadMediaModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -350,6 +350,32 @@ const collegeCoursesUpload = multer({
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Fallback handler for Render ephemeral disk: serve from MongoDB Atlas if file is missing on disk
+app.get('/uploads/:folder/:filename', async (req, res, next) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
+  if (fs.existsSync(filePath)) {
+    return next();
+  }
+  // File missing from local disk (e.g. after Render redeploy) -> Recover from MongoDB Atlas!
+  if (isMongoConnected()) {
+    try {
+      const media = await UploadMediaModel.findOne({ filename: req.params.filename });
+      if (media && media.data) {
+        try {
+          const folderDir = path.join(__dirname, 'uploads', req.params.folder);
+          if (!fs.existsSync(folderDir)) fs.mkdirSync(folderDir, { recursive: true });
+          fs.writeFileSync(filePath, media.data);
+        } catch {}
+        res.set('Content-Type', media.contentType || 'image/jpeg');
+        return res.send(media.data);
+      }
+    } catch (err) {
+      console.error('MongoDB media fallback error:', err.message);
+    }
+  }
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Universal CMS, Courses & Banner Image Upload Endpoint
@@ -359,7 +385,7 @@ app.post('/api/upload-image', (req, res) => {
     { name: 'photo', maxCount: 1 },
     { name: 'file', maxCount: 1 }
   ]);
-  uploadMiddleware(req, res, (err) => {
+  uploadMiddleware(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ success: false, message: err.message });
     }
@@ -368,6 +394,26 @@ app.post('/api/upload-image', (req, res) => {
       return res.status(400).json({ success: false, message: 'No image file uploaded.' });
     }
     const imageUrl = `/uploads/gallery/${uploadedFile.filename}`;
+
+    // Persist to MongoDB Atlas so ephemeral container restarts never delete user uploads!
+    if (isMongoConnected() && uploadedFile.path && fs.existsSync(uploadedFile.path)) {
+      try {
+        const fileBuffer = fs.readFileSync(uploadedFile.path);
+        await UploadMediaModel.findOneAndUpdate(
+          { filename: uploadedFile.filename },
+          {
+            filename: uploadedFile.filename,
+            data: fileBuffer,
+            contentType: uploadedFile.mimetype || 'image/jpeg',
+            size: uploadedFile.size || fileBuffer.length
+          },
+          { upsert: true }
+        );
+      } catch (mErr) {
+        console.error('Error saving uploaded media to MongoDB Atlas:', mErr.message);
+      }
+    }
+
     res.json({ 
       success: true, 
       imageUrl, 

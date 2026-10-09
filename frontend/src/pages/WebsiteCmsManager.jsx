@@ -1503,7 +1503,7 @@ export default function WebsiteCmsManager({
                         alt={tst.studentName || tst.title} 
                         className="w-full h-full object-cover" 
                         onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1600&auto=format&fit=crop';
+                          e.target.src = '/testimonials/pkc_admission_banner.jpg';
                         }}
                       />
                       <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-xs text-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-md shadow-xs">

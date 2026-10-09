@@ -347,6 +347,13 @@ export const FeeAdjustmentModel = mongoose.model('FeeAdjustment', new mongoose.S
   date: String
 }, { strict: false, timestamps: true }));
 
+export const UploadMediaModel = mongoose.model('UploadMedia', new mongoose.Schema({
+  filename: { type: String, unique: true, index: true },
+  data: Buffer,
+  contentType: { type: String, default: 'image/jpeg' },
+  size: Number
+}, { strict: false, timestamps: true }));
+
 function cleanDoc(doc) {
   if (!doc) return doc;
   const { _id, __v, ...rest } = doc;

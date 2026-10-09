@@ -21,7 +21,7 @@ export default function GalleryPage({ lang = 'en' }) {
       id: 1,
       title: 'University Convocation & Degree Distribution Ceremony',
       category: 'Graduation',
-      image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=75',
       desc: 'Annual convocation ceremony awarding UGC recognized degrees to graduating students.'
     },
     {
