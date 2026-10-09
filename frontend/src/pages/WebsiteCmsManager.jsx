@@ -33,53 +33,74 @@ import {
   Home,
   FileText,
   UploadCloud,
-  Check
+  Check,
+  Crop
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import ImageCropModal from '../components/ImageCropModal';
 
-// Reusable Direct Image File Upload Component (Fast direct upload + device support)
-function ImageUploadField({ label, value, onChange, placeholder = "Click to upload image file from device" }) {
+// Reusable Direct Image File Upload Component with Interactive Crop & Edit
+function ImageUploadField({ 
+  label, 
+  value, 
+  onChange, 
+  placeholder = "Click to upload image file from device",
+  aspect = '16:9'
+}) {
   const [uploading, setUploading] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState('');
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
     if (!file) return;
     if (file.size > 25 * 1024 * 1024) {
       alert('File size exceeds 25MB limit. Please select a smaller photo.');
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawImageSrc(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleOpenEditExisting = () => {
+    if (!value) return;
+    setRawImageSrc(value);
+    setShowCropper(true);
+  };
+
+  const handleCropComplete = async (croppedUrl) => {
     setUploading(true);
     let uploadedUrl = '';
 
-    // Attempt 1: Upload directly to server upload endpoint for permanent static URL
+    // Attempt 1: Upload directly to server upload endpoint
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const res = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (data && data.success && (data.imageUrl || data.url)) {
-        uploadedUrl = data.imageUrl || data.url;
+      if (croppedUrl.startsWith('data:image')) {
+        const blob = await (await fetch(croppedUrl)).blob();
+        const formData = new FormData();
+        formData.append('image', blob, 'photo-upload.jpg');
+        const res = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data && data.success && (data.imageUrl || data.url)) {
+          uploadedUrl = data.imageUrl || data.url;
+        }
+      } else {
+        uploadedUrl = croppedUrl;
       }
     } catch (err) {
       console.warn('Direct upload notice, falling back to data URL:', err);
     }
 
-    // Attempt 2: Fallback to Base64 Data URL if server upload was unreachable
     if (!uploadedUrl) {
-      try {
-        uploadedUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      } catch (fErr) {
-        alert('Could not read image file: ' + fErr.message);
-      }
+      uploadedUrl = croppedUrl;
     }
 
     setUploading(false);
@@ -96,14 +117,14 @@ function ImageUploadField({ label, value, onChange, placeholder = "Click to uplo
           <span>{label} *</span>
         </span>
         <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
-          {uploading ? '⏳ Uploading...' : 'Direct Device Upload'}
+          {uploading ? '⏳ Uploading...' : 'Direct Device Upload + Crop'}
         </span>
       </label>
 
       {uploading ? (
         <div className="bg-amber-50/60 border-2 border-dashed border-amber-300 rounded-2xl p-5 text-center flex flex-col items-center justify-center animate-pulse">
           <div className="w-7 h-7 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mb-2" />
-          <span className="text-xs font-bold text-slate-800">Uploading image to website server...</span>
+          <span className="text-xs font-bold text-slate-800">Saving &amp; uploading image to website server...</span>
           <span className="text-[10.5px] text-slate-500 mt-0.5">Please wait a moment</span>
         </div>
       ) : value ? (
@@ -120,19 +141,28 @@ function ImageUploadField({ label, value, onChange, placeholder = "Click to uplo
             <div className="truncate">
               <strong className="text-xs font-bold text-slate-900 block truncate">{label} Photo</strong>
               <span className="text-[10.5px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
-                <Check className="w-3.5 h-3.5 text-emerald-600" /> Image File Ready &amp; Saved
+                <Check className="w-3.5 h-3.5 text-emerald-600" /> Image Ready &amp; Saved
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-[#C59B27] text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95">
-              <span>Change Photo</span>
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+            <button
+              type="button"
+              onClick={handleOpenEditExisting}
+              className="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-400/50 text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1 shadow-2xs transition-transform active:scale-95"
+              title="Crop, Zoom or Rotate this photo"
+            >
+              <Crop className="w-3.5 h-3.5 text-amber-700" />
+              <span>Crop / Edit</span>
+            </button>
+            <label className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-[#C59B27] text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95">
+              <span>Change</span>
               <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             </label>
             <button
               type="button"
               onClick={() => onChange('')}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
               title="Remove photo"
             >
               <X className="w-4 h-4" />
@@ -144,8 +174,20 @@ function ImageUploadField({ label, value, onChange, placeholder = "Click to uplo
           <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
           <UploadCloud className="w-7 h-7 text-[#C59B27] mb-1 group-hover:scale-110 transition-transform" />
           <span className="text-xs font-bold text-[#071530]">{placeholder}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5">Supports JPG, PNG, WEBP &amp; GIF photos</span>
+          <span className="text-[10px] text-slate-500 mt-0.5">Click to choose image • Supports Crop, Zoom &amp; Rotate</span>
         </label>
+      )}
+
+      {/* Interactive Crop Modal */}
+      {showCropper && (
+        <ImageCropModal
+          isOpen={showCropper}
+          imageSrc={rawImageSrc}
+          onClose={() => setShowCropper(false)}
+          onCropComplete={handleCropComplete}
+          initialAspect={aspect}
+          title={`Crop & Edit: ${label}`}
+        />
       )}
     </div>
   );

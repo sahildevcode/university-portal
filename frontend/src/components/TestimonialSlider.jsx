@@ -5,42 +5,36 @@ export default function TestimonialSlider({ lang = 'en' }) {
   const [slides, setSlides] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 6 Rich Default Demo Banners (Fast-loading optimized high-res web images)
+  // 5 Official PKC Promotional Banners (Auto-fit & perfectly adjusted)
   const defaultSlides = [
     {
       id: 'tst-1',
-      title: 'Annual Convocation & Degree Distribution Ceremony',
-      imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=75',
+      title: 'PKC Education Admissions & Scholarship Tie-Up',
+      imageUrl: '/testimonials/pkc_scholarship_tieup.jpg',
       active: true
     },
     {
       id: 'tst-2',
-      title: 'Computer Lab Practical Training & Web Tech',
-      imageUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=75',
+      title: 'PKC Education Learning Institute & Consultancy Group',
+      imageUrl: '/testimonials/pkc_admission_banner.jpg',
       active: true
     },
     {
       id: 'tst-3',
-      title: 'State Merit Felicitation & Scholarship Awards',
-      imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=75',
+      title: 'Free Laptop & Tablet Scheme for Professional Courses',
+      imageUrl: '/testimonials/pkc_free_laptop_mba.jpg',
       active: true
     },
     {
       id: 'tst-4',
-      title: 'Campus Career Guidance & Counseling Desk',
-      imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=75',
+      title: 'MBA Admissions Open in Top UGC Universities',
+      imageUrl: '/testimonials/pkc_mba_admission.jpg',
       active: true
     },
     {
       id: 'tst-5',
-      title: 'University Campus & Higher Education Learning',
-      imageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=75',
-      active: true
-    },
-    {
-      id: 'tst-6',
-      title: 'Youth Academic Success & Degree Placement',
-      imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=75',
+      title: 'Tally Prime, Basic Computer & CPCT Special Batch',
+      imageUrl: '/testimonials/pkc_tally_cpct_offer.jpg',
       active: true
     }
   ];
@@ -124,14 +118,24 @@ export default function TestimonialSlider({ lang = 'en' }) {
                   isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
+                {/* Ambient Blurred Backdrop: Fills entire widescreen slider smoothly with poster colors (no awkward black bars) */}
+                <img 
+                  src={slide.imageUrl} 
+                  alt="" 
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover object-center blur-2xl opacity-40 scale-110 pointer-events-none select-none"
+                />
+                <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
+
+                {/* Main Crisp Image: Completely uncropped & preserved aspect ratio (all courses, text, phones visible) */}
                 <img 
                   src={slide.imageUrl} 
                   alt={slide.title || `PKC Banner ${idx + 1}`}
                   loading={idx === 0 ? 'eager' : 'lazy'}
                   decoding="async"
-                  className="w-full h-full object-cover object-center"
+                  className="relative z-10 w-full h-full object-contain object-center drop-shadow-2xl select-none"
                   onError={(e) => {
-                    e.target.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=75';
+                    e.target.src = '/testimonials/pkc_admission_banner.jpg';
                   }}
                 />
               </div>
