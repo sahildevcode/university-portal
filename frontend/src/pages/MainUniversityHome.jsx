@@ -99,25 +99,57 @@ export default function MainUniversityHome({
   const [courseSearch, setCourseSearch] = useState('');
   const [courseCategory, setCourseCategory] = useState('all');
   const [courseViewMode, setCourseViewMode] = useState('grid');
-  const [dbCourses, setDbCourses] = useState([]);
+  const [dbCourses, setDbCourses] = useState(() => {
+    if (Array.isArray(courses) && courses.length > 0) return courses;
+    try {
+      const saved = localStorage.getItem('pkc_courses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [selectedCourseModal, setSelectedCourseModal] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/courses')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.courses) && data.courses.length > 0) {
-          setDbCourses(data.courses);
-        }
-      })
-      .catch(err => console.log('Live courses fetch:', err));
-  }, []);
 
   useEffect(() => {
     if (Array.isArray(courses) && courses.length > 0) {
       setDbCourses(courses);
     }
   }, [courses]);
+
+  useEffect(() => {
+    const loadLiveCourses = async () => {
+      try {
+        const saved = localStorage.getItem('pkc_courses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setDbCourses(parsed);
+        }
+        const res = await fetch('/api/courses');
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.courses) && data.courses.length > 0) {
+          setDbCourses(data.courses);
+          try {
+            localStorage.setItem('pkc_courses', JSON.stringify(data.courses));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn('Live courses fetch notice:', err);
+      }
+    };
+
+    loadLiveCourses();
+    window.addEventListener('focus', loadLiveCourses);
+    window.addEventListener('storage', loadLiveCourses);
+    const poller = setInterval(loadLiveCourses, 2500);
+
+    return () => {
+      window.removeEventListener('focus', loadLiveCourses);
+      window.removeEventListener('storage', loadLiveCourses);
+      clearInterval(poller);
+    };
+  }, []);
 
   // Scroll entrance observer for Section 2: Program Cards (Smooth staggered fade-in from bottom)
   const [cardsInView, setCardsInView] = useState(false);
@@ -370,17 +402,29 @@ export default function MainUniversityHome({
   const resolvedScholarshipPrograms = scholarship8Programs.map(prog => {
     const pName = (prog.name || '').toLowerCase().trim();
     const pFull = (prog.fullName || '').toLowerCase().trim();
-    const matched = activeCourseCatalog.find(c => {
+    const pCode = (prog.code || '').toLowerCase().trim();
+
+    // 1. Exact match by code or name first
+    let matched = activeCourseCatalog.find(c => {
       const cName = (c.name || '').toLowerCase().trim();
       const cCode = (c.code || '').toLowerCase().trim();
-      return (
-        cName === pName ||
-        cName.includes(pName) ||
-        pName.includes(cName) ||
-        (cCode && (cCode === prog.code?.toLowerCase() || cCode.includes(pName))) ||
-        (pFull && cName.includes(pFull))
-      );
+      return (pCode && cCode === pCode) || cName === pName || (pFull && cName === pFull);
     });
+
+    // 2. Partial substring match fallback
+    if (!matched) {
+      matched = activeCourseCatalog.find(c => {
+        const cName = (c.name || '').toLowerCase().trim();
+        const cCode = (c.code || '').toLowerCase().trim();
+        return (
+          cName.includes(pName) ||
+          pName.includes(cName) ||
+          (pCode && cCode.includes(pCode)) ||
+          (pFull && cName.includes(pFull))
+        );
+      });
+    }
+
     const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
     return {
       ...prog,
@@ -1060,11 +1104,11 @@ export default function MainUniversityHome({
                     {/* Top Image Banner */}
                     <div className="relative h-36 overflow-hidden bg-slate-900">
                       <img
-                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Arts}
+                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Commerce || catImages.Arts}
                         alt={course.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
                         onError={(e) => {
-                          e.target.src = catImages[course.category] || catImages.Arts;
+                          e.target.src = catImages[course.category] || catImages.Commerce || catImages.Arts;
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
@@ -1073,13 +1117,13 @@ export default function MainUniversityHome({
                       <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
 
                       {/* Category Badge Top Left */}
-                      <span className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-sm ${catBadgeStyles[course.category]}`}>
-                        {course.category}
+                      <span className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-sm ${catBadgeStyles[course.category] || 'bg-slate-900/80 text-amber-200 border-amber-500/40'}`}>
+                        {course.category || course.department || 'Academic'}
                       </span>
 
                       {/* Duration Tag Top Right */}
                       <span className="absolute top-2.5 right-2.5 bg-[#C59B27] text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
-                        {course.duration}
+                        {course.duration || (course.durationYears ? `${course.durationYears} Years` : '2 Years')}
                       </span>
 
                       {/* Icon overlay bottom left */}

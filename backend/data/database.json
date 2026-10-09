@@ -980,7 +980,10 @@
       "degree": "MBA",
       "__v": 0,
       "createdAt": "2026-09-22T06:37:01.280Z",
-      "updatedAt": "2026-09-22T06:37:01.280Z"
+      "updatedAt": "2026-10-09T04:15:50.896Z",
+      "imageUrl": "/uploads/gallery/event-1791519348728-164519.webp",
+      "catImage": "/uploads/gallery/event-1791519348728-164519.webp",
+      "image": "/uploads/gallery/event-1791519348728-164519.webp"
     },
     {
       "_id": "6ab2220d17570ea1fb76559a",
@@ -61237,7 +61240,7 @@
       "Official Syllabus, Study Scheme & Exam Form Support",
       "Career Counseling & Placement Desk"
     ],
-    "directorPhoto": "/uploads/gallery/event-1791517629683-216907.webp"
+    "directorPhoto": ""
   },
   "inquiries": [
     {

@@ -33,6 +33,60 @@ export default function PublicCourseCatalog({
   const [courseViewMode, setCourseViewMode] = useState('grid');
   const [selectedCourseModal, setSelectedCourseModal] = useState(null);
 
+  // Live Courses State (Synchronized across browser tabs with localStorage and /api/courses)
+  const [dbCourses, setDbCourses] = useState(() => {
+    if (Array.isArray(courses) && courses.length > 0) return courses;
+    try {
+      const saved = localStorage.getItem('pkc_courses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    if (Array.isArray(courses) && courses.length > 0) {
+      setDbCourses(courses);
+    }
+  }, [courses]);
+
+  useEffect(() => {
+    const loadLiveCourses = async () => {
+      try {
+        const saved = localStorage.getItem('pkc_courses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDbCourses(parsed);
+          }
+        }
+        const res = await fetch('/api/courses');
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.courses) && data.courses.length > 0) {
+          setDbCourses(data.courses);
+          try {
+            localStorage.setItem('pkc_courses', JSON.stringify(data.courses));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn('Live course catalog sync notice:', err);
+      }
+    };
+
+    loadLiveCourses();
+    window.addEventListener('focus', loadLiveCourses);
+    window.addEventListener('storage', loadLiveCourses);
+    const poller = setInterval(loadLiveCourses, 2500);
+
+    return () => {
+      window.removeEventListener('focus', loadLiveCourses);
+      window.removeEventListener('storage', loadLiveCourses);
+      clearInterval(poller);
+    };
+  }, []);
+
   // All 63 Courses Static Master List
   const allCourses = [
     { id: 1,  name: 'BA',                                    duration: '3 Years', category: 'Arts', code: 'BA-01' },
@@ -207,7 +261,7 @@ export default function PublicCourseCatalog({
     }
   ];
 
-  const activeCatalog = courses.length > 0 ? courses : allCourses;
+  const activeCatalog = dbCourses.length > 0 ? dbCourses : (courses.length > 0 ? courses : allCourses);
   const courseCategories = ['all', 'Scholarship Benefit', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
 
   const catImages = {
@@ -223,17 +277,29 @@ export default function PublicCourseCatalog({
   const resolvedScholarshipPrograms = scholarship8Programs.map(prog => {
     const pName = (prog.name || '').toLowerCase().trim();
     const pFull = (prog.fullName || '').toLowerCase().trim();
-    const matched = activeCatalog.find(c => {
+    const pCode = (prog.code || '').toLowerCase().trim();
+
+    // 1. Exact match by code or name first
+    let matched = activeCatalog.find(c => {
       const cName = (c.name || '').toLowerCase().trim();
       const cCode = (c.code || '').toLowerCase().trim();
-      return (
-        cName === pName ||
-        cName.includes(pName) ||
-        pName.includes(cName) ||
-        (cCode && (cCode === prog.code?.toLowerCase() || cCode.includes(pName))) ||
-        (pFull && cName.includes(pFull))
-      );
+      return (pCode && cCode === pCode) || cName === pName || (pFull && cName === pFull);
     });
+
+    // 2. Partial substring match fallback
+    if (!matched) {
+      matched = activeCatalog.find(c => {
+        const cName = (c.name || '').toLowerCase().trim();
+        const cCode = (c.code || '').toLowerCase().trim();
+        return (
+          cName.includes(pName) ||
+          pName.includes(cName) ||
+          (pCode && cCode.includes(pCode)) ||
+          (pFull && cName.includes(pFull))
+        );
+      });
+    }
+
     const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
     return {
       ...prog,
@@ -621,16 +687,16 @@ export default function PublicCourseCatalog({
                     {/* Top Image Banner */}
                     <div className="relative h-36 overflow-hidden bg-slate-900 rounded-t-xl -m-5 mb-1">
                       <img
-                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Arts}
+                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Commerce || catImages.Arts}
                         alt={course.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
                         onError={(e) => {
-                          e.target.src = catImages[course.category] || catImages.Arts;
+                          e.target.src = catImages[course.category] || catImages.Commerce || catImages.Arts;
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
                       <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-xs text-amber-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30">
-                        {course.category}
+                        {course.category || course.department || 'Academic'}
                       </span>
                     </div>
 
@@ -640,7 +706,7 @@ export default function PublicCourseCatalog({
                           #{course.code || `CRS-${course.id}`}
                         </span>
                         <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          ⏱️ {course.duration}
+                          ⏱️ {course.duration || (course.durationYears ? `${course.durationYears} Years` : '2 Years')}
                         </span>
                       </div>
 
@@ -648,7 +714,7 @@ export default function PublicCourseCatalog({
                         {course.name}
                       </h3>
                       <p className="text-xs text-slate-500 font-medium">
-                        Category: <strong className="text-slate-700">{course.category}</strong>
+                        Category: <strong className="text-slate-700">{course.category || course.department || 'Degree / Diploma'}</strong>
                       </p>
                     </div>
 
@@ -700,11 +766,11 @@ export default function PublicCourseCatalog({
                         </td>
                         <td className="p-4">
                           <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold">
-                            {course.category}
+                            {course.category || course.department || 'Degree'}
                           </span>
                         </td>
                         <td className="p-4 font-bold text-emerald-700">
-                          {course.duration}
+                          {course.duration || (course.durationYears ? `${course.durationYears} Years` : '2 Years')}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">

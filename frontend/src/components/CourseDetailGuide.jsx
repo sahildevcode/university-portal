@@ -80,7 +80,7 @@ export default function CourseDetailGuide({
       {/* 2. Course Hero Banner Section */}
       <div className="relative bg-slate-950 text-white overflow-hidden py-12 sm:py-16">
         <img 
-          src={course.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'} 
+          src={course.imageUrl || course.catImage || course.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'} 
           alt={course.name} 
           className="absolute inset-0 w-full h-full object-cover opacity-25"
         />
@@ -89,10 +89,10 @@ export default function CourseDetailGuide({
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 space-y-4 text-center sm:text-left z-10">
           <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
             <span className="bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-xs font-black uppercase px-3 py-1 rounded-md tracking-wider shadow-sm">
-              🎓 {course.badge || course.category || 'UGC DEGREE'}
+              🎓 {course.badge || course.category || course.department || 'UGC DEGREE'}
             </span>
             <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold px-3 py-1 rounded-md">
-              ⏱️ Duration: {course.duration}
+              ⏱️ Duration: {course.duration || (course.durationYears ? `${course.durationYears} Years` : '2 Years')}
             </span>
             <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1 rounded-md">
               🟢 ADMISSIONS OPEN 2026-27

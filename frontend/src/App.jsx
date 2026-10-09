@@ -161,7 +161,14 @@ export default function App() {
   }, [activeView, publicTab]);
 
   // Shared Data States
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pkc_courses');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   // 1. Student Auth State
@@ -207,7 +214,12 @@ export default function App() {
     try {
       const coursesRes = await fetch('/api/courses');
       const coursesData = await coursesRes.json();
-      if (coursesData.success) setCourses(coursesData.courses || []);
+      if (coursesData.success && Array.isArray(coursesData.courses)) {
+        setCourses(coursesData.courses);
+        try {
+          localStorage.setItem('pkc_courses', JSON.stringify(coursesData.courses));
+        } catch {}
+      }
 
       // If student is logged in, refresh their student record
       if (studentUser?.rollNo) {
@@ -240,6 +252,31 @@ export default function App() {
   useEffect(() => {
     fetchGlobalData();
   }, [studentUser?.rollNo, staffUser?.id, activeView, publicTab]);
+
+  // Real-time synchronization across browser tabs (Admin CMS <-> Student Portal)
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const saved = localStorage.getItem('pkc_courses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCourses(parsed);
+          }
+        }
+      } catch {}
+      fetchGlobalData();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    const interval = setInterval(fetchGlobalData, 4000);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Student Handlers
   const handleStudentLoginSuccess = (user, student) => {

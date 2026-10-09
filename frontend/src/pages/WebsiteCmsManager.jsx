@@ -292,7 +292,12 @@ export default function WebsiteCmsManager({
 
       const crsRes = await fetch('/api/courses');
       const crsData = await crsRes.json();
-      if (crsData.success && Array.isArray(crsData.courses)) setCourses(crsData.courses);
+      if (crsData.success && Array.isArray(crsData.courses)) {
+        setCourses(crsData.courses);
+        try {
+          localStorage.setItem('pkc_courses', JSON.stringify(crsData.courses));
+        } catch {}
+      }
     } catch (err) {
       console.log('CMS data loading notice:', err);
     }
@@ -477,6 +482,26 @@ export default function WebsiteCmsManager({
       const data = await res.json();
       setShowCourseModal(false);
       setSuccessMsg(editingCourse ? `Course "${courseForm.name}" updated successfully!` : `New course "${courseForm.name}" added to website!`);
+      
+      // Update local courses state and localStorage immediately
+      setCourses(prev => {
+        let updatedList;
+        if (editingCourse) {
+          updatedList = prev.map(c => 
+            (c.id === editingCourse.id || c.code === editingCourse.code || (c._id && c._id === editingCourse._id))
+              ? { ...c, ...payload }
+              : c
+          );
+        } else {
+          updatedList = [...prev, (data && data.course) ? data.course : payload];
+        }
+        try {
+          localStorage.setItem('pkc_courses', JSON.stringify(updatedList));
+          window.dispatchEvent(new Event('storage'));
+        } catch {}
+        return updatedList;
+      });
+
       loadData();
       if (typeof onRefreshCourses === 'function') onRefreshCourses();
       setTimeout(() => setSuccessMsg(null), 4000);
@@ -538,11 +563,18 @@ export default function WebsiteCmsManager({
       const data = await res.json();
 
       // 3. Update local state immediately
-      setCourses(prev => prev.map(c => 
-        (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
-          ? { ...c, imageUrl: uploadedUrl, catImage: uploadedUrl, image: uploadedUrl }
-          : c
-      ));
+      setCourses(prev => {
+        const next = prev.map(c => 
+          (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
+            ? { ...c, imageUrl: uploadedUrl, catImage: uploadedUrl, image: uploadedUrl }
+            : c
+        );
+        try {
+          localStorage.setItem('pkc_courses', JSON.stringify(next));
+          window.dispatchEvent(new Event('storage'));
+        } catch {}
+        return next;
+      });
 
       setSuccessMsg(`Course photo for "${course.name}" updated successfully & visible live on student portal!`);
       if (typeof onRefreshCourses === 'function') onRefreshCourses();
@@ -568,11 +600,18 @@ export default function WebsiteCmsManager({
         })
       });
 
-      setCourses(prev => prev.map(c => 
-        (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
-          ? { ...c, imageUrl: '', catImage: '', image: '' }
-          : c
-      ));
+      setCourses(prev => {
+        const next = prev.map(c => 
+          (c.id === course.id || c.code === course.code || (c._id && c._id === course._id))
+            ? { ...c, imageUrl: '', catImage: '', image: '' }
+            : c
+        );
+        try {
+          localStorage.setItem('pkc_courses', JSON.stringify(next));
+          window.dispatchEvent(new Event('storage'));
+        } catch {}
+        return next;
+      });
 
       setSuccessMsg(`Photo removed for "${course.name}".`);
       if (typeof onRefreshCourses === 'function') onRefreshCourses();
