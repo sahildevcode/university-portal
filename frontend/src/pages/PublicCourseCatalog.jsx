@@ -208,6 +208,7 @@ export default function PublicCourseCatalog({
   ];
 
   const activeCatalog = courses.length > 0 ? courses : allCourses;
+  const courseCategories = ['all', 'Scholarship Benefit', 'Arts', 'Science', 'Commerce', 'Computer', 'Law', 'Research'];
 
   const catImages = {
     Arts:     'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80',

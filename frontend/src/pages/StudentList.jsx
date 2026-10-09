@@ -4552,6 +4552,16 @@ export default function StudentList({
                                   ? [...feeDeskStudent.payments]
                                   : [];
 
+                            const histBd = calculateStudentYearBreakdown({
+                              ...feeDeskStudent,
+                              payments: list
+                            });
+                            const acad = histBd.feeY1 + histBd.feeY2 + histBd.feeY3 + histBd.feeY4;
+                            const sch = histBd.totalSch;
+                            const tot = histBd.totalFee;
+                            const paid = histBd.totalPaid;
+                            const rem = histBd.totalRem;
+
                             const yearDefs = [
                               { key: 'paidYear1', yr: 1, label: '1st Year', match: ['YEAR1', 'SEM-1', 'SEM-2', '1ST'] },
                               { key: 'paidYear2', yr: 2, label: '2nd Year', match: ['YEAR2', 'SEM-3', 'SEM-4', '2ND'] },
@@ -5002,6 +5012,7 @@ export default function StudentList({
                             scholarshipEntries.map((sEntry, idx) => {
                               const sDate = sEntry.feeDate || sEntry.date || '-';
                               const sAmt = Number(sEntry.amountPaid !== undefined ? sEntry.amountPaid : (sEntry.amount || 0));
+                              const currentTotalSch = Number(feeDeskStudent.scholarshipAmount || 0);
 
                               return (
                                 <tr key={sEntry.id || idx} className={idx % 2 === 1 ? 'bg-purple-50/40' : 'bg-white'}>
@@ -5032,14 +5043,14 @@ export default function StudentList({
                                             feeType: 'Scholarship Grant',
                                             paidFor: sEntry.purpose || sEntry.yearLabel || 'Scholarship Grant',
                                             amountPaid: sAmt,
-                                            totalFee: totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
+                                            totalFee: currentTotalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
                                             totalPaidToDate: Number(feeDeskStudent.totalPaid || 0),
-                                            balanceRemaining: Math.max(0, (totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0)),
+                                            balanceRemaining: Math.max(0, (currentTotalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0)),
                                             academicFee: Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
                                             studentFee: Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0)),
-                                            scholarshipAmount: totalSch,
+                                            scholarshipAmount: currentTotalSch,
                                             totalPaid: Number(feeDeskStudent.totalPaid || 0),
-                                            balanceDue: Math.max(0, (totalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0))
+                                            balanceDue: Math.max(0, (currentTotalSch + Number(feeDeskStudent.academicFee !== undefined && feeDeskStudent.academicFee !== null ? feeDeskStudent.academicFee : (feeDeskStudent.studentFee || 0))) - Number(feeDeskStudent.totalPaid || 0))
                                           });
                                         }}
                                         className="bg-[#28a745] hover:bg-[#218838] text-white font-bold px-2.5 py-1 rounded text-[10px] shadow-2xs hover:scale-105 transition-all cursor-pointer flex items-center gap-1"

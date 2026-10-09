@@ -565,6 +565,9 @@ export default function SyllabusManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null); // { success: bool, message: string }
   const [activeExpandedDegree, setActiveExpandedDegree] = useState('M.Sc'); // Pre-expand M.Sc for demonstration
+  const [uploadBranchCode, setUploadBranchCode] = useState('MSC-CS');
+  const [uploadSemester, setUploadSemester] = useState('1');
+  const currentUploadBranch = ACADEMIC_BRANCHES.find(b => b.code === uploadBranchCode) || ACADEMIC_BRANCHES[0];
 
   // Load Universities, Colleges and Syllabi on Mount
   useEffect(() => {
