@@ -61115,11 +61115,11 @@
   "users": [
     {
       "username": "admin",
-      "email": "",
-      "password": "",
+      "email": "pkcinstitute@gmail.com",
+      "password": "pkc@123",
       "role": "admin",
       "name": "Institute Administrator",
-      "isSetupRequired": true
+      "isSetupRequired": false
     },
     {
       "username": "accounts",

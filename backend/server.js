@@ -32,6 +32,36 @@ if (process.env.MONGODB_URI) {
   }
 }
 
+// Ensure Master Admin credentials match pkcinstitute@gmail.com / pkc@123
+try {
+  const db = readDB();
+  let admin = (db.users || []).find(u => u.role === 'admin');
+  if (!admin) {
+    admin = {
+      id: 'user-admin',
+      username: 'admin',
+      email: 'pkcinstitute@gmail.com',
+      password: 'pkc@123',
+      role: 'admin',
+      name: 'PKC Institute Administrator',
+      isSetupRequired: false
+    };
+    if (!Array.isArray(db.users)) db.users = [];
+    db.users.push(admin);
+    writeDB(db);
+    console.log('[AUTH] Admin created with pkcinstitute@gmail.com');
+  } else if (!admin.email || admin.email !== 'pkcinstitute@gmail.com' || admin.password !== 'pkc@123') {
+    admin.email = 'pkcinstitute@gmail.com';
+    admin.password = 'pkc@123';
+    admin.isSetupRequired = false;
+    writeDB(db);
+    console.log('[AUTH] Admin credentials updated to pkcinstitute@gmail.com / pkc@123');
+  }
+} catch (err) {
+  console.warn('[AUTH] Admin init notice:', err);
+}
+
+
 // Helper: Recalculate multi-year scholarship balances from scholarshipHistory
 export function recalculateStudentScholarships(student) {
   if (!student) return;
