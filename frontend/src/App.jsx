@@ -16,6 +16,7 @@ import CashCounterPortal from './pages/CashCounterPortal';
 import FloatingContactWidget from './components/FloatingContactWidget';
 import ScrollProgressTop from './components/ScrollProgressTop';
 import InquiryModal from './components/InquiryModal';
+import ModuleErrorBoundary from './components/ModuleErrorBoundary';
 
 // Helper to detect if running on dedicated admin domain
 const isAdminHost = () => {
@@ -419,64 +420,47 @@ export default function App() {
         {/* ========================================================================= */}
         {activeView === 'admin' && (
           <div className="p-4 sm:p-6 lg:p-8">
-            {!adminUser ? (
-              staffUser ? (
-                <AdminPortal 
-                  staffUser={staffUser}
-                  courses={courses}
-                  onRefreshCourses={fetchGlobalData}
-                  onLogout={handleStaffLogout}
-                  onStaffLogout={handleStaffLogout}
-                  onViewStudentWebsite={() => {
-                    localStorage.setItem('pkc_active_view', 'public');
-                    navigateTo('public', '/');
-                  }}
-                  lang={lang}
-                  setLang={setLang}
-                  toggleLang={toggleLang}
-                />
-              ) : (
-                <AdminLoginScreen 
-                  initialTab="admin"
-                  onLoginSuccess={handleAdminLoginSuccess} 
-                  onStaffLoginSuccess={handleStaffLoginSuccess}
-                  onBackToPublic={() => {
-                    if (isAdminHost()) {
-                      window.location.href = 'https://pkc-education-institute.vercel.app';
-                    } else {
+            <ModuleErrorBoundary 
+              onReset={() => window.location.reload()} 
+              onBackToMenu={() => {
+                try { localStorage.removeItem('pkc_admin_user'); } catch (e) {}
+                window.location.href = '/admin';
+              }}
+            >
+              {!adminUser ? (
+                staffUser ? (
+                  <AdminPortal 
+                    staffUser={staffUser}
+                    courses={courses}
+                    onRefreshCourses={fetchGlobalData}
+                    onLogout={handleStaffLogout}
+                    onStaffLogout={handleStaffLogout}
+                    onViewStudentWebsite={() => {
+                      localStorage.setItem('pkc_active_view', 'public');
                       navigateTo('public', '/');
-                    }
-                  }}
-                  lang={lang}
-                  setLang={setLang}
-                  toggleLang={toggleLang}
-                />
-              )
-            ) : (
-              <AdminPortal 
-                adminUser={adminUser} 
-                courses={courses} 
-                onRefreshCourses={fetchGlobalData}
-                onLogout={handleAdminLogout}
-                onViewStudentWebsite={() => {
-                  localStorage.setItem('pkc_active_view', 'public');
-                  navigateTo('public', '/');
-                }}
-                lang={lang}
-                setLang={setLang}
-                toggleLang={toggleLang}
-              />
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* VIEW 3: STAFF DESK (AUTHORIZED MODULES) */}
-        {/* ========================================================================= */}
-        {activeView === 'staff' && (
-          <div className="p-4 sm:p-6 lg:p-8">
-            {!staffUser ? (
-              adminUser ? (
+                    }}
+                    lang={lang}
+                    setLang={setLang}
+                    toggleLang={toggleLang}
+                  />
+                ) : (
+                  <AdminLoginScreen 
+                    initialTab="admin"
+                    onLoginSuccess={handleAdminLoginSuccess} 
+                    onStaffLoginSuccess={handleStaffLoginSuccess}
+                    onBackToPublic={() => {
+                      if (isAdminHost()) {
+                        window.location.href = 'https://pkc-education-institute.vercel.app';
+                      } else {
+                        navigateTo('public', '/');
+                      }
+                    }}
+                    lang={lang}
+                    setLang={setLang}
+                    toggleLang={toggleLang}
+                  />
+                )
+              ) : (
                 <AdminPortal 
                   adminUser={adminUser} 
                   courses={courses} 
@@ -490,33 +474,66 @@ export default function App() {
                   setLang={setLang}
                   toggleLang={toggleLang}
                 />
+              )}
+            </ModuleErrorBoundary>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* VIEW 3: STAFF DESK (AUTHORIZED MODULES) */}
+        {/* ========================================================================= */}
+        {activeView === 'staff' && (
+          <div className="p-4 sm:p-6 lg:p-8">
+            <ModuleErrorBoundary 
+              onReset={() => window.location.reload()} 
+              onBackToMenu={() => {
+                try { localStorage.removeItem('pkc_staff_user'); } catch (e) {}
+                window.location.href = '/staff';
+              }}
+            >
+              {!staffUser ? (
+                adminUser ? (
+                  <AdminPortal 
+                    adminUser={adminUser} 
+                    courses={courses} 
+                    onRefreshCourses={fetchGlobalData}
+                    onLogout={handleAdminLogout}
+                    onViewStudentWebsite={() => {
+                      localStorage.setItem('pkc_active_view', 'public');
+                      navigateTo('public', '/');
+                    }}
+                    lang={lang}
+                    setLang={setLang}
+                    toggleLang={toggleLang}
+                  />
+                ) : (
+                  <AdminLoginScreen 
+                    initialTab="staff"
+                    onLoginSuccess={handleAdminLoginSuccess} 
+                    onStaffLoginSuccess={handleStaffLoginSuccess}
+                    onBackToPublic={() => navigateTo('public', '/')}
+                    lang={lang}
+                    setLang={setLang}
+                    toggleLang={toggleLang}
+                  />
+                )
               ) : (
-                <AdminLoginScreen 
-                  initialTab="staff"
-                  onLoginSuccess={handleAdminLoginSuccess} 
-                  onStaffLoginSuccess={handleStaffLoginSuccess}
-                  onBackToPublic={() => navigateTo('public', '/')}
+                <AdminPortal 
+                  staffUser={staffUser}
+                  courses={courses} 
+                  onRefreshCourses={fetchGlobalData}
+                  onLogout={handleStaffLogout}
+                  onStaffLogout={handleStaffLogout}
+                  onViewStudentWebsite={() => {
+                    localStorage.setItem('pkc_active_view', 'public');
+                    navigateTo('public', '/');
+                  }}
                   lang={lang}
                   setLang={setLang}
                   toggleLang={toggleLang}
                 />
-              )
-            ) : (
-              <AdminPortal 
-                staffUser={staffUser}
-                courses={courses} 
-                onRefreshCourses={fetchGlobalData}
-                onLogout={handleStaffLogout}
-                onStaffLogout={handleStaffLogout}
-                onViewStudentWebsite={() => {
-                  localStorage.setItem('pkc_active_view', 'public');
-                  navigateTo('public', '/');
-                }}
-                lang={lang}
-                setLang={setLang}
-                toggleLang={toggleLang}
-              />
-            )}
+              )}
+            </ModuleErrorBoundary>
           </div>
         )}
 

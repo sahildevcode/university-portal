@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, BookOpen, Plus, Edit3, Trash2, Users, CreditCard, 
   CheckCircle2, AlertCircle, Save, LogOut, Layers, Star,
-  UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
+  User, UserCheck, Key, Lock, Eye, EyeOff, FolderCheck, Globe, ChevronDown, Building2,
   Copy, Check, ExternalLink, ChevronRight, Menu, X, UploadCloud, ArrowLeft, LayoutGrid,
   UserX, GraduationCap, FolderLock, TrendingUp, Briefcase, HelpCircle, Camera,
   FileText
