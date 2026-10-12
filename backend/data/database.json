@@ -1162,7 +1162,7 @@
       "studentFee": 10000,
       "courseFee": 10000,
       "admissionFee": 0,
-      "totalFee": 15000,
+      "totalFee": 9500,
       "scholarshipAmount": 5000,
       "netTotalFee": 15000,
       "courseFeePaid": 0,
@@ -1272,7 +1272,26 @@
           "remark": "",
           "receivedBy": "Admin Desk"
         }
-      ]
+      ],
+      "discountHistory": [
+        {
+          "id": "DISC-1791826178430-412u",
+          "receiptNo": "DISC-001-8430",
+          "date": "2026-10-12",
+          "feeDate": "2026-10-12",
+          "currentClass": "SEM-1",
+          "purpose": "Special Discount",
+          "paymentMode": "Discount / Concession",
+          "amount": 500,
+          "amountPaid": 500,
+          "remark": "Special fee discount applied",
+          "createdAt": "2026-10-12T17:29:38.430Z"
+        }
+      ],
+      "discountAmount": 500,
+      "discount": 500,
+      "remainingFee": 4500,
+      "totalRem": 4500
     },
     {
       "id": "std-leg-1789560000001",

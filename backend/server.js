@@ -4744,6 +4744,159 @@ app.delete(['/api/students/:rollNo/set-fee', '/api/students/:rollNo/set-fee/:ent
   });
 });
 
+// Set / Apply Student Discount (Deducted directly from Total Set Fee)
+app.put('/api/students/:rollNo/set-discount', async (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  if (!Array.isArray(student.discountHistory)) {
+    student.discountHistory = [];
+  }
+
+  const {
+    discountAmount,
+    amount,
+    purpose,
+    feeDate,
+    currentClass,
+    remark,
+    action,
+    id
+  } = req.body;
+
+  const dateStr = feeDate ? (typeof feeDate === 'string' && feeDate.includes('T') ? feeDate.split('T')[0] : feeDate) : new Date().toISOString().split('T')[0];
+  const amt = Number(discountAmount !== undefined ? discountAmount : (amount || 0));
+
+  if (action === 'delete' && id) {
+    const targetId = String(id).toLowerCase();
+    student.discountHistory = student.discountHistory.filter(d => 
+      String(d.id || '').toLowerCase() !== targetId &&
+      String(d.receiptNo || '').toLowerCase() !== targetId
+    );
+  } else if (amt > 0) {
+    student.discountHistory.push({
+      id: id || 'DISC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      receiptNo: `DISC-${student.rollNo || '001'}-${Date.now().toString().slice(-4)}`,
+      date: dateStr,
+      feeDate: dateStr,
+      currentClass: currentClass || student.currentClass || '1st Year',
+      purpose: purpose || 'Special Discount',
+      paymentMode: 'Discount / Concession',
+      amount: amt,
+      amountPaid: amt,
+      remark: remark || 'Fee discount applied by admin',
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  // Recalculate total discount
+  const totalDiscount = student.discountHistory.reduce((sum, d) => sum + Number(d.amountPaid !== undefined ? d.amountPaid : (d.amount || 0)), 0);
+  student.discountAmount = totalDiscount;
+  student.discount = totalDiscount;
+
+  // Deduct discount from total fees set:
+  const totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || 0));
+  const regFee = Number(student.registrationFee || student.regFee || 0);
+  student.totalFee = Math.max(0, (totalAcad > 0 ? totalAcad : Number(student.totalFee || 0)) - totalDiscount + regFee);
+
+  const totalPaid = Number(student.totalPaid || 0);
+  student.remainingFee = Math.max(0, student.totalFee - totalPaid);
+  student.totalRem = student.remainingFee;
+
+  writeDB(db);
+
+  if (isMongoConnected() && student.id) {
+    try {
+      await StudentModel.findOneAndUpdate(
+        { $or: [{ id: student.id }, { rollNo: student.rollNo }] },
+        { 
+          discountHistory: student.discountHistory,
+          discountAmount: student.discountAmount,
+          discount: student.discount,
+          totalFee: student.totalFee,
+          remainingFee: student.remainingFee,
+          totalRem: student.totalRem
+        }
+      );
+    } catch (e) {
+      console.error('Mongo sync discount error:', e.message);
+    }
+  }
+
+  res.json({
+    success: true,
+    message: amt > 0 ? `Discount of ₹${amt.toLocaleString('en-IN')} applied successfully!` : 'Discount updated successfully!',
+    student
+  });
+});
+
+app.delete(['/api/students/:rollNo/set-discount', '/api/students/:rollNo/set-discount/:id'], async (req, res) => {
+  const db = readDB();
+  const rawKey = (req.params.rollNo || '').trim();
+  const student = findStudent(db.students, rawKey);
+
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+
+  if (!Array.isArray(student.discountHistory)) {
+    student.discountHistory = [];
+  }
+
+  const targetId = (req.params.id || req.body.id || 'all').toLowerCase();
+  if (targetId === 'all') {
+    student.discountHistory = [];
+  } else {
+    student.discountHistory = student.discountHistory.filter(d => 
+      String(d.id || '').toLowerCase() !== targetId &&
+      String(d.receiptNo || '').toLowerCase() !== targetId
+    );
+  }
+
+  const totalDiscount = student.discountHistory.reduce((sum, d) => sum + Number(d.amountPaid !== undefined ? d.amountPaid : (d.amount || 0)), 0);
+  student.discountAmount = totalDiscount;
+  student.discount = totalDiscount;
+
+  const totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || 0));
+  const regFee = Number(student.registrationFee || student.regFee || 0);
+  student.totalFee = Math.max(0, (totalAcad > 0 ? totalAcad : Number(student.totalFee || 0)) - totalDiscount + regFee);
+
+  const totalPaid = Number(student.totalPaid || 0);
+  student.remainingFee = Math.max(0, student.totalFee - totalPaid);
+  student.totalRem = student.remainingFee;
+
+  writeDB(db);
+
+  if (isMongoConnected() && student.id) {
+    try {
+      await StudentModel.findOneAndUpdate(
+        { $or: [{ id: student.id }, { rollNo: student.rollNo }] },
+        { 
+          discountHistory: student.discountHistory,
+          discountAmount: student.discountAmount,
+          discount: student.discount,
+          totalFee: student.totalFee,
+          remainingFee: student.remainingFee,
+          totalRem: student.totalRem
+        }
+      );
+    } catch (e) {
+      console.error('Mongo sync discount delete error:', e.message);
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Discount entry deleted successfully.',
+    student
+  });
+});
+
 // Set Student Scholarship (Multi-Year Support: 1st Year, 2nd Year, 3rd Year, 4th Year)
 app.put('/api/students/:rollNo/set-scholarship', (req, res) => {
   const db = readDB();

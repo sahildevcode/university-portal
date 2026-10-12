@@ -4,7 +4,7 @@ import {
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
   ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
   PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle,
-  Sparkles
+  Sparkles, Tag
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import PrintAdmissionSlip from '../components/PrintAdmissionSlip';
@@ -148,6 +148,30 @@ export default function StudentList({
     }
     const totalSch = (schY1 + schY2 + schY3 + schY4) > 0 ? (schY1 + schY2 + schY3 + schY4) : Number(item.scholarshipAmount || 0);
 
+    // 2.5 Discount per Year (Deducted directly from Total Set Fee)
+    let discY1 = 0, discY2 = 0, discY3 = 0, discY4 = 0;
+    if (Array.isArray(item.discountHistory) && item.discountHistory.length > 0) {
+      item.discountHistory.forEach(entry => {
+        const amt = Number(entry.amountPaid !== undefined ? entry.amountPaid : (entry.amount || entry.fee || 0));
+        const cls = String(entry.currentClass || '').toUpperCase();
+        const yStr = String(entry.year || '').toLowerCase();
+        if (yStr === 'year1' || yStr === '1' || cls.includes('SEM-1') || cls.includes('SEM-2') || cls.includes('YEAR-1') || cls.includes('1ST')) {
+          discY1 += amt;
+        } else if (yStr === 'year2' || yStr === '2' || cls.includes('SEM-3') || cls.includes('SEM-4') || cls.includes('YEAR-2') || cls.includes('2ND')) {
+          discY2 += amt;
+        } else if (yStr === 'year3' || yStr === '3' || cls.includes('SEM-5') || cls.includes('SEM-6') || cls.includes('YEAR-3') || cls.includes('3RD')) {
+          discY3 += amt;
+        } else if (yStr === 'year4' || yStr === '4' || cls.includes('SEM-7') || cls.includes('SEM-8') || cls.includes('YEAR-4') || cls.includes('4TH')) {
+          discY4 += amt;
+        } else {
+          discY1 += amt;
+        }
+      });
+    }
+    const totalDiscount = (discY1 + discY2 + discY3 + discY4) > 0 
+      ? (discY1 + discY2 + discY3 + discY4) 
+      : Number(item.discountAmount !== undefined && item.discountAmount !== null ? item.discountAmount : (item.discount || 0));
+
     // 3. Category & Year-wise Payable Fee
     const rawCat = item.feeCategory;
     const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
@@ -167,22 +191,23 @@ export default function StudentList({
       if (cat === 'full_course_fee') {
         return yrAcad + extra;
       }
-      // For both course_fee_scholarship and full_scholarship:
-      // If student has course fee entered, add it! If course fee is 0, it's pure scholarship
       return yrAcad + yrSch + extra;
     };
 
-    const totalY1 = calcYrTotal(feeY1, schY1, true);
-    const totalY2 = calcYrTotal(feeY2, schY2, false);
-    const totalY3 = calcYrTotal(feeY3, schY3, false);
-    const totalY4 = calcYrTotal(feeY4, schY4, false);
+    const totalY1 = Math.max(0, calcYrTotal(feeY1, schY1, true) - discY1);
+    const totalY2 = Math.max(0, calcYrTotal(feeY2, schY2, false) - discY2);
+    const totalY3 = Math.max(0, calcYrTotal(feeY3, schY3, false) - discY3);
+    const totalY4 = Math.max(0, calcYrTotal(feeY4, schY4, false) - discY4);
 
-    let totalFee = 0;
+    let baseTotalFee = 0;
     if (cat === 'full_course_fee') {
-      totalFee = (totalAcadFee > 0 ? totalAcadFee : Number(item.totalFee || item.studentFee || 0)) + regFee;
+      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : Number(item.totalFee || item.studentFee || 0)) + regFee;
     } else {
-      totalFee = totalAcadFee + totalSch + regFee;
+      baseTotalFee = totalAcadFee + totalSch + regFee;
     }
+
+    // Direct deduction of discount from total fees set:
+    const totalFee = Math.max(0, baseTotalFee - totalDiscount);
 
     // 4. Received Fees per Year
     let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
@@ -278,6 +303,7 @@ export default function StudentList({
       feeY3, schY3, recY3, totalY3, dueY3, advY3, net3, hasY3Activity, effectiveRecY3, advAppliedY3,
       feeY4, schY4, recY4, totalY4, dueY4, advY4, net4, hasY4Activity, effectiveRecY4, advAppliedY4,
       totalFee, totalSch, totalPaid, totalRem,
+      totalDiscount, baseTotalFee,
       advanceAmount, isAdvance, nextFeeDueDate,
       cat
     };
@@ -972,6 +998,9 @@ export default function StudentList({
       setFeeDeskPurpose('Center Fee');
       setFeeDeskAmount('');
       setExtraFeeRows([]);
+    } else if (initialMode === 'set_discount') {
+      setFeeDeskPurpose('Special Discount');
+      setFeeDeskAmount('');
     } else if (initialMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
       setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
@@ -1000,7 +1029,7 @@ export default function StudentList({
           setScholarshipYear3(String(sy3 || 0));
           setScholarshipYear4(String(sy4 || 0));
 
-          if (initialMode === 'set_fee') {
+          if (initialMode === 'set_fee' || initialMode === 'set_discount') {
             setFeeDeskAmount('');
           }
         } else {
@@ -1033,6 +1062,9 @@ export default function StudentList({
       setFeeDeskPurpose('Center Fee');
       setFeeDeskAmount('');
       setExtraFeeRows([]);
+    } else if (newMode === 'set_discount') {
+      setFeeDeskPurpose('Special Discount');
+      setFeeDeskAmount('');
     } else if (newMode === 'set_scholarship') {
       setFeeDeskPurpose('Scholarship');
       setFeeDeskAmount(y1 > 0 ? String(y1) : (sch > 0 ? String(sch) : '0'));
@@ -1040,6 +1072,7 @@ export default function StudentList({
   };
 
   const handleOpenSetFeeModal = (student) => handleOpenFeeDesk(student, 'set_fee');
+  const handleOpenSetDiscountModal = (student) => handleOpenFeeDesk(student, 'set_discount');
   const handleOpenSetScholarshipModal = (student) => handleOpenFeeDesk(student, 'set_scholarship');
   const handleOpenReceiveFeeModal = (student) => handleOpenFeeDesk(student, 'receive');
 
@@ -1197,11 +1230,66 @@ export default function StudentList({
         setFeeDeskSuccess(`Scholarship updated successfully! Total Multi-Year Scholarship: ₹${freshBd.totalSch.toLocaleString('en-IN')}`);
         fetchStudents();
         if (onFeeReceived) onFeeReceived();
+      } else if (feeDeskMode === 'set_discount') {
+        const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
+        if (isNaN(amt) || amt <= 0) {
+          throw new Error('Please enter a valid discount amount (greater than 0).');
+        }
+
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-discount`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amt,
+            discountAmount: amt,
+            purpose: feeDeskPurpose || 'Special Discount',
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass,
+            remark: feeDeskRemark || 'Special fee discount applied'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || 'Failed to apply discount');
+        }
+
+        const updatedStudent = data.student;
+        const freshBd = calculateStudentYearBreakdown(updatedStudent);
+        setFeeDeskStudent(updatedStudent);
+        setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+        setFeeDeskAmount('');
+        setFeeDeskSuccess(`Discount of ₹${amt.toLocaleString('en-IN')} (${feeDeskPurpose || 'Discount'}) applied successfully! Subtracted directly from Total Set Fee. Net Total Fee: ₹${Number(freshBd.totalFee || 0).toLocaleString('en-IN')}`);
+        fetchStudents();
+        if (onFeeReceived) onFeeReceived();
       }
     } catch (err) {
       setFeeDeskError(err.message || 'Error processing request');
     } finally {
       setFeeDeskLoading(false);
+    }
+  };
+
+  const handleDeleteDiscount = async (discountId, amount) => {
+    if (!feeDeskStudent || !discountId) return;
+    const confirmDelete = window.confirm(`Are you sure you want to remove this discount of ₹${Number(amount || 0).toLocaleString('en-IN')}? Total fee will be restored.`);
+    if (!confirmDelete) return;
+
+    const studentLookupKey = getStudentKey(feeDeskStudent);
+    try {
+      const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-discount/${encodeURIComponent(discountId)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete discount');
+      }
+      const updatedStudent = data.student;
+      setFeeDeskStudent(updatedStudent);
+      setStudents(prev => prev.map(s => (s.id === updatedStudent.id || (s.rollNo && s.rollNo === updatedStudent.rollNo)) ? { ...s, ...updatedStudent } : s));
+      setFeeDeskSuccess(`Discount entry removed successfully! Total fee restored.`);
+      fetchStudents();
+    } catch (err) {
+      setFeeDeskError(err.message || 'Error deleting discount');
     }
   };
 
@@ -2619,6 +2707,7 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap text-rose-300">Remaining_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap text-amber-300">Discount</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
                     </tr>
@@ -2661,6 +2750,7 @@ export default function StudentList({
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-right whitespace-nowrap">Remaining_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Receive_Fee</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Fee</th>
+                      <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap text-amber-300">Discount</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 text-center whitespace-nowrap">Set_Scholarship</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2 text-center whitespace-nowrap">Actions</th>
                     </tr>
@@ -2669,7 +2759,7 @@ export default function StudentList({
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 53 : 37) : 20} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
+                      <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 54 : 38) : 21} className="p-8 text-center text-slate-400 font-medium">Loading students directory...</td>
                     </tr>
                   ) : paginatedStudents.length === 0 ? (
                     <tr>
@@ -3131,6 +3221,17 @@ export default function StudentList({
                             <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                               <button
                                 type="button"
+                                onClick={() => handleOpenSetDiscountModal(std)}
+                                className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap inline-flex items-center gap-1"
+                                title="Apply Discount (Subtracted from Total Set Fee)"
+                              >
+                                <Tag className="w-3 h-3" />
+                                <span>Discount</span>
+                              </button>
+                            </td>
+                            <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                              <button
+                                type="button"
                                 onClick={() => handleOpenSetScholarshipModal(std)}
                                 className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
                                 title="Set Student Scholarship"
@@ -3481,6 +3582,17 @@ export default function StudentList({
                                 <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
                                   <button
                                     type="button"
+                                    onClick={() => handleOpenSetDiscountModal(linked)}
+                                    className="bg-[#d97706] hover:bg-[#b45309] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap inline-flex items-center gap-1"
+                                    title="Apply Discount (Subtracted from Total Set Fee)"
+                                  >
+                                    <Tag className="w-3 h-3" />
+                                    <span>Discount</span>
+                                  </button>
+                                </td>
+                                <td className="py-2.5 px-2 border-r border-slate-200 text-center whitespace-nowrap">
+                                  <button
+                                    type="button"
                                     onClick={() => handleOpenSetScholarshipModal(linked)}
                                     className="bg-[#1e7e34] hover:bg-[#155d27] text-white font-bold px-2.5 py-1 rounded text-[11px] shadow-sm cursor-pointer transition-all hover:scale-102 whitespace-nowrap"
                                   >
@@ -3595,18 +3707,21 @@ export default function StudentList({
             <div className={`text-white px-5 py-3.5 flex items-center justify-between gap-3 shrink-0 shadow-sm ${
               feeDeskMode === 'set_scholarship'
                 ? 'bg-gradient-to-r from-purple-800 to-indigo-900'
+                : feeDeskMode === 'set_discount'
+                ? 'bg-gradient-to-r from-amber-600 to-orange-700'
                 : feeDeskMode === 'set_fee'
                 ? 'bg-gradient-to-r from-sky-700 to-blue-800'
                 : 'bg-gradient-to-r from-emerald-800 to-green-800'
             }`}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center font-black text-white text-base">
-                  {feeDeskMode === 'set_scholarship' ? <Award className="w-5 h-5" /> : feeDeskMode === 'set_fee' ? <BookOpen className="w-5 h-5" /> : '₹'}
+                  {feeDeskMode === 'set_scholarship' ? <Award className="w-5 h-5" /> : feeDeskMode === 'set_discount' ? <Tag className="w-5 h-5" /> : feeDeskMode === 'set_fee' ? <BookOpen className="w-5 h-5" /> : '₹'}
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base tracking-wide flex items-center gap-2">
                     {feeDeskMode === 'receive' && 'Receive Fees (छात्र शुल्क प्राप्त करें)'}
                     {feeDeskMode === 'set_fee' && 'Set Student Academic Fee (Center Fee)'}
+                    {feeDeskMode === 'set_discount' && 'Apply Student Fee Discount (फीस छूट - कुल फीस में से घटेगी)'}
                     {feeDeskMode === 'set_scholarship' && 'Set Student Scholarship (छात्रवृत्ति निर्धारण)'}
                   </h3>
                   <div className="text-xs text-emerald-100 flex items-center gap-2">
@@ -3619,15 +3734,47 @@ export default function StudentList({
                 </div>
               </div>
 
-              {/* Clean Close Button Only - No cross-tabs */}
-              <button
-                type="button"
-                onClick={() => setFeeDeskStudent(null)}
-                className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors cursor-pointer"
-                title="Close (ESC)"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Mode Switch Tabs & Close Button */}
+              <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center bg-black/25 p-1 rounded-xl gap-1">
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('receive')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${feeDeskMode === 'receive' ? 'bg-white text-slate-900 shadow-xs' : 'text-white/80 hover:bg-white/15'}`}
+                  >
+                    Receive Fee
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('set_fee')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${feeDeskMode === 'set_fee' ? 'bg-white text-slate-900 shadow-xs' : 'text-white/80 hover:bg-white/15'}`}
+                  >
+                    Set Fee
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('set_discount')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${feeDeskMode === 'set_discount' ? 'bg-amber-400 text-slate-950 font-black shadow-xs' : 'text-amber-200 hover:bg-white/15'}`}
+                  >
+                    🏷️ Discount
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchFeeDeskMode('set_scholarship')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${feeDeskMode === 'set_scholarship' ? 'bg-white text-slate-900 shadow-xs' : 'text-white/80 hover:bg-white/15'}`}
+                  >
+                    Scholarship
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFeeDeskStudent(null)}
+                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-colors cursor-pointer"
+                  title="Close (ESC)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Content Body */}
@@ -4115,22 +4262,33 @@ export default function StudentList({
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (extraFeeRows.length < 5) {
-                            setExtraFeeRows(prev => [
-                              ...prev,
-                              { id: Date.now(), purpose: 'Academic Fee', amount: '' }
-                            ]);
-                          }
-                        }}
-                        className="text-sky-800 hover:text-sky-950 bg-sky-100 hover:bg-sky-200 border border-sky-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                        title="Add another fee purpose and amount to save together"
-                      >
-                        <PlusCircle className="w-3.5 h-3.5 text-sky-700" />
-                        <span>+ Add Another Purpose (साथ में दूसरी एंट्री जोड़ें)</span>
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (extraFeeRows.length < 5) {
+                              setExtraFeeRows(prev => [
+                                ...prev,
+                                { id: Date.now(), purpose: 'Academic Fee', amount: '' }
+                              ]);
+                            }
+                          }}
+                          className="text-sky-800 hover:text-sky-950 bg-sky-100 hover:bg-sky-200 border border-sky-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                          title="Add another fee purpose and amount to save together"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5 text-sky-700" />
+                          <span>+ Add Another Purpose (साथ में दूसरी एंट्री जोड़ें)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => switchFeeDeskMode('set_discount')}
+                          className="text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                          title="Apply Discount for this student (Deducted from Total Set Fee)"
+                        >
+                          <Tag className="w-3.5 h-3.5 text-amber-700" />
+                          <span>🏷️ Discount (फीस छूट दें)</span>
+                        </button>
+                      </div>
 
                       {canEdit && (
                         <button
@@ -4144,6 +4302,213 @@ export default function StudentList({
                         </button>
                       )}
                     </div>
+                  </>
+                )}
+
+                {/* 2.5 SET DISCOUNT FORM (DIRECT DEDUCTION FROM TOTAL FEES SET) */}
+                {feeDeskMode === 'set_discount' && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Student_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fullName || feeDeskStudent.studentName || ''} className="w-full px-3 py-2 text-xs font-bold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Father_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.fatherName || '-'} className="w-full px-3 py-2 text-xs font-semibold uppercase bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">University_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.universityName || 'PKC University / Board'} className="w-full px-3 py-2 text-xs font-semibold bg-slate-100 border border-slate-300 rounded-lg text-slate-800 cursor-not-allowed outline-none truncate" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Course_Name:</label>
+                        <input type="text" readOnly value={feeDeskStudent.courseName || '-'} className="w-full px-3 py-2 text-xs font-bold text-indigo-900 bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed outline-none truncate" />
+                      </div>
+
+                      {/* Fee Calculation & Direct Discount Status Banner */}
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        {(() => {
+                          const bd = calculateStudentYearBreakdown(feeDeskStudent);
+                          const totalSet = bd.baseTotalFee || bd.totalFee;
+                          return (
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Total Fees Set & Discount Calculation (सीधे कुल सेट फीस में से कटौती)</span>
+                              </span>
+                              <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
+                                <div>Total Fees Set: <span className="font-mono text-slate-900 font-extrabold">₹{Number(totalSet || 0).toLocaleString('en-IN')}</span></div>
+                                <div className="text-amber-800">Total Discount: <span className="font-mono text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 font-extrabold">-₹{Number(bd.totalDiscount || 0).toLocaleString('en-IN')}</span></div>
+                                <div className="text-blue-900">Net Fee (छूट के बाद): <span className="font-mono text-blue-900 text-sm font-black">₹{Number(bd.totalFee || 0).toLocaleString('en-IN')}</span></div>
+                                <div className="text-emerald-800">Paid: <span className="font-mono">₹{Number(bd.totalPaid || 0).toLocaleString('en-IN')}</span></div>
+                                <div className="text-rose-800">Remaining Due: <span className="font-mono text-sm font-black text-rose-700">₹{Number(bd.totalRem || 0).toLocaleString('en-IN')}</span></div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <span className="px-3 py-1 bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-xs shrink-0 self-start sm:self-center">
+                          Direct Fee Minus
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Discount Date* :</label>
+                        <input
+                          type="date"
+                          required
+                          value={feeDeskDate}
+                          onChange={(e) => setFeeDeskDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Class / Semester / Year:</label>
+                        <select value={feeDeskClass} onChange={(e) => setFeeDeskClass(e.target.value)} className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer">
+                          <optgroup label="Annual / Yearly Pattern (वार्षिक)">
+                            <option value="1st Year">1st Year (1st Year Annual)</option>
+                            <option value="2nd Year">2nd Year (2nd Year Annual)</option>
+                            <option value="3rd Year">3rd Year (3rd Year Annual)</option>
+                            <option value="4th Year">4th Year (4th Year Annual)</option>
+                          </optgroup>
+                          <optgroup label="Semester Pattern (सेमेस्टर)">
+                            <option value="SEM-1">SEM-1 (1st Semester)</option>
+                            <option value="SEM-2">SEM-2 (2nd Semester)</option>
+                            <option value="SEM-3">SEM-3 (3rd Semester)</option>
+                            <option value="SEM-4">SEM-4 (4th Semester)</option>
+                            <option value="SEM-5">SEM-5 (5th Semester)</option>
+                            <option value="SEM-6">SEM-6 (6th Semester)</option>
+                            <option value="SEM-7">SEM-7 (7th Semester)</option>
+                            <option value="SEM-8">SEM-8 (8th Semester)</option>
+                          </optgroup>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Discount Type / Reason* :</label>
+                        <select
+                          value={feeDeskPurpose}
+                          onChange={(e) => setFeeDeskPurpose(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-semibold border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="Special Discount">Special Discount (विशेष छूट)</option>
+                          <option value="Admission Discount">Admission Discount (प्रवेश छूट)</option>
+                          <option value="Fee Concession">Fee Concession (फीस में रियायत)</option>
+                          <option value="Director Special Concession">Director Special Concession</option>
+                          <option value="Merit Discount">Merit Discount (योग्यता छूट)</option>
+                          <option value="Early Bird Discount">Early Bird Discount</option>
+                          <option value="Family / Sibling Discount">Family / Sibling Discount</option>
+                          <option value="Financial Hardship Concession">Financial Hardship Concession</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-900 mb-1">
+                          Discount Amount (₹)* :
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          required
+                          value={feeDeskAmount}
+                          onChange={(e) => setFeeDeskAmount(e.target.value)}
+                          placeholder="e.g. 5000"
+                          className="w-full px-3.5 py-2 text-sm font-extrabold border-2 border-amber-600 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-amber-400 focus:outline-none font-mono"
+                        />
+                        <div className="flex items-center gap-1 mt-1">
+                          {[500, 1000, 2000, 5000, 10000].map(quickAmt => (
+                            <button
+                              key={quickAmt}
+                              type="button"
+                              onClick={() => setFeeDeskAmount(String(quickAmt))}
+                              className="px-1.5 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[9.5px] font-bold cursor-pointer transition-colors"
+                            >
+                              +{quickAmt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="col-span-1 sm:col-span-2 lg:col-span-4">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Remark / Reason for Discount :</label>
+                        <input
+                          type="text"
+                          value={feeDeskRemark}
+                          onChange={(e) => setFeeDeskRemark(e.target.value)}
+                          placeholder="e.g. Approved by Management / Special fee concession..."
+                          className="w-full px-3 py-2 text-xs font-medium border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                      <div className="text-[11px] text-amber-900 font-semibold flex items-center gap-1.5">
+                        <span>ℹ️</span>
+                        <span>यह डिस्काउंट राशि छात्र की कुल सेट फीस (Total Set Fee) में से सीधे माइनस (घटाई) जाएगी।</span>
+                      </div>
+
+                      {canEdit && (
+                        <button
+                          type="submit"
+                          disabled={feeDeskLoading}
+                          className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black px-7 py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                          title="Apply fee discount"
+                        >
+                          <Tag className="w-4 h-4" />
+                          <span>{feeDeskLoading ? 'Applying...' : 'Apply Discount (छूट घटाएं)'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Applied Discounts History Table */}
+                    {Array.isArray(feeDeskStudent.discountHistory) && feeDeskStudent.discountHistory.length > 0 && (
+                      <div className="mt-4 border border-amber-200 rounded-xl overflow-hidden shadow-2xs">
+                        <div className="bg-amber-100/70 px-3.5 py-2 border-b border-amber-200 flex items-center justify-between">
+                          <h4 className="font-extrabold text-amber-950 text-xs uppercase tracking-wide flex items-center gap-1.5">
+                            <Tag className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Applied Discounts (दी गई छूट का रिकॉर्ड)</span>
+                          </h4>
+                          <span className="text-[10px] font-bold text-amber-800">
+                            Total Discount: ₹{feeDeskStudent.discountHistory.reduce((sum, d) => sum + Number(d.amount || d.amountPaid || 0), 0).toLocaleString('en-IN')}/-
+                          </span>
+                        </div>
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-100 text-slate-700 font-bold text-[10px] uppercase">
+                            <tr>
+                              <th className="p-2.5 border-b border-slate-200">Date</th>
+                              <th className="p-2.5 border-b border-slate-200">Class</th>
+                              <th className="p-2.5 border-b border-slate-200">Purpose / Reason</th>
+                              <th className="p-2.5 border-b border-slate-200 text-right">Discount (₹)</th>
+                              <th className="p-2.5 border-b border-slate-200 text-center">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {feeDeskStudent.discountHistory.map((d, dIdx) => (
+                              <tr key={d.id || dIdx} className="hover:bg-amber-50/40">
+                                <td className="p-2.5 font-mono text-slate-700">{d.feeDate || d.date || '-'}</td>
+                                <td className="p-2.5 text-slate-700">{d.currentClass || '-'}</td>
+                                <td className="p-2.5 font-medium text-slate-800">{d.purpose || 'Special Discount'}</td>
+                                <td className="p-2.5 text-right font-bold font-mono text-amber-700">₹{Number(d.amount || d.amountPaid || 0).toLocaleString('en-IN')}/-</td>
+                                <td className="p-2.5 text-center">
+                                  {canEdit && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteDiscount(d.id, d.amount || d.amountPaid)}
+                                      className="text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                                      title="Remove this discount"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </>
                 )}
 

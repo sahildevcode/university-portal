@@ -41,7 +41,8 @@ import {
   Ban,
   AlertTriangle,
   DollarSign,
-  PlusCircle
+  PlusCircle,
+  Tag
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { fireCelebration } from '../utils/confetti';
@@ -483,14 +484,18 @@ export default function VocationalCoursesManager({
   // Helper open functions matching StudentList parity
   const handleOpenReceiveFeeModal = (student) => handleOpenFeeDesk(student, 'receive');
   const handleOpenSetFeeModal = (student) => handleOpenFeeDesk(student, 'set_fee');
+  const handleOpenSetDiscountModal = (student) => handleOpenFeeDesk(student, 'set_discount');
 
-  // Switch between 'receive' and 'set_fee' modes inside modal
+  // Switch between 'receive', 'set_fee', and 'set_discount' modes inside modal
   const switchFeeDeskMode = (newMode) => {
     setFeeDeskMode(newMode);
     setFeeDeskError(null);
     setFeeDeskSuccess(null);
     if (newMode === 'set_fee') {
       setFeeDeskPurpose('Total Vocational Course Fee');
+    } else if (newMode === 'set_discount') {
+      setFeeDeskPurpose('Special Course Discount');
+      setFeeDeskAmount('');
     } else {
       setFeeDeskPurpose('Course Fee Installment');
       const tot = Number(feeDeskTotalFee || (feeDeskStudent?.totalFee || feeDeskStudent?.academicFee || 0));
@@ -510,7 +515,7 @@ export default function VocationalCoursesManager({
     setFeeDeskDate(new Date().toISOString().split('T')[0]);
     setFeeDeskModePayment('Cash');
     setFeeDeskRefNo('');
-    setFeeDeskPurpose(mode === 'set_fee' ? 'Total Vocational Course Fee' : 'Course Fee Installment');
+    setFeeDeskPurpose(mode === 'set_fee' ? 'Total Vocational Course Fee' : (mode === 'set_discount' ? 'Special Course Discount' : 'Course Fee Installment'));
     setFeeDeskReceivedBy('Admin Desk');
     setFeeDeskRemark('');
 
@@ -518,7 +523,7 @@ export default function VocationalCoursesManager({
     const paid = Number(student.totalPaid || 0);
     const rem = Math.max(0, tot - paid);
     setFeeDeskTotalFee(tot > 0 ? String(tot) : (student.totalFee !== undefined && student.totalFee !== null && student.totalFee !== '' ? String(student.totalFee) : '0'));
-    setFeeDeskAmount(mode === 'set_fee' ? '' : (rem > 0 ? String(rem) : ''));
+    setFeeDeskAmount((mode === 'set_fee' || mode === 'set_discount') ? '' : (rem > 0 ? String(rem) : ''));
 
     // Set initial payments from student record if available
     let initialList = Array.isArray(student.feeHistory) && student.feeHistory.length > 0
@@ -582,6 +587,29 @@ export default function VocationalCoursesManager({
       const amt = (feeDeskAmount === '' || feeDeskAmount === null || feeDeskAmount === undefined) ? 0 : Number(feeDeskAmount);
       if (isNaN(amt) || amt < 0) {
         throw new Error('Please enter a valid amount (0 or more).');
+      }
+
+      if (feeDeskMode === 'set_discount') {
+        const amt = Number(feeDeskAmount) || 0;
+        if (amt <= 0) throw new Error('Please enter a valid discount amount (greater than 0).');
+        const res = await fetch(`/api/students/${encodeURIComponent(studentLookupKey)}/set-discount`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amt,
+            discountAmount: amt,
+            purpose: feeDeskPurpose || 'Special Course Discount',
+            feeDate: feeDeskDate,
+            currentClass: feeDeskClass,
+            remark: feeDeskRemark || 'Special fee discount applied'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to apply discount');
+        setFeeDeskSuccess(`Discount of ₹${amt.toLocaleString('en-IN')} applied successfully! Subtracted from Total Set Fee.`);
+        setFeeDeskAmount('');
+        fetchStudents();
+        return;
       }
 
       const isSetTotalFee = actionOverride === 'set_total_fee';
