@@ -32,7 +32,7 @@ if (process.env.MONGODB_URI) {
   }
 }
 
-// Ensure Master Admin credentials match pkcinstitute@gmail.com / pkc@123
+// Ensure Master Admin credentials have official contact details
 try {
   const db = readDB();
   let admin = (db.users || []).find(u => u.role === 'admin');
@@ -41,6 +41,7 @@ try {
       id: 'user-admin',
       username: 'admin',
       email: 'pkcinstitute@gmail.com',
+      phone: '7000212637',
       password: 'pkc@123',
       role: 'admin',
       name: 'PKC Institute Administrator',
@@ -49,13 +50,25 @@ try {
     if (!Array.isArray(db.users)) db.users = [];
     db.users.push(admin);
     writeDB(db);
-    console.log('[AUTH] Admin created with pkcinstitute@gmail.com');
-  } else if (!admin.email || admin.email !== 'pkcinstitute@gmail.com' || admin.password !== 'pkc@123') {
-    admin.email = 'pkcinstitute@gmail.com';
-    admin.password = 'pkc@123';
-    admin.isSetupRequired = false;
-    writeDB(db);
-    console.log('[AUTH] Admin credentials updated to pkcinstitute@gmail.com / pkc@123');
+    console.log('[AUTH] Admin created with pkcinstitute@gmail.com / 7000212637');
+  } else {
+    let changed = false;
+    if (!admin.email) {
+      admin.email = 'pkcinstitute@gmail.com';
+      changed = true;
+    }
+    if (!admin.phone) {
+      admin.phone = '7000212637';
+      changed = true;
+    }
+    if (!admin.password) {
+      admin.password = 'pkc@123';
+      changed = true;
+    }
+    if (changed) {
+      writeDB(db);
+      console.log('[AUTH] Admin contact details synchronized.');
+    }
   }
 } catch (err) {
   console.warn('[AUTH] Admin init notice:', err);
@@ -470,22 +483,24 @@ app.get('/api/auth/status', (req, res) => {
   res.json({
     success: true,
     isSetupRequired,
-    adminEmail: adminUser?.email ? `${adminUser.email.slice(0, 2)}***@${adminUser.email.split('@')[1] || ''}` : ''
+    adminEmail: adminUser?.email ? `${adminUser.email.slice(0, 2)}***@${adminUser.email.split('@')[1] || ''}` : '',
+    adminPhone: adminUser?.phone ? `+91 ******${adminUser.phone.slice(-4)}` : ''
   });
 });
 
-// Admin Login (supports First-Time Setup on 1st login, and regular login thereafter)
+// Admin Login (supports login by Email OR Mobile / WhatsApp Number OR Username)
 app.post('/api/auth/login', (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, phone, password } = req.body;
   const db = readDB();
 
-  const identifier = (email || username || '').trim().toLowerCase();
+  const rawId = (email || username || phone || '').trim();
+  const identifier = rawId.toLowerCase();
   const cleanPass = (password || '').trim();
 
-  if (!identifier || !cleanPass) {
+  if (!rawId || !cleanPass) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide both Email and Password.'
+      message: 'Please provide Email or Mobile Number and Password.'
     });
   }
 
@@ -504,10 +519,15 @@ app.post('/api/auth/login', (req, res) => {
       });
     }
 
+    const isEmail = identifier.includes('@');
+    const digitsOnly = identifier.replace(/[^0-9]/g, '');
+    const isMobile = digitsOnly.length >= 10 && !isEmail;
+
     const newAdmin = {
       id: adminUser?.id || `user-admin-${Date.now()}`,
-      username: identifier.includes('@') ? identifier.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : identifier,
-      email: identifier.includes('@') ? identifier : `${identifier}@pkc.edu`,
+      username: isEmail ? identifier.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : (isMobile ? 'admin' : identifier),
+      email: isEmail ? identifier : (adminUser?.email || 'pkcinstitute@gmail.com'),
+      phone: isMobile ? digitsOnly.slice(-10) : (adminUser?.phone || '7000212637'),
       password: cleanPass,
       role: 'admin',
       name: adminUser?.name || 'Institute Administrator',
@@ -530,6 +550,7 @@ app.post('/api/auth/login', (req, res) => {
         id: newAdmin.id,
         username: newAdmin.username,
         email: newAdmin.email,
+        phone: newAdmin.phone,
         name: newAdmin.name,
         role: newAdmin.role
       }
@@ -537,16 +558,33 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   // 2. Regular Login: verify credentials against registered admin
+  // Supports login via:
+  // - Email: pkcinstitute@gmail.com
+  // - Mobile / WhatsApp: 7000212637 or +917000212637
+  // - Username: admin
+  const idDigits = identifier.replace(/[^0-9]/g, '');
+
   const user = db.users.find(u => {
+    if ((u.password || '').trim() !== cleanPass) return false;
+
     const userEmail = (u.email || '').trim().toLowerCase();
     const userUsername = (u.username || '').trim().toLowerCase();
-    return (userEmail === identifier || userUsername === identifier) && (u.password || '').trim() === cleanPass;
+    const userPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
+
+    if (userEmail && userEmail === identifier) return true;
+    if (userUsername && userUsername === identifier) return true;
+    if (idDigits.length >= 10 && userPhoneDigits.length >= 10) {
+      if (userPhoneDigits.endsWith(idDigits.slice(-10)) || idDigits.endsWith(userPhoneDigits.slice(-10))) {
+        return true;
+      }
+    }
+    return false;
   });
 
   if (!user) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid Admin Email or Password. Please check your credentials.'
+      message: 'Invalid Admin Email, Mobile Number or Password. Please check your credentials.'
     });
   }
 
@@ -557,6 +595,7 @@ app.post('/api/auth/login', (req, res) => {
       id: user.id || `user-${user.username}`,
       username: user.username,
       email: user.email || '',
+      phone: user.phone || '',
       name: user.name || user.username,
       role: user.role || 'admin'
     }
@@ -564,80 +603,147 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // ==========================================
-// REAL-WORLD FORGOT PASSWORD WITH 6-DIGIT OTP VERIFICATION
+// REAL-WORLD FORGOT PASSWORD & RECOVERY WITH WHATSAPP / SMS / EMAIL OTP
 // ==========================================
 
-// Step 1: Send 6-Digit OTP Code to Registered Email
+// Helper to find the admin by Email, Phone digits, or Username
+function findAdminUser(db, inputIdentifier) {
+  const users = Array.isArray(db.users) ? db.users : [];
+  const cleanId = (inputIdentifier || '').trim().toLowerCase();
+  const inputDigits = cleanId.replace(/[^0-9]/g, '');
+
+  let admin = users.find(u => {
+    if (u.role !== 'admin') return false;
+    const uEmail = (u.email || '').trim().toLowerCase();
+    const uUser = (u.username || '').trim().toLowerCase();
+    const uPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
+
+    if (uEmail && uEmail === cleanId) return true;
+    if (uUser && uUser === cleanId) return true;
+    if (inputDigits.length >= 10 && uPhoneDigits.length >= 10) {
+      if (uPhoneDigits.endsWith(inputDigits.slice(-10)) || inputDigits.endsWith(uPhoneDigits.slice(-10))) {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  // Fallback: if only one admin exists in database, use that admin
+  if (!admin) {
+    const defaultAdmin = users.find(u => u.role === 'admin');
+    if (defaultAdmin && (!cleanId || cleanId === 'admin' || cleanId === '7000212637' || cleanId === 'pkcinstitute@gmail.com')) {
+      admin = defaultAdmin;
+    }
+  }
+
+  return admin;
+}
+
+// Step 1: Send 6-Digit OTP Code via WhatsApp, SMS, or Email
 app.post('/api/auth/forgot-password/send-code', (req, res) => {
-  const { email } = req.body;
+  const { identifier, email, phone, channel = 'whatsapp' } = req.body;
   const db = readDB();
 
-  const cleanEmail = (email || '').trim().toLowerCase();
-  if (!cleanEmail) {
+  const rawInput = (identifier || email || phone || '').trim();
+  if (!rawInput) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide your registered admin email address.'
+      message: 'Please provide your registered Email or Mobile / WhatsApp Number.'
     });
   }
 
-  const admin = (db.users || []).find(u => 
-    u.role === 'admin' && (
-      (u.email || '').trim().toLowerCase() === cleanEmail ||
-      (u.username || '').trim().toLowerCase() === cleanEmail
-    )
-  );
-
+  const admin = findAdminUser(db, rawInput);
   if (!admin) {
     return res.status(404).json({
       success: false,
-      message: 'No registered admin account found with this email. Please enter your registered email.'
+      message: 'No registered admin account found with this Email or Mobile Number. (इस विवरण से कोई एडमिन नहीं मिला)'
     });
   }
 
   // Generate real 6-digit random verification code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+  const sessionKey = `reset_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-  global.__adminResetOtp[cleanEmail] = {
+  const adminPhone = (admin.phone || '7000212637').replace(/[^0-9]/g, '');
+  const adminEmail = (admin.email || 'pkcinstitute@gmail.com').trim().toLowerCase();
+
+  const otpPayload = {
     code,
     expiresAt,
-    verified: false
+    verified: false,
+    adminId: admin.id || 'admin',
+    email: adminEmail,
+    phone: adminPhone
   };
 
-  console.log(`[AUTH] 🔐 Password Reset OTP for ${cleanEmail}: ${code} (Valid for 10m)`);
+  // Store in global memory under sessionKey and identifiers
+  global.__adminResetOtp[sessionKey] = otpPayload;
+  global.__adminResetOtp[adminEmail] = otpPayload;
+  if (adminPhone.length >= 10) {
+    global.__adminResetOtp[adminPhone.slice(-10)] = otpPayload;
+  }
+
+  // Build WhatsApp Click-to-Send URL
+  const waPhone = adminPhone.length === 10 ? '91' + adminPhone : adminPhone;
+  const waMessage = `PKC Education Institute (Admin Verification): Your 6-digit OTP is ${code}. Valid for 10 minutes. Do not share with anyone.`;
+  const whatsappUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`;
+  const smsUri = `sms:+${waPhone}?body=${encodeURIComponent(waMessage)}`;
+
+  console.log(`[AUTH] 🔐 ${channel.toUpperCase()} OTP for Admin (${adminEmail} / ${adminPhone}): ${code} (Session: ${sessionKey})`);
 
   res.json({
     success: true,
-    message: `A 6-digit verification code has been sent to ${cleanEmail}.`,
-    email: cleanEmail,
-    code: code // Included for seamless verification without external mail server dependency
+    message: channel === 'whatsapp'
+      ? `6-digit WhatsApp OTP sent for +91 ${adminPhone.slice(-10)}`
+      : `6-digit verification code generated for ${adminEmail}`,
+    sessionKey,
+    code, // Returned for instant on-screen test display without requiring 3rd party SMS gateway
+    whatsappUrl,
+    smsUri,
+    targetPhone: adminPhone.slice(-10),
+    maskedPhone: adminPhone ? `+91 ******${adminPhone.slice(-4)}` : '',
+    maskedEmail: adminEmail ? `${adminEmail.slice(0, 2)}***@${adminEmail.split('@')[1] || ''}` : '',
+    channel
   });
 });
 
-// Step 2: Verify 6-Digit OTP Code
+// Step 2: Verify 6-Digit OTP Code (and reveal registered details)
 app.post('/api/auth/forgot-password/verify-code', (req, res) => {
-  const { email, code } = req.body;
+  const { sessionKey, identifier, email, phone, code } = req.body;
+  const db = readDB();
 
-  const cleanEmail = (email || '').trim().toLowerCase();
   const cleanCode = (code || '').trim();
-
-  if (!cleanEmail || !cleanCode) {
+  if (!cleanCode) {
     return res.status(400).json({
       success: false,
-      message: 'Email and 6-digit verification code are required.'
+      message: 'Please enter the 6-digit verification code.'
     });
   }
 
-  const otpData = global.__adminResetOtp[cleanEmail];
+  // Lookup OTP record by sessionKey or identifier
+  let otpData = null;
+  if (sessionKey && global.__adminResetOtp[sessionKey]) {
+    otpData = global.__adminResetOtp[sessionKey];
+  } else {
+    const rawId = (identifier || email || phone || '').trim().toLowerCase();
+    const idDigits = rawId.replace(/[^0-9]/g, '');
+    if (global.__adminResetOtp[rawId]) {
+      otpData = global.__adminResetOtp[rawId];
+    } else if (idDigits.length >= 10 && global.__adminResetOtp[idDigits.slice(-10)]) {
+      otpData = global.__adminResetOtp[idDigits.slice(-10)];
+    }
+  }
+
   if (!otpData) {
     return res.status(400).json({
       success: false,
-      message: 'No verification code was requested for this email. Please request a new code.'
+      message: 'No verification session found. Please request a new verification code.'
     });
   }
 
   if (Date.now() > otpData.expiresAt) {
-    delete global.__adminResetOtp[cleanEmail];
+    if (sessionKey) delete global.__adminResetOtp[sessionKey];
     return res.status(400).json({
       success: false,
       message: 'Verification code has expired. Please request a new code.'
@@ -652,29 +758,53 @@ app.post('/api/auth/forgot-password/verify-code', (req, res) => {
   }
 
   otpData.verified = true;
+
+  // Find latest admin record to reveal the registered email and phone
+  const admin = (db.users || []).find(u => u.role === 'admin') || {
+    email: otpData.email || 'pkcinstitute@gmail.com',
+    phone: otpData.phone || '7000212637'
+  };
+
   res.json({
     success: true,
-    message: 'Verification code confirmed successfully! You can now set your new password.'
+    message: 'Verification code confirmed successfully!',
+    verified: true,
+    sessionKey: sessionKey || 'verified_session',
+    registeredEmail: admin.email || 'pkcinstitute@gmail.com',
+    registeredPhone: admin.phone || '7000212637',
+    adminName: admin.name || 'Administrator'
   });
 });
 
-// Step 3: Reset Password (Unlocks ONLY after Code Matches!)
+// Step 3: Reset Password and optionally Update Email & Phone
 app.post('/api/auth/forgot-password/reset', (req, res) => {
-  const { email, code, newPassword, confirmPassword } = req.body;
+  const { sessionKey, identifier, email, phone, code, newPassword, confirmPassword, newEmail, newPhone } = req.body;
   const db = readDB();
 
-  const cleanEmail = (email || '').trim().toLowerCase();
   const cleanCode = (code || '').trim();
   const cleanNewPass = (newPassword || '').trim();
 
-  if (!cleanEmail || !cleanNewPass) {
+  if (!cleanNewPass) {
     return res.status(400).json({
       success: false,
-      message: 'Email and New Password are required.'
+      message: 'Please provide a new password.'
     });
   }
 
-  const otpData = global.__adminResetOtp[cleanEmail];
+  // Lookup OTP record
+  let otpData = null;
+  if (sessionKey && global.__adminResetOtp[sessionKey]) {
+    otpData = global.__adminResetOtp[sessionKey];
+  } else {
+    const rawId = (identifier || email || phone || '').trim().toLowerCase();
+    const idDigits = rawId.replace(/[^0-9]/g, '');
+    if (global.__adminResetOtp[rawId]) {
+      otpData = global.__adminResetOtp[rawId];
+    } else if (idDigits.length >= 10 && global.__adminResetOtp[idDigits.slice(-10)]) {
+      otpData = global.__adminResetOtp[idDigits.slice(-10)];
+    }
+  }
+
   if (!otpData || otpData.code !== cleanCode || !otpData.verified) {
     return res.status(403).json({
       success: false,
@@ -696,33 +826,144 @@ app.post('/api/auth/forgot-password/reset', (req, res) => {
     });
   }
 
-  const adminIndex = (db.users || []).findIndex(u => 
-    u.role === 'admin' && (
-      (u.email || '').trim().toLowerCase() === cleanEmail ||
-      (u.username || '').trim().toLowerCase() === cleanEmail
-    )
-  );
+  if (!Array.isArray(db.users)) db.users = [];
+  let adminIndex = db.users.findIndex(u => u.role === 'admin');
 
   if (adminIndex === -1) {
-    return res.status(404).json({
-      success: false,
-      message: 'Admin account not found.'
-    });
+    // If not found, create new master admin
+    const newMaster = {
+      id: `user-admin-${Date.now()}`,
+      username: 'admin',
+      email: (newEmail || otpData.email || 'pkcinstitute@gmail.com').trim().toLowerCase(),
+      phone: (newPhone || otpData.phone || '7000212637').replace(/[^0-9]/g, '').slice(-10),
+      password: cleanNewPass,
+      role: 'admin',
+      name: 'Institute Administrator',
+      isSetupRequired: false,
+      updatedAt: new Date().toISOString()
+    };
+    db.users.push(newMaster);
+    adminIndex = db.users.length - 1;
+  } else {
+    // Update existing admin
+    db.users[adminIndex].password = cleanNewPass;
+    db.users[adminIndex].isSetupRequired = false;
+    db.users[adminIndex].updatedAt = new Date().toISOString();
+
+    // If admin requested updating their email
+    if (newEmail && typeof newEmail === 'string' && newEmail.trim().includes('@')) {
+      db.users[adminIndex].email = newEmail.trim().toLowerCase();
+    }
+
+    // If admin requested updating their mobile phone
+    if (newPhone && typeof newPhone === 'string') {
+      const cleanNewDigits = newPhone.replace(/[^0-9]/g, '');
+      if (cleanNewDigits.length >= 10) {
+        db.users[adminIndex].phone = cleanNewDigits.slice(-10);
+      }
+    }
   }
 
-  db.users[adminIndex].password = cleanNewPass;
-  db.users[adminIndex].isSetupRequired = false;
-  if (!db.users[adminIndex].email && cleanEmail.includes('@')) {
-    db.users[adminIndex].email = cleanEmail;
-  }
+  // Write changes locally and sync permanently to MongoDB Atlas
   writeDB(db);
 
-  delete global.__adminResetOtp[cleanEmail];
+  // Clear OTP session
+  if (sessionKey) delete global.__adminResetOtp[sessionKey];
+  if (otpData.email) delete global.__adminResetOtp[otpData.email];
+  if (otpData.phone) delete global.__adminResetOtp[otpData.phone];
+
+  const updatedAdmin = db.users[adminIndex];
+  console.log(`[AUTH] ✅ Password & Contact info updated for Admin: ${updatedAdmin.email} / ${updatedAdmin.phone}`);
 
   res.json({
     success: true,
-    message: 'Password successfully changed! You can now log in with your new password.',
-    email: cleanEmail
+    message: 'Password and credentials successfully updated! You can now log in.',
+    email: updatedAdmin.email,
+    phone: updatedAdmin.phone,
+    user: {
+      id: updatedAdmin.id,
+      username: updatedAdmin.username,
+      email: updatedAdmin.email,
+      phone: updatedAdmin.phone,
+      name: updatedAdmin.name,
+      role: updatedAdmin.role
+    }
+  });
+});
+
+// Admin Profile API (View and Update Admin Contact & Password inside Dashboard)
+app.get('/api/auth/admin-profile', (req, res) => {
+  const db = readDB();
+  const admin = (db.users || []).find(u => u.role === 'admin');
+  if (!admin) {
+    return res.status(404).json({ success: false, message: 'Admin profile not found.' });
+  }
+  res.json({
+    success: true,
+    admin: {
+      id: admin.id,
+      username: admin.username,
+      email: admin.email || 'pkcinstitute@gmail.com',
+      phone: admin.phone || '7000212637',
+      name: admin.name || 'Institute Administrator',
+      role: 'admin'
+    }
+  });
+});
+
+app.put('/api/auth/admin-profile', (req, res) => {
+  const { name, email, phone, currentPassword, newPassword } = req.body;
+  const db = readDB();
+
+  if (!Array.isArray(db.users)) db.users = [];
+  const adminIndex = db.users.findIndex(u => u.role === 'admin');
+  if (adminIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Admin record not found.' });
+  }
+
+  const admin = db.users[adminIndex];
+
+  // If changing password, verify current password
+  if (newPassword && newPassword.trim()) {
+    if (admin.password && (currentPassword || '').trim() !== admin.password.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password does not match. Please verify your current password.'
+      });
+    }
+    if (newPassword.trim().length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 4 characters long.'
+      });
+    }
+    admin.password = newPassword.trim();
+  }
+
+  if (name && typeof name === 'string') admin.name = name.trim();
+  if (email && typeof email === 'string' && email.includes('@')) {
+    admin.email = email.trim().toLowerCase();
+  }
+  if (phone && typeof phone === 'string') {
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.length >= 10) admin.phone = digits.slice(-10);
+  }
+  admin.updatedAt = new Date().toISOString();
+
+  writeDB(db);
+  console.log(`[AUTH] 👤 Admin profile updated directly: Email=${admin.email}, Phone=${admin.phone}`);
+
+  res.json({
+    success: true,
+    message: 'Admin profile updated successfully!',
+    admin: {
+      id: admin.id,
+      username: admin.username,
+      email: admin.email,
+      phone: admin.phone,
+      name: admin.name,
+      role: 'admin'
+    }
   });
 });
 

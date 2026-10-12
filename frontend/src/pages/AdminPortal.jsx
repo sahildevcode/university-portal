@@ -23,6 +23,7 @@ import StaffPayrollManager from './StaffPayrollManager';
 import CompletedStudentsManager from './CompletedStudentsManager';
 import StudentYearlyMarksheetManager from './StudentYearlyMarksheetManager';
 import BulkImportModal from '../components/BulkImportModal';
+import AdminProfileModal from '../components/AdminProfileModal';
 import ModuleErrorBoundary from '../components/ModuleErrorBoundary';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -363,6 +364,7 @@ export default function AdminPortal({
 
   // Add / Edit Course Modal
   const [showCourseModal, setShowCourseModal] = useState(false);
+  const [showAdminProfileModal, setShowAdminProfileModal] = useState(false);
   const [editingCourseId, setEditingCourseId] = useState(null);
   const [courseForm, setCourseForm] = useState({
     name: '', code: '', department: 'School of Computing & Management',
@@ -543,6 +545,19 @@ export default function AdminPortal({
             >
               <UploadCloud className="w-3.5 h-3.5 text-amber-300" />
               <span>📥 Bulk Import Data</span>
+            </button>
+          )}
+
+          {/* Admin Profile & Security Settings Button */}
+          {!staffUser && (
+            <button
+              type="button"
+              onClick={() => setShowAdminProfileModal(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white border border-indigo-400/40 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+              title="Admin Profile & Security Settings (ईमेल व मोबाइल सेटिंग)"
+            >
+              <User className="w-3.5 h-3.5 text-amber-300" />
+              <span>⚙️ {lang === 'hi' ? 'ईमेल व मोबाइल सेटिंग' : 'Admin Profile'}</span>
             </button>
           )}
 
@@ -1113,6 +1128,13 @@ export default function AdminPortal({
           setSuccessMsg('Bulk import completed successfully! Legacy students and fee accounts are live.');
           if (onRefreshCourses) onRefreshCourses();
         }}
+      />
+
+      {/* Admin Profile & Contact/Security Settings Modal */}
+      <AdminProfileModal
+        isOpen={showAdminProfileModal}
+        onClose={() => setShowAdminProfileModal(false)}
+        lang={lang}
       />
 
     </div>
