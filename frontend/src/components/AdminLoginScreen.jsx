@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, Key, User, Lock, AlertCircle, CheckCircle2, 
-  UserCheck, Eye, EyeOff, Globe, Mail, ArrowLeft 
+  UserCheck, Eye, EyeOff, Globe, Mail, ArrowLeft, RefreshCw, Send, Check
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -21,19 +21,26 @@ export default function AdminLoginScreen({
   // Active Role Option: 'admin' | 'staff'
   const [activeRole, setActiveRole] = useState(initialTab || 'admin');
 
+  // Check if admin setup is required (first-time initialization)
+  const [isSetupRequired, setIsSetupRequired] = useState(false);
+
   // Admin Auth Mode: 'login' | 'forgot'
   const [adminAuthMode, setAdminAuthMode] = useState('login');
+
+  // Forgot Password 3-Step State: 1 (Email) -> 2 (OTP Code) -> 3 (New Password)
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [receivedOtp, setReceivedOtp] = useState('');
+  const [inputOtp, setInputOtp] = useState('');
+  const [forgotNewPass, setForgotNewPass] = useState('');
+  const [forgotConfirmPass, setForgotConfirmPass] = useState('');
+  const [showForgotPass, setShowForgotPass] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Admin Login Credentials
   const [adminIdentifier, setAdminIdentifier] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPass, setShowAdminPass] = useState(false);
-
-  // Admin Forgot Password Fields
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotNewPass, setForgotNewPass] = useState('');
-  const [forgotConfirmPass, setForgotConfirmPass] = useState('');
-  const [showForgotPass, setShowForgotPass] = useState(false);
 
   // Staff Credentials
   const [staffUsername, setStaffUsername] = useState('');
@@ -45,14 +52,42 @@ export default function AdminLoginScreen({
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  // Reset errors and alerts on mode change
+  // Fetch Admin Status on Mount
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.success && data.isSetupRequired) {
+          setIsSetupRequired(true);
+        }
+      } catch (e) {
+        console.warn('Could not check auth status:', e);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  // Cooldown countdown for OTP resend
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown(prev => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // Mode change helper
   const switchAdminMode = (newMode) => {
     setAdminAuthMode(newMode);
+    setForgotStep(1);
+    setInputOtp('');
+    setReceivedOtp('');
     setError(null);
     setSuccessMsg(null);
   };
 
-  // 1. Handle Admin Login Submission (Email or ID)
+  // 1. Handle Admin Login / Setup Submission
   const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -72,7 +107,11 @@ export default function AdminLoginScreen({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || (isHindi ? 'अमान्य एडमिन ईमेल/आईडी या पासवर्ड।' : 'Invalid Admin Email/ID or Password.'));
+        throw new Error(data.message || (isHindi ? 'अमान्य एडमिन ईमेल या पासवर्ड।' : 'Invalid Admin Email or Password.'));
+      }
+
+      if (data.isFirstTimeSetup) {
+        setIsSetupRequired(false);
       }
 
       if (onLoginSuccess) {
@@ -85,8 +124,89 @@ export default function AdminLoginScreen({
     }
   };
 
-  // 2. Handle Admin Forgot Password
-  const handleForgotPassword = async (e) => {
+  // 2A. Forgot Password - Step 1: Send OTP Code
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    if (!forgotEmail.trim()) {
+      setError(isHindi ? 'कृपया अपना पंजीकृत ईमेल दर्ज करें।' : 'Please enter your registered admin email.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || (isHindi ? 'वेरिफिकेशन कोड भेजने में त्रुटि हुई।' : 'Failed to send verification code.'));
+      }
+
+      setReceivedOtp(data.code || '');
+      setForgotStep(2);
+      setResendCooldown(60);
+      setSuccessMsg(
+        isHindi 
+          ? `6-अंकों का वेरिफिकेशन कोड ${forgotEmail} पर भेज दिया गया है!` 
+          : `6-digit verification code sent to ${forgotEmail}!`
+      );
+    } catch (err) {
+      setError(err.message || 'Error sending code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2B. Forgot Password - Step 2: Verify OTP Code
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    if (!inputOtp.trim() || inputOtp.trim().length !== 6) {
+      setError(isHindi ? 'कृपया 6 अंकों का सही कोड दर्ज करें।' : 'Please enter a valid 6-digit verification code.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: forgotEmail.trim().toLowerCase(), 
+          code: inputOtp.trim() 
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || (isHindi ? 'गलत वेरिफिकेशन कोड। कृपया दोबारा जाँचें।' : 'Invalid verification code. Please check and try again.'));
+      }
+
+      setForgotStep(3);
+      setSuccessMsg(
+        isHindi 
+          ? 'कोड सफलतापूर्वक सत्यापित हो गया! अब अपना नया पासवर्ड बनाएं।' 
+          : 'Code verified successfully! Now create your new password.'
+      );
+    } catch (err) {
+      setError(err.message || 'Error verifying code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2C. Forgot Password - Step 3: Save New Password
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -105,11 +225,12 @@ export default function AdminLoginScreen({
     }
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await fetch('/api/auth/forgot-password/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: forgotEmail.trim().toLowerCase(),
+          code: inputOtp.trim(),
           newPassword: forgotNewPass.trim(),
           confirmPassword: forgotConfirmPass.trim()
         })
@@ -120,20 +241,18 @@ export default function AdminLoginScreen({
         throw new Error(data.message || (isHindi ? 'पासवर्ड बदलने में त्रुटि हुई।' : 'Failed to reset password.'));
       }
 
-      // Pre-fill login credentials
+      // Pre-fill credentials in login view
       setAdminIdentifier(forgotEmail.trim().toLowerCase());
       setAdminPassword(forgotNewPass.trim());
       setSuccessMsg(
         isHindi 
-          ? 'पासवर्ड सफलतापूर्वक बदल दिया गया है! अब आप लॉगिन कर सकते हैं।' 
-          : 'Password updated successfully! You can now log in with your new password.'
+          ? 'पासवर्ड सफलतापूर्वक बदल गया! अब नीचे लॉगिन बटन दबाएं।' 
+          : 'Password updated successfully! Click login below to access portal.'
       );
       setAdminAuthMode('login');
-
-      // Clear forgot form
-      setForgotEmail('');
-      setForgotNewPass('');
-      setForgotConfirmPass('');
+      setForgotStep(1);
+      setInputOtp('');
+      setReceivedOtp('');
     } catch (err) {
       setError(err.message || 'Error updating password.');
     } finally {
@@ -311,12 +430,12 @@ export default function AdminLoginScreen({
         )}
 
         {/* ========================================================================= */}
-        {/* ROLE 1: ADMIN (LOGIN & FORGOT PASSWORD) */}
+        {/* ROLE 1: ADMIN (LOGIN & 3-STEP FORGOT PASSWORD WITH CODE) */}
         {/* ========================================================================= */}
         {activeRole === 'admin' && (
           <div className="px-6 sm:px-8 pb-8">
             
-            {/* Admin Sub-navigation Header when in Forgot mode */}
+            {/* Header when in Forgot Password mode */}
             {adminAuthMode === 'forgot' && (
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
                 <button
@@ -325,38 +444,56 @@ export default function AdminLoginScreen({
                   className="text-xs font-bold text-slate-600 hover:text-amber-600 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{isHindi ? 'वापस लॉगिन पर जाएं' : 'Back to Admin Login'}</span>
+                  <span>{isHindi ? 'वापस लॉगिन पर जाएं' : 'Back to Login'}</span>
                 </button>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-400/30">
-                  {isHindi ? 'पासवर्ड रीसेट' : 'Forgot Password'}
+                  {isHindi ? `स्टेप ${forgotStep}/3: सत्यापन` : `Step ${forgotStep}/3: Verification`}
                 </span>
               </div>
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* SUB-VIEW A: ADMIN LOGIN */}
+            {/* VIEW A: ADMIN LOGIN / FIRST-TIME SETUP */}
             {/* ------------------------------------------------------------- */}
             {adminAuthMode === 'login' && (
               <form onSubmit={handleAdminSubmit} autoComplete="off" className="space-y-4 text-xs text-slate-900">
-                <div className="bg-amber-50/70 border border-amber-200/80 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-[11px]">
-                  <Shield className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Administrator Access:</strong> Full system access, college records, fee audit trail, and university settlements.
-                  </span>
-                </div>
+                
+                {/* Dynamic Banner: First Time Setup vs Regular Administrator Access */}
+                {isSetupRequired ? (
+                  <div className="bg-amber-500/15 border-2 border-amber-500 p-3.5 rounded-2xl flex items-start gap-2.5 text-amber-950 text-xs">
+                    <Key className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block text-sm font-black text-amber-900">
+                        {isHindi ? 'पहला एडमिन सेटअप (First-Time Setup)' : 'First-Time Admin Setup'}
+                      </strong>
+                      <p className="text-[11px] text-amber-800 mt-0.5">
+                        {isHindi 
+                          ? 'कृपया अपना आधिकारिक ईमेल और पासवर्ड दर्ज करें। यह पहली बार लॉगिन करने पर हमेशा के लिए मुख्य एडमिन अकाउंट के रूप में सेव हो जाएगा।'
+                          : 'Enter your official email and password once. It will be permanently saved as the Master Admin credentials.'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50/70 border border-amber-200/80 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-[11px]">
+                    <Shield className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      <strong>Administrator Access:</strong> Full system access, college records, fee audit trail, and university settlements.
+                    </span>
+                  </div>
+                )}
 
-                {/* Admin Email or User ID */}
+                {/* Admin Email Address */}
                 <div className="space-y-1">
                   <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'एडमिन ईमेल या यूजर आईडी *' : 'Admin Email or User ID *'}
+                    {isHindi ? 'एडमिन ईमेल पता *' : 'Admin Email Address *'}
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                     <input
-                      type="text"
+                      type="email"
                       value={adminIdentifier}
                       onChange={(e) => setAdminIdentifier(e.target.value)}
-                      placeholder={isHindi ? "ईमेल दर्ज करें (e.g. admin@pkc.edu या Admin ID)" : "Enter Admin Email or User ID (e.g. admin@pkc.edu)"}
+                      placeholder="e.g. director@pkc.edu or yourname@gmail.com"
                       autoComplete="username"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text"
                       required
@@ -371,13 +508,15 @@ export default function AdminLoginScreen({
                     <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                       {isHindi ? 'एडमिन पासवर्ड *' : 'Admin Password *'}
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => switchAdminMode('forgot')}
-                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors cursor-pointer"
-                    >
-                      {isHindi ? 'पासवर्ड भूल गए? (Forgot Password)' : 'Forgot Password?'}
-                    </button>
+                    {!isSetupRequired && (
+                      <button
+                        type="button"
+                        onClick={() => switchAdminMode('forgot')}
+                        className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors cursor-pointer"
+                      >
+                        {isHindi ? 'पासवर्ड भूल गए? (Forgot Password)' : 'Forgot Password?'}
+                      </button>
+                    )}
                   </div>
                   <div className="relative">
                     <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -408,11 +547,15 @@ export default function AdminLoginScreen({
                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-400/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-2"
                 >
                   {loading ? (
-                    <span>{isHindi ? 'प्रमाणित किया जा रहा है...' : 'Verifying Admin Credentials...'}</span>
+                    <span>{isHindi ? 'सत्यापित किया जा रहा है...' : 'Verifying Admin Credentials...'}</span>
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />
-                      <span>{isHindi ? 'एडमिन पोर्टल में प्रवेश करें (Login)' : 'Login to Administrator Portal (एडमिन पोर्टल में प्रवेश करें)'}</span>
+                      <span>
+                        {isSetupRequired 
+                          ? (isHindi ? 'पासवर्ड सेट करें और पोर्टल में प्रवेश करें' : 'Set Credentials & Enter Admin Portal')
+                          : (isHindi ? 'एडमिन पोर्टल में प्रवेश करें (Login)' : 'Login to Administrator Portal (एडमिन पोर्टल में प्रवेश करें)')}
+                      </span>
                     </>
                   )}
                 </button>
@@ -420,111 +563,214 @@ export default function AdminLoginScreen({
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* SUB-VIEW B: ADMIN FORGOT PASSWORD */}
+            {/* VIEW B: REAL-WORLD FORGOT PASSWORD WITH 6-DIGIT OTP */}
             {/* ------------------------------------------------------------- */}
             {adminAuthMode === 'forgot' && (
-              <form onSubmit={handleForgotPassword} autoComplete="off" className="space-y-3.5 text-xs text-slate-900">
-                <div className="bg-amber-50/80 border border-amber-300/80 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-[11px]">
-                  <Key className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    {isHindi 
-                      ? 'अपना पंजीकृत ईमेल और नया पासवर्ड दर्ज करें। पासवर्ड तुरंत अपडेट हो जाएगा।' 
-                      : 'Enter your registered email and choose a new password to reset your credentials.'}
-                  </span>
-                </div>
+              <div className="space-y-4 text-xs text-slate-900">
+                
+                {/* STEP 1: ENTER REGISTERED EMAIL */}
+                {forgotStep === 1 && (
+                  <form onSubmit={handleSendOtp} className="space-y-4">
+                    <div className="bg-amber-50/80 border border-amber-300/80 p-3.5 rounded-2xl flex items-center gap-2.5 text-amber-950 text-xs">
+                      <Mail className="w-5 h-5 text-amber-600 shrink-0" />
+                      <span>
+                        {isHindi 
+                          ? 'अपना पंजीकृत एडमिन ईमेल दर्ज करें। आपके ईमेल पर 6 अंकों का गुप्त वेरिफिकेशन कोड भेजा जाएगा।' 
+                          : 'Enter your registered admin email. A 6-digit verification code will be sent to your email.'}
+                      </span>
+                    </div>
 
-                {/* Registered Email */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'पंजीकृत एडमिन ईमेल *' : 'Registered Admin Email *'}
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type="email"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="e.g. director@pkc.edu or admin@gmail.com"
-                      autoComplete="email"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                </div>
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                        {isHindi ? 'पंजीकृत एडमिन ईमेल *' : 'Registered Admin Email *'}
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                        <input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="e.g. director@pkc.edu or admin@gmail.com"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text"
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
 
-                {/* New Password */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'नया पासवर्ड दर्ज करें *' : 'New Password *'}
-                  </label>
-                  <div className="relative">
-                    <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type={showForgotPass ? 'text' : 'password'}
-                      value={forgotNewPass}
-                      onChange={(e) => setForgotNewPass(e.target.value)}
-                      placeholder={isHindi ? "नया पासवर्ड (कम से कम 4 अक्षर)" : "Enter new password (min. 4 characters)"}
-                      autoComplete="new-password"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
-                      required
-                    />
                     <button
-                      type="button"
-                      onClick={() => setShowForgotPass(!showForgotPass)}
-                      className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
-                      tabIndex={-1}
+                      type="submit"
+                      disabled={loading}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-400/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm"
                     >
-                      {showForgotPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {loading ? (
+                        <span>{isHindi ? 'कोड भेजा जा रहा है...' : 'Sending Code...'}</span>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 text-slate-950" />
+                          <span>{isHindi ? 'वेरिफिकेशन कोड भेजें (Send Verification Code)' : 'Send 6-Digit Verification Code'}</span>
+                        </>
+                      )}
                     </button>
-                  </div>
-                </div>
+                  </form>
+                )}
 
-                {/* Confirm New Password */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'नए पासवर्ड की पुष्टि करें *' : 'Confirm New Password *'}
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type={showForgotPass ? 'text' : 'password'}
-                      value={forgotConfirmPass}
-                      onChange={(e) => setForgotConfirmPass(e.target.value)}
-                      placeholder={isHindi ? "वही नया पासवर्ड दोबारा दर्ज करें" : "Re-enter new password"}
-                      autoComplete="new-password"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
-                      required
-                    />
-                  </div>
-                </div>
+                {/* STEP 2: ENTER & VERIFY 6-DIGIT CODE */}
+                {forgotStep === 2 && (
+                  <form onSubmit={handleVerifyOtp} className="space-y-4">
+                    {/* Realistic Code Notification Banner */}
+                    <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-2xl space-y-1.5 text-indigo-950">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs flex items-center gap-1.5 text-indigo-900">
+                          <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                          {isHindi ? 'वेरिफिकेशन कोड भेजा गया' : 'Verification Code Sent'}
+                        </span>
+                        <span className="text-[10px] font-mono bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-md font-bold">
+                          Valid for 10m
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-indigo-700">
+                        {isHindi ? `कोड भेजा गया ईमेल:` : `Sent to:`} <strong>{forgotEmail}</strong>
+                      </p>
+                      {receivedOtp && (
+                        <div className="mt-2 p-2 bg-white rounded-xl border border-indigo-200 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-600 font-bold">
+                            {isHindi ? 'सत्यापन कोड (Direct Code):' : 'Your Security Code:'}
+                          </span>
+                          <span className="font-mono text-base font-black tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-300">
+                            {receivedOtp}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                {/* Forgot Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-2"
-                >
-                  {loading ? (
-                    <span>{isHindi ? 'पासवर्ड बदला जा रहा है...' : 'Updating Password...'}</span>
-                  ) : (
-                    <>
-                      <Key className="w-4 h-4 text-slate-950" />
-                      <span>{isHindi ? 'पासवर्ड बदलें और सेव करें (Change & Save)' : 'Change Password & Save'}</span>
-                    </>
-                  )}
-                </button>
+                    <div className="space-y-1 text-center">
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                        {isHindi ? '6 अंकों का वेरिफिकेशन कोड दर्ज करें *' : 'Enter 6-Digit Verification Code *'}
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={inputOtp}
+                        onChange={(e) => setInputOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="••••••"
+                        className="w-48 mx-auto px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-2xl font-black text-center tracking-widest text-slate-900 focus:bg-white focus:ring-4 focus:ring-amber-400/20 focus:border-amber-500 focus:outline-none transition-all"
+                        required
+                        autoFocus
+                      />
+                    </div>
 
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => switchAdminMode('login')}
-                    className="text-[11px] font-bold text-slate-600 hover:text-amber-700 transition-colors cursor-pointer"
-                  >
-                    {isHindi ? 'पासवर्ड याद आ गया? वापस लॉगिन करें' : 'Remembered your password? Back to Login'}
-                  </button>
-                </div>
-              </form>
+                    <div className="flex items-center justify-between text-[11px] px-1 text-slate-500">
+                      <span>{isHindi ? 'कोड नहीं मिला?' : "Didn't receive the code?"}</span>
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={resendCooldown > 0 || loading}
+                        className="font-bold text-amber-700 hover:text-amber-800 disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>
+                          {resendCooldown > 0 
+                            ? (isHindi ? `पुनः भेजें (${resendCooldown}s)` : `Resend in ${resendCooldown}s`)
+                            : (isHindi ? 'कोड पुनः भेजें' : 'Resend Code')}
+                        </span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading || inputOtp.length !== 6}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-400/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm"
+                    >
+                      {loading ? (
+                        <span>{isHindi ? 'सत्यापित किया जा रहा है...' : 'Verifying Code...'}</span>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 text-slate-950" />
+                          <span>{isHindi ? 'कोड सत्यापित करें (Verify Code)' : 'Verify Code & Proceed'}</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+                {/* STEP 3: SET NEW PASSWORD (Unlocks ONLY after Code Match!) */}
+                {forgotStep === 3 && (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xl flex items-center gap-2 text-emerald-950 text-[11px]">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        {isHindi 
+                          ? 'सत्यापन सफल! कृपया अपना नया सुरक्षित पासवर्ड बनाएं।' 
+                          : 'Code Verified! Now choose a strong new password.'}
+                      </span>
+                    </div>
+
+                    {/* New Password */}
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                        {isHindi ? 'नया पासवर्ड दर्ज करें *' : 'New Password *'}
+                      </label>
+                      <div className="relative">
+                        <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                        <input
+                          type={showForgotPass ? 'text' : 'password'}
+                          value={forgotNewPass}
+                          onChange={(e) => setForgotNewPass(e.target.value)}
+                          placeholder={isHindi ? "नया पासवर्ड (कम से कम 4 अक्षर)" : "Enter new password (min. 4 characters)"}
+                          autoComplete="new-password"
+                          className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
+                          required
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPass(!showForgotPass)}
+                          className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                          tabIndex={-1}
+                        >
+                          {showForgotPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm New Password */}
+                    <div className="space-y-1">
+                      <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                        {isHindi ? 'नए पासवर्ड की पुष्टि करें *' : 'Confirm New Password *'}
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                        <input
+                          type={showForgotPass ? 'text' : 'password'}
+                          value={forgotConfirmPass}
+                          onChange={(e) => setForgotConfirmPass(e.target.value)}
+                          placeholder={isHindi ? "वही नया पासवर्ड दोबारा दर्ज करें" : "Re-enter new password"}
+                          autoComplete="new-password"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 hover:from-emerald-700 hover:to-teal-900 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-2"
+                    >
+                      {loading ? (
+                        <span>{isHindi ? 'पासवर्ड सेव किया जा रहा है...' : 'Saving Password...'}</span>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 text-white" />
+                          <span>{isHindi ? 'नया पासवर्ड सेव करें (Save New Password)' : 'Save New Password & Login'}</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+              </div>
             )}
 
           </div>

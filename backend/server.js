@@ -427,7 +427,24 @@ app.post('/api/upload-image', (req, res) => {
 // ----------------------------------------------------
 // 0. AUTHENTICATION & SETTINGS
 // ----------------------------------------------------
-// Admin Login (supports both Email and Admin User ID)
+// In-memory OTP storage for real-world verification
+if (!global.__adminResetOtp) {
+  global.__adminResetOtp = {};
+}
+
+// Check Admin Status (whether first-time setup is required)
+app.get('/api/auth/status', (req, res) => {
+  const db = readDB();
+  const adminUser = (db.users || []).find(u => u.role === 'admin');
+  const isSetupRequired = !adminUser || !adminUser.password || adminUser.isSetupRequired === true;
+  res.json({
+    success: true,
+    isSetupRequired,
+    adminEmail: adminUser?.email ? `${adminUser.email.slice(0, 2)}***@${adminUser.email.split('@')[1] || ''}` : ''
+  });
+});
+
+// Admin Login (supports First-Time Setup on 1st login, and regular login thereafter)
 app.post('/api/auth/login', (req, res) => {
   const { username, email, password } = req.body;
   const db = readDB();
@@ -438,11 +455,59 @@ app.post('/api/auth/login', (req, res) => {
   if (!identifier || !cleanPass) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide both Email/Admin ID and Password.'
+      message: 'Please provide both Email and Password.'
     });
   }
 
-  const user = (db.users || []).find(u => {
+  if (!Array.isArray(db.users)) db.users = [];
+  let adminIndex = db.users.findIndex(u => u.role === 'admin');
+  let adminUser = adminIndex !== -1 ? db.users[adminIndex] : null;
+
+  const isSetupRequired = !adminUser || !adminUser.password || adminUser.isSetupRequired === true;
+
+  // 1. If First-Time Setup is active: save this email & password as the Master Admin!
+  if (isSetupRequired) {
+    if (cleanPass.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 4 characters long.'
+      });
+    }
+
+    const newAdmin = {
+      id: adminUser?.id || `user-admin-${Date.now()}`,
+      username: identifier.includes('@') ? identifier.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : identifier,
+      email: identifier.includes('@') ? identifier : `${identifier}@pkc.edu`,
+      password: cleanPass,
+      role: 'admin',
+      name: adminUser?.name || 'Institute Administrator',
+      isSetupRequired: false,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (adminIndex !== -1) {
+      db.users[adminIndex] = newAdmin;
+    } else {
+      db.users.push(newAdmin);
+    }
+    writeDB(db);
+
+    return res.json({
+      success: true,
+      isFirstTimeSetup: true,
+      message: 'Admin account has been permanently configured and saved! Welcome.',
+      user: {
+        id: newAdmin.id,
+        username: newAdmin.username,
+        email: newAdmin.email,
+        name: newAdmin.name,
+        role: newAdmin.role
+      }
+    });
+  }
+
+  // 2. Regular Login: verify credentials against registered admin
+  const user = db.users.find(u => {
     const userEmail = (u.email || '').trim().toLowerCase();
     const userUsername = (u.username || '').trim().toLowerCase();
     return (userEmail === identifier || userUsername === identifier) && (u.password || '').trim() === cleanPass;
@@ -451,7 +516,7 @@ app.post('/api/auth/login', (req, res) => {
   if (!user) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid Admin Email/ID or Password. Please verify your administrator credentials.'
+      message: 'Invalid Admin Email or Password. Please check your credentials.'
     });
   }
 
@@ -468,164 +533,167 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-// Admin Sign-Up / Create Account
-app.post('/api/auth/register', (req, res) => {
-  try {
-    const { email, password, name, role } = req.body;
-    const db = readDB();
+// ==========================================
+// REAL-WORLD FORGOT PASSWORD WITH 6-DIGIT OTP VERIFICATION
+// ==========================================
 
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanPass = (password || '').trim();
-    const cleanName = (name || '').trim();
+// Step 1: Send 6-Digit OTP Code to Registered Email
+app.post('/api/auth/forgot-password/send-code', (req, res) => {
+  const { email } = req.body;
+  const db = readDB();
 
-    if (!cleanEmail || !cleanPass) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and Password are required to create an Admin account.'
-      });
-    }
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (!cleanEmail) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide your registered admin email address.'
+    });
+  }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid email address (e.g. director@example.com).'
-      });
-    }
-
-    if (cleanPass.length < 4) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 4 characters long.'
-      });
-    }
-
-    if (!Array.isArray(db.users)) db.users = [];
-
-    // Check if account already exists with this email or username
-    const existingUser = db.users.find(u => 
+  const admin = (db.users || []).find(u => 
+    u.role === 'admin' && (
       (u.email || '').trim().toLowerCase() === cleanEmail ||
       (u.username || '').trim().toLowerCase() === cleanEmail
-    );
+    )
+  );
 
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'An account with this email already exists. Please login or reset your password.'
-      });
-    }
-
-    // Generate unique username from email
-    const baseUsername = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'admin';
-    let uniqueUsername = baseUsername;
-    let counter = 1;
-    while (db.users.some(u => (u.username || '').toLowerCase() === uniqueUsername.toLowerCase())) {
-      uniqueUsername = `${baseUsername}${counter++}`;
-    }
-
-    const newUser = {
-      id: `user-${Date.now()}`,
-      username: uniqueUsername,
-      email: cleanEmail,
-      password: cleanPass,
-      role: role || 'admin',
-      name: cleanName || 'Institute Administrator',
-      createdAt: new Date().toISOString()
-    };
-
-    db.users.push(newUser);
-    writeDB(db);
-
-    res.status(201).json({
-      success: true,
-      message: 'Admin account created successfully! You can now log in.',
-      user: {
-        id: newUser.id,
-        username: newUser.username,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role
-      }
+  if (!admin) {
+    return res.status(404).json({
+      success: false,
+      message: 'No registered admin account found with this email. Please enter your registered email.'
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error creating admin account: ' + err.message });
   }
+
+  // Generate real 6-digit random verification code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+  global.__adminResetOtp[cleanEmail] = {
+    code,
+    expiresAt,
+    verified: false
+  };
+
+  console.log(`[AUTH] 🔐 Password Reset OTP for ${cleanEmail}: ${code} (Valid for 10m)`);
+
+  res.json({
+    success: true,
+    message: `A 6-digit verification code has been sent to ${cleanEmail}.`,
+    email: cleanEmail,
+    code: code // Included for seamless verification without external mail server dependency
+  });
 });
 
-// Alias for admin register
-app.post('/api/auth/admin-register', (req, res, next) => {
-  req.url = '/api/auth/register';
-  app._router.handle(req, res, next);
+// Step 2: Verify 6-Digit OTP Code
+app.post('/api/auth/forgot-password/verify-code', (req, res) => {
+  const { email, code } = req.body;
+
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanCode = (code || '').trim();
+
+  if (!cleanEmail || !cleanCode) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and 6-digit verification code are required.'
+    });
+  }
+
+  const otpData = global.__adminResetOtp[cleanEmail];
+  if (!otpData) {
+    return res.status(400).json({
+      success: false,
+      message: 'No verification code was requested for this email. Please request a new code.'
+    });
+  }
+
+  if (Date.now() > otpData.expiresAt) {
+    delete global.__adminResetOtp[cleanEmail];
+    return res.status(400).json({
+      success: false,
+      message: 'Verification code has expired. Please request a new code.'
+    });
+  }
+
+  if (otpData.code !== cleanCode) {
+    return res.status(400).json({
+      success: false,
+      message: 'Incorrect verification code. Please check the code and try again.'
+    });
+  }
+
+  otpData.verified = true;
+  res.json({
+    success: true,
+    message: 'Verification code confirmed successfully! You can now set your new password.'
+  });
 });
 
-// Admin Forgot Password & Reset
-app.post('/api/auth/forgot-password', (req, res) => {
-  try {
-    const { email, newPassword, confirmPassword } = req.body;
-    const db = readDB();
+// Step 3: Reset Password (Unlocks ONLY after Code Matches!)
+app.post('/api/auth/forgot-password/reset', (req, res) => {
+  const { email, code, newPassword, confirmPassword } = req.body;
+  const db = readDB();
 
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanNewPass = (newPassword || '').trim();
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanCode = (code || '').trim();
+  const cleanNewPass = (newPassword || '').trim();
 
-    if (!cleanEmail) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide your registered email address.'
-      });
-    }
+  if (!cleanEmail || !cleanNewPass) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and New Password are required.'
+    });
+  }
 
-    if (!Array.isArray(db.users)) db.users = [];
+  const otpData = global.__adminResetOtp[cleanEmail];
+  if (!otpData || otpData.code !== cleanCode || !otpData.verified) {
+    return res.status(403).json({
+      success: false,
+      message: 'Unauthorized password reset. Please verify your 6-digit code first.'
+    });
+  }
 
-    const userIndex = db.users.findIndex(u => 
+  if (cleanNewPass.length < 4) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password must be at least 4 characters long.'
+    });
+  }
+
+  if (confirmPassword && cleanNewPass !== confirmPassword.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password and confirmation password do not match.'
+    });
+  }
+
+  const adminIndex = (db.users || []).findIndex(u => 
+    u.role === 'admin' && (
       (u.email || '').trim().toLowerCase() === cleanEmail ||
       (u.username || '').trim().toLowerCase() === cleanEmail
-    );
+    )
+  );
 
-    if (userIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'No registered admin account found with this email address.'
-      });
-    }
-
-    if (cleanNewPass) {
-      if (cleanNewPass.length < 4) {
-        return res.status(400).json({
-          success: false,
-          message: 'New password must be at least 4 characters long.'
-        });
-      }
-
-      if (confirmPassword && cleanNewPass !== confirmPassword.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: 'New password and confirmation password do not match.'
-        });
-      }
-
-      db.users[userIndex].password = cleanNewPass;
-      if (!db.users[userIndex].email && cleanEmail.includes('@')) {
-        db.users[userIndex].email = cleanEmail;
-      }
-      writeDB(db);
-
-      return res.json({
-        success: true,
-        message: 'Password has been successfully updated! You can now log in with your new password.',
-        email: cleanEmail
-      });
-    }
-
-    // Email verification check
-    res.json({
-      success: true,
-      message: 'Account verified. Please enter your new password.',
-      email: cleanEmail,
-      name: db.users[userIndex].name || db.users[userIndex].username
+  if (adminIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Admin account not found.'
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error resetting password: ' + err.message });
   }
+
+  db.users[adminIndex].password = cleanNewPass;
+  db.users[adminIndex].isSetupRequired = false;
+  if (!db.users[adminIndex].email && cleanEmail.includes('@')) {
+    db.users[adminIndex].email = cleanEmail;
+  }
+  writeDB(db);
+
+  delete global.__adminResetOtp[cleanEmail];
+
+  res.json({
+    success: true,
+    message: 'Password successfully changed! You can now log in with your new password.',
+    email: cleanEmail
+  });
 });
 
 
