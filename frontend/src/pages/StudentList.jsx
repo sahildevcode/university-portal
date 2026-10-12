@@ -29,8 +29,10 @@ export default function StudentList({
   filterEndDate = '',
   onFeeReceived,
   isRecordsDesk = false,
-  canEdit = true
+  canEdit: propCanEdit = true,
+  staffUser
 }) {
+  const canEdit = !staffUser && Boolean(propCanEdit);
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
@@ -199,11 +201,12 @@ export default function StudentList({
     const totalY3 = Math.max(0, calcYrTotal(feeY3, schY3, false) - discY3);
     const totalY4 = Math.max(0, calcYrTotal(feeY4, schY4, false) - discY4);
 
+    const fallbackFee = Number(item.baseTotalFee || item.totalFee || item.studentFee || item.courseFee || 0);
     let baseTotalFee = 0;
     if (cat === 'full_course_fee') {
-      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : Number(item.totalFee || item.studentFee || 0)) + regFee;
+      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : fallbackFee) + regFee;
     } else {
-      baseTotalFee = totalAcadFee + totalSch + regFee;
+      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : (totalSch > 0 ? 0 : fallbackFee)) + totalSch + regFee;
     }
 
     // Direct deduction of discount from total fees set:
@@ -4857,7 +4860,7 @@ export default function StudentList({
                                         ) : (
                                           <span>₹0/-</span>
                                         )}
-                                        {yr.rec > 0 && (
+                                        {canEdit && yr.rec > 0 && (
                                           <div className="flex items-center gap-1 ml-1.5">
                                             <button
                                               type="button"

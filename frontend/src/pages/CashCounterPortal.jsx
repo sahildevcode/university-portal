@@ -306,7 +306,7 @@ export default function CashCounterPortal({
             <span className="font-bold">🔒 Cashier Counter:</span>
             <span>Fee collection entries are locked upon receipt generation. Corrections or fee reductions require University Admin authority.</span>
           </div>
-          <AccountsDashboard isAdmin={false} staffUser={staffUser} lang={lang} toggleLang={toggleLang} />
+          <AccountsDashboard isAdmin={false} staffUser={staffUser} canEdit={false} lang={lang} toggleLang={toggleLang} />
         </div>
       )}
 

@@ -4630,13 +4630,14 @@ app.put('/api/students/:rollNo/set-fee', (req, res) => {
             : (totalAcad > 0 ? 'full_course_fee' : 'full_scholarship'));
 
   const regFee = Number(student.registrationFee || student.regFee || 0);
-  if (cat === 'full_course_fee') {
-    student.totalFee = totalAcad + regFee;
-  } else {
-    student.totalFee = totalAcad + sch + regFee;
-  }
+  const baseTotalFee = (cat === 'full_course_fee') ? (totalAcad + regFee) : (totalAcad + sch + regFee);
+  student.baseTotalFee = baseTotalFee;
+  const currentDiscount = Number(student.discountAmount || student.discount || 0);
+  student.totalFee = Math.max(0, baseTotalFee - currentDiscount);
   student.netTotalFee = student.totalFee;
   student.balanceDue = Math.max(0, student.totalFee - (Number(student.totalPaid) || 0));
+  student.remainingFee = student.balanceDue;
+  student.totalRem = student.balanceDue;
   student.updatedAt = new Date().toISOString();
 
   writeDB(db);
@@ -4800,9 +4801,16 @@ app.put('/api/students/:rollNo/set-discount', async (req, res) => {
   student.discount = totalDiscount;
 
   // Deduct discount from total fees set:
-  const totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || 0));
+  let totalAcad = 0;
+  if (Array.isArray(student.academicFeeHistory) && student.academicFeeHistory.length > 0) {
+    totalAcad = student.academicFeeHistory.reduce((sum, e) => sum + Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0)), 0);
+  } else {
+    totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || student.totalFee || 0));
+  }
   const regFee = Number(student.registrationFee || student.regFee || 0);
-  student.totalFee = Math.max(0, (totalAcad > 0 ? totalAcad : Number(student.totalFee || 0)) - totalDiscount + regFee);
+  const baseTotalFee = (totalAcad > 0 ? totalAcad : Number(student.baseTotalFee || student.totalFee || 0)) + regFee;
+  student.baseTotalFee = baseTotalFee;
+  student.totalFee = Math.max(0, baseTotalFee - totalDiscount);
 
   const totalPaid = Number(student.totalPaid || 0);
   student.remainingFee = Math.max(0, student.totalFee - totalPaid);
@@ -4818,6 +4826,7 @@ app.put('/api/students/:rollNo/set-discount', async (req, res) => {
           discountHistory: student.discountHistory,
           discountAmount: student.discountAmount,
           discount: student.discount,
+          baseTotalFee: student.baseTotalFee,
           totalFee: student.totalFee,
           remainingFee: student.remainingFee,
           totalRem: student.totalRem
@@ -4862,9 +4871,16 @@ app.delete(['/api/students/:rollNo/set-discount', '/api/students/:rollNo/set-dis
   student.discountAmount = totalDiscount;
   student.discount = totalDiscount;
 
-  const totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || 0));
+  let totalAcad = 0;
+  if (Array.isArray(student.academicFeeHistory) && student.academicFeeHistory.length > 0) {
+    totalAcad = student.academicFeeHistory.reduce((sum, e) => sum + Number(e.amountPaid !== undefined ? e.amountPaid : (e.amount || 0)), 0);
+  } else {
+    totalAcad = Number(student.academicFee !== undefined && student.academicFee !== null ? student.academicFee : (student.studentFee || student.courseFee || student.totalFee || 0));
+  }
   const regFee = Number(student.registrationFee || student.regFee || 0);
-  student.totalFee = Math.max(0, (totalAcad > 0 ? totalAcad : Number(student.totalFee || 0)) - totalDiscount + regFee);
+  const baseTotalFee = (totalAcad > 0 ? totalAcad : Number(student.baseTotalFee || student.totalFee || 0)) + regFee;
+  student.baseTotalFee = baseTotalFee;
+  student.totalFee = Math.max(0, baseTotalFee - totalDiscount);
 
   const totalPaid = Number(student.totalPaid || 0);
   student.remainingFee = Math.max(0, student.totalFee - totalPaid);
@@ -4880,6 +4896,7 @@ app.delete(['/api/students/:rollNo/set-discount', '/api/students/:rollNo/set-dis
           discountHistory: student.discountHistory,
           discountAmount: student.discountAmount,
           discount: student.discount,
+          baseTotalFee: student.baseTotalFee,
           totalFee: student.totalFee,
           remainingFee: student.remainingFee,
           totalRem: student.totalRem
@@ -5564,6 +5581,12 @@ function syncStudentPaymentState(student, db) {
   } else {
     calcTotalFee = totalAcadFee + totalSch + regFee;
   }
+  const totalDiscount = Array.isArray(student.discountHistory) 
+    ? student.discountHistory.reduce((s, d) => s + Number(d.amountPaid !== undefined ? d.amountPaid : (d.amount || 0)), 0)
+    : Number(student.discountAmount || student.discount || 0);
+  student.baseTotalFee = calcTotalFee;
+  student.discountAmount = totalDiscount;
+  calcTotalFee = Math.max(0, calcTotalFee - totalDiscount);
   student.totalFee = calcTotalFee;
   student.netTotalFee = calcTotalFee;
   student.balanceDue = Math.max(0, calcTotalFee - student.totalPaid);
