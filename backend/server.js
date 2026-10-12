@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 import pdfParse from 'pdf-parse';
 import { readDB, writeDB, initDB } from './db.js';
-import { connectMongoDB, hydrateFromMongo, isMongoConnected, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel, UniversityModel, CollegeModel, UploadMediaModel } from './db_mongo.js';
+import { connectMongoDB, hydrateFromMongo, isMongoConnected, UserModel, CourseModel, StudentModel, FeePaymentModel, ResultModel, SettingModel, InquiryModel, EventPhotoModel, JobApplicationModel, HomeCmsModel, UniversityModel, CollegeModel, UploadMediaModel } from './db_mongo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,6 +69,26 @@ try {
       writeDB(db);
       console.log('[AUTH] Admin contact details synchronized.');
     }
+  }
+
+  // Guarantee admin credentials in MongoDB Atlas cloud collection
+  if (isMongoConnected() && admin) {
+    await UserModel.findOneAndUpdate(
+      { role: 'admin' },
+      {
+        $set: {
+          username: admin.username || 'admin',
+          email: admin.email || 'pkcinstitute@gmail.com',
+          phone: admin.phone || '7000212637',
+          password: admin.password || 'pkc@123',
+          name: admin.name || 'PKC Institute Administrator',
+          role: 'admin',
+          isSetupRequired: false
+        }
+      },
+      { upsert: true }
+    );
+    console.log('[AUTH] ✅ Admin credentials permanently synced to MongoDB Atlas (pkcinstitute@gmail.com / 7000212637)');
   }
 } catch (err) {
   console.warn('[AUTH] Admin init notice:', err);
@@ -777,7 +797,7 @@ app.post('/api/auth/forgot-password/verify-code', (req, res) => {
 });
 
 // Step 3: Reset Password and optionally Update Email & Phone
-app.post('/api/auth/forgot-password/reset', (req, res) => {
+app.post('/api/auth/forgot-password/reset', async (req, res) => {
   const { sessionKey, identifier, email, phone, code, newPassword, confirmPassword, newEmail, newPhone } = req.body;
   const db = readDB();
 
@@ -867,6 +887,27 @@ app.post('/api/auth/forgot-password/reset', (req, res) => {
   // Write changes locally and sync permanently to MongoDB Atlas
   writeDB(db);
 
+  if (isMongoConnected()) {
+    try {
+      await UserModel.findOneAndUpdate(
+        { role: 'admin' },
+        {
+          $set: {
+            email: db.users[adminIndex].email,
+            phone: db.users[adminIndex].phone,
+            password: db.users[adminIndex].password,
+            name: db.users[adminIndex].name,
+            role: 'admin',
+            isSetupRequired: false
+          }
+        },
+        { upsert: true }
+      );
+    } catch (mErr) {
+      console.warn('Mongo Atlas user update notice:', mErr.message);
+    }
+  }
+
   // Clear OTP session
   if (sessionKey) delete global.__adminResetOtp[sessionKey];
   if (otpData.email) delete global.__adminResetOtp[otpData.email];
@@ -911,7 +952,7 @@ app.get('/api/auth/admin-profile', (req, res) => {
   });
 });
 
-app.put('/api/auth/admin-profile', (req, res) => {
+app.put('/api/auth/admin-profile', async (req, res) => {
   const { name, email, phone, currentPassword, newPassword } = req.body;
   const db = readDB();
 
@@ -951,6 +992,27 @@ app.put('/api/auth/admin-profile', (req, res) => {
   admin.updatedAt = new Date().toISOString();
 
   writeDB(db);
+
+  if (isMongoConnected()) {
+    try {
+      await UserModel.findOneAndUpdate(
+        { role: 'admin' },
+        {
+          $set: {
+            email: admin.email,
+            phone: admin.phone,
+            password: admin.password,
+            name: admin.name,
+            role: 'admin'
+          }
+        },
+        { upsert: true }
+      );
+    } catch (mErr) {
+      console.warn('Mongo Atlas user update notice:', mErr.message);
+    }
+  }
+
   console.log(`[AUTH] 👤 Admin profile updated directly: Email=${admin.email}, Phone=${admin.phone}`);
 
   res.json({

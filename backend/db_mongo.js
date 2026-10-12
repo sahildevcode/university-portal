@@ -646,7 +646,8 @@ async function diffAndSync(current) {
     diffCollection(EntranceExamModel, previousDbState.entrance_exams || [], current.entrance_exams || [], 'id'),
     diffCollection(FeedbackModel, previousDbState.feedbacks || [], current.feedbacks || [], 'id'),
     diffCollection(StudentUserModel, previousDbState.student_users || [], current.student_users || [], 'id'),
-    diffCollection(FeeAdjustmentModel, previousDbState.fee_adjustments || [], current.fee_adjustments || [], 'id')
+    diffCollection(FeeAdjustmentModel, previousDbState.fee_adjustments || [], current.fee_adjustments || [], 'id'),
+    diffCollection(UserModel, previousDbState.users || [], current.users || [], 'username')
   ]);
 
   if (current.settings && JSON.stringify(current.settings) !== JSON.stringify(previousDbState.settings)) {
