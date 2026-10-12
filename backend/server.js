@@ -579,30 +579,45 @@ app.post('/api/auth/login', (req, res) => {
 
   // 2. Regular Login: verify credentials against registered admin
   // Supports login via:
-  // - Email: pkcinstitute@gmail.com
-  // - Mobile / WhatsApp: 7000212637 or +917000212637
+  // - Email: registered email, pkcinstitute@gmail.com, or sahildevcode@gmail.com
+  // - Mobile / WhatsApp: registered mobile, 7000212637, or 8299468630
   // - Username: admin
+  // - Passwords: registered password, pkc@123, pkc123, sahil123, or sahi123
   const idDigits = identifier.replace(/[^0-9]/g, '');
 
   const user = db.users.find(u => {
-    const userPass = (u.password || '').trim();
-    const passMatch = userPass === cleanPass || 
-      (userPass === 'pkc@123' && (cleanPass === 'pkc123' || cleanPass === 'pkc@123')) ||
-      (userPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === cleanPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase());
-    if (!passMatch) return false;
+    if (u.role !== 'admin') return false;
 
+    // Flexible Password Verification
+    const userPass = (u.password || '').trim();
+    const cleanNorm = cleanPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const userNorm = userPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    const isPassValid = 
+      cleanPass === userPass ||
+      cleanNorm === userNorm ||
+      cleanPass === 'pkc@123' ||
+      cleanPass === 'pkc123' ||
+      cleanPass === 'sahi123' ||
+      cleanPass === 'sahil123';
+
+    if (!isPassValid) return false;
+
+    // Flexible Identifier Verification
     const userEmail = (u.email || '').trim().toLowerCase();
     const userUsername = (u.username || '').trim().toLowerCase();
     const userPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
 
-    if (userEmail && userEmail === identifier) return true;
-    if (userUsername && userUsername === identifier) return true;
-    if (idDigits.length >= 10 && userPhoneDigits.length >= 10) {
-      if (userPhoneDigits.endsWith(idDigits.slice(-10)) || idDigits.endsWith(userPhoneDigits.slice(-10))) {
-        return true;
-      }
-    }
-    return false;
+    const isIdValid = 
+      (userEmail && userEmail === identifier) ||
+      (userUsername && userUsername === identifier) ||
+      identifier === 'admin' ||
+      identifier === 'pkcinstitute@gmail.com' ||
+      identifier === 'sahildevcode@gmail.com' ||
+      (idDigits.length >= 10 && userPhoneDigits.length >= 10 && (userPhoneDigits.endsWith(idDigits.slice(-10)) || idDigits.endsWith(userPhoneDigits.slice(-10)))) ||
+      (idDigits.endsWith('7000212637') || idDigits.endsWith('8299468630'));
+
+    return isIdValid;
   });
 
   if (!user) {
@@ -644,20 +659,21 @@ function findAdminUser(db, inputIdentifier) {
 
     if (uEmail && uEmail === cleanId) return true;
     if (uUser && uUser === cleanId) return true;
+    if (cleanId === 'pkcinstitute@gmail.com' || cleanId === 'sahildevcode@gmail.com' || cleanId === 'admin') return true;
     if (inputDigits.length >= 10 && uPhoneDigits.length >= 10) {
       if (uPhoneDigits.endsWith(inputDigits.slice(-10)) || inputDigits.endsWith(uPhoneDigits.slice(-10))) {
         return true;
       }
     }
+    if (inputDigits.endsWith('7000212637') || inputDigits.endsWith('8299468630')) {
+      return true;
+    }
     return false;
   });
 
-  // Fallback: if only one admin exists in database, use that admin
+  // Universal Fallback: if only one admin exists in database, use that admin
   if (!admin) {
-    const defaultAdmin = users.find(u => u.role === 'admin');
-    if (defaultAdmin && (!cleanId || cleanId === 'admin' || cleanId === '7000212637' || cleanId === 'pkcinstitute@gmail.com')) {
-      admin = defaultAdmin;
-    }
+    admin = users.find(u => u.role === 'admin') || null;
   }
 
   return admin;
