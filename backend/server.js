@@ -32,14 +32,14 @@ if (process.env.MONGODB_URI) {
   }
 }
 
-// Ensure Master Admin credentials start with official institute defaults: pkcinstitute@gmail.com / 7000212637 / pkc123
+// Ensure Master Admin exists in database (preserves whatever admin saved last)
 try {
   const db = readDB();
   if (!Array.isArray(db.users)) db.users = [];
-  let adminIndex = db.users.findIndex(u => u.role === 'admin');
+  let admin = db.users.find(u => u.role === 'admin');
 
-  if (adminIndex === -1) {
-    const admin = {
+  if (!admin) {
+    admin = {
       id: 'user-admin',
       username: 'admin',
       email: 'pkcinstitute@gmail.com',
@@ -47,44 +47,31 @@ try {
       password: 'pkc123',
       role: 'admin',
       name: 'PKC Institute Administrator',
-      isSetupRequired: false,
-      userConfigured: false
+      isSetupRequired: false
     };
     db.users.push(admin);
     writeDB(db);
-    console.log('[AUTH] Admin created with pkcinstitute@gmail.com / 7000212637 / pkc123');
-  } else {
-    const admin = db.users[adminIndex];
-    // If not yet customized by the user from the profile modal, guarantee default is pkcinstitute@gmail.com / 7000212637 / pkc123
-    if (!admin.userConfigured) {
-      admin.email = 'pkcinstitute@gmail.com';
-      admin.phone = '7000212637';
-      admin.password = 'pkc123';
-      admin.name = 'PKC Institute Administrator';
-      writeDB(db);
-      console.log('[AUTH] Admin defaults initialized to pkcinstitute@gmail.com / 7000212637 / pkc123');
-    }
+    console.log('[AUTH] Initial Admin initialized: pkcinstitute@gmail.com / 7000212637 / pkc123');
   }
 
-  const currentAdmin = db.users.find(u => u.role === 'admin');
-  if (isMongoConnected() && currentAdmin) {
+  // Sync currently saved active admin to MongoDB Atlas
+  if (isMongoConnected() && admin) {
     await UserModel.findOneAndUpdate(
       { role: 'admin' },
       {
         $set: {
-          username: currentAdmin.username || 'admin',
-          email: currentAdmin.email || 'pkcinstitute@gmail.com',
-          phone: currentAdmin.phone || '7000212637',
-          password: currentAdmin.password || 'pkc123',
-          name: currentAdmin.name || 'PKC Institute Administrator',
+          username: admin.username || 'admin',
+          email: admin.email,
+          phone: admin.phone,
+          password: admin.password,
+          name: admin.name || 'PKC Institute Administrator',
           role: 'admin',
-          userConfigured: currentAdmin.userConfigured || false,
           isSetupRequired: false
         }
       },
       { upsert: true }
     );
-    console.log(`[AUTH] ✅ Admin credentials live in MongoDB Atlas: ${currentAdmin.email} / ${currentAdmin.phone}`);
+    console.log(`[AUTH] ✅ Active Admin synced to MongoDB Atlas: ${admin.email} / ${admin.phone}`);
   }
 } catch (err) {
   console.warn('[AUTH] Admin init notice:', err);
@@ -575,45 +562,27 @@ app.post('/api/auth/login', (req, res) => {
 
   // 2. Regular Login: verify credentials against registered admin
   // Supports login via:
-  // - Email: registered email, pkcinstitute@gmail.com, or sahildevcode@gmail.com
-  // - Mobile / WhatsApp: registered mobile, 7000212637, or 8299468630
-  // - Username: admin
-  // - Passwords: registered password, pkc@123, pkc123, sahil123, or sahi123
+  // 2. Regular Login: STRICTLY verify credentials against currently saved Admin account
   const idDigits = identifier.replace(/[^0-9]/g, '');
 
-  const user = db.users.find(u => {
+  const user = (db.users || []).find(u => {
     if (u.role !== 'admin') return false;
 
-    // Flexible Password Verification
+    // Password must strictly match the admin's currently saved password
     const userPass = (u.password || '').trim();
-    const cleanNorm = cleanPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const userNorm = userPass.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (cleanPass !== userPass) return false;
 
-    const isPassValid = 
-      cleanPass === userPass ||
-      cleanNorm === userNorm ||
-      cleanPass === 'pkc@123' ||
-      cleanPass === 'pkc123' ||
-      cleanPass === 'sahi123' ||
-      cleanPass === 'sahil123';
-
-    if (!isPassValid) return false;
-
-    // Flexible Identifier Verification
+    // Identifier must strictly match the admin's currently saved email, phone, or username
     const userEmail = (u.email || '').trim().toLowerCase();
     const userUsername = (u.username || '').trim().toLowerCase();
     const userPhoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
 
-    const isIdValid = 
+    const isMatch = 
       (userEmail && userEmail === identifier) ||
       (userUsername && userUsername === identifier) ||
-      identifier === 'admin' ||
-      identifier === 'pkcinstitute@gmail.com' ||
-      identifier === 'sahildevcode@gmail.com' ||
-      (idDigits.length >= 10 && userPhoneDigits.length >= 10 && (userPhoneDigits.endsWith(idDigits.slice(-10)) || idDigits.endsWith(userPhoneDigits.slice(-10)))) ||
-      (idDigits.endsWith('7000212637') || idDigits.endsWith('8299468630'));
+      (idDigits.length >= 10 && userPhoneDigits.length >= 10 && (userPhoneDigits.endsWith(idDigits.slice(-10)) || idDigits.endsWith(userPhoneDigits.slice(-10))));
 
-    return isIdValid;
+    return isMatch;
   });
 
   if (!user) {
@@ -641,7 +610,7 @@ app.post('/api/auth/login', (req, res) => {
 // REAL-WORLD FORGOT PASSWORD & RECOVERY WITH WHATSAPP / SMS / EMAIL OTP
 // ==========================================
 
-// Helper to find the admin by Email, Phone digits, or Username
+// Helper to find the admin strictly by currently saved Email, Phone digits, or Username
 function findAdminUser(db, inputIdentifier) {
   const users = Array.isArray(db.users) ? db.users : [];
   const cleanId = (inputIdentifier || '').trim().toLowerCase();
@@ -655,24 +624,15 @@ function findAdminUser(db, inputIdentifier) {
 
     if (uEmail && uEmail === cleanId) return true;
     if (uUser && uUser === cleanId) return true;
-    if (cleanId === 'pkcinstitute@gmail.com' || cleanId === 'sahildevcode@gmail.com' || cleanId === 'admin') return true;
     if (inputDigits.length >= 10 && uPhoneDigits.length >= 10) {
       if (uPhoneDigits.endsWith(inputDigits.slice(-10)) || inputDigits.endsWith(uPhoneDigits.slice(-10))) {
         return true;
       }
     }
-    if (inputDigits.endsWith('7000212637') || inputDigits.endsWith('8299468630')) {
-      return true;
-    }
     return false;
   });
 
-  // Universal Fallback: if only one admin exists in database, use that admin
-  if (!admin) {
-    admin = users.find(u => u.role === 'admin') || null;
-  }
-
-  return admin;
+  return admin || null;
 }
 
 // Step 1: Send 6-Digit OTP Code via WhatsApp, SMS, or Email
