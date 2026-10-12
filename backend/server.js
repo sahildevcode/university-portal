@@ -32,63 +32,59 @@ if (process.env.MONGODB_URI) {
   }
 }
 
-// Ensure Master Admin credentials have official contact details
+// Ensure Master Admin credentials start with official institute defaults: pkcinstitute@gmail.com / 7000212637 / pkc123
 try {
   const db = readDB();
-  let admin = (db.users || []).find(u => u.role === 'admin');
-  if (!admin) {
-    admin = {
+  if (!Array.isArray(db.users)) db.users = [];
+  let adminIndex = db.users.findIndex(u => u.role === 'admin');
+
+  if (adminIndex === -1) {
+    const admin = {
       id: 'user-admin',
       username: 'admin',
       email: 'pkcinstitute@gmail.com',
       phone: '7000212637',
-      password: 'pkc@123',
+      password: 'pkc123',
       role: 'admin',
       name: 'PKC Institute Administrator',
-      isSetupRequired: false
+      isSetupRequired: false,
+      userConfigured: false
     };
-    if (!Array.isArray(db.users)) db.users = [];
     db.users.push(admin);
     writeDB(db);
-    console.log('[AUTH] Admin created with pkcinstitute@gmail.com / 7000212637');
+    console.log('[AUTH] Admin created with pkcinstitute@gmail.com / 7000212637 / pkc123');
   } else {
-    let changed = false;
-    if (!admin.email) {
+    const admin = db.users[adminIndex];
+    // If not yet customized by the user from the profile modal, guarantee default is pkcinstitute@gmail.com / 7000212637 / pkc123
+    if (!admin.userConfigured) {
       admin.email = 'pkcinstitute@gmail.com';
-      changed = true;
-    }
-    if (!admin.phone) {
       admin.phone = '7000212637';
-      changed = true;
-    }
-    if (!admin.password) {
-      admin.password = 'pkc@123';
-      changed = true;
-    }
-    if (changed) {
+      admin.password = 'pkc123';
+      admin.name = 'PKC Institute Administrator';
       writeDB(db);
-      console.log('[AUTH] Admin contact details synchronized.');
+      console.log('[AUTH] Admin defaults initialized to pkcinstitute@gmail.com / 7000212637 / pkc123');
     }
   }
 
-  // Guarantee admin credentials in MongoDB Atlas cloud collection
-  if (isMongoConnected() && admin) {
+  const currentAdmin = db.users.find(u => u.role === 'admin');
+  if (isMongoConnected() && currentAdmin) {
     await UserModel.findOneAndUpdate(
       { role: 'admin' },
       {
         $set: {
-          username: admin.username || 'admin',
-          email: admin.email || 'pkcinstitute@gmail.com',
-          phone: admin.phone || '7000212637',
-          password: admin.password || 'pkc@123',
-          name: admin.name || 'PKC Institute Administrator',
+          username: currentAdmin.username || 'admin',
+          email: currentAdmin.email || 'pkcinstitute@gmail.com',
+          phone: currentAdmin.phone || '7000212637',
+          password: currentAdmin.password || 'pkc123',
+          name: currentAdmin.name || 'PKC Institute Administrator',
           role: 'admin',
+          userConfigured: currentAdmin.userConfigured || false,
           isSetupRequired: false
         }
       },
       { upsert: true }
     );
-    console.log('[AUTH] ✅ Admin credentials permanently synced to MongoDB Atlas (pkcinstitute@gmail.com / 7000212637)');
+    console.log(`[AUTH] ✅ Admin credentials live in MongoDB Atlas: ${currentAdmin.email} / ${currentAdmin.phone}`);
   }
 } catch (err) {
   console.warn('[AUTH] Admin init notice:', err);
@@ -1025,6 +1021,7 @@ app.put('/api/auth/admin-profile', async (req, res) => {
     const digits = phone.replace(/[^0-9]/g, '');
     if (digits.length >= 10) admin.phone = digits.slice(-10);
   }
+  admin.userConfigured = true;
   admin.updatedAt = new Date().toISOString();
 
   writeDB(db);
@@ -1039,7 +1036,8 @@ app.put('/api/auth/admin-profile', async (req, res) => {
             phone: admin.phone,
             password: admin.password,
             name: admin.name,
-            role: 'admin'
+            role: 'admin',
+            userConfigured: true
           }
         },
         { upsert: true }
