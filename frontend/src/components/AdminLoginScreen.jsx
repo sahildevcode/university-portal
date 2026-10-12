@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Shield, Key, User, Lock, AlertCircle, CheckCircle2, 
-  UserCheck, Eye, EyeOff, Globe, Mail, UserPlus, ArrowLeft, Sparkles 
+  UserCheck, Eye, EyeOff, Globe, Mail, ArrowLeft 
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -21,20 +21,13 @@ export default function AdminLoginScreen({
   // Active Role Option: 'admin' | 'staff'
   const [activeRole, setActiveRole] = useState(initialTab || 'admin');
 
-  // Admin Auth Mode: 'login' | 'signup' | 'forgot'
+  // Admin Auth Mode: 'login' | 'forgot'
   const [adminAuthMode, setAdminAuthMode] = useState('login');
 
   // Admin Login Credentials
   const [adminIdentifier, setAdminIdentifier] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPass, setShowAdminPass] = useState(false);
-
-  // Admin Sign Up Fields
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPass, setSignupConfirmPass] = useState('');
-  const [showSignupPass, setShowSignupPass] = useState(false);
 
   // Admin Forgot Password Fields
   const [forgotEmail, setForgotEmail] = useState('');
@@ -92,65 +85,7 @@ export default function AdminLoginScreen({
     }
   };
 
-  // 2. Handle Admin Sign Up (Create Account)
-  const handleAdminSignup = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccessMsg(null);
-
-    if (signupPassword !== signupConfirmPass) {
-      setError(isHindi ? 'पासवर्ड और कन्फर्म पासवर्ड एक जैसे होने चाहिए।' : 'Password and Confirm Password do not match.');
-      setLoading(false);
-      return;
-    }
-
-    if (signupPassword.length < 4) {
-      setError(isHindi ? 'पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।' : 'Password must be at least 4 characters long.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: signupName.trim() || 'Institute Administrator',
-          email: signupEmail.trim().toLowerCase(),
-          password: signupPassword.trim(),
-          role: 'admin'
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || (isHindi ? 'अकाउंट बनाने में त्रुटि हुई।' : 'Failed to create admin account.'));
-      }
-
-      // Pre-fill login with newly registered credentials
-      setAdminIdentifier(signupEmail.trim().toLowerCase());
-      setAdminPassword(signupPassword.trim());
-      setSuccessMsg(
-        isHindi 
-          ? 'एडमिन अकाउंट सफलतापूर्वक बन गया और सेव हो गया! अब आप नीचे लॉगिन कर सकते हैं।' 
-          : 'Admin account created and saved successfully! You can now log in below.'
-      );
-      setAdminAuthMode('login');
-
-      // Clear sign-up form
-      setSignupName('');
-      setSignupEmail('');
-      setSignupPassword('');
-      setSignupConfirmPass('');
-    } catch (err) {
-      setError(err.message || 'Error creating admin account.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3. Handle Admin Forgot Password
+  // 2. Handle Admin Forgot Password
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -206,7 +141,7 @@ export default function AdminLoginScreen({
     }
   };
 
-  // 4. Handle Staff Login Submission
+  // 3. Handle Staff Login Submission
   const handleStaffSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -376,13 +311,13 @@ export default function AdminLoginScreen({
         )}
 
         {/* ========================================================================= */}
-        {/* ROLE 1: ADMIN (LOGIN / SIGN UP / FORGOT PASSWORD) */}
+        {/* ROLE 1: ADMIN (LOGIN & FORGOT PASSWORD) */}
         {/* ========================================================================= */}
         {activeRole === 'admin' && (
           <div className="px-6 sm:px-8 pb-8">
             
-            {/* Admin Sub-navigation Header when in Signup or Forgot mode */}
-            {adminAuthMode !== 'login' && (
+            {/* Admin Sub-navigation Header when in Forgot mode */}
+            {adminAuthMode === 'forgot' && (
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
                 <button
                   type="button"
@@ -393,9 +328,7 @@ export default function AdminLoginScreen({
                   <span>{isHindi ? 'वापस लॉगिन पर जाएं' : 'Back to Admin Login'}</span>
                 </button>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-400/30">
-                  {adminAuthMode === 'signup' 
-                    ? (isHindi ? 'नया अकाउंट बनाएं' : 'Create Account') 
-                    : (isHindi ? 'पासवर्ड रीसेट' : 'Forgot Password')}
+                  {isHindi ? 'पासवर्ड रीसेट' : 'Forgot Password'}
                 </span>
               </div>
             )}
@@ -472,7 +405,7 @@ export default function AdminLoginScreen({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-400/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-1"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-400/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-2"
                 >
                   {loading ? (
                     <span>{isHindi ? 'प्रमाणित किया जा रहा है...' : 'Verifying Admin Credentials...'}</span>
@@ -483,151 +416,11 @@ export default function AdminLoginScreen({
                     </>
                   )}
                 </button>
-
-                {/* Bottom Card: Sign Up / Create Account Trigger */}
-                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
-                  <span>
-                    {isHindi ? 'क्या आपके पास एडमिन अकाउंट नहीं है?' : "Don't have an administrator account?"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => switchAdminMode('signup')}
-                    className="inline-flex items-center gap-1.5 font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100/80 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors cursor-pointer"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>{isHindi ? 'नया अकाउंट बनाएं (Sign Up)' : 'Create Account / Sign Up'}</span>
-                  </button>
-                </div>
               </form>
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* SUB-VIEW B: ADMIN SIGN UP (CREATE ACCOUNT) */}
-            {/* ------------------------------------------------------------- */}
-            {adminAuthMode === 'signup' && (
-              <form onSubmit={handleAdminSignup} autoComplete="off" className="space-y-3.5 text-xs text-slate-900">
-                <div className="bg-amber-50/80 border border-amber-300/80 p-3 rounded-xl flex items-center gap-2 text-amber-900 text-[11px]">
-                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    {isHindi 
-                      ? 'नया एडमिन अकाउंट बनाएं। अपनी ईमेल और पासवर्ड दर्ज करें, यह सुरक्षित रूप से सेव हो जाएगा।' 
-                      : 'Create a new Admin account. Enter your email and password to register.'}
-                  </span>
-                </div>
-
-                {/* Admin Full Name / Designation */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'एडमिन का नाम / पद (वैकल्पिक)' : 'Admin Full Name / Title (Optional)'}
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
-                      placeholder={isHindi ? "e.g. निदेशक / कुलसचिव / एडमिनिस्ट्रेटर" : "e.g. Director / Registrar / Admin Name"}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text"
-                    />
-                  </div>
-                </div>
-
-                {/* Admin Email Address */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'एडमिन ईमेल पता *' : 'Admin Email Address *'}
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type="email"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      placeholder="e.g. director@pkc.edu or admin@gmail.com"
-                      autoComplete="email"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                {/* Admin Password */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'पासवर्ड बनाएं *' : 'Create Password *'}
-                  </label>
-                  <div className="relative">
-                    <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type={showSignupPass ? 'text' : 'password'}
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      placeholder={isHindi ? "कम से कम 4 अक्षर का पासवर्ड बनाएं" : "Create password (min. 4 characters)"}
-                      autoComplete="new-password"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowSignupPass(!showSignupPass)}
-                      className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 cursor-pointer"
-                      tabIndex={-1}
-                    >
-                      {showSignupPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div className="space-y-1">
-                  <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    {isHindi ? 'पासवर्ड की पुष्टि करें *' : 'Confirm Password *'}
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                    <input
-                      type={showSignupPass ? 'text' : 'password'}
-                      value={signupConfirmPass}
-                      onChange={(e) => setSignupConfirmPass(e.target.value)}
-                      placeholder={isHindi ? "वही पासवर्ड दोबारा दर्ज करें" : "Re-enter your password"}
-                      autoComplete="new-password"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Sign Up Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-50 text-xs sm:text-sm mt-2"
-                >
-                  {loading ? (
-                    <span>{isHindi ? 'अकाउंट बनाया जा रहा है...' : 'Creating Admin Account...'}</span>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 text-slate-950" />
-                      <span>{isHindi ? 'अकाउंट बनाएं और सेव करें (Create & Save)' : 'Create Admin Account & Save'}</span>
-                    </>
-                  )}
-                </button>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => switchAdminMode('login')}
-                    className="text-[11px] font-bold text-slate-600 hover:text-amber-700 transition-colors cursor-pointer"
-                  >
-                    {isHindi ? 'पहले से अकाउंट है? लॉगिन करें' : 'Already have an account? Back to Login'}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* ------------------------------------------------------------- */}
-            {/* SUB-VIEW C: ADMIN FORGOT PASSWORD */}
+            {/* SUB-VIEW B: ADMIN FORGOT PASSWORD */}
             {/* ------------------------------------------------------------- */}
             {adminAuthMode === 'forgot' && (
               <form onSubmit={handleForgotPassword} autoComplete="off" className="space-y-3.5 text-xs text-slate-900">
