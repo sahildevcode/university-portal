@@ -34,12 +34,12 @@ export default function AdminLoginScreen({
   // Step 3: Discover Registered Email & Mobile + Set New Password + Optionally Update Email & Mobile
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotChannel, setForgotChannel] = useState('whatsapp'); // 'whatsapp' | 'email'
-  const [forgotIdentifier, setForgotIdentifier] = useState('7000212637');
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [sessionKey, setSessionKey] = useState('');
   const [receivedOtp, setReceivedOtp] = useState('');
   const [inputOtp, setInputOtp] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
-  const [targetPhone, setTargetPhone] = useState('7000212637');
+  const [targetPhone, setTargetPhone] = useState('');
   const [targetEmail, setTargetEmail] = useState('');
   const [discoveredEmail, setDiscoveredEmail] = useState('');
   const [discoveredPhone, setDiscoveredPhone] = useState('');
@@ -628,12 +628,7 @@ export default function AdminLoginScreen({
                       <div className="grid grid-cols-2 gap-2.5">
                         <button
                           type="button"
-                          onClick={() => {
-                            setForgotChannel('whatsapp');
-                            if (!forgotIdentifier || forgotIdentifier.includes('@')) {
-                              setForgotIdentifier('7000212637');
-                            }
-                          }}
+                          onClick={() => setForgotChannel('whatsapp')}
                           className={`p-3 rounded-xl border-2 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                             forgotChannel === 'whatsapp'
                               ? 'bg-emerald-500/10 border-emerald-500 text-emerald-950 shadow-sm'
@@ -646,12 +641,7 @@ export default function AdminLoginScreen({
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setForgotChannel('email');
-                            if (!forgotIdentifier || !forgotIdentifier.includes('@')) {
-                              setForgotIdentifier('pkcinstitute@gmail.com');
-                            }
-                          }}
+                          onClick={() => setForgotChannel('email')}
                           className={`p-3 rounded-xl border-2 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                             forgotChannel === 'email'
                               ? 'bg-amber-500/10 border-amber-500 text-amber-950 shadow-sm'

@@ -60,11 +60,6 @@ export default function AdminProfileModal({ isOpen, onClose, lang = 'en' }) {
     setSuccessMsg(null);
 
     if (changePassword) {
-      if (!currentPassword) {
-        setError(isHindi ? 'कृपया वर्तमान पासवर्ड दर्ज करें।' : 'Please enter your current password.');
-        setLoading(false);
-        return;
-      }
       if (newPassword.length < 4) {
         setError(isHindi ? 'नया पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।' : 'New password must be at least 4 characters long.');
         setLoading(false);
@@ -85,7 +80,7 @@ export default function AdminProfileModal({ isOpen, onClose, lang = 'en' }) {
       };
 
       if (changePassword && newPassword) {
-        payload.currentPassword = currentPassword.trim();
+        payload.currentPassword = (currentPassword || '').trim();
         payload.newPassword = newPassword.trim();
       }
 
@@ -100,10 +95,22 @@ export default function AdminProfileModal({ isOpen, onClose, lang = 'en' }) {
         throw new Error(data.message || (isHindi ? 'प्रोफ़ाइल अपडेट करने में त्रुटि हुई।' : 'Failed to update admin profile.'));
       }
 
+      // Sync active session in localStorage immediately
+      try {
+        const stored = localStorage.getItem('pkc_admin_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          u.email = payload.email;
+          u.phone = payload.phone;
+          u.name = payload.name;
+          localStorage.setItem('pkc_admin_user', JSON.stringify(u));
+        }
+      } catch (e) {}
+
       setSuccessMsg(
         isHindi 
-          ? 'एडमिन ईमेल, मोबाइल नंबर व क्रेडेंशियल्स सफलतापूर्वक सुरक्षित हो गए!' 
-          : 'Admin profile, email, and security settings saved successfully!'
+          ? 'एडमिन ईमेल, मोबाइल नंबर व नया पासवर्ड सफलतापूर्वक सुरक्षित हो गए!' 
+          : 'Admin profile, email, and password saved successfully!'
       );
       setChangePassword(false);
       setCurrentPassword('');
@@ -260,7 +267,7 @@ export default function AdminProfileModal({ isOpen, onClose, lang = 'en' }) {
               <div className="mt-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 animate-fadeIn">
                 <div className="space-y-1">
                   <label className="block font-bold text-slate-700 text-[10px] uppercase">
-                    {isHindi ? 'वर्तमान पासवर्ड (Current Password) *' : 'Current Password *'}
+                    {isHindi ? 'वर्तमान पासवर्ड (वैकल्पिक / यदि याद हो)' : 'Current Password (Optional - leave blank if logged in)'}
                   </label>
                   <div className="relative">
                     <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
@@ -268,7 +275,7 @@ export default function AdminProfileModal({ isOpen, onClose, lang = 'en' }) {
                       type={showCurrentPass ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder={isHindi ? "वर्तमान पासवर्ड दर्ज करें" : "Enter current password"}
+                      placeholder={isHindi ? "pkc@123 या खाली छोड़ें" : "pkc@123 or leave blank"}
                       className="w-full pl-9 pr-9 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold"
                     />
                     <button
