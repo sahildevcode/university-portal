@@ -61115,6 +61115,7 @@
   "users": [
     {
       "username": "admin",
+      "email": "admin@pkc.edu",
       "password": "admin123",
       "role": "admin",
       "name": "Institute Administrator"

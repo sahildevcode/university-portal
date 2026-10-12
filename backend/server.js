@@ -427,22 +427,31 @@ app.post('/api/upload-image', (req, res) => {
 // ----------------------------------------------------
 // 0. AUTHENTICATION & SETTINGS
 // ----------------------------------------------------
-// Admin Login
+// Admin Login (supports both Email and Admin User ID)
 app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   const db = readDB();
 
-  const cleanUser = (username || '').trim().toLowerCase();
+  const identifier = (email || username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  const user = (db.users || []).find(
-    u => (u.username || '').trim().toLowerCase() === cleanUser && (u.password || '').trim() === cleanPass
-  );
+  if (!identifier || !cleanPass) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide both Email/Admin ID and Password.'
+    });
+  }
+
+  const user = (db.users || []).find(u => {
+    const userEmail = (u.email || '').trim().toLowerCase();
+    const userUsername = (u.username || '').trim().toLowerCase();
+    return (userEmail === identifier || userUsername === identifier) && (u.password || '').trim() === cleanPass;
+  });
 
   if (!user) {
     return res.status(401).json({
       success: false,
-      message: 'Invalid Admin User ID or Password. Please verify your administrator credentials.'
+      message: 'Invalid Admin Email/ID or Password. Please verify your administrator credentials.'
     });
   }
 
@@ -450,12 +459,175 @@ app.post('/api/auth/login', (req, res) => {
     success: true,
     message: 'Admin authentication successful.',
     user: {
+      id: user.id || `user-${user.username}`,
       username: user.username,
-      name: user.name,
-      role: user.role
+      email: user.email || '',
+      name: user.name || user.username,
+      role: user.role || 'admin'
     }
   });
 });
+
+// Admin Sign-Up / Create Account
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { email, password, name, role } = req.body;
+    const db = readDB();
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+    const cleanName = (name || '').trim();
+
+    if (!cleanEmail || !cleanPass) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and Password are required to create an Admin account.'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid email address (e.g. director@example.com).'
+      });
+    }
+
+    if (cleanPass.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 4 characters long.'
+      });
+    }
+
+    if (!Array.isArray(db.users)) db.users = [];
+
+    // Check if account already exists with this email or username
+    const existingUser = db.users.find(u => 
+      (u.email || '').trim().toLowerCase() === cleanEmail ||
+      (u.username || '').trim().toLowerCase() === cleanEmail
+    );
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists. Please login or reset your password.'
+      });
+    }
+
+    // Generate unique username from email
+    const baseUsername = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') || 'admin';
+    let uniqueUsername = baseUsername;
+    let counter = 1;
+    while (db.users.some(u => (u.username || '').toLowerCase() === uniqueUsername.toLowerCase())) {
+      uniqueUsername = `${baseUsername}${counter++}`;
+    }
+
+    const newUser = {
+      id: `user-${Date.now()}`,
+      username: uniqueUsername,
+      email: cleanEmail,
+      password: cleanPass,
+      role: role || 'admin',
+      name: cleanName || 'Institute Administrator',
+      createdAt: new Date().toISOString()
+    };
+
+    db.users.push(newUser);
+    writeDB(db);
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin account created successfully! You can now log in.',
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error creating admin account: ' + err.message });
+  }
+});
+
+// Alias for admin register
+app.post('/api/auth/admin-register', (req, res, next) => {
+  req.url = '/api/auth/register';
+  app._router.handle(req, res, next);
+});
+
+// Admin Forgot Password & Reset
+app.post('/api/auth/forgot-password', (req, res) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+    const db = readDB();
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanNewPass = (newPassword || '').trim();
+
+    if (!cleanEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your registered email address.'
+      });
+    }
+
+    if (!Array.isArray(db.users)) db.users = [];
+
+    const userIndex = db.users.findIndex(u => 
+      (u.email || '').trim().toLowerCase() === cleanEmail ||
+      (u.username || '').trim().toLowerCase() === cleanEmail
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'No registered admin account found with this email address.'
+      });
+    }
+
+    if (cleanNewPass) {
+      if (cleanNewPass.length < 4) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password must be at least 4 characters long.'
+        });
+      }
+
+      if (confirmPassword && cleanNewPass !== confirmPassword.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password and confirmation password do not match.'
+        });
+      }
+
+      db.users[userIndex].password = cleanNewPass;
+      if (!db.users[userIndex].email && cleanEmail.includes('@')) {
+        db.users[userIndex].email = cleanEmail;
+      }
+      writeDB(db);
+
+      return res.json({
+        success: true,
+        message: 'Password has been successfully updated! You can now log in with your new password.',
+        email: cleanEmail
+      });
+    }
+
+    // Email verification check
+    res.json({
+      success: true,
+      message: 'Account verified. Please enter your new password.',
+      email: cleanEmail,
+      name: db.users[userIndex].name || db.users[userIndex].username
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error resetting password: ' + err.message });
+  }
+});
+
 
 // Dedicated Staff Login (using staff_users managed by Admin)
 app.post('/api/auth/staff-login', (req, res) => {
