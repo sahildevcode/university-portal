@@ -189,13 +189,13 @@ export default function Footer({ setActiveTab }) {
                 </div>
               </a>
 
-              {/* Branch Office Location Card */}
+              {/* Institute Location Card */}
               <a 
                 href="https://maps.app.goo.gl/kTX4J2zAUR8LHpuU9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block p-2.5 bg-slate-900/90 border border-slate-800 hover:border-emerald-500/60 rounded-xl transition-all group"
-                title="View Branch Location on Google Maps"
+                title="View Institute Location on Google Maps"
               >
                 <div className="flex items-start gap-2.5">
                   <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -203,7 +203,7 @@ export default function Footer({ setActiveTab }) {
                   </div>
                   <div className="flex-1 space-y-0.5 text-xs">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-white group-hover:text-emerald-400 transition-colors">Branch Office</span>
+                      <span className="font-bold text-white group-hover:text-emerald-400 transition-colors">Institute</span>
                       <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">View Map ↗</span>
                     </div>
                     <p className="text-slate-400 text-[11px] leading-relaxed">
