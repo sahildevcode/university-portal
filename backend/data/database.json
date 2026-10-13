@@ -2097,9 +2097,9 @@
       "studentFee": 0,
       "courseFee": 0,
       "admissionFee": 0,
-      "totalFee": 0,
+      "totalFee": 900,
       "scholarshipAmount": 0,
-      "netTotalFee": 0,
+      "netTotalFee": 900,
       "courseFeePaid": 0,
       "admissionFeePaid": 0,
       "initialPayment": 0,
@@ -2121,7 +2121,12 @@
       "documents": {
         "student_image": "",
         "photo": ""
-      }
+      },
+      "discount": 100,
+      "discountAmount": 100,
+      "baseTotalFee": 1000,
+      "remainingFee": 0,
+      "totalRem": 0
     },
     {
       "id": "std-leg-1789560000011",

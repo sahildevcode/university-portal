@@ -174,45 +174,7 @@ export default function StudentList({
       ? (discY1 + discY2 + discY3 + discY4) 
       : Number(item.discountAmount !== undefined && item.discountAmount !== null ? item.discountAmount : (item.discount || 0));
 
-    // 3. Category & Year-wise Payable Fee
-    const rawCat = item.feeCategory;
-    const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
-      ? 'full_course_fee'
-      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
-        ? 'course_fee_scholarship'
-        : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
-          ? 'full_scholarship'
-          : ((totalAcadFee > 0 && totalSch > 0)
-              ? 'course_fee_scholarship'
-              : (totalAcadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
-
-    const regFee = Number(item.registrationFee || item.regFee || 0);
-
-    const calcYrTotal = (yrAcad, yrSch, isY1 = false) => {
-      const extra = isY1 ? regFee : 0;
-      if (cat === 'full_course_fee') {
-        return yrAcad + extra;
-      }
-      return yrAcad + yrSch + extra;
-    };
-
-    const totalY1 = Math.max(0, calcYrTotal(feeY1, schY1, true) - discY1);
-    const totalY2 = Math.max(0, calcYrTotal(feeY2, schY2, false) - discY2);
-    const totalY3 = Math.max(0, calcYrTotal(feeY3, schY3, false) - discY3);
-    const totalY4 = Math.max(0, calcYrTotal(feeY4, schY4, false) - discY4);
-
-    const fallbackFee = Number(item.baseTotalFee || item.totalFee || item.studentFee || item.courseFee || 0);
-    let baseTotalFee = 0;
-    if (cat === 'full_course_fee') {
-      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : fallbackFee) + regFee;
-    } else {
-      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : (totalSch > 0 ? 0 : fallbackFee)) + totalSch + regFee;
-    }
-
-    // Direct deduction of discount from total fees set:
-    const totalFee = Math.max(0, baseTotalFee - totalDiscount);
-
-    // 4. Received Fees per Year
+    // 3. Received Fees per Year
     let recY1 = 0, recY2 = 0, recY3 = 0, recY4 = 0;
     const payList = (Array.isArray(item.payments) && item.payments.length > 0)
       ? item.payments
@@ -244,6 +206,48 @@ export default function StudentList({
     }
 
     const totalPaid = payList.length > 0 ? (recY1 + recY2 + recY3 + recY4) : ((recY1 + recY2 + recY3 + recY4) > 0 ? (recY1 + recY2 + recY3 + recY4) : Number(item.totalPaid || 0));
+
+    // 4. Category & Year-wise Payable Fee
+    const rawCat = item.feeCategory;
+    const cat = (rawCat === 'full_course_fee' || rawCat === 'fees_base')
+      ? 'full_course_fee'
+      : (rawCat === 'course_fee_scholarship' || rawCat === 'academics')
+        ? 'course_fee_scholarship'
+        : (rawCat === 'full_scholarship' || rawCat === 'scholarship')
+          ? 'full_scholarship'
+          : ((totalAcadFee > 0 && totalSch > 0)
+              ? 'course_fee_scholarship'
+              : (totalAcadFee > 0 ? 'full_course_fee' : 'full_scholarship'));
+
+    const regFee = Number(item.registrationFee || item.regFee || 0);
+
+    const calcYrTotal = (yrAcad, yrSch, isY1 = false) => {
+      const extra = isY1 ? regFee : 0;
+      if (cat === 'full_course_fee') {
+        return yrAcad + extra;
+      }
+      return yrAcad + yrSch + extra;
+    };
+
+    const totalY1 = Math.max(0, calcYrTotal(feeY1 > 0 ? feeY1 : (schY1 > 0 ? 0 : recY1), schY1, true) - discY1);
+    const totalY2 = Math.max(0, calcYrTotal(feeY2 > 0 ? feeY2 : (schY2 > 0 ? 0 : recY2), schY2, false) - discY2);
+    const totalY3 = Math.max(0, calcYrTotal(feeY3 > 0 ? feeY3 : (schY3 > 0 ? 0 : recY3), schY3, false) - discY3);
+    const totalY4 = Math.max(0, calcYrTotal(feeY4 > 0 ? feeY4 : (schY4 > 0 ? 0 : recY4), schY4, false) - discY4);
+
+    const fallbackFee = Number(item.baseTotalFee || item.totalFee || item.studentFee || item.courseFee || 0);
+    let baseTotalFee = 0;
+    if (cat === 'full_course_fee') {
+      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : (fallbackFee > 0 ? fallbackFee : totalPaid)) + regFee;
+    } else {
+      baseTotalFee = (totalAcadFee > 0 ? totalAcadFee : (totalSch > 0 ? 0 : (fallbackFee > 0 ? fallbackFee : totalPaid))) + totalSch + regFee;
+    }
+
+    if (baseTotalFee <= 0 && totalPaid > 0) {
+      baseTotalFee = totalPaid;
+    }
+
+    // Direct deduction of discount from total fees set:
+    const totalFee = Math.max(0, baseTotalFee - totalDiscount);
     const totalRem = Math.max(0, totalFee - totalPaid);
     const advanceAmount = totalPaid > totalFee ? (totalPaid - totalFee) : 0;
     const isAdvance = advanceAmount > 0;
