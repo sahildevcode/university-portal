@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, Search, Filter, Eye, EyeOff, Printer, CreditCard, Award, 
   FileText, CheckCircle, AlertCircle, X, Download, ExternalLink, Trash2, Calendar,
-  ArrowLeft, RotateCcw, ChevronDown, Edit3, Zap, Save, CheckCircle2, UploadCloud,
+  ArrowLeft, RotateCcw, ChevronDown, ChevronRight, Edit3, Zap, Save, CheckCircle2, UploadCloud,
   PlusCircle, BookOpen, School, GraduationCap, Camera, UserX, Ban, AlertTriangle,
   Sparkles, Tag
 } from 'lucide-react';
@@ -318,6 +318,17 @@ export default function StudentList({
 
   // Table Column Display Mode: 'all' (39+ fields horizontal scroll) or 'compact'
   const [tableColumnMode, setTableColumnMode] = useState('all');
+
+  // Expanded student row IDs for mobile / quick accordion view
+  const [expandedStudentIds, setExpandedStudentIds] = useState(new Set());
+  const toggleExpandStudent = (id) => {
+    setExpandedStudentIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Toggle for Year-Wise Fee Breakdown Columns (1st, 2nd, 3rd & 4th Year - All 12 Columns)
   const [showYearWiseFees, setShowYearWiseFees] = useState(() => {
@@ -2458,29 +2469,31 @@ export default function StudentList({
       </div>
 
       {/* Controls Bar: Show entries + Dual filter + Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <span>Show</span>
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="px-2 py-1 bg-slate-50 border border-slate-300 rounded font-bold text-slate-800 focus:outline-none cursor-pointer"
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value="all">All</option>
-          </select>
-          <span>entries</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          <div className="flex items-center gap-1.5">
+            <span>Show</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-slate-50 border border-slate-300 rounded font-bold text-slate-800 focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value="all">All</option>
+            </select>
+            <span>entries</span>
+          </div>
 
           <button
             type="button"
             onClick={() => setDualOnly(!dualOnly)}
-            className={`ml-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border ${
               dualOnly
                 ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300'
@@ -2493,7 +2506,7 @@ export default function StudentList({
           </button>
 
           {/* Table View Mode Switcher */}
-          <div className="ml-3 inline-flex items-center bg-slate-200/90 p-0.5 rounded-lg border border-slate-300">
+          <div className="inline-flex items-center bg-slate-200/90 p-0.5 rounded-lg border border-slate-300">
             <button
               type="button"
               onClick={() => setTableColumnMode('all')}
@@ -2504,7 +2517,7 @@ export default function StudentList({
               }`}
               title="Show all student registration form fields directly in table columns"
             >
-              <span>📋 All Form Fields (Horizontal Scroll)</span>
+              <span>📊 Excel Sheet (All)</span>
             </button>
             <button
               type="button"
@@ -2516,7 +2529,7 @@ export default function StudentList({
               }`}
               title="Switch to compact table view"
             >
-              <span>📑 Compact View</span>
+              <span>📑 Compact</span>
             </button>
           </div>
 
@@ -2525,7 +2538,7 @@ export default function StudentList({
             <button
               type="button"
               onClick={toggleYearWiseFees}
-              className={`ml-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                 showYearWiseFees
                   ? 'bg-amber-100 text-amber-950 border-amber-400 shadow-xs'
                   : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-300'
@@ -2535,21 +2548,21 @@ export default function StudentList({
               {showYearWiseFees ? (
                 <>
                   <EyeOff className="w-3.5 h-3.5 text-amber-700" />
-                  <span>✕ Hide All Year Fees</span>
+                  <span>✕ Hide Year Fees</span>
                 </>
               ) : (
                 <>
                   <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>👁️ Show All Year Fees</span>
+                  <span>👁️ Year Fees</span>
                 </>
               )}
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <label className="text-xs text-slate-600 font-bold whitespace-nowrap">Search:</label>
-          <div className="relative min-w-[220px]">
+          <div className="relative flex-1 sm:min-w-[220px]">
             <input
               type="text"
               value={search}
@@ -2590,13 +2603,23 @@ export default function StudentList({
 
         return (
           <div className="bg-white rounded-xl border border-slate-300 shadow-md overflow-hidden">
-            <div className="overflow-x-auto max-h-[calc(100vh-220px)] overflow-y-auto relative">
+            {/* Mobile View Excel Helper Bar */}
+            <div className="flex md:hidden items-center justify-between px-3 py-2 bg-gradient-to-r from-[#0b1f33] via-slate-800 to-indigo-950 text-white text-[11px] font-bold border-b border-slate-700 shadow-xs">
+              <span className="flex items-center gap-1.5 text-amber-300">
+                <span className="font-black">📊 Excel Grid Mode</span>
+                <span className="text-white/70 font-normal text-[10px]">• Swipe ↔️ for all columns</span>
+              </span>
+              <span className="text-[10px] text-sky-200 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-400/30">
+                Tap ▶ to open record
+              </span>
+            </div>
+            <div className="overflow-x-auto max-h-[calc(100vh-220px)] overflow-y-auto relative touch-pan-x [-webkit-overflow-scrolling:touch]">
               <table className="w-full text-xs text-left border-collapse">
                 <thead className="sticky top-0 z-40 bg-[#0b1f33] text-white uppercase text-[10.5px] font-extrabold tracking-wider select-none shadow-md">
                   {tableColumnMode === 'all' ? (
                     <tr>
-                      <th className="sticky top-0 left-0 z-50 bg-[#0b1f33] py-2.5 px-2 text-center border-r border-slate-700 min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.15)]">#</th>
-                      <th className="sticky top-0 left-[44px] z-50 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.2)]">Student_Name</th>
+                      <th className="sticky top-0 md:left-0 z-50 bg-[#0b1f33] py-2 px-1.5 md:py-2.5 md:px-2 text-center border-r border-slate-700 min-w-[36px] md:min-w-[44px] md:w-11 md:shadow-[2px_0_4px_rgba(0,0,0,0.15)]">#</th>
+                      <th className="sticky top-0 md:left-[44px] z-50 bg-[#0b1f33] py-2 px-2 md:py-2.5 md:px-2.5 border-r border-slate-700 whitespace-nowrap min-w-[150px] md:min-w-[210px] md:shadow-[4px_0_6px_rgba(0,0,0,0.2)]">Student_Name</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Father_Name</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Mother_Name</th>
                       <th className="sticky top-0 z-40 bg-[#0b1f33] py-2.5 px-2.5 border-r border-slate-700 whitespace-nowrap">Student_Contact</th>
@@ -2819,13 +2842,27 @@ export default function StudentList({
                       return (
                         <React.Fragment key={std.id}>
                           <tr className="group hover:bg-[#eaf3fa] transition-colors border-b border-slate-200 text-xs">
-                            {/* Sticky # */}
-                            <td className="sticky left-0 z-20 bg-white group-hover:bg-[#eaf3fa] py-2.5 px-2 text-center font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
-                              {startIndex + idx + 1}
+                            {/* Sticky # on desktop, interactive expander on mobile */}
+                            <td className="md:sticky md:left-0 z-20 bg-white group-hover:bg-[#eaf3fa] py-2 px-1.5 md:py-2.5 md:px-2 text-center font-bold text-slate-700 border-r border-slate-200 whitespace-nowrap min-w-[36px] md:min-w-[44px] md:w-11 md:shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpandStudent(std.id)}
+                                  className="p-1 -ml-1 rounded hover:bg-indigo-100 text-indigo-700 md:hidden transition-colors cursor-pointer"
+                                  title="Open full student record card (खोलें)"
+                                >
+                                  {expandedStudentIds.has(std.id) ? (
+                                    <ChevronDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 hover:text-indigo-600 shrink-0" />
+                                  )}
+                                </button>
+                                <span>{startIndex + idx + 1}</span>
+                              </div>
                             </td>
 
-                            {/* Sticky Student Name + Photo */}
-                            <td className="sticky left-[44px] z-20 bg-white group-hover:bg-[#eaf3fa] py-2 px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
+                            {/* Sticky Student Name + Photo on desktop, smooth horizontal scroll on mobile */}
+                            <td className="md:sticky md:left-[44px] z-20 bg-white group-hover:bg-[#eaf3fa] py-2 px-2 md:px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[150px] md:min-w-[210px] md:shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
                               <div className="flex items-center gap-2.5">
                                 <div
                                   onClick={() => handleOpenProfile(std)}
@@ -3298,6 +3335,207 @@ export default function StudentList({
                             </td>
                           </tr>
 
+                          {/* Expanded Full Record Card for Mobile (खुल के आती है जैसे एक्सेल शीट) */}
+                          {expandedStudentIds.has(std.id) && (
+                            <tr key={`${std.id}-expanded`} className="bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 border-b-2 border-indigo-400">
+                              <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 54 : 38) : 21} className="p-3 sm:p-4 text-left">
+                                <div className="bg-white rounded-xl border border-indigo-200 shadow-sm p-3.5 space-y-3.5 max-w-full">
+                                  {/* Header: Photo + Name + Key Info */}
+                                  <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
+                                    <div 
+                                      onClick={() => handleOpenProfile(std)}
+                                      className="w-12 h-14 rounded-lg overflow-hidden bg-slate-100 border border-slate-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 shadow-2xs"
+                                      title="View photo & KYC documents"
+                                    >
+                                      {std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo ? (
+                                        <img 
+                                          src={std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo} 
+                                          alt="" 
+                                          className="w-full h-full object-cover" 
+                                        />
+                                      ) : (
+                                        <Users className="w-5 h-5 text-slate-400" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <h4 
+                                          onClick={() => handleOpenProfile(std)}
+                                          className="font-extrabold text-slate-900 text-sm uppercase truncate cursor-pointer hover:text-indigo-600"
+                                        >
+                                          {std.fullName || std.studentName}
+                                        </h4>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${std.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                          {std.status || 'Active'}
+                                        </span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                        <span>Roll: <strong className="text-slate-800 font-bold">{std.rollNo || '-'}</strong></span>
+                                        <span>Reg: <strong className="text-slate-800 font-bold">{std.registrationNo || '-'}</strong></span>
+                                        <span>Enroll: <strong className="text-slate-800 font-bold">{std.enrollmentNo || '-'}</strong></span>
+                                      </div>
+                                      <div className="text-[11px] text-indigo-900 font-bold mt-1 truncate">
+                                        🎓 {std.courseName || '-'} ({std.branch || 'General'}) • {std.currentClass || '1st Year'}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Grid of Key Info */}
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Father's Name</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.fatherName || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Mother's Name</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.motherName || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Contact / Phone</span>
+                                      <span className="font-semibold text-slate-800 font-mono truncate block">{std.contact || std.phone || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Email</span>
+                                      <span className="font-semibold text-slate-800 font-mono text-[10px] truncate block">{std.email || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">University / Board</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.universityName || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">College / Center</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.collegeName || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Aadhaar No</span>
+                                      <span className="font-semibold text-slate-800 font-mono truncate block">{std.aadhaarNo || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Category • Gender</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.category || std.socialCategory || '-'} • {std.gender || '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Session / Satra</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.currentSession || std.admissionSession || '-'} ({std.currentSatra || std.admissionSatra || '-'})</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Admission Date</span>
+                                      <span className="font-semibold text-slate-800 font-mono truncate block">{std.admissionDate ? (typeof std.admissionDate === 'string' && std.admissionDate.includes('T') ? std.admissionDate.split('T')[0] : std.admissionDate) : '-'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 col-span-2">
+                                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Address</span>
+                                      <span className="font-semibold text-slate-800 truncate block">{std.address || '-'}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Complete Fees Breakdown Bar */}
+                                  <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-xl p-3 shadow-xs">
+                                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 mb-2 flex items-center justify-between">
+                                      <span className="flex items-center gap-1.5">
+                                        <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                                        <span>Complete Fee Details (शुल्क विवरण)</span>
+                                      </span>
+                                      <span className="text-white/80 font-normal">Category: {std.feeCategory || 'Course Fee'}</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs">
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">Total Set Fee</span>
+                                        <span className="font-black text-amber-300 font-mono">₹{(yd.baseTotalFee || yd.totalFee).toLocaleString('en-IN')}/-</span>
+                                      </div>
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">Scholarship</span>
+                                        <span className="font-bold text-purple-300 font-mono">₹{yd.totalSch.toLocaleString('en-IN')}/-</span>
+                                      </div>
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">Discount</span>
+                                        <span className="font-bold text-amber-400 font-mono">-₹{(yd.totalDiscount || 0).toLocaleString('en-IN')}/-</span>
+                                      </div>
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">Net Payable</span>
+                                        <span className="font-black text-sky-300 font-mono">₹{yd.totalFee.toLocaleString('en-IN')}/-</span>
+                                      </div>
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">Total Paid</span>
+                                        <span className="font-black text-emerald-400 font-mono">₹{yd.totalPaid.toLocaleString('en-IN')}/-</span>
+                                      </div>
+                                      <div className="bg-white/10 p-2 rounded-lg">
+                                        <span className="text-[9px] text-slate-300 block uppercase">{yd.isAdvance ? 'Advance Credit' : 'Due Balance'}</span>
+                                        <span className={`font-black font-mono ${yd.isAdvance ? 'text-emerald-300' : yd.totalRem > 0 ? 'text-rose-400' : 'text-slate-300'}`}>
+                                          {yd.isAdvance ? `+₹${yd.advanceAmount.toLocaleString('en-IN')}/-` : `₹${yd.totalRem.toLocaleString('en-IN')}/-`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Direct Action Buttons for Mobile */}
+                                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenReceiveFeeModal(std)}
+                                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+                                    >
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                      <span>Receive Fee</span>
+                                    </button>
+                                    {canEdit && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenSetFeeModal(std)}
+                                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
+                                        >
+                                          <BookOpen className="w-3.5 h-3.5" />
+                                          <span>Set Fee</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenSetDiscountModal(std)}
+                                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs cursor-pointer font-black"
+                                        >
+                                          <Tag className="w-3.5 h-3.5" />
+                                          <span>Discount</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenSetScholarshipModal(std)}
+                                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer"
+                                        >
+                                          <Award className="w-3.5 h-3.5" />
+                                          <span>Scholarship</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditModal(std)}
+                                          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                          <span>Edit</span>
+                                        </button>
+                                      </>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => setPrintSlipStudent(std)}
+                                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer"
+                                      title="Print Admission Slip"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                      <span>Slip</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenProfile(std)}
+                                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Profile</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+
                           {/* Connected Dual Program Secondary Row */}
                           {std.linkedCourses && [...std.linkedCourses].sort((a, b) => new Date(a.admissionDate || 0) - new Date(b.admissionDate || 0)).map((linked, lIdx) => {
                             const lyd = calculateStudentYearBreakdown(linked);
@@ -3311,9 +3549,26 @@ export default function StudentList({
                             const lPaid = lyd.totalPaid;
                             const lRem = lyd.totalRem;
                             return (
-                              <tr key={linked.id || `linked-${lIdx}`} className="group bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
-                                <td className="sticky left-0 z-20 bg-amber-50 group-hover:bg-amber-100 py-2.5 px-2 text-center font-bold text-amber-700 border-r border-slate-200 whitespace-nowrap min-w-[44px] w-11 shadow-[2px_0_4px_rgba(0,0,0,0.05)]">↳</td>
-                                <td className="sticky left-[44px] z-20 bg-amber-50 group-hover:bg-amber-100 py-2.5 px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[210px] shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
+                              <React.Fragment key={linked.id || `linked-${lIdx}`}>
+                                <tr className="group bg-amber-50/50 hover:bg-amber-100/60 border-l-4 border-l-amber-500 border-b border-slate-200 transition-colors text-xs">
+                                <td className="md:sticky md:left-0 z-20 bg-amber-50 group-hover:bg-amber-100 py-2 px-1.5 md:py-2.5 md:px-2 text-center font-bold text-amber-700 border-r border-slate-200 whitespace-nowrap min-w-[36px] md:min-w-[44px] md:w-11 md:shadow-[2px_0_4px_rgba(0,0,0,0.05)]">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandStudent(linked.id)}
+                                      className="p-1 -ml-1 rounded hover:bg-amber-200 text-amber-900 md:hidden transition-colors cursor-pointer"
+                                      title="Open full record card (खोलें)"
+                                    >
+                                      {expandedStudentIds.has(linked.id) ? (
+                                        <ChevronDown className="w-3.5 h-3.5 text-amber-900 shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                                      )}
+                                    </button>
+                                    <span>↳</span>
+                                  </div>
+                                </td>
+                                <td className="md:sticky md:left-[44px] z-20 bg-amber-50 group-hover:bg-amber-100 py-2 px-2 md:py-2.5 md:px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[150px] md:min-w-[210px] md:shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
                                   <div className="font-bold text-slate-800 uppercase tracking-tight">{std.fullName || std.studentName}</div>
                                   <div className="text-[10px] text-amber-700 font-mono font-bold">Dual: {linked.rollNo || linked.enrollmentNo || linked.id}</div>
                                 </td>
@@ -3647,7 +3902,193 @@ export default function StudentList({
                                   </div>
                                 </td>
                               </tr>
-                            );
+
+                              {/* Expanded Record Card for Linked Dual Course on Mobile */}
+                              {expandedStudentIds.has(linked.id) && (
+                                <tr key={`${linked.id}-expanded`} className="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-slate-50 border-b-2 border-amber-400">
+                                  <td colSpan={tableColumnMode === 'all' ? (showYearWiseFees ? 54 : 38) : 21} className="p-3 sm:p-4 text-left">
+                                    <div className="bg-white rounded-xl border border-amber-200 shadow-sm p-3.5 space-y-3.5 max-w-full">
+                                      {/* Header: Student Name + Linked Course Info */}
+                                      <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
+                                        <div 
+                                          onClick={() => handleOpenProfile(linked)}
+                                          className="w-12 h-14 rounded-lg overflow-hidden bg-amber-50 border border-amber-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-amber-500 shadow-2xs"
+                                          title="View photo & KYC documents"
+                                        >
+                                          {std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo ? (
+                                            <img 
+                                              src={std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo} 
+                                              alt="" 
+                                              className="w-full h-full object-cover" 
+                                            />
+                                          ) : (
+                                            <Users className="w-5 h-5 text-amber-600" />
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <h4 
+                                              onClick={() => handleOpenProfile(linked)}
+                                              className="font-extrabold text-slate-900 text-sm uppercase truncate cursor-pointer hover:text-amber-700"
+                                            >
+                                              {std.fullName || std.studentName} <span className="text-xs font-bold text-amber-700">(Dual Course)</span>
+                                            </h4>
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${linked.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                                              {linked.status || 'Active'}
+                                            </span>
+                                          </div>
+                                          <div className="text-[11px] text-slate-500 font-mono flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                            <span>Roll: <strong className="text-slate-800 font-bold">{linked.rollNo || '-'}</strong></span>
+                                            <span>Enroll: <strong className="text-slate-800 font-bold">{linked.enrollmentNo || std.enrollmentNo || '-'}</strong></span>
+                                            <span>Dual ID: <strong className="text-slate-800 font-bold">{linked.id || '-'}</strong></span>
+                                          </div>
+                                          <div className="text-[11px] text-amber-900 font-bold mt-1 truncate">
+                                            🎓 {linked.courseName || '-'} ({linked.branch || 'General'}) • {linked.currentClass || '1st Year'}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Grid of Key Info */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Father's Name</span>
+                                          <span className="font-semibold text-slate-800 truncate block">{std.fatherName || '-'}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Contact / Phone</span>
+                                          <span className="font-semibold text-slate-800 font-mono truncate block">{std.contact || std.phone || '-'}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">College / Center</span>
+                                          <span className="font-semibold text-slate-800 truncate block">{linked.collegeName || std.collegeName || '-'}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">University / Board</span>
+                                          <span className="font-semibold text-slate-800 truncate block">{linked.universityName || std.universityName || '-'}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Session / Satra</span>
+                                          <span className="font-semibold text-slate-800 truncate block">{linked.admissionSession || std.admissionSession || '-'} ({linked.admissionSatra || std.admissionSatra || '-'})</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Admission Date</span>
+                                          <span className="font-semibold text-slate-800 font-mono truncate block">{linked.admissionDate ? (typeof linked.admissionDate === 'string' && linked.admissionDate.includes('T') ? linked.admissionDate.split('T')[0] : linked.admissionDate) : '-'}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 col-span-2">
+                                          <span className="text-[10px] text-slate-500 font-bold block uppercase">Remark</span>
+                                          <span className="font-semibold text-slate-800 truncate block">{linked.remark || '-'}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Complete Fees Breakdown Bar */}
+                                      <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white rounded-xl p-3 shadow-xs">
+                                        <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 mb-2 flex items-center justify-between">
+                                          <span className="flex items-center gap-1.5">
+                                            <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>Complete Fee Details (Dual Course Fee)</span>
+                                          </span>
+                                          <span className="text-white/80 font-normal">Course: {linked.courseName || '-'}</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-xs">
+                                          <div className="bg-white/10 p-2 rounded-lg">
+                                            <span className="text-[9px] text-slate-300 block uppercase">Total Set Fee</span>
+                                            <span className="font-black text-amber-300 font-mono">₹{(lyd.baseTotalFee || lyd.totalFee).toLocaleString('en-IN')}/-</span>
+                                          </div>
+                                          <div className="bg-white/10 p-2 rounded-lg">
+                                            <span className="text-[9px] text-slate-300 block uppercase">Scholarship</span>
+                                            <span className="font-bold text-purple-300 font-mono">₹{lyd.totalSch.toLocaleString('en-IN')}/-</span>
+                                          </div>
+                                          <div className="bg-white/10 p-2 rounded-lg">
+                                            <span className="text-[9px] text-slate-300 block uppercase">Discount</span>
+                                            <span className="font-bold text-amber-300 font-mono">₹{Number(linked.discountAmount || 0).toLocaleString('en-IN')}/-</span>
+                                          </div>
+                                          <div className="bg-white/10 p-2 rounded-lg">
+                                            <span className="text-[9px] text-slate-300 block uppercase">Net Payable</span>
+                                            <span className="font-bold text-sky-300 font-mono">₹{(lyd.netPayable || Math.max(0, lyd.totalFee - Number(linked.discountAmount || 0))).toLocaleString('en-IN')}/-</span>
+                                          </div>
+                                          <div className="bg-white/10 p-2 rounded-lg">
+                                            <span className="text-[9px] text-slate-300 block uppercase">Total Paid</span>
+                                            <span className="font-black text-emerald-400 font-mono">₹{lyd.totalPaid.toLocaleString('en-IN')}/-</span>
+                                          </div>
+                                          <div className={`p-2 rounded-lg ${lyd.isAdvance ? 'bg-emerald-950/80 border border-emerald-500' : 'bg-rose-950/80 border border-rose-500'}`}>
+                                            <span className="text-[9px] text-slate-300 block uppercase">{lyd.isAdvance ? 'Advance Credit' : 'Balance Due'}</span>
+                                            <span className={`font-black font-mono ${lyd.isAdvance ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                              {lyd.isAdvance ? `+₹${lyd.advanceAmount.toLocaleString('en-IN')}/-` : `₹${lyd.totalRem.toLocaleString('en-IN')}/-`}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Quick Action Buttons on Mobile */}
+                                      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenReceiveFeeModal(linked)}
+                                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+                                        >
+                                          <CreditCard className="w-3.5 h-3.5" />
+                                          <span>Receive Fee</span>
+                                        </button>
+                                        {canEdit && (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenSetFeeModal(linked)}
+                                              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
+                                            >
+                                              <BookOpen className="w-3.5 h-3.5" />
+                                              <span>Set Fee</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenSetDiscountModal(linked)}
+                                              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs cursor-pointer font-black"
+                                            >
+                                              <Tag className="w-3.5 h-3.5" />
+                                              <span>Discount</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenSetScholarshipModal(linked)}
+                                              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs cursor-pointer"
+                                            >
+                                              <Award className="w-3.5 h-3.5" />
+                                              <span>Scholarship</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenEditModal(linked)}
+                                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer"
+                                            >
+                                              <Edit3 className="w-3.5 h-3.5" />
+                                              <span>Edit</span>
+                                            </button>
+                                          </>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => setPrintSlipStudent(linked)}
+                                          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer"
+                                          title="Print Admission Slip"
+                                        >
+                                          <Printer className="w-3.5 h-3.5" />
+                                          <span>Slip</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenProfile(linked)}
+                                          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
+                                        >
+                                          <Eye className="w-3.5 h-3.5" />
+                                          <span>Profile</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
                           })}
                         </React.Fragment>
                       );
