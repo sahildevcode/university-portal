@@ -8,7 +8,16 @@ import {
   ExternalLink, 
   Heart,
   Globe,
-  GraduationCap
+  GraduationCap,
+  Laptop,
+  Briefcase,
+  Sparkles,
+  CheckCircle2,
+  FileText,
+  Search,
+  BookOpen,
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 
 // Authentic WhatsApp SVG Icon Component
@@ -20,16 +29,122 @@ function WhatsAppIcon({ className = "w-4 h-4" }) {
   );
 }
 
-export default function Footer({ setActiveTab }) {
+export default function Footer({ setActiveTab = () => {} }) {
+  // Popular searches tag cloud for high visibility & quick course navigation
+  const popularSearches = [
+    { label: 'DCA Course in Chhatarpur', action: 'courses' },
+    { label: 'PGDCA Admission 2026', action: 'courses' },
+    { label: 'Tally Prime with GST Classes', action: 'courses' },
+    { label: 'CPCT Typing Hindi & English', action: 'courses' },
+    { label: 'MPTASS Scholarship Form Assistance', action: 'inquiry' },
+    { label: 'MBA University Admission MP', action: 'courses' },
+    { label: 'B.Ed & M.Ed College Admissions', action: 'courses' },
+    { label: 'B.Tech CSE Top College Tie-Up', action: 'courses' },
+    { label: 'BCA Degree College Guidance', action: 'courses' },
+    { label: 'BA / B.Com / B.Sc Degree', action: 'courses' },
+    { label: 'Distance Education Degree MP', action: 'courses' },
+    { label: 'Free Laptop Scheme for Professional Courses', action: 'inquiry' },
+    { label: 'Best Computer Institute Chhatarpur', action: 'about' },
+    { label: '100% Job Placement Assistance', action: 'inquiry' },
+    { label: 'UGC Approved University Degree', action: 'courses' }
+  ];
+
+  const servicesList = [
+    {
+      title: 'University Degree Admissions',
+      desc: 'Regular, Distance & Private (BA, B.Sc, B.Com, BCA, MBA, B.Tech, B.Ed)',
+      badge: 'UGC Approved'
+    },
+    {
+      title: 'Govt. Computer Diplomas',
+      desc: 'DCA & PGDCA with High-Tech AC Computer Lab & Practical Coding',
+      badge: 'Certified'
+    },
+    {
+      title: 'Tally Prime & GST Accounting',
+      desc: 'Corporate Accounting, Tally ERP 9, GST Billing & Return Filing',
+      badge: '100% Practical'
+    },
+    {
+      title: 'CPCT Typing Training Desk',
+      desc: 'Hindi Mangal Unicode & English High-Speed Computer Typing',
+      badge: 'Special Batch'
+    },
+    {
+      title: '100% Scholarship Assistance',
+      desc: 'Complete MPTASS & NSP Form Guidance for SC / ST / OBC Candidates',
+      badge: 'Fee Benefit'
+    },
+    {
+      title: 'Career Counseling & Placement',
+      desc: 'Corporate Campus Placement Tie-ups, Interview Prep & Resume Building',
+      badge: 'Job Ready'
+    },
+    {
+      title: 'Exam Forms & Verification Desk',
+      desc: 'University Enrollment, Exam Form Submission & Marksheet Verification',
+      badge: 'Full Support'
+    }
+  ];
+
   return (
-    <footer className="bg-[#061124] text-slate-300 pt-16 pb-10 border-t border-slate-800 no-print font-sans">
+    <footer className="bg-[#050e1d] text-slate-300 pt-14 pb-10 border-t border-slate-800/80 no-print font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Main 12-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-12 border-b border-slate-800/80">
+        {/* ========================================================================= */}
+        {/* 1. TOP KEY SERVICES HIGHLIGHT STRIP (Feature Banners) */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-12 mb-12 border-b border-slate-800/80">
           
-          {/* Col 1: Brand & Crest (3 cols) */}
-          <div className="lg:col-span-3 space-y-4 pr-2">
+          <div className="flex items-center gap-3.5 p-3.5 bg-slate-900/80 border border-slate-800 hover:border-[#C59B27]/50 rounded-2xl transition-all group">
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-[#C59B27] flex items-center justify-center shrink-0 border border-[#C59B27]/30 group-hover:scale-105 transition-transform">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <div>
+              <h5 className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">UGC Degree Admissions</h5>
+              <p className="text-[11px] text-slate-400 mt-0.5">Regular, Distance &amp; Private</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5 p-3.5 bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl transition-all group">
+            <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/30 group-hover:scale-105 transition-transform">
+              <Laptop className="w-6 h-6" />
+            </div>
+            <div>
+              <h5 className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors">IT Diplomas &amp; Tally</h5>
+              <p className="text-[11px] text-slate-400 mt-0.5">DCA, PGDCA, CPCT Typing</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5 p-3.5 bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl transition-all group">
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-105 transition-transform">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <h5 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">100% Scholarship Help</h5>
+              <p className="text-[11px] text-slate-400 mt-0.5">MPTASS &amp; NSP Special Benefits</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5 p-3.5 bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 rounded-2xl transition-all group">
+            <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/30 group-hover:scale-105 transition-transform">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <div>
+              <h5 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">Job Placement Support</h5>
+              <p className="text-[11px] text-slate-400 mt-0.5">Corporate Tie-ups &amp; Guidance</p>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 2. MAIN 4-COLUMN COMPREHENSIVE GRID */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12 border-b border-slate-800/80">
+          
+          {/* Col 1: Brand & Excellence Profile (3 cols) */}
+          <div className="lg:col-span-3 space-y-4 pr-1">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-amber-500 shrink-0 shadow-md">
                 <img src="/pkc_logo.png" alt="PKC Logo" className="w-full h-full object-contain rounded-full" />
@@ -44,81 +159,144 @@ export default function Footer({ setActiveTab }) {
               </div>
             </div>
             
-            <p className="text-xs text-slate-300 leading-relaxed flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
-              <span>Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur (M.P.)</span>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Empowering students since 2011 with authorized UGC university degrees, government certified IT diplomas, and 100% transparent career &amp; scholarship guidance in Chhatarpur (M.P.).
             </p>
 
-            <div className="flex items-center gap-2 text-[11px] text-[#C59B27] bg-[#071530] border border-[#C59B27]/40 px-3 py-1.5 rounded-md w-fit">
-              <ShieldCheck className="w-4 h-4 shrink-0" />
-              <span>Registered Society No. 06/03/01/12345/18</span>
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center gap-2 text-[11px] text-[#C59B27] bg-[#071530] border border-[#C59B27]/40 px-3 py-1.5 rounded-lg w-fit shadow-xs">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-[#C59B27]" />
+                <span>Reg. Society No. 06/03/01/12345/18</span>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg w-fit shadow-xs">
+                <Clock className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span>15+ Years Academic Excellence (Est. 2011)</span>
+              </div>
             </div>
           </div>
 
-          {/* Col 2: Quick Links (2 cols) */}
+          {/* Col 2: Services & Consultancy Detailed Section (4 cols) */}
+          <div className="lg:col-span-4 space-y-3.5">
+            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Our Services &amp; Consultancy</span>
+              </span>
+              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                What We Offer
+              </span>
+            </h4>
+            
+            <ul className="space-y-2.5 text-xs">
+              {servicesList.map((svc, i) => (
+                <li key={i} className="flex items-start gap-2.5 group">
+                  <div className="w-4 h-4 rounded-full bg-amber-500/20 text-[#C59B27] flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3 h-3" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-slate-200 group-hover:text-amber-400 transition-colors">
+                        {svc.title}
+                      </span>
+                      <span className="text-[9.5px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">
+                        {svc.badge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                      {svc.desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Col 3: Quick Links & Direct Portals (2 cols) */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2">
-              Quick Links
+            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+              <span>Quick Links</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-400 font-medium">
               <li>
-                <button onClick={() => setActiveTab('home')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
-                  Home &amp; Welcome
+                <button 
+                  onClick={() => setActiveTab('home')} 
+                  className="hover:text-[#C59B27] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-600" />
+                  <span>Home &amp; Welcome</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => setActiveTab('about')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
-                  About PKC Institute
+                <button 
+                  onClick={() => setActiveTab('about')} 
+                  className="hover:text-[#C59B27] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-600" />
+                  <span>About Institute</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => setActiveTab('courses')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
-                  Academic Programs
+                <button 
+                  onClick={() => setActiveTab('courses')} 
+                  className="hover:text-[#C59B27] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-600" />
+                  <span>All Courses &amp; Fees</span>
                 </button>
               </li>
               <li>
-                <button onClick={() => setActiveTab('inquiry')} className="hover:text-[#C59B27] transition-colors cursor-pointer text-left">
-                  Admission Inquiry Desk
+                <button 
+                  onClick={() => setActiveTab('inquiry')} 
+                  className="hover:text-[#C59B27] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-600" />
+                  <span>Admission Inquiry</span>
                 </button>
               </li>
               <li>
-                <a href="/admin" className="text-slate-400 hover:text-[#C59B27] transition-colors flex items-center gap-1">
-                  <span>PKC Admin Portal</span>
+                <button 
+                  onClick={() => setActiveTab('gallery')} 
+                  className="hover:text-[#C59B27] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <ArrowRight className="w-3 h-3 text-slate-600" />
+                  <span>Campus Photo Gallery</span>
+                </button>
+              </li>
+              <li className="pt-2 border-t border-slate-800/80">
+                <a 
+                  href="/admin" 
+                  className="text-slate-400 hover:text-[#C59B27] transition-colors flex items-center gap-1.5 font-bold"
+                >
+                  <ShieldCheck className="w-3 h-3 text-[#C59B27]" />
+                  <span>Admin Portal</span>
                 </a>
               </li>
               <li>
-                <a href="/staff" className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1">
+                <a 
+                  href="/staff" 
+                  className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 font-bold"
+                >
+                  <Briefcase className="w-3 h-3 text-emerald-400" />
                   <span>Staff &amp; Cash Counter</span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: Academic Programs (2 cols) */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2">
-              Programs
-            </h4>
-            <ul className="space-y-2 text-xs text-slate-400 font-medium">
-              <li>• Computer Apps (BCA)</li>
-              <li>• Management (MBA, BBA)</li>
-              <li>• Engineering (B.Tech CSE)</li>
-              <li>• Diplomas (DCA, PGDCA)</li>
-              <li>• Degrees (B.Sc, B.Com, BA)</li>
-            </ul>
-          </div>
-
-          {/* Col 4: Contact & Locations (5 cols) */}
-          <div className="lg:col-span-5 space-y-3.5 text-xs">
-            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center justify-between">
-              <span>Contact Us &amp; Campuses</span>
-              <span className="text-[10px] text-amber-400 font-normal">Connect Directly</span>
+          {/* Col 4: Contact Us & Campus Map Cards (3 cols) */}
+          <div className="lg:col-span-3 space-y-3.5 text-xs">
+            <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center">
+              <span className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Contact &amp; Campuses</span>
+              </span>
             </h4>
             
             <div className="space-y-2.5">
               {/* WhatsApp Quick Chat */}
               <a 
-                href="https://wa.me/917000212637?text=Hello%20PKC%20Institute%2C%20I%20want%20information%20about%20admissions"
+                href="https://wa.me/917000212637?text=Hello%20PKC%20Institute%2C%20I%20want%20information%20about%20admissions%20and%20courses"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-2.5 bg-[#25D366]/10 border border-[#25D366]/30 rounded-xl hover:bg-[#25D366]/20 transition-all group"
@@ -134,8 +312,8 @@ export default function Footer({ setActiveTab }) {
                 <ExternalLink className="w-3.5 h-3.5 text-emerald-400 opacity-60 group-hover:opacity-100" />
               </a>
 
-              {/* Helpline & Email row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Helpline & Email mini cards */}
+              <div className="grid grid-cols-1 gap-2">
                 <a 
                   href="tel:+917000212637"
                   className="flex items-center gap-2 p-2 bg-slate-900/90 border border-slate-800 rounded-xl hover:border-amber-400/50 hover:bg-slate-800/60 transition-all group"
@@ -145,8 +323,8 @@ export default function Footer({ setActiveTab }) {
                     <Phone className="w-3.5 h-3.5" />
                   </div>
                   <div className="overflow-hidden">
-                    <div className="text-[10px] text-slate-400 font-semibold">Helpline</div>
-                    <div className="text-xs font-bold text-slate-200 group-hover:text-white truncate">+91 7000212637</div>
+                    <div className="text-[10px] text-slate-400 font-semibold">Official Helpline</div>
+                    <div className="text-xs font-bold text-slate-200 group-hover:text-white truncate">+91 7000212637, 7580878825</div>
                   </div>
                 </a>
 
@@ -160,7 +338,7 @@ export default function Footer({ setActiveTab }) {
                   </div>
                   <div className="overflow-hidden">
                     <div className="text-[10px] text-slate-400 font-semibold">Official Email</div>
-                    <div className="text-[11px] font-bold text-slate-200 group-hover:text-white truncate">pkcinstituteaiu@...</div>
+                    <div className="text-xs font-bold text-slate-200 group-hover:text-white truncate">pkcinstituteaiu@gmail.com</div>
                   </div>
                 </a>
               </div>
@@ -218,16 +396,43 @@ export default function Footer({ setActiveTab }) {
 
         </div>
 
-        {/* Bottom Bar (Northfield Copyright & Legal) */}
+        {/* ========================================================================= */}
+        {/* 3. POPULAR SEARCHES / TRENDING COURSES TAG CLOUD */}
+        {/* ========================================================================= */}
+        <div className="py-6 border-b border-slate-800/80">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider shrink-0">
+              <Search className="w-3.5 h-3.5 text-amber-400" />
+              <span>Popular Searches:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+              {popularSearches.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveTab(item.action)}
+                  className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white px-2.5 py-1 rounded-lg border border-slate-800/80 hover:border-slate-700 transition-colors cursor-pointer"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 4. BOTTOM BAR (Copyright, Recognition & Legal) */}
+        {/* ========================================================================= */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} PKC Education Learning Institute &amp; Consultancy. All rights reserved.</p>
-          <div className="flex items-center space-x-4 text-[11px] text-slate-400">
-            <span className="hover:text-white cursor-pointer">Privacy Policy</span>
-            <span>|</span>
-            <span className="hover:text-white cursor-pointer">Terms of Use</span>
-            <span>|</span>
-            <span className="hover:text-white cursor-pointer">Approved by UGC &amp; MP Higher Education</span>
-            <span>|</span>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400">
+            <span className="hover:text-white cursor-pointer" onClick={() => setActiveTab('about')}>About PKC</span>
+            <span>•</span>
+            <span className="hover:text-white cursor-pointer" onClick={() => setActiveTab('courses')}>Courses</span>
+            <span>•</span>
+            <span className="hover:text-white cursor-pointer" onClick={() => setActiveTab('inquiry')}>Admissions</span>
+            <span>•</span>
+            <span className="text-emerald-400/80 font-medium">UGC &amp; MP Higher Education Recognized</span>
+            <span>•</span>
             <a href="/admin" className="hover:text-[#C59B27] text-slate-500 font-semibold transition-colors">Admin Login</a>
           </div>
         </div>

@@ -13,6 +13,7 @@ import {
   Users
 } from 'lucide-react';
 import { fireCelebration } from '../utils/confetti';
+import { getCourseSubjectImage } from '../utils/courseImageHelper';
 
 export default function CourseDetailGuide({ 
   course, 
@@ -80,9 +81,12 @@ export default function CourseDetailGuide({
       {/* 2. Course Hero Banner Section */}
       <div className="relative bg-slate-950 text-white overflow-hidden py-12 sm:py-16">
         <img 
-          src={course.imageUrl || course.catImage || course.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'} 
+          src={getCourseSubjectImage(course)} 
           alt={course.name} 
           className="absolute inset-0 w-full h-full object-cover opacity-25"
+          onError={(e) => {
+            e.target.src = getCourseSubjectImage(course);
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
         

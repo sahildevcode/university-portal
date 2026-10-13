@@ -17,6 +17,7 @@ import {
 import { translations } from '../utils/translations';
 import { fireCelebration } from '../utils/confetti';
 import CourseDetailGuide from '../components/CourseDetailGuide';
+import { getCourseSubjectImage } from '../utils/courseImageHelper';
 
 export default function PublicCourseCatalog({ 
   courses = [], 
@@ -303,7 +304,7 @@ export default function PublicCourseCatalog({
     const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
     return {
       ...prog,
-      image: dynamicImg || prog.image
+      image: dynamicImg || getCourseSubjectImage(matched || prog) || prog.image
     };
   });
 
@@ -687,11 +688,11 @@ export default function PublicCourseCatalog({
                     {/* Top Image Banner */}
                     <div className="relative h-36 overflow-hidden bg-slate-900 rounded-t-xl -m-5 mb-1">
                       <img
-                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Commerce || catImages.Arts}
+                        src={getCourseSubjectImage(course)}
                         alt={course.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
                         onError={(e) => {
-                          e.target.src = catImages[course.category] || catImages.Commerce || catImages.Arts;
+                          e.target.src = getCourseSubjectImage(course);
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />

@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Filter,
   Search,
-  School
+  School,
+  Phone
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import CampusEventSlider from '../components/CampusEventSlider';
@@ -29,6 +30,15 @@ import AdmissionLiveTicker from '../components/AdmissionLiveTicker';
 import { fireCelebration } from '../utils/confetti';
 import CourseDetailGuide from '../components/CourseDetailGuide';
 import TestimonialSlider from '../components/TestimonialSlider';
+import { getCourseSubjectImage } from '../utils/courseImageHelper';
+
+function WhatsAppIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+    </svg>
+  );
+}
 
 export default function MainUniversityHome({ 
   setActiveTab, 
@@ -94,6 +104,9 @@ export default function MainUniversityHome({
 
   // Program Category Filter State
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [searchCollegeCourse, setSearchCollegeCourse] = useState('all');
+  const [searchCollegeState, setSearchCollegeState] = useState('MP');
+  const [searchCollegeCity, setSearchCollegeCity] = useState('all');
 
   // 62 Courses — Search + Category Filter + Grid/Table View Mode
   const [courseSearch, setCourseSearch] = useState('');
@@ -428,7 +441,7 @@ export default function MainUniversityHome({
     const dynamicImg = matched?.imageUrl || matched?.catImage || matched?.image;
     return {
       ...prog,
-      image: dynamicImg || prog.image
+      image: dynamicImg || getCourseSubjectImage(matched || prog) || prog.image
     };
   });
 
@@ -695,90 +708,227 @@ export default function MainUniversityHome({
         </div>
       </section>
 
-      {/* ACCREDITATIONS & KEY STATISTICS */}
-      <section className="bg-[#071530] text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
-        {/* Ambient Light */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#C59B27]/5 rounded-full blur-3xl pointer-events-none" />
+      {/* ========================================================================= */}
+      {/* FIND THE RIGHT COLLEGE & ACADEMIC MILESTONES (GLASSMORPHIC HERO WITH SEARCH & STATS) */}
+      {/* ========================================================================= */}
+      <section className="relative text-white py-20 sm:py-28 overflow-hidden border-b border-slate-800">
+        
+        {/* Background Image: Graduation Caps in the Air with Deep Cinematic Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1920&q=80" 
+            alt="Graduation Caps Celebration" 
+            className="w-full h-full object-cover object-center opacity-30 scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#071530]/95 via-[#0A1931]/90 to-[#071530]/98" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/25 via-transparent to-transparent pointer-events-none" />
+        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-center relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 text-center relative z-10">
           
-          <div className="max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3 py-1 rounded-full border border-[#C59B27]/30 inline-block">
-              TRUST &amp; RECOGNITIONS
+          {/* Main Heading & Subtitle */}
+          <div className="max-w-4xl mx-auto space-y-3">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/30 inline-block shadow-sm">
+              YOUR FUTURE STARTS HERE
             </span>
-            <h2 className="font-serif-academic text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
-              Academic Milestones &amp; Institutional Trust
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md">
+              Find the Right College for Your Future
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Empowering students across Central India since 2011 with verified government and university accreditations.
+            <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+              Explore thousands of colleges across India by course, state and city — with verified UGC accreditations &amp; 100% scholarship support.
             </p>
           </div>
 
-          {/* 5 Animated Counters */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800 bg-[#0A1931]/80 p-6 sm:p-10 rounded-3xl border border-slate-800 shadow-2xl backdrop-blur-sm">
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <GraduationCap className="w-8 h-8 animate-badge-bounce" />
+          {/* Interactive College & Course Search Bar */}
+          <div className="bg-white rounded-3xl p-3 sm:p-3.5 shadow-2xl border border-white/20 max-w-4xl mx-auto text-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+              
+              {/* Field 1: Course */}
+              <div className="sm:col-span-4 relative text-left">
+                <label className="text-[10px] font-bold text-slate-400 block px-3 pt-1 uppercase tracking-wider">What do you want to study?</label>
+                <select
+                  value={searchCollegeCourse}
+                  onChange={(e) => setSearchCollegeCourse(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Degrees &amp; Diplomas</option>
+                  <option value="BCA">BCA (Computer Applications)</option>
+                  <option value="DCA">DCA (Diploma in Computer)</option>
+                  <option value="PGDCA">PGDCA (Post Graduate IT)</option>
+                  <option value="MBA">MBA (Management &amp; HR)</option>
+                  <option value="B.Ed">B.Ed (Bachelor of Education)</option>
+                  <option value="B.Tech">B.Tech (Engineering &amp; CSE)</option>
+                  <option value="Tally">Tally Prime with GST</option>
+                  <option value="CPCT">CPCT Typing (Hindi/English)</option>
+                  <option value="B.Sc">B.Sc / M.Sc Science</option>
+                  <option value="B.Com">B.Com / M.Com Commerce</option>
+                  <option value="BA">BA / MSW Humanities</option>
+                </select>
               </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+
+              {/* Field 2: State */}
+              <div className="sm:col-span-3 border-t sm:border-t-0 sm:border-l border-slate-200 relative text-left">
+                <label className="text-[10px] font-bold text-slate-400 block px-3 pt-1 uppercase tracking-wider">Select State</label>
+                <select
+                  value={searchCollegeState}
+                  onChange={(e) => setSearchCollegeState(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="MP">Madhya Pradesh (M.P.)</option>
+                  <option value="UP">Uttar Pradesh (U.P.)</option>
+                  <option value="ALL">All India Universities</option>
+                </select>
+              </div>
+
+              {/* Field 3: City / District */}
+              <div className="sm:col-span-2 border-t sm:border-t-0 sm:border-l border-slate-200 relative text-left">
+                <label className="text-[10px] font-bold text-slate-400 block px-3 pt-1 uppercase tracking-wider">Select City</label>
+                <select
+                  value={searchCollegeCity}
+                  onChange={(e) => setSearchCollegeCity(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Cities</option>
+                  <option value="Chhatarpur">Chhatarpur</option>
+                  <option value="Sagar">Sagar</option>
+                  <option value="Bhopal">Bhopal</option>
+                  <option value="Jabalpur">Jabalpur</option>
+                  <option value="Gwalior">Gwalior</option>
+                  <option value="Indore">Indore</option>
+                </select>
+              </div>
+
+              {/* Action Button: Search Colleges */}
+              <div className="sm:col-span-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    fireCelebration({ x: 0.5, y: 0.5 });
+                    if (searchCollegeCourse !== 'all') {
+                      setCourseSearch(searchCollegeCourse);
+                    }
+                    document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="w-full bg-[#c2410c] hover:bg-[#ea580c] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-5 py-3 rounded-2xl sm:rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer hover:shadow-orange-900/30 active:scale-95"
+                >
+                  <Search className="w-4 h-4 text-white" />
+                  <span>Search Colleges</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Stream Category Filter Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-4xl mx-auto pt-2">
+            {[
+              { label: 'Engineering', q: 'B.Tech' },
+              { label: 'MBA & Management', q: 'MBA' },
+              { label: 'Computer Science', q: 'BCA' },
+              { label: 'Teaching & B.Ed', q: 'B.Ed' },
+              { label: 'Commerce', q: 'B.Com' },
+              { label: 'Science', q: 'B.Sc' },
+              { label: 'Arts & Social Work', q: 'BA' },
+              { label: 'Govt IT Diplomas', q: 'DCA' }
+            ].map((cat, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  fireCelebration({ x: 0.5, y: 0.5 });
+                  setCourseSearch(cat.q);
+                  document.getElementById('courses-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-amber-400/50 text-white hover:text-amber-300 rounded-full px-4 sm:px-5 py-2 text-xs font-semibold backdrop-blur-md transition-all cursor-pointer shadow-sm hover:scale-105"
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Modern Glassmorphic Stat Cards (Reference Design) */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 pt-6">
+            
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all shadow-xl hover:-translate-y-1">
+              <strong className="text-3xl sm:text-4xl lg:text-5xl font-black text-white block">
                 <AnimatedCounter end={18500} suffix="+" />
               </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+              <span className="text-xs text-slate-200 mt-1.5 block font-semibold tracking-wider">
                 Students Guided
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Building2 className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all shadow-xl hover:-translate-y-1">
+              <strong className="text-3xl sm:text-4xl lg:text-5xl font-black text-white block">
                 <AnimatedCounter end={28} suffix="+" />
               </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
+              <span className="text-xs text-slate-200 mt-1.5 block font-semibold tracking-wider">
                 University Affiliations
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <BookOpen className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all shadow-xl hover:-translate-y-1">
+              <strong className="text-3xl sm:text-4xl lg:text-5xl font-black text-white block">
                 <AnimatedCounter end={50} suffix="+" />
               </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Degree &amp; Diplomas
+              <span className="text-xs text-slate-200 mt-1.5 block font-semibold tracking-wider">
+                Courses Offered
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Award className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all shadow-xl hover:-translate-y-1">
+              <strong className="text-3xl sm:text-4xl lg:text-5xl font-black text-white block">
                 <AnimatedCounter end={15} suffix="+" />
               </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Years of Excellence
+              <span className="text-xs text-slate-200 mt-1.5 block font-semibold tracking-wider">
+                Years of Expertise
               </span>
             </div>
 
-            <div className="space-y-2 pt-4 md:pt-0 col-span-2 md:col-span-1 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center text-[#C59B27] mb-1">
-                <Star className="w-8 h-8 animate-badge-bounce" />
-              </div>
-              <strong className="font-serif-academic text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 block">
+            <div className="col-span-2 lg:col-span-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-all shadow-xl hover:-translate-y-1">
+              <strong className="text-3xl sm:text-4xl lg:text-5xl font-black text-white block">
                 <AnimatedCounter end={95} suffix="%" />
               </strong>
-              <span className="text-xs text-slate-300 uppercase tracking-wider block font-bold">
-                Career Guidance Rate
+              <span className="text-xs text-slate-200 mt-1.5 block font-semibold tracking-wider">
+                Placement &amp; Career Rate
               </span>
+            </div>
+
+          </div>
+
+          {/* Dedicated Decision CTA Card */}
+          <div className="bg-gradient-to-r from-[#071530] via-[#0c234b] to-[#071530] border border-[#C59B27]/40 rounded-3xl p-8 sm:p-12 shadow-2xl max-w-4xl mx-auto space-y-4 text-center mt-6">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] block">
+              YOUR FUTURE STARTS HERE
+            </span>
+            <h3 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Your future starts with one decision.
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Let's find the college that's right for you — free, personalised guidance on colleges, courses, entrance exams and education loans.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+              <a
+                href="tel:+917000212637"
+                className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs sm:text-sm px-6 py-3.5 rounded-full shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+              >
+                <Phone className="w-4 h-4 text-slate-900" />
+                <span>Call +91 7000212637</span>
+              </a>
+
+              <a
+                href="https://wa.me/917000212637?text=Hello%20PKC%20Education%2C%20I%20want%20free%20guidance%20for%20admissions%20and%20colleges."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-full shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-white" />
+                <span>Chat on WhatsApp</span>
+              </a>
             </div>
           </div>
 
           {/* Accreditations Banner */}
-          <div className="bg-[#0A1931] border border-[#C59B27]/40 rounded-2xl p-5 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-semibold text-slate-300">
+          <div className="bg-[#0A1931]/80 backdrop-blur-md border border-[#C59B27]/40 rounded-2xl p-4 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-4 text-xs font-semibold text-slate-300">
             <div className="flex items-center gap-2 text-emerald-400">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>UGC Approved Universities</span>
@@ -1068,11 +1218,11 @@ export default function MainUniversityHome({
                     {/* Top Image Banner */}
                     <div className="relative h-36 overflow-hidden bg-slate-900">
                       <img
-                        src={course.imageUrl || course.catImage || course.image || catImages[course.category] || catImages.Commerce || catImages.Arts}
+                        src={getCourseSubjectImage(course)}
                         alt={course.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-85"
                         onError={(e) => {
-                          e.target.src = catImages[course.category] || catImages.Commerce || catImages.Arts;
+                          e.target.src = getCourseSubjectImage(course);
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
