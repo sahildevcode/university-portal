@@ -534,101 +534,64 @@ export default function MainUniversityHome({
         <div className="absolute w-80 h-80 rounded-full bg-amber-500/10 blur-3xl top-1/3 left-1/2 -translate-x-1/2 animate-pulse pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="max-w-3xl lg:max-w-4xl space-y-6 text-center lg:text-left">
             
-            {/* Left Content */}
-            <div className="lg:col-span-8 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5 animate-pulse">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{lang === 'hi' ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी' : 'PKC EDUCATION LEARNING INSTITUTE & CONSULTANCY'}</span>
-                </span>
-              </div>
-
-              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
-                {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
-                <span className="relative inline-block mt-1.5 py-1">
-                  <span 
-                    key={currentPhraseIdx}
-                    className={`font-bold block animate-fadeIn py-1 ${
-                      lang === 'hi'
-                        ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
-                        : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
-                    }`}
-                  >
-                    {dynamicPhrases[currentPhraseIdx]}
-                  </span>
-                </span>
-              </h1>
-
-              <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed mx-auto lg:mx-0 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] font-medium">
-                {lang === 'hi' 
-                  ? (homeCms?.heroTaglineHi || 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।')
-                  : (homeCms?.heroTaglineEn || 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.')
-                }
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <button
-                  onClick={() => {
-                    fireCelebration({ x: 0.3, y: 0.5 });
-                    setActiveTab('courses');
-                  }}
-                  className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl border border-[#C59B27]/80 shadow-xl hover:border-[#C59B27] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
-                >
-                  <span className="relative z-10">{t.viewCourses}</span>
-                  <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1.5 transition-transform relative z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C59B27]/0 via-[#C59B27]/20 to-[#C59B27]/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    fireCelebration({ x: 0.5, y: 0.5 });
-                    setActiveTab('inquiry');
-                  }}
-                  className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>{t.onlineInquiry}</span>
-                  <ArrowRight className="w-4 h-4 text-slate-600" />
-                </button>
-              </div>
-
+            {/* Main Hero Badge */}
+            <div className="inline-flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5 animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>{lang === 'hi' ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी' : 'PKC EDUCATION LEARNING INSTITUTE & CONSULTANCY'}</span>
+              </span>
             </div>
 
-            {/* Right: Sir Photo with Ambient Glowing Shadow & Floating Animation */}
-            <div className="lg:col-span-4 flex justify-center lg:justify-end items-end relative pt-6 lg:pt-0">
-              <div 
-                onClick={() => fireCelebration({ x: 0.85, y: 0.45 })}
-                className="relative cursor-pointer group flex flex-col items-center select-none"
-                title="PKC Education Director & Academic Mentor 🎓"
+            <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
+              {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
+              <span className="relative inline-block mt-1.5 py-1">
+                <span 
+                  key={currentPhraseIdx}
+                  className={`font-bold block animate-fadeIn py-1 ${
+                    lang === 'hi'
+                      ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
+                      : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
+                  }`}
+                >
+                  {dynamicPhrases[currentPhraseIdx]}
+                </span>
+              </span>
+            </h1>
+
+            <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed mx-auto lg:mx-0 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] font-medium">
+              {lang === 'hi' 
+                ? (homeCms?.heroTaglineHi || 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।')
+                : (homeCms?.heroTaglineEn || 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.')
+              }
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <button
+                onClick={() => {
+                  fireCelebration({ x: 0.3, y: 0.5 });
+                  setActiveTab('courses');
+                }}
+                className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl border border-[#C59B27]/80 shadow-xl hover:border-[#C59B27] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
               >
-                {/* 1. Multi-layer Glowing Background Aura & Ambient Golden / Blue Shadow */}
-                <div className="absolute inset-0 -top-10 w-72 sm:w-80 h-72 sm:h-80 mx-auto rounded-full bg-gradient-to-tr from-[#C59B27]/40 via-blue-600/30 to-amber-300/35 blur-3xl opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 pointer-events-none" />
-                <div className="absolute bottom-4 w-64 h-24 rounded-full bg-[#C59B27]/30 blur-2xl pointer-events-none" />
+                <span className="relative z-10">{t.viewCourses}</span>
+                <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1.5 transition-transform relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#C59B27]/0 via-[#C59B27]/20 to-[#C59B27]/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              </button>
 
-                {/* 2. Sir's Photo with Float Animation and Rich Drop Shadow */}
-                <div className="relative z-10 animate-float transition-transform duration-500 group-hover:scale-[1.03]">
-                  <img
-                    src={homeCms?.sirHeroImage || "/sir_director_cutout.png"}
-                    alt="Director - PKC Education"
-                    className="max-h-[380px] sm:max-h-[460px] lg:max-h-[510px] w-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] drop-shadow-[0_10px_25px_rgba(197,155,39,0.35)] filter transition-all duration-300"
-                  />
-
-
-                  {/* Floating Pill Bottom Center / Left */}
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 sm:left-2 sm:translate-x-0 bg-gradient-to-r from-[#071530]/95 via-[#0A1931]/95 to-[#071530]/95 backdrop-blur-md border border-[#C59B27]/70 text-white rounded-2xl px-4 py-2 shadow-2xl flex items-center gap-2.5 whitespace-nowrap group-hover:scale-105 transition-all">
-                    <div className="w-7 h-7 rounded-xl bg-[#C59B27] text-slate-950 flex items-center justify-center font-black shrink-0 shadow-md">
-                      <GraduationCap className="w-4 h-4" />
-                    </div>
-                    <div className="text-left">
-                      <span className="text-[9px] font-bold text-amber-300 block uppercase tracking-wider">Director &amp; Chief Mentor</span>
-                      <strong className="text-xs font-black text-white block">PKC Education Academy</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <button
+                onClick={() => {
+                  fireCelebration({ x: 0.5, y: 0.5 });
+                  setActiveTab('inquiry');
+                }}
+                className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>{t.onlineInquiry}</span>
+                <ArrowRight className="w-4 h-4 text-slate-600" />
+              </button>
             </div>
 
           </div>
