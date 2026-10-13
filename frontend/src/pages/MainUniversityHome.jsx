@@ -1413,45 +1413,7 @@ export default function MainUniversityHome({
           </div>
 
           {/* Official Google Maps Location & Route Guide (With Share & Download Card) */}
-          <OfficeLocationMap className="my-8" />
-
-          {/* Direct Campus Admission Counter Banner */}
-          <div className="bg-[#071530] text-white rounded-3xl p-8 sm:p-10 border border-[#C59B27]/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-1.5 text-center md:text-left">
-              <span className="text-xs font-black uppercase tracking-widest text-[#C59B27]">
-                CAMPUS ADMISSION COUNTER &amp; HELPLINE
-              </span>
-              <h3 className="font-serif-academic text-2xl font-bold text-white">
-                PKC Education Learning Institute &amp; Consultancy
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Head Office: <a href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8" target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:text-white underline font-semibold transition-colors" title="Open in Google Maps">Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur (M.P.) - 471001 ↗</a> • Helpline: <a href="tel:+917000212637" className="text-white hover:text-amber-300 font-bold transition-colors">+91 7000212637</a>
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => {
-                  fireCelebration({ x: 0.75, y: 0.75 });
-                  setActiveTab('inquiry');
-                }}
-                className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 group"
-              >
-                <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
-                <span>DIRECT ADMISSION INQUIRY</span>
-              </button>
-
-              <a
-                href="https://wa.me/917000212637?text=Hello%20PKC%20Education%2C%20I%20have%20an%20inquiry%20regarding%20admissions."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-3.5 rounded-xl shadow-md flex items-center gap-1.5"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>WHATSAPP (7000212637)</span>
-              </a>
-            </div>
-          </div>
+          <OfficeLocationMap className="mt-8 mb-4" />
 
         </div>
       </section>
