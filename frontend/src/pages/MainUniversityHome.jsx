@@ -31,6 +31,7 @@ import { fireCelebration } from '../utils/confetti';
 import CourseDetailGuide from '../components/CourseDetailGuide';
 import TestimonialSlider from '../components/TestimonialSlider';
 import { getCourseSubjectImage } from '../utils/courseImageHelper';
+import OfficeLocationMap from '../components/OfficeLocationMap';
 
 function WhatsAppIcon({ className = "w-4 h-4" }) {
   return (
@@ -1410,6 +1411,9 @@ export default function MainUniversityHome({
               )}
             </form>
           </div>
+
+          {/* Official Google Maps Location & Route Guide (With Share & Download Card) */}
+          <OfficeLocationMap className="my-8" />
 
           {/* Direct Campus Admission Counter Banner */}
           <div className="bg-[#071530] text-white rounded-3xl p-8 sm:p-10 border border-[#C59B27]/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">

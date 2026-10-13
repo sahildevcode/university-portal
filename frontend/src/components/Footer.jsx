@@ -345,7 +345,7 @@ export default function Footer({ setActiveTab = () => {} }) {
 
               {/* Head Office Location Card */}
               <a 
-                href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8"
+                href="https://share.google/r5US9gVYqU8Uui9Gj"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block p-2.5 bg-slate-900/90 border border-slate-800 hover:border-[#C59B27]/60 rounded-xl transition-all group"

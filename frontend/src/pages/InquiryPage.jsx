@@ -12,6 +12,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { translations } from '../utils/translations';
+import OfficeLocationMap from '../components/OfficeLocationMap';
 
 export default function InquiryPage({ courses = [], lang = 'en' }) {
   const t = translations[lang] || translations.en;
@@ -316,7 +317,7 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
                 <div>
                   <strong className="block text-white font-semibold">Campus Address:</strong>
                   <a 
-                    href="https://maps.app.goo.gl/j28qn74aWXJN1ueM8"
+                    href="https://share.google/r5US9gVYqU8Uui9Gj"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-slate-300 hover:text-amber-400 hover:underline transition-colors block"
@@ -393,6 +394,11 @@ export default function InquiryPage({ courses = [], lang = 'en' }) {
             </ul>
           </div>
 
+        </div>
+
+        {/* Head Office Interactive Map, Navigation, Share & Download Card */}
+        <div className="mt-12">
+          <OfficeLocationMap />
         </div>
 
       </div>
