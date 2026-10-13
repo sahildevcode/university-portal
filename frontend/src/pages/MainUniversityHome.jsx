@@ -521,10 +521,11 @@ export default function MainUniversityHome({
           <img 
             src={homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"} 
             alt="University Campus" 
-            className="w-full h-full object-cover object-center opacity-60 scale-105 transition-all duration-700"
+            className="w-full h-full object-cover object-center opacity-90 scale-105 brightness-105 contrast-105 transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/90 via-[#071530]/80 to-[#071530]/65" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071530] via-transparent to-black/40" />
+          {/* Subtle translucent dark overlay for text contrast while keeping background bright and clear */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/80 via-[#071530]/50 to-[#071530]/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071530]/90 via-transparent to-black/30" />
         </div>
 
         {/* Ambient Floating Glowing Particle Orbs */}
@@ -544,15 +545,15 @@ export default function MainUniversityHome({
                 </span>
               </div>
 
-              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
                 {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
                 <span className="relative inline-block mt-1.5 py-1">
                   <span 
                     key={currentPhraseIdx}
                     className={`font-bold block animate-fadeIn py-1 ${
                       lang === 'hi'
-                        ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl'
-                        : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic'
+                        ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
+                        : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
                     }`}
                   >
                     {dynamicPhrases[currentPhraseIdx]}
@@ -560,7 +561,7 @@ export default function MainUniversityHome({
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed mx-auto lg:mx-0">
+              <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed mx-auto lg:mx-0 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] font-medium">
                 {lang === 'hi' 
                   ? (homeCms?.heroTaglineHi || 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।')
                   : (homeCms?.heroTaglineEn || 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.')
