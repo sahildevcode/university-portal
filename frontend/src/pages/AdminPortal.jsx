@@ -211,7 +211,7 @@ export default function AdminPortal({
       const sId = s.id || s.username;
       const res = await fetch(`/api/staff/${sId}`);
       const data = await res.json();
-      if (data.success && data.staff) {
+      if (data.success && data.staff && localStorage.getItem('pkc_staff_user')) {
         setCurrentStaff(data.staff);
         localStorage.setItem('pkc_staff_user', JSON.stringify(data.staff));
       }

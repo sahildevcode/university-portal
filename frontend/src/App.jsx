@@ -222,25 +222,48 @@ export default function App() {
         } catch {}
       }
 
-      // If student is logged in, refresh their student record
-      if (studentUser?.rollNo) {
-        const stdRes = await fetch(`/api/students/${studentUser.rollNo}`);
-        const stdData = await stdRes.json();
-        if (stdData.success) setStudentData(stdData.student);
+      // If student is logged in, refresh their student record (safeguarded against logged-out state)
+      const currentStudentRaw = localStorage.getItem('pkc_student_user');
+      if (currentStudentRaw) {
+        try {
+          const curStd = JSON.parse(currentStudentRaw);
+          if (curStd?.rollNo) {
+            const stdRes = await fetch(`/api/students/${curStd.rollNo}`);
+            const stdData = await stdRes.json();
+            if (stdData.success && localStorage.getItem('pkc_student_user')) {
+              setStudentData(stdData.student);
+            }
+          }
+        } catch {}
+      } else {
+        if (studentUser) {
+          setStudentUser(null);
+          setStudentData(null);
+        }
       }
 
-      // If staff is logged in, refresh live allowedModules and profile
-      if (staffUser?.id || staffUser?.username) {
+      // If staff is logged in, refresh live allowedModules and profile (strictly check localStorage)
+      const currentStaffRaw = localStorage.getItem('pkc_staff_user');
+      if (currentStaffRaw) {
         try {
-          const sId = staffUser.id || staffUser.username;
-          const stfRes = await fetch(`/api/staff/${sId}`);
-          const stfData = await stfRes.json();
-          if (stfData.success && stfData.staff) {
-            setStaffUser(stfData.staff);
-            localStorage.setItem('pkc_staff_user', JSON.stringify(stfData.staff));
+          const curStaff = JSON.parse(currentStaffRaw);
+          const sId = curStaff?.id || curStaff?.username;
+          if (sId) {
+            const stfRes = await fetch(`/api/staff/${sId}`);
+            const stfData = await stfRes.json();
+            // Strictly re-verify that user did NOT logout while request was in-flight
+            if (stfData.success && stfData.staff && localStorage.getItem('pkc_staff_user')) {
+              setStaffUser(stfData.staff);
+              localStorage.setItem('pkc_staff_user', JSON.stringify(stfData.staff));
+            }
           }
         } catch (stfErr) {
           console.warn('Error refreshing staff permissions in global data:', stfErr);
+        }
+      } else {
+        // If logged out from localStorage, force staff state to null so it never auto-logs in!
+        if (staffUser) {
+          setStaffUser(null);
         }
       }
     } catch (err) {
