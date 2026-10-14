@@ -51,39 +51,74 @@ export default function Footer({ setActiveTab = () => {} }) {
 
   const servicesList = [
     {
-      title: 'University Degree Admissions',
-      desc: 'Regular, Distance & Private (BA, B.Sc, B.Com, BCA, MBA, B.Tech, B.Ed)',
-      badge: 'UGC Approved'
+      title: 'College admission consultancy',
+      desc: 'Top university & college selection, counseling, seat allotment & document guidance.',
+      badge: 'Admissions'
     },
     {
-      title: 'Govt. Computer Diplomas',
-      desc: 'DCA & PGDCA with High-Tech AC Computer Lab & Practical Coding',
+      title: 'Mp Online Traning',
+      desc: 'Citizen portal services, online government application forms & digital kiosk training.',
+      badge: 'Govt. Portal'
+    },
+    {
+      title: 'Degree & Diploma Admission Advisory',
+      desc: 'Full advisory for recognized UGC regular, private & distance degree / diploma courses.',
+      badge: 'UGC Advisory'
+    },
+    {
+      title: 'Higher Education Consultancy',
+      desc: 'Master degrees, doctorate research, M.Phil & higher academic career consultation.',
+      badge: 'University Tie-ups'
+    },
+    {
+      title: 'Vocational and certificate courses',
+      desc: 'Short-term skill development modules, job-oriented certificates & practical training.',
       badge: 'Certified'
     },
     {
-      title: 'Tally Prime & GST Accounting',
-      desc: 'Corporate Accounting, Tally ERP 9, GST Billing & Return Filing',
-      badge: '100% Practical'
+      title: 'Career Counselling',
+      desc: 'One-on-one student career roadmap, aptitude assessment & educational guidance.',
+      badge: '1-on-1 Mentorship'
     },
     {
-      title: 'CPCT Typing Training Desk',
-      desc: 'Hindi Mangal Unicode & English High-Speed Computer Typing',
-      badge: 'Special Batch'
+      title: 'Soft skill',
+      desc: 'Personality development, corporate communication, public speaking & etiquette.',
+      badge: 'Personality'
     },
     {
-      title: '100% Scholarship Assistance',
-      desc: 'Complete MPTASS & NSP Form Guidance for SC / ST / OBC Candidates',
+      title: 'Computer literary Programs',
+      desc: 'Essential computer operations, digital literacy, internet tools & office typing.',
+      badge: 'Digital Skills'
+    },
+    {
+      title: 'Admission Guidance',
+      desc: 'Direct admission support, university verification, eligibility checks & registration.',
+      badge: 'Full Support'
+    },
+    {
+      title: 'Job placement services',
+      desc: 'Resume preparation, mock interviews, corporate campus placement tie-ups & referrals.',
+      badge: 'Placement'
+    },
+    {
+      title: 'Scholarship Base Courses',
+      desc: '100% fee concession & scholarship application assistance under MPTASS & NSP schemes.',
       badge: 'Fee Benefit'
     },
     {
-      title: 'Career Counseling & Placement',
-      desc: 'Corporate Campus Placement Tie-ups, Interview Prep & Resume Building',
-      badge: 'Job Ready'
+      title: 'Students Orientation program',
+      desc: 'Welcome induction sessions, academic syllabus breakdown & semester exam guidance.',
+      badge: 'Induction'
     },
     {
-      title: 'Exam Forms & Verification Desk',
-      desc: 'University Enrollment, Exam Form Submission & Marksheet Verification',
-      badge: 'Full Support'
+      title: 'Mock Interview',
+      desc: 'Practical interview preparation, viva rounds, personality feedback & confidence booster.',
+      badge: 'Interview Prep'
+    },
+    {
+      title: 'UG/PG All Course',
+      desc: 'Comprehensive admissions for BA, B.Sc, B.Com, BCA, MBA, B.Tech, M.Com, M.Sc & more.',
+      badge: 'All Streams'
     }
   ];
 
@@ -183,11 +218,11 @@ export default function Footer({ setActiveTab = () => {} }) {
                 <span>Our Services &amp; Consultancy</span>
               </span>
               <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                What We Offer
+                All 14 Services
               </span>
             </h4>
             
-            <ul className="space-y-2.5 text-xs">
+            <ul className="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700">
               {servicesList.map((svc, i) => (
                 <li key={i} className="flex items-start gap-2.5 group">
                   <div className="w-4 h-4 rounded-full bg-amber-500/20 text-[#C59B27] flex items-center justify-center shrink-0 mt-0.5">
