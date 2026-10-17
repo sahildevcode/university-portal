@@ -17,163 +17,220 @@ import {
   Compass, 
   CheckCircle2,
   Building2,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 
 export default function OfficeLocationMap({ className = "" }) {
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [copied, setCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [viewMode, setViewMode] = useState('dark'); // 'dark' (as in screenshot) or 'satellite'
+  const [viewMode, setViewMode] = useState('dark'); // 'dark' or 'satellite'
   const [downloading, setDownloading] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
-  // Official Google Maps Link shared by client
-  const googleMapsUrl = "https://share.google/r5US9gVYqU8Uui9Gj";
-  const navigationUrl = "https://www.google.com/maps/dir/?api=1&destination=PKC+Education+Learning+Institute+Office+Chhatarpur";
-  const fullAddress = "Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur, Madhya Pradesh - 471001";
-  const officeName = "PKC Education Learning Institute Office Chhatarpur";
+  // Both Official Campuses Data
+  const locations = {
+    office: {
+      id: 'office',
+      name: "PKC Education Learning Institute (Head Office)",
+      shortName: "Head Office (Panna Road)",
+      tag: "HEAD OFFICE (MAIN CAMPUS)",
+      badge: "UGC Admissions & Administration",
+      address: "Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur (M.P.) - 471001",
+      landmarks: "Near Loknathpuram Colony & Govt. Maharaja PG College",
+      mapsUrl: "https://share.google/r5US9gVYqU8Uui9Gj",
+      navUrl: "https://www.google.com/maps/dir/?api=1&destination=PKC+Education+Learning+Institute+Office+Chhatarpur"
+    },
+    institute: {
+      id: 'institute',
+      name: "PKC Education Learning Institute (Institute Campus)",
+      shortName: "Institute Campus (Satai Road)",
+      tag: "INSTITUTE CAMPUS (BRANCH)",
+      badge: "Computer Lab & IT Training",
+      address: "PKC Education Learning Institute, Satai Road, Pooja Doodh Dairy ke Upper, Chhatarpur (M.P.)",
+      landmarks: "Near Pooja Doodh Dairy, Satai Road",
+      mapsUrl: "https://maps.app.goo.gl/kTX4J2zAUR8LHpuU9",
+      navUrl: "https://www.google.com/maps/dir/?api=1&destination=PKC+Education+Learning+Institute+Satai+Road+Chhatarpur"
+    }
+  };
 
-  // Handle Share functionality
-  const handleShare = async () => {
+  const helplineNumber = "+91 7580878825";
+  const officeHoursText = "Mon - Sat: 10:00 AM - 06:00 PM";
+  const googleMapsUrl = locations.office.mapsUrl;
+
+  // Share functionality with 2 location options
+  const handleShareLocation = async (type = 'office') => {
+    const loc = locations[type];
     const shareData = {
-      title: officeName,
-      text: `PKC Education Learning Institute Office Chhatarpur location on Google Maps:\nAddress: ${fullAddress}\nPhone: +91 7000212637\n`,
-      url: googleMapsUrl,
+      title: loc.name,
+      text: `${loc.name} location on Google Maps:\nAddress: ${loc.address}\nLandmark: ${loc.landmarks}\nHelpline: ${helplineNumber}\nTiming: ${officeHoursText}\n`,
+      url: loc.mapsUrl,
     };
 
     if (navigator.share) {
       try {
         await navigator.share(shareData);
         return;
-      } catch (err) {
-        // User cancelled or share failed, fallback to clipboard
-      }
+      } catch (err) {}
     }
 
-    // Fallback: Copy to clipboard
     try {
-      await navigator.clipboard.writeText(`${officeName}\n${fullAddress}\nGoogle Maps: ${googleMapsUrl}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      await navigator.clipboard.writeText(`${loc.name}\nAddress: ${loc.address}\nHelpline: ${helplineNumber}\nGoogle Maps: ${loc.mapsUrl}`);
+      setCopiedType(type);
+      setTimeout(() => setCopiedType(null), 3000);
     } catch {
-      window.prompt("Copy location link:", googleMapsUrl);
+      window.prompt("Copy location link:", loc.mapsUrl);
     }
   };
 
-  // Direct WhatsApp Share
-  const handleWhatsAppShare = () => {
+  // WhatsApp Share with 2 location options
+  const handleWhatsAppShare = (type = 'office') => {
+    const loc = locations[type];
     const text = encodeURIComponent(
-      `📍 *${officeName}*\n\n` +
-      `🏢 *Address:* ${fullAddress}\n` +
-      `📞 *Contact:* +91 7000212637, 7580878825\n` +
-      `🗺️ *Google Maps Location:* ${googleMapsUrl}\n\n` +
-      `Admissions & Course Counseling: BCA, MBA, B.Tech, DCA, PGDCA, B.Ed, M.P. Online`
+      `📍 *${loc.name}*\n\n` +
+      `🏢 *Address:* ${loc.address}\n` +
+      `📌 *Landmark:* ${loc.landmarks}\n` +
+      `📞 *Helpline:* ${helplineNumber}\n` +
+      `⏰ *Office Hours:* ${officeHoursText}\n` +
+      `🗺️ *Google Maps Link:* ${loc.mapsUrl}\n\n` +
+      `Admissions & Course Counseling: BA, B.Sc, B.Com, BCA, MBA, B.Tech, DCA, PGDCA, B.Ed, MPTASS Scholarship`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
-  // Handle Offline Location Card Download via Canvas
+  // Handle Offline Location Card Download via Canvas (Generates image featuring BOTH Campuses)
   const handleDownloadCard = () => {
     setDownloading(true);
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 1200;
-      canvas.height = 750;
+      canvas.height = 780;
       const ctx = canvas.getContext('2d');
 
       // 1. Background Gradient
-      const grad = ctx.createLinearGradient(0, 0, 1200, 750);
+      const grad = ctx.createLinearGradient(0, 0, 1200, 780);
       grad.addColorStop(0, '#071530');
       grad.addColorStop(0.5, '#0c234b');
       grad.addColorStop(1, '#050f24');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1200, 750);
+      ctx.fillRect(0, 0, 1200, 780);
 
       // Gold Accent Border
       ctx.strokeStyle = '#C59B27';
       ctx.lineWidth = 8;
-      ctx.strokeRect(20, 20, 1160, 710);
+      ctx.strokeRect(20, 20, 1160, 740);
 
       // Inner subtle border
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.lineWidth = 2;
-      ctx.strokeRect(32, 32, 1136, 686);
+      ctx.strokeRect(32, 32, 1136, 716);
 
       // Top Tag
       ctx.fillStyle = '#C59B27';
       ctx.font = 'bold 22px system-ui, sans-serif';
       ctx.letterSpacing = '3px';
-      ctx.fillText('OFFICIAL HEAD OFFICE & CAMPUS LOCATION GUIDE', 70, 90);
+      ctx.fillText('OFFICIAL HEAD OFFICE & CAMPUS LOCATION GUIDE', 60, 85);
 
       // Institute Name
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 44px Georgia, serif';
+      ctx.font = 'bold 40px Georgia, serif';
       ctx.letterSpacing = '0px';
-      ctx.fillText('PKC Education Learning Institute & Consultancy', 70, 150);
+      ctx.fillText('PKC Education Learning Institute & Consultancy', 60, 140);
 
       // Rating & Verified badge
       ctx.fillStyle = '#F59E0B';
-      ctx.font = 'bold 26px system-ui, sans-serif';
-      ctx.fillText('★ 5.0 Google Verified (Education Center)', 70, 200);
+      ctx.font = 'bold 24px system-ui, sans-serif';
+      ctx.fillText('★ 5.0 Google Verified (Education Center)', 60, 185);
 
       // Divider line
       ctx.strokeStyle = 'rgba(197, 155, 39, 0.4)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(70, 230);
-      ctx.lineTo(1130, 230);
+      ctx.moveTo(60, 210);
+      ctx.lineTo(1140, 210);
       ctx.stroke();
 
-      // Location Card Box (Simulated dark map preview)
+      // ==========================================
+      // BOX 1 (LEFT): 🏢 HEAD OFFICE (PANNA ROAD)
+      // ==========================================
       ctx.fillStyle = '#0f1f3d';
-      ctx.fillRect(70, 260, 1060, 260);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.fillRect(60, 230, 525, 340);
+      ctx.strokeStyle = 'rgba(197, 155, 39, 0.35)';
       ctx.lineWidth = 2;
-      ctx.strokeRect(70, 260, 1060, 260);
+      ctx.strokeRect(60, 230, 525, 340);
 
-      // Address section
       ctx.fillStyle = '#93C5FD';
-      ctx.font = 'bold 22px system-ui, sans-serif';
-      ctx.fillText('📍 PRIMARY CAMPUS ADDRESS:', 110, 315);
+      ctx.font = 'bold 20px system-ui, sans-serif';
+      ctx.fillText('🏢 1. HEAD OFFICE (PANNA ROAD):', 85, 275);
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 28px system-ui, sans-serif';
-      ctx.fillText('Beside Govt. Girls College, Panna Road,', 110, 360);
-      ctx.fillText('Choubey Colony, Chhatarpur (M.P.) - 471001', 110, 405);
+      ctx.font = 'bold 23px system-ui, sans-serif';
+      ctx.fillText('Beside Govt. Girls College, Panna Road,', 85, 320);
+      ctx.fillText('Choubey Colony, Chhatarpur (M.P.) - 471001', 85, 360);
 
-      ctx.fillStyle = '#E2E8F0';
-      ctx.font = '22px system-ui, sans-serif';
-      ctx.fillText('Landmarks: Near Loknathpuram Colony & Govt. Maharaja PG College', 110, 460);
+      ctx.fillStyle = '#CBD5E1';
+      ctx.font = '18px system-ui, sans-serif';
+      ctx.fillText('Landmark: Near Loknathpuram & Maharaja College', 85, 420);
 
-      // Contact & Timing Row
+      ctx.fillStyle = '#FBBF24';
+      ctx.font = '16px system-ui, sans-serif';
+      ctx.fillText('🗺️ Maps: https://share.google/r5US9gVYqU8Uui9Gj', 85, 475);
+      ctx.fillText('• UGC Degree Admissions & University Counseling', 85, 525);
+
+      // ==========================================
+      // BOX 2 (RIGHT): 🏫 INSTITUTE CAMPUS (SATAI ROAD)
+      // ==========================================
+      ctx.fillStyle = '#0f1f3d';
+      ctx.fillRect(615, 230, 525, 340);
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.35)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(615, 230, 525, 340);
+
+      ctx.fillStyle = '#A7F3D0';
+      ctx.font = 'bold 20px system-ui, sans-serif';
+      ctx.fillText('🏫 2. INSTITUTE CAMPUS (SATAI ROAD):', 640, 275);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 23px system-ui, sans-serif';
+      ctx.fillText('PKC Education Learning Institute,', 640, 320);
+      ctx.fillText('Satai Road, Pooja Doodh Dairy ke Upper,', 640, 360);
+      ctx.fillText('Chhatarpur (M.P.)', 640, 400);
+
+      ctx.fillStyle = '#CBD5E1';
+      ctx.font = '18px system-ui, sans-serif';
+      ctx.fillText('Landmark: Near Pooja Doodh Dairy, Satai Road', 640, 450);
+
+      ctx.fillStyle = '#FBBF24';
+      ctx.font = '16px system-ui, sans-serif';
+      ctx.fillText('🗺️ Maps: https://maps.app.goo.gl/kTX4J2zAUR8LHpuU9', 640, 495);
+      ctx.fillText('• Practical Computer Labs, DCA, PGDCA & Training', 640, 535);
+
+      // Contact & Timing Row (Below Boxes)
       ctx.fillStyle = '#10B981';
       ctx.font = 'bold 24px system-ui, sans-serif';
-      ctx.fillText('📞 Helpline: +91 7000212637, 7580878825', 70, 575);
+      ctx.fillText(`📞 Helpline: ${helplineNumber}`, 60, 615);
 
       ctx.fillStyle = '#FBBF24';
       ctx.font = 'bold 24px system-ui, sans-serif';
-      ctx.fillText('⏰ Office Hours: Mon - Sat: 09:00 AM - 07:00 PM', 70, 620);
-
-      ctx.fillStyle = '#94A3B8';
-      ctx.font = '20px system-ui, sans-serif';
-      ctx.fillText(`🗺️ Google Maps Link: ${googleMapsUrl}`, 70, 665);
+      ctx.fillText(`⏰ Office Hours: ${officeHoursText}`, 550, 615);
 
       // Bottom footer branding
-      ctx.fillStyle = '#64748B';
+      ctx.fillStyle = '#94A3B8';
       ctx.font = 'italic 18px system-ui, sans-serif';
-      ctx.fillText('Authorized UGC Degree Admissions & Govt. Recognized IT Diplomas (Est. 2011)', 70, 700);
+      ctx.fillText('Authorized UGC Degree Admissions & Govt. Recognized IT Diplomas (Est. 2011)', 60, 670);
 
       // Download triggered
       const imageURL = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
       downloadLink.href = imageURL;
-      downloadLink.download = 'PKC_Education_Office_Location_Chhatarpur.png';
+      downloadLink.download = 'PKC_Education_Head_Office_And_Institute_Location.png';
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
     } catch (e) {
       console.error('Download error:', e);
-      window.open(googleMapsUrl, '_blank');
+      window.open(locations.office.mapsUrl, '_blank');
     } finally {
       setTimeout(() => setDownloading(false), 800);
     }
@@ -492,29 +549,29 @@ export default function OfficeLocationMap({ className = "" }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* OFFICE DETAILS & ACTION BUTTONS BAR (Directly Under Map) */}
+        {/* OFFICE DETAILS & BOTH CAMPUS CARDS (Directly Under Map) */}
         {/* ========================================================================= */}
-        <div className="p-5 sm:p-7 bg-gradient-to-b from-[#0a152d] to-[#071024] border-t border-slate-800 space-y-5">
+        <div className="p-5 sm:p-7 bg-gradient-to-b from-[#0a152d] to-[#071024] border-t border-slate-800 space-y-6">
           
-          {/* Business Title, Rating & Address Row */}
+          {/* Header Row: Title, Rating & Quick Timings */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/30 px-2.5 py-0.5 rounded-md">
-                  HEAD OFFICE (CHHATARPUR)
+                  CHHATARPUR CAMPUSES &amp; OFFICES
                 </span>
                 <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Google Verified Location</span>
+                  <span>Google Verified Locations</span>
                 </span>
               </div>
 
               <h2 className="font-serif-academic text-xl sm:text-2xl font-bold text-white tracking-tight">
-                PKC Education Learning Institute Office Chhatarpur
+                PKC Education Learning Institute &amp; Consultancy
               </h2>
 
-              {/* Rating as in screenshot */}
+              {/* 5.0 Google Rating */}
               <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-300">
                 <span className="font-black text-amber-400">5.0</span>
                 <div className="flex items-center text-amber-400">
@@ -522,72 +579,184 @@ export default function OfficeLocationMap({ className = "" }) {
                     <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <span className="text-slate-400 font-semibold">(1) • Education center</span>
+                <span className="text-slate-400 font-semibold">(1) • Official Education Center</span>
               </div>
-
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed flex items-start gap-1.5 pt-0.5">
-                <MapPin className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
-                <span>
-                  <strong>Full Address:</strong> {fullAddress}
-                </span>
-              </p>
             </div>
 
-            {/* Quick Timing & Contact Badge Box */}
+            {/* Quick Timing & Contact Badge Box (Updated: 10 AM to 6 PM & only 7580878825) */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2 shrink-0">
               <div className="flex items-center gap-2 text-xs text-slate-300 font-medium">
                 <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Office: Mon - Sat: <strong>09:00 AM - 07:00 PM</strong></span>
+                <span>Office: Mon - Sat: <strong>10:00 AM - 06:00 PM</strong></span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-300 font-medium">
                 <Phone className="w-4 h-4 text-[#C59B27] shrink-0" />
-                <span>Call Desk: <strong className="text-white">+91 7000212637, 7580878825</strong></span>
+                <span>Call Desk: <strong className="text-white">+91 7580878825</strong></span>
               </div>
             </div>
 
           </div>
 
           {/* ========================================================================= */}
-          {/* USER SPECIFIED ACTION BUTTONS: Navigate, Share & Download */}
+          {/* BOTH CAMPUS ADDRESS CARDS (HEAD OFFICE + INSTITUTE CAMPUS) */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Campus 1: Head Office Card */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 hover:border-amber-400/60 transition-all space-y-3 flex flex-col justify-between group">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-md flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3 text-amber-400" />
+                    <span>HEAD OFFICE (PANNA ROAD)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">UGC Admissions</span>
+                </div>
+
+                <h4 className="font-bold text-white text-sm group-hover:text-amber-300 transition-colors">
+                  {locations.office.name}
+                </h4>
+
+                <p className="text-xs text-slate-300 leading-relaxed flex items-start gap-1.5">
+                  <MapPin className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
+                  <span>{locations.office.address}</span>
+                </p>
+
+                <p className="text-[11px] text-slate-400 pl-5">
+                  <strong>Landmark:</strong> {locations.office.landmarks}
+                </p>
+              </div>
+
+              {/* Action Buttons for Office */}
+              <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+                <a
+                  href={locations.office.navUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>Directions</span>
+                </a>
+
+                <button
+                  onClick={() => handleShareLocation('office')}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="Copy Head Office Google Maps Link"
+                >
+                  {copiedType === 'office' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleWhatsAppShare('office')}
+                  className="bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="Share Office on WhatsApp"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Campus 2: Institute Campus Card */}
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 hover:border-emerald-400/60 transition-all space-y-3 flex flex-col justify-between group">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded-md flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3 text-emerald-400" />
+                    <span>INSTITUTE CAMPUS (SATAI ROAD)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">IT Labs &amp; Training</span>
+                </div>
+
+                <h4 className="font-bold text-white text-sm group-hover:text-emerald-300 transition-colors">
+                  {locations.institute.name}
+                </h4>
+
+                <p className="text-xs text-slate-300 leading-relaxed flex items-start gap-1.5">
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{locations.institute.address}</span>
+                </p>
+
+                <p className="text-[11px] text-slate-400 pl-5">
+                  <strong>Landmark:</strong> {locations.institute.landmarks}
+                </p>
+              </div>
+
+              {/* Action Buttons for Institute */}
+              <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+                <a
+                  href={locations.institute.navUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>Directions</span>
+                </a>
+
+                <button
+                  onClick={() => handleShareLocation('institute')}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="Copy Institute Campus Google Maps Link"
+                >
+                  {copiedType === 'institute' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleWhatsAppShare('institute')}
+                  className="bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 text-[11px] font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="Share Institute on WhatsApp"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ========================================================================= */}
+          {/* USER ACTION BUTTONS BAR: Share Choice, WhatsApp & Download */}
           {/* ========================================================================= */}
           <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
             
             {/* Left Action Buttons */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
               
-              {/* 1. Navigate / Get Directions */}
-              <a
-                href={navigationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 sm:flex-initial bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 group cursor-pointer"
-              >
-                <Navigation className="w-4 h-4 text-slate-950 group-hover:rotate-45 transition-transform" />
-                <span>GET DIRECTIONS (NAVIGATE)</span>
-              </a>
-
-              {/* 2. Share Location (Native / Clipboard) */}
+              {/* 1. Share Location (Opens 2-option chooser) */}
               <button
-                onClick={handleShare}
-                className="flex-1 sm:flex-initial bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl border border-slate-700 hover:border-slate-500 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                title="Share this location with others"
+                onClick={() => setShareModalOpen(true)}
+                className="flex-1 sm:flex-initial bg-[#C59B27] hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                title="Share Office or Institute location link"
               >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span className="text-emerald-400">LINK COPIED!</span>
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="w-4 h-4 text-amber-400" />
-                    <span>SHARE LOCATION</span>
-                  </>
-                )}
+                <Share2 className="w-4 h-4 text-slate-950" />
+                <span>SHARE LOCATION LINK (2 OPTIONS)</span>
               </button>
 
-              {/* 3. WhatsApp Direct Share */}
+              {/* 2. WhatsApp Direct Share (Opens 2-option chooser) */}
               <button
-                onClick={handleWhatsAppShare}
+                onClick={() => setShareModalOpen(true)}
                 className="flex-1 sm:flex-initial bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 title="Share Location on WhatsApp"
               >
@@ -595,12 +764,12 @@ export default function OfficeLocationMap({ className = "" }) {
                 <span>WHATSAPP SHARE</span>
               </button>
 
-              {/* 4. Download Location / Visiting Card (Requested by User) */}
+              {/* 3. Download Location / Visiting Card (Features Both Campuses) */}
               <button
                 onClick={handleDownloadCard}
                 disabled={downloading}
                 className="flex-1 sm:flex-initial bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-wider px-4 py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                title="Download offline location map card to your phone"
+                title="Download offline location map card with both campus addresses"
               >
                 <Download className={`w-4 h-4 text-white ${downloading ? 'animate-bounce' : ''}`} />
                 <span>{downloading ? 'GENERATING...' : 'DOWNLOAD MAP CARD'}</span>
@@ -608,13 +777,13 @@ export default function OfficeLocationMap({ className = "" }) {
 
             </div>
 
-            {/* Direct Dial Call Office Button */}
+            {/* Direct Dial Call Office Button (Updated: only +91 7580878825) */}
             <a
-              href="tel:+917000212637"
+              href={`tel:${helplineNumber}`}
               className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors"
             >
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Need help reaching? Call +91 7000212637</span>
+              <span>Need help reaching? Call {helplineNumber}</span>
             </a>
 
           </div>
@@ -622,6 +791,175 @@ export default function OfficeLocationMap({ className = "" }) {
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* 2-OPTION LINK SHARE CHOOSER MODAL (INSTITUTE VS OFFICE) */}
+      {/* ========================================================================= */}
+      {shareModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setShareModalOpen(false)}
+        >
+          <div 
+            className="bg-[#0b1325] border border-slate-700 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                  <Share2 className="w-5 h-5 text-amber-400" />
+                </span>
+                <div>
+                  <h3 className="font-serif-academic font-bold text-lg text-white">
+                    Share Location Link
+                  </h3>
+                  <p className="text-xs text-amber-300/80 font-medium">
+                    चुनें कि आपको किस लोकेशन का लिंक शेयर करना है:
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Options List */}
+            <div className="space-y-3.5">
+              
+              {/* Option 1: Head Office */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/30 hover:border-amber-400 transition-all space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded">
+                    OPTION 1: HEAD OFFICE
+                  </span>
+                  <span className="text-xs font-bold text-slate-400">Panna Road</span>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white text-sm">
+                    {locations.office.name}
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                    {locations.office.address}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleShareLocation('office')}
+                    className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    {copiedType === 'office' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-slate-950" />
+                        <span>Link Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Office Link</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleWhatsAppShare('office')}
+                    className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <a
+                    href={locations.office.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-2 rounded-xl transition-colors"
+                    title="Open in Maps"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Option 2: Institute Campus */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-emerald-500/30 hover:border-emerald-400 transition-all space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 rounded">
+                    OPTION 2: INSTITUTE CAMPUS
+                  </span>
+                  <span className="text-xs font-bold text-slate-400">Satai Road</span>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white text-sm">
+                    {locations.institute.name}
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                    {locations.institute.address}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleShareLocation('institute')}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    {copiedType === 'institute' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-slate-950" />
+                        <span>Link Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Institute Link</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleWhatsAppShare('institute')}
+                    className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  <a
+                    href={locations.institute.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white p-2 rounded-xl transition-colors"
+                    title="Open in Maps"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+              <span>Helpline: {helplineNumber}</span>
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="font-bold text-slate-400 hover:text-white cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

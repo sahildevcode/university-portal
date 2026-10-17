@@ -18,6 +18,8 @@ import {
   Zap,
   Check,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Filter,
   Search,
   School,
@@ -113,6 +115,7 @@ export default function MainUniversityHome({
   const [courseSearch, setCourseSearch] = useState('');
   const [courseCategory, setCourseCategory] = useState('all');
   const [courseViewMode, setCourseViewMode] = useState('grid');
+  const [visibleCourseCount, setVisibleCourseCount] = useState(9);
   const [dbCourses, setDbCourses] = useState(() => {
     if (Array.isArray(courses) && courses.length > 0) return courses;
     try {
@@ -125,6 +128,11 @@ export default function MainUniversityHome({
     return [];
   });
   const [selectedCourseModal, setSelectedCourseModal] = useState(null);
+
+  // Reset pagination limit back to 9 on filter or search change
+  useEffect(() => {
+    setVisibleCourseCount(9);
+  }, [courseCategory, courseSearch]);
 
   useEffect(() => {
     if (Array.isArray(courses) && courses.length > 0) {
@@ -459,6 +467,8 @@ export default function MainUniversityHome({
     return matchCat && matchSearch;
   });
 
+  const displayedCourses = filteredCourses.slice(0, visibleCourseCount);
+
   // 5 Program Categories
   const programCategories = [
     {
@@ -529,17 +539,17 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 1: HERO & LEGACY */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center bg-[#071530] text-white py-16 sm:py-24 overflow-hidden border-b border-[#C59B27]/30">
+      <section className="relative min-h-[380px] sm:min-h-[420px] lg:h-[calc(100vh-160px)] lg:max-h-[460px] flex flex-col justify-between bg-[#071530] text-white overflow-hidden border-b border-[#C59B27]/30">
         {/* Campus Background Image with Balanced Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
             src={homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"} 
             alt="University Campus" 
-            className="w-full h-full object-cover object-center opacity-90 scale-105 brightness-105 contrast-105 transition-all duration-700"
+            className="w-full h-full object-cover object-[center_30%] opacity-90 brightness-105 contrast-105 transition-all duration-700"
           />
           {/* Subtle translucent dark overlay for text contrast while keeping background bright and clear */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/80 via-[#071530]/50 to-[#071530]/25" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071530]/90 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/85 via-[#071530]/50 to-[#071530]/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#071530]/90 via-transparent to-black/25" />
         </div>
 
         {/* Ambient Floating Glowing Particle Orbs */}
@@ -547,25 +557,26 @@ export default function MainUniversityHome({
         <div className="absolute w-96 h-96 rounded-full bg-blue-600/15 blur-3xl -bottom-20 -right-20 animate-float pointer-events-none" />
         <div className="absolute w-80 h-80 rounded-full bg-amber-500/10 blur-3xl top-1/3 left-1/2 -translate-x-1/2 animate-pulse pointer-events-none" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="max-w-3xl lg:max-w-4xl space-y-6 text-center lg:text-left">
+        {/* Hero Content (Proportionate Sizing Matching 90% View at 100% Zoom) */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center py-4 sm:py-5 lg:py-6">
+          <div className="max-w-2xl lg:max-w-3xl space-y-2.5 sm:space-y-3 text-center lg:text-left">
             
             {/* Main Hero Badge */}
             <div className="inline-flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-[#C59B27] bg-[#C59B27]/15 px-3.5 py-1.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5 animate-pulse">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[9.5px] sm:text-[10.5px] font-black uppercase tracking-[0.2em] text-[#C59B27] bg-[#C59B27]/15 px-3 py-0.5 rounded-full border border-[#C59B27]/40 shadow-sm flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-400" />
                 <span>{lang === 'hi' ? 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी' : 'PKC EDUCATION LEARNING INSTITUTE & CONSULTANCY'}</span>
               </span>
             </div>
 
-            <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.3] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
+            <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-[33px] font-black tracking-tight text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.25] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
               {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
-              <span className="relative inline-block mt-1.5 py-1">
+              <span className="relative inline-block mt-0.5 py-0.5">
                 <span 
                   key={currentPhraseIdx}
-                  className={`font-bold block animate-fadeIn py-1 ${
+                  className={`font-bold block animate-fadeIn ${
                     lang === 'hi'
-                      ? 'text-amber-400 not-italic font-sans leading-relaxed tracking-normal text-3xl sm:text-4xl lg:text-5xl drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
+                      ? 'text-amber-400 not-italic font-sans leading-snug tracking-normal text-lg sm:text-xl md:text-2xl lg:text-[28px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
                       : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
                   }`}
                 >
@@ -574,7 +585,7 @@ export default function MainUniversityHome({
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed mx-auto lg:mx-0 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] font-medium">
+            <p className="text-[11.5px] sm:text-xs text-slate-200 max-w-xl leading-relaxed mx-auto lg:mx-0 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] font-medium line-clamp-2">
               {lang === 'hi' 
                 ? (homeCms?.heroTaglineHi || 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी में हम वर्ष 2011 से छात्र-छात्राओं को यूजीसी मान्यता प्राप्त विश्वविद्यालयों से प्रमाणित डिग्री, कंप्यूटर डिप्लोमा एवं पारदर्शी कैरियर मार्गदर्शन प्रदान कर रहे हैं।')
                 : (homeCms?.heroTaglineEn || 'At PKC Education Learning Institute & Consultancy, we empower students to think critically, lead courageously, and earn certified degrees from top UGC approved universities across India.')
@@ -582,16 +593,16 @@ export default function MainUniversityHome({
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 pt-1">
               <button
                 onClick={() => {
                   fireCelebration({ x: 0.3, y: 0.5 });
                   setActiveTab('courses');
                 }}
-                className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl border border-[#C59B27]/80 shadow-xl hover:border-[#C59B27] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
+                className="w-full sm:w-auto bg-[#0A1931] hover:bg-[#061124] text-white font-bold text-[11.5px] uppercase tracking-wider px-5 py-2.5 rounded-xl border border-[#C59B27]/80 shadow-md hover:border-[#C59B27] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 group relative overflow-hidden"
               >
                 <span className="relative z-10">{t.viewCourses}</span>
-                <ArrowRight className="w-4 h-4 text-[#C59B27] group-hover:translate-x-1.5 transition-transform relative z-10" />
+                <ArrowRight className="w-3.5 h-3.5 text-[#C59B27] group-hover:translate-x-1.5 transition-transform relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#C59B27]/0 via-[#C59B27]/20 to-[#C59B27]/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </button>
 
@@ -600,26 +611,28 @@ export default function MainUniversityHome({
                   fireCelebration({ x: 0.5, y: 0.5 });
                   setActiveTab('inquiry');
                 }}
-                className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-xs sm:text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-white hover:bg-slate-100 text-[#071530] font-bold text-[11.5px] uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4 text-amber-500" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>{t.onlineInquiry}</span>
-                <ArrowRight className="w-4 h-4 text-slate-600" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-600" />
               </button>
             </div>
 
           </div>
         </div>
-      </section>
 
-      {/* Admissions Live Marquee Ticker Ribbon */}
-      <AdmissionLiveTicker 
-        onAction={() => {
-          fireCelebration();
-          setActiveTab('inquiry');
-        }} 
-        lang={lang} 
-      />
+        {/* Admissions Live Marquee Ticker Ribbon (Anchored at Bottom of Hero) */}
+        <div className="relative z-20 w-full mt-auto">
+          <AdmissionLiveTicker 
+            onAction={() => {
+              fireCelebration();
+              setActiveTab('inquiry');
+            }} 
+            lang={lang} 
+          />
+        </div>
+      </section>
 
 
 
@@ -954,7 +967,7 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 3: COURSES — ALL 62 COURSES & SCHOLARSHIP BENEFIT CARDS */}
       {/* ========================================================================= */}
-      <section className="bg-slate-50 py-14 sm:py-20 border-b border-slate-200">
+      <section id="courses-catalog-section" className="bg-slate-50 py-14 sm:py-20 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
           {/* Header */}
@@ -963,12 +976,12 @@ export default function MainUniversityHome({
               COMPLETE COURSE CATALOG
             </span>
             <h2 className="font-serif-academic text-3xl sm:text-4xl font-bold text-[#071530]">
-              {lang === 'hi' ? 'सभी 62 पाठ्यक्रम देखें' : 'All 62 Academic Programs'}
+              {lang === 'hi' ? `सभी ${activeCourseCatalog.length} पाठ्यक्रम देखें` : `All ${activeCourseCatalog.length} Academic Programs`}
             </h2>
             <p className="text-sm text-slate-500 max-w-xl mx-auto">
               {lang === 'hi'
-                ? 'श्रेणी अनुसार फ़िल्टर करें या सीधे कोर्स खोजें'
-                : 'Filter by category or search for your desired course'}
+                ? 'श्रेणी अनुसार फ़िल्टर करें या सीधे कोर्स खोजें (प्रारंभिक 9 कोर्स प्रदर्शित)'
+                : 'Filter by category or search for your desired course (showing initial 9)'}
             </p>
           </div>
 
@@ -1034,7 +1047,9 @@ export default function MainUniversityHome({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-[#071530] uppercase tracking-wider bg-slate-200/70 px-3 py-1 rounded-lg">
-                {filteredCourses.length} {lang === 'hi' ? 'पाठ्यक्रम उपलब्ध' : 'courses available'}
+                {lang === 'hi'
+                  ? `प्रदर्शित: ${Math.min(visibleCourseCount, filteredCourses.length)} / कुल ${filteredCourses.length} कोर्स`
+                  : `Showing ${Math.min(visibleCourseCount, filteredCourses.length)} of ${filteredCourses.length} courses`}
               </span>
               {(courseSearch || courseCategory !== 'all') && (
                 <button
@@ -1170,7 +1185,7 @@ export default function MainUniversityHome({
           ) : courseViewMode === 'grid' ? (
             /* ================= GRID CARDS VIEW ================= */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map(course => {
+              {displayedCourses.map(course => {
                 const catImages = {
                   Arts:     'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80',
                   Science:  'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=600&q=80',
@@ -1305,7 +1320,7 @@ export default function MainUniversityHome({
                 <div className="col-span-3 sm:col-span-3 text-right">Actions</div>
               </div>
               <div className="divide-y divide-slate-100">
-                {filteredCourses.map((course, idx) => {
+                {displayedCourses.map((course, idx) => {
                   const rowCatBadge = {
                     Arts:     'bg-purple-50 text-purple-600 border-purple-200',
                     Science:  'bg-green-50 text-green-600 border-green-200',
@@ -1351,6 +1366,72 @@ export default function MainUniversityHome({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ================= "SEE MORE / SHOW ALL" CONTROLS ================= */}
+          {courseCategory !== 'Scholarship Benefit' && filteredCourses.length > 9 && (
+            <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col items-center justify-center space-y-4">
+              {/* Progress Count Text & Bar */}
+              <div className="w-full max-w-md text-center space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>
+                    {lang === 'hi'
+                      ? `प्रदर्शित: ${Math.min(visibleCourseCount, filteredCourses.length)} / ${filteredCourses.length} कोर्स`
+                      : `Displaying: ${Math.min(visibleCourseCount, filteredCourses.length)} of ${filteredCourses.length} courses`}
+                  </span>
+                  <span className="text-[#C59B27] font-black">
+                    {Math.round((Math.min(visibleCourseCount, filteredCourses.length) / filteredCourses.length) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#071530] via-amber-500 to-[#C59B27] transition-all duration-500 rounded-full"
+                    style={{
+                      width: `${Math.min(100, Math.round((Math.min(visibleCourseCount, filteredCourses.length) / filteredCourses.length) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {/* See More (+9) Button */}
+                {visibleCourseCount < filteredCourses.length && (
+                  <button
+                    onClick={() => setVisibleCourseCount(prev => Math.min(prev + 9, filteredCourses.length))}
+                    className="group bg-[#071530] hover:bg-[#0d2350] text-[#C59B27] hover:text-amber-300 font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-2xl border-2 border-[#C59B27]/50 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>{lang === 'hi' ? 'और 9 कोर्स देखें (+9)' : 'SEE MORE COURSES (+9)'}</span>
+                    <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                  </button>
+                )}
+
+                {/* Show All Button */}
+                {visibleCourseCount < filteredCourses.length && (
+                  <button
+                    onClick={() => setVisibleCourseCount(filteredCourses.length)}
+                    className="bg-white hover:bg-slate-100 text-slate-800 font-black text-xs sm:text-sm uppercase tracking-wider px-5 py-3.5 rounded-2xl border border-slate-300 shadow-sm hover:shadow hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>{lang === 'hi' ? `सभी (${filteredCourses.length}) कोर्स देखें` : `SHOW ALL (${filteredCourses.length}) COURSES`}</span>
+                  </button>
+                )}
+
+                {/* Show Less Button */}
+                {visibleCourseCount > 9 && (
+                  <button
+                    onClick={() => {
+                      setVisibleCourseCount(9);
+                      const el = document.getElementById('courses-catalog-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className="bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs sm:text-sm uppercase tracking-wider px-5 py-3.5 rounded-2xl border border-amber-300 shadow-sm hover:shadow hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    <span>{lang === 'hi' ? 'कम देखें (वापस 9 कोर्स)' : 'SHOW LESS (BACK TO 9)'}</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

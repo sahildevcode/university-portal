@@ -211,33 +211,36 @@ export default function Footer({ setActiveTab = () => {} }) {
           </div>
 
           {/* Col 2: Services & Consultancy Detailed Section (4 cols) */}
-          <div className="lg:col-span-4 space-y-3.5">
+          <div className="lg:col-span-4 space-y-2.5">
             <h4 className="text-white font-bold text-xs uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Our Services &amp; Consultancy</span>
               </span>
-              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+              <span className="text-[9.5px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
                 All 14 Services
               </span>
             </h4>
             
-            <ul className="space-y-2.5 text-xs max-h-[580px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700">
+            <ul className="space-y-1">
               {servicesList.map((svc, i) => (
-                <li key={i} className="flex items-start gap-2.5 group">
-                  <div className="w-4 h-4 rounded-full bg-amber-500/20 text-[#C59B27] flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3 h-3" />
+                <li 
+                  key={i} 
+                  className="flex items-start gap-2 py-0.5 px-1.5 rounded-md hover:bg-slate-900/90 transition-colors group"
+                >
+                  <div className="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-[#C59B27] flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-2.5 h-2.5" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-slate-200 group-hover:text-amber-400 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="font-bold text-[11px] text-slate-200 group-hover:text-amber-400 transition-colors truncate">
                         {svc.title}
                       </span>
-                      <span className="text-[9.5px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded">
+                      <span className="text-[8.5px] font-semibold text-slate-400 bg-slate-900 border border-slate-800/80 px-1.5 py-0.2 rounded shrink-0">
                         {svc.badge}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                    <p className="text-[9.5px] text-slate-400 leading-tight mt-0.5 line-clamp-1 group-hover:text-slate-300 transition-colors" title={svc.desc}>
                       {svc.desc}
                     </p>
                   </div>

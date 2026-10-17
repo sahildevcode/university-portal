@@ -87,7 +87,7 @@ export const translations = {
     successInquiry: 'Inquiry Submitted Successfully! Our counselor will call you within 24 hours.',
     directContact: 'Direct Contact & Office Visit',
     officeAddress: 'Head Office: P.K.C. Institute Campus, Beside Govt. Girls College, Panna Road, Choubey Colony, Chhatarpur (M.P.) - 471001',
-    officeHours: 'Monday - Saturday: 9:30 AM to 6:00 PM',
+    officeHours: 'Monday - Saturday: 10:00 AM to 6:00 PM',
     whatsappHelp: 'Chat on WhatsApp',
     callHelp: 'Call Helpline',
     
@@ -191,7 +191,7 @@ export const translations = {
     successInquiry: 'पूछताछ सफलतापूर्वक दर्ज हो गई! हमारे काउंसलर 24 घंटे के अंदर आपसे संपर्क करेंगे।',
     directContact: 'सीधा संपर्क एवं कार्यालय का पता',
     officeAddress: 'प्रधान कार्यालय: पी.के.सी. इंस्टीट्यूट कैंपस, शासकीय कन्या महाविद्यालय के पास, पन्ना रोड, चौबे कॉलोनी, छतरपुर (म.प्र.) - 471001',
-    officeHours: 'सोमवार - शनिवार: प्रातः 9:30 से सायं 6:00 बजे तक',
+    officeHours: 'सोमवार - शनिवार: प्रातः 10:00 से सायं 6:00 बजे तक',
     whatsappHelp: 'व्हाट्सएप पर चैट करें',
     callHelp: 'हेल्पलाइन पर कॉल करें',
 

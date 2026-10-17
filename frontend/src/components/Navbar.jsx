@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  GraduationCap, 
   Shield, 
   UserCheck, 
   User, 
-  LogOut, 
   BookOpen, 
   PhoneCall, 
   MapPin, 
@@ -16,11 +14,12 @@ import {
   X,
   Compass,
   ArrowRight,
-  ChevronDown,
-  Briefcase
+  Briefcase,
+  MessageSquare
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { fireCelebration } from '../utils/confetti';
+import ReviewCommentModal, { getStoredReviews } from './ReviewCommentModal';
 
 export default function Navbar({ 
   activeView, 
@@ -42,6 +41,20 @@ export default function Navbar({
   const t = translations[lang] || translations.en;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewsCount, setReviewsCount] = useState(() => getStoredReviews().length);
+
+  React.useEffect(() => {
+    const updateCount = () => {
+      setReviewsCount(getStoredReviews().length);
+    };
+    window.addEventListener('pkc_reviews_updated', updateCount);
+    window.addEventListener('storage', updateCount);
+    return () => {
+      window.removeEventListener('pkc_reviews_updated', updateCount);
+      window.removeEventListener('storage', updateCount);
+    };
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -71,8 +84,8 @@ export default function Navbar({
     }`}>
       
       {/* 1. TOP UTILITY STRIP (Deep Midnight Navy - Exact Northfield Style) */}
-      <div className="bg-[#071530] text-slate-200 text-[11px] py-1.5 px-4 sm:px-8 border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div className="bg-[#071530] text-slate-200 text-[10.5px] py-1 px-4 sm:px-6 lg:px-8 xl:px-10 border-b border-slate-800/80">
+        <div className="w-full flex flex-wrap items-center justify-between gap-2">
           
           {/* Left: Location & Contact */}
           <div className="flex items-center space-x-4">
@@ -91,37 +104,8 @@ export default function Navbar({
             </span>
           </div>
 
-          {/* Right: Quick Portal Links & Language Toggle */}
+          {/* Right: Language Toggle */}
           <div className="flex items-center space-x-3 sm:space-x-4 text-[11px] font-medium">
-            
-            {/* Student Quick Portal */}
-            {studentUser ? (
-              <div className="flex items-center gap-1.5 bg-blue-950/80 border border-blue-800/60 px-2 py-0.5 rounded text-blue-200">
-                <GraduationCap className="w-3 h-3 text-blue-400" />
-                <button 
-                  onClick={() => { setActiveView('public'); setPublicTab('courses'); }}
-                  className="hover:underline font-bold"
-                >
-                  {studentUser.fullName?.split(' ')[0]} (Student)
-                </button>
-                <button 
-                  onClick={onStudentLogout} 
-                  className="text-slate-400 hover:text-rose-400 ml-1"
-                  title="Logout"
-                >
-                  <LogOut className="w-3 h-3" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onOpenStudentAuth}
-                className="hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <GraduationCap className="w-3 h-3 text-amber-400/80" />
-                <span>{t.student}</span>
-              </button>
-            )}
-            <span className="text-slate-700">|</span>
 
             {/* Language Switcher */}
             <button
@@ -138,19 +122,19 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* 2. MAIN NAVBAR (Pristine White with Academic Crest & Centered Navigation) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-4">
+      {/* 2. MAIN NAVBAR (Full Width - Logo Pure Left, Navigation Centered, Reviews + CTA Pure Right) */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="relative flex items-center justify-between h-[66px] sm:h-[70px] gap-4">
           
           {/* ========================================================================= */}
-          {/* LEFT: University Crest & Institution Branding */}
+          {/* LEFT: University Crest & Institution Branding (Pure Left Side) */}
           {/* ========================================================================= */}
           <div 
             onClick={() => handleNavClick('home')}
-            className="flex items-center gap-3.5 cursor-pointer group select-none shrink-0"
+            className="flex items-center gap-3 cursor-pointer group select-none shrink-0 z-10"
           >
             {/* Crest Logo */}
-            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-[#071530] shadow-md group-hover:border-amber-500 transition-all duration-300">
+            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-[#071530] shadow-md group-hover:border-amber-500 transition-all duration-300">
               <img 
                 src="/pkc_logo.png" 
                 alt="PKC Education Learning Institute Logo" 
@@ -161,28 +145,28 @@ export default function Navbar({
             {/* Institution Typography (Serif Academic) */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-serif-academic font-black text-lg sm:text-xl md:text-2xl text-[#071530] tracking-tight group-hover:text-amber-600 transition-colors">
+                <span className="font-serif-academic font-black text-base sm:text-lg md:text-xl text-[#071530] tracking-tight group-hover:text-amber-600 transition-colors">
                   PKC EDUCATION
                 </span>
               </div>
-              <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-slate-600 uppercase -mt-0.5">
+              <span className="text-[9.5px] sm:text-[10px] font-bold tracking-wider text-slate-600 uppercase -mt-0.5">
                 LEARNING INSTITUTE &amp; CONSULTANCY
               </span>
-              <span className="text-[9px] text-amber-700/90 font-semibold tracking-widest uppercase hidden sm:block">
+              <span className="text-[8.5px] text-amber-700/90 font-semibold tracking-widest uppercase hidden sm:block">
                 LEARN. LEAD. SUCCEED. • EST. 2011
               </span>
             </div>
           </div>
 
           {/* ========================================================================= */}
-          {/* CENTER: Navigation Links (Exact Northfield Clean Academic Style) */}
+          {/* CENTER: Navigation Links (Mathematically Centered in Navbar) */}
           {/* ========================================================================= */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 absolute left-1/2 -translate-x-1/2">
             
             {/* 1. HOME */}
             <button
               onClick={() => handleNavClick('home')}
-              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'home'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -194,7 +178,7 @@ export default function Navbar({
             {/* 2. ABOUT US */}
             <button
               onClick={() => handleNavClick('about')}
-              className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'about'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -206,7 +190,7 @@ export default function Navbar({
             {/* 3. COURSES */}
             <button
               onClick={() => handleNavClick('courses')}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'courses'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -226,7 +210,7 @@ export default function Navbar({
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
               }}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'testimonials'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -238,7 +222,7 @@ export default function Navbar({
             {/* 4. ADMISSION INQUIRY */}
             <button
               onClick={() => handleNavClick('inquiry')}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'inquiry'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -247,23 +231,10 @@ export default function Navbar({
               {t.inquiry}
             </button>
 
-            {/* 5. JOB APPLY */}
-            <button
-              onClick={() => handleNavClick('job-apply')}
-              className={`px-3.5 py-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer rounded-lg flex items-center gap-1.5 border ${
-                activeView === 'public' && publicTab === 'job-apply'
-                  ? 'bg-[#071530] text-amber-400 border-amber-500 shadow-sm'
-                  : 'bg-amber-400/10 text-amber-800 hover:bg-amber-400/20 border-amber-400/40'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5 text-amber-600" />
-              <span>JOB APPLY</span>
-            </button>
-
             {/* 6. GALLERY */}
             <button
               onClick={() => handleNavClick('gallery')}
-              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
+              className={`px-3 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 ${
                 activeView === 'public' && publicTab === 'gallery'
                   ? 'text-[#071530] border-amber-500 font-extrabold'
                   : 'text-slate-700 hover:text-[#071530] border-transparent hover:border-slate-300'
@@ -275,30 +246,48 @@ export default function Navbar({
           </nav>
 
           {/* ========================================================================= */}
-          {/* RIGHT: Highlighted Gold "JOB APPLY" CTA Button */}
+          {/* RIGHT: REVIEWS BUTTON + GOLD JOB APPLY CTA BUTTON */}
           {/* ========================================================================= */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 z-10">
+            {/* Reviews Button */}
             <button
               onClick={() => {
-                fireCelebration({ x: 0.9, y: 0.1 });
-                handleNavClick('job-apply');
+                fireCelebration({ x: 0.85, y: 0.1 });
+                setReviewModalOpen(true);
               }}
-              className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-lg shadow-md hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 group relative overflow-hidden"
+              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100/90 text-amber-950 border border-amber-300/90 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all shadow-xs cursor-pointer hover:scale-105 active:scale-95 group"
+              title="Student Reviews & Comments"
             >
-              <Briefcase className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-12 transition-transform" />
-              <span>JOB APPLY</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              <MessageSquare className="w-3.5 h-3.5 text-amber-700 group-hover:scale-110 transition-transform" />
+              <span className="font-black text-[#071530] text-[11px]">
+                {reviewsCount} Reviews
+              </span>
             </button>
-          </div>
 
-          {/* Mobile Hamburger Toggle */}
-          <div className="flex lg:hidden items-center gap-2">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 cursor-pointer"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {/* Highlighted Gold "JOB APPLY" CTA Button */}
+            <div className="hidden sm:flex items-center">
+              <button
+                onClick={() => {
+                  fireCelebration({ x: 0.9, y: 0.1 });
+                  handleNavClick('job-apply');
+                }}
+                className="bg-[#C59B27] hover:bg-[#b0871d] text-slate-950 font-black text-[11px] uppercase tracking-wider px-4 py-2 rounded-lg shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-1.5 group relative overflow-hidden"
+              >
+                <Briefcase className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-12 transition-transform" />
+                <span>JOB APPLY</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+
+            {/* Mobile Hamburger Toggle */}
+            <div className="flex lg:hidden items-center gap-2">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 cursor-pointer"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
 
         </div>
@@ -355,14 +344,6 @@ export default function Navbar({
               {t.inquiry}
             </button>
             <button
-              onClick={() => handleNavClick('job-apply')}
-              className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                publicTab === 'job-apply' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              JOB APPLY
-            </button>
-            <button
               onClick={() => handleNavClick('gallery')}
               className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
                 publicTab === 'gallery' ? 'bg-[#071530] text-white' : 'text-slate-700 hover:bg-slate-100'
@@ -370,7 +351,21 @@ export default function Navbar({
             >
               GALLERY
             </button>
+
             <div className="pt-2 space-y-2">
+              {/* Mobile Review Button */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setReviewModalOpen(true);
+                }}
+                className="w-full bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300/90 font-black text-xs uppercase tracking-wider py-2.5 rounded-md shadow-xs text-center cursor-pointer flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4 text-amber-700" />
+                <span>REVIEWS & COMMENTS ({reviewsCount})</span>
+              </button>
+
+              {/* Mobile Job Apply Button */}
               <button
                 onClick={() => {
                   fireCelebration({ x: 0.5, y: 0.5 });
@@ -387,6 +382,13 @@ export default function Navbar({
         )}
 
       </div>
+
+      {/* Review & Comment Modal */}
+      <ReviewCommentModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        onReviewAdded={(newCount) => setReviewsCount(newCount)}
+      />
 
     </header>
   );

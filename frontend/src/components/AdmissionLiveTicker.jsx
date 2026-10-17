@@ -44,7 +44,7 @@ export default function AdmissionLiveTicker({ onAction, lang = 'en' }) {
   };
 
   return (
-    <div className="relative bg-gradient-to-r from-slate-950 via-[#071530] to-slate-950 text-white border-y border-[#C59B27]/40 py-2.5 overflow-hidden shadow-inner select-none">
+    <div className="relative bg-gradient-to-r from-slate-950 via-[#071530] to-slate-950 text-white border-y border-[#C59B27]/40 py-1.5 sm:py-2 overflow-hidden shadow-inner select-none">
       {/* Decorative ambient subtle pulse */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#C59B27]/10 via-transparent to-transparent pointer-events-none"></div>
 

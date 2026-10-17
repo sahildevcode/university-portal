@@ -198,7 +198,7 @@ export default function StudentDashboard({ studentUser, studentData, onRefresh, 
               If you prefer physical payment, visit the University Accounts Section (Room 104, Admin Block). The cash counter accepts <strong>Cash, Card Swipe (POS), and Demand Drafts</strong>.
             </p>
             <span className="text-[11px] font-semibold text-slate-500 block">
-              Counter Timings: Mon-Sat, 9:30 AM to 4:30 PM
+              Counter Timings: Mon-Sat, 10:00 AM to 6:00 PM
             </span>
           </div>
 
