@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://pkc-university-api.onrender.com/api/:path*"
+      "destination": "https://university-portal-qs06.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://pkc-university-api.onrender.com/uploads/:path*"
+      "destination": "https://university-portal-qs06.onrender.com/uploads/:path*"
     },
     {
       "source": "/(.*)",
