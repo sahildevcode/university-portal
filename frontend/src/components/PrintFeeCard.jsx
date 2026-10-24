@@ -253,7 +253,7 @@ export default function PrintFeeCard({ student, payments = [], onClose }) {
             <div className="flex flex-col items-center justify-end">
               <div className="h-9 w-36 sm:w-44 border-b border-slate-700 mb-1 flex items-end justify-center">
                 <span className="font-serif-univ font-bold text-indigo-950 text-[9px] opacity-80 mb-0.5">
-                  PKC ACADEMY SEAL
+                  PKC INSTITUTE SEAL
                 </span>
               </div>
               <p className="font-black text-[10.5px] sm:text-[11px] text-slate-900 whitespace-nowrap">
