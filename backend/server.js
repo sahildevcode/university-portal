@@ -6875,6 +6875,7 @@ app.delete('/api/testimonials/:id', (req, res) => {
 // ABOUT US & STATISTICS APIS
 // ----------------------------------------------------
 app.get('/api/about', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
   const db = readDB();
   res.json({ success: true, about: db.about || {} });
 });
@@ -6897,6 +6898,7 @@ app.put('/api/about', async (req, res) => {
 // HOME PAGE CMS APIS (Hero, Live Ticker, Stats, Banners)
 // ----------------------------------------------------
 app.get('/api/home-cms', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
   const db = readDB();
   res.json({ success: true, homeCms: db.home_cms || null });
 });
@@ -7067,6 +7069,7 @@ app.delete('/api/event-photos/:id', (req, res) => {
 // ====================================================
 // Get all academic courses
 app.get('/api/courses', async (req, res) => {
+    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
   try {
     if (process.env.MONGODB_URI) {
       const courses = await CourseModel.find({}).sort({ createdAt: -1 });

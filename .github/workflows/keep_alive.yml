@@ -13,4 +13,4 @@ jobs:
       - name: Ping PKC Render Backend
         run: |
           echo "Pinging PKC University Backend to prevent sleep..."
-          curl -s -f -m 30 https://pkc-university-api.onrender.com/api/health || echo "Ping attempted"
+          curl -s -f -m 30 https://university-portal-qs06.onrender.com/api/health || echo "Ping attempted"

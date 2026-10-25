@@ -294,11 +294,9 @@ export default function App() {
 
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
-    const interval = setInterval(fetchGlobalData, 4000);
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
-      clearInterval(interval);
     };
   }, []);
 

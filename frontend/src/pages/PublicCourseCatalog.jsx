@@ -79,12 +79,10 @@ export default function PublicCourseCatalog({
     loadLiveCourses();
     window.addEventListener('focus', loadLiveCourses);
     window.addEventListener('storage', loadLiveCourses);
-    const poller = setInterval(loadLiveCourses, 2500);
 
     return () => {
       window.removeEventListener('focus', loadLiveCourses);
       window.removeEventListener('storage', loadLiveCourses);
-      clearInterval(poller);
     };
   }, []);
 

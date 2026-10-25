@@ -55,12 +55,10 @@ export default function AboutPage({ lang = 'en', onNavigateTab }) {
 
     window.addEventListener('storage', onSync);
     window.addEventListener('focus', onSync);
-    const interval = setInterval(loadAbout, 2000);
 
     return () => {
       window.removeEventListener('storage', onSync);
       window.removeEventListener('focus', onSync);
-      clearInterval(interval);
     };
   }, []);
 

@@ -82,10 +82,8 @@ export default function MainUniversityHome({
     };
 
     window.addEventListener('storage', checkCms);
-    const interval = setInterval(checkCms, 1500);
     return () => {
       window.removeEventListener('storage', checkCms);
-      clearInterval(interval);
     };
   }, []);
 
@@ -164,12 +162,10 @@ export default function MainUniversityHome({
     loadLiveCourses();
     window.addEventListener('focus', loadLiveCourses);
     window.addEventListener('storage', loadLiveCourses);
-    const poller = setInterval(loadLiveCourses, 2500);
 
     return () => {
       window.removeEventListener('focus', loadLiveCourses);
       window.removeEventListener('storage', loadLiveCourses);
-      clearInterval(poller);
     };
   }, []);
 
