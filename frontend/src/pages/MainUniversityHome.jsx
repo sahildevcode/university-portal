@@ -567,7 +567,7 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 1: HERO & LEGACY */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[calc(100vh-112px)] flex flex-col justify-between bg-[#071530] text-white overflow-hidden border-b border-[#C59B27]/30">
+      <section className="relative min-h-[440px] sm:min-h-[500px] lg:min-h-[calc(100vh-112px)] flex flex-col justify-between bg-[#071530] text-white overflow-hidden border-b border-[#C59B27]/30">
         {/* Campus Background Image Auto-Slider with Balanced Overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {heroBackgrounds.map((bgSrc, idx) => {
@@ -594,7 +594,7 @@ export default function MainUniversityHome({
         <div className="absolute w-80 h-80 rounded-full bg-amber-500/10 blur-3xl top-1/3 left-1/2 -translate-x-1/2 animate-pulse pointer-events-none" />
 
         {/* Hero Content (Proportionate Sizing Matching 90% View at 100% Zoom) */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center py-4 sm:py-5 lg:py-6">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-center py-6 sm:py-8 lg:py-6">
           <div className="max-w-2xl lg:max-w-3xl space-y-2.5 sm:space-y-3 text-center lg:text-left">
             
             {/* Main Hero Badge */}
@@ -605,14 +605,14 @@ export default function MainUniversityHome({
               </span>
             </div>
 
-            <h1 className={`text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.25] font-sans' : 'leading-[1.15] font-serif-academic'}`}>
+            <h1 className={`text-xl sm:text-3xl md:text-4xl lg:text-[46px] font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.25] font-sans' : 'leading-[1.15] font-serif-academic'}`}>
               {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
               <span className="relative inline-block mt-0.5 py-0.5">
                 <span 
                   key={currentPhraseIdx}
                   className={`font-bold block animate-fadeIn ${
                     lang === 'hi'
-                      ? 'text-amber-400 not-italic font-sans leading-snug tracking-normal text-xl sm:text-2xl md:text-3xl lg:text-[36px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
+                      ? 'text-amber-400 not-italic font-sans leading-snug tracking-normal text-lg sm:text-2xl md:text-3xl lg:text-[36px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
                       : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
                   }`}
                 >

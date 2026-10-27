@@ -11,7 +11,7 @@ export default function FloatingContactWidget() {
   return (
     <aside 
       aria-label="Quick Contact & Location Desk" 
-      className="fixed right-0 bottom-[20px] z-50 flex flex-col items-end gap-2 select-none print:hidden pointer-events-none"
+      className="fixed right-0 bottom-[20px] z-50 hidden sm:flex flex-col items-end gap-2 select-none print:hidden pointer-events-none"
     >
       
       {/* ========================================================================= */}

@@ -91,67 +91,66 @@ export default function Navbar({
         : 'bg-white shadow-xs border-b border-slate-200'
     }`}>
       
-      {/* 1. TOP UTILITY STRIP (Deep Midnight Navy - Exact Northfield Style) */}
-      <div className="bg-[#071530] text-slate-200 text-[10.5px] py-1 px-4 sm:px-6 lg:px-8 xl:px-10 border-b border-slate-800/80">
-        <div className="w-full flex flex-wrap items-center justify-between gap-2">
+      {/* 1. TOP UTILITY STRIP (Deep Midnight Navy - Mobile Optimized Single Clean Line) */}
+      <div className="bg-[#071530] text-slate-200 text-[10.5px] py-1 px-3 sm:px-6 lg:px-8 xl:px-10 border-b border-slate-800/80">
+        <div className="w-full flex items-center justify-between gap-1.5 sm:gap-2">
           
           {/* Left: Location & Contact */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 overflow-hidden">
             {/* 1. Location Badge */}
-            <span className="inline-flex items-center gap-1.5 text-amber-200 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-sm animate-pulse">
+            <span className="inline-flex items-center gap-1 text-amber-200 font-bold bg-amber-500/20 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-xs shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
-              <MapPin className="w-3 h-3 text-amber-300 shrink-0" />
-              <span>{t.location}</span>
+              <MapPin className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-amber-300 shrink-0" />
+              <span className="text-[10px] sm:text-[10.5px]">{t.location}</span>
             </span>
 
             {/* 2. Helpline Phone Badge */}
             <a 
-              href="tel:+917000212637"
-              className="inline-flex items-center gap-1.5 text-emerald-200 font-bold bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/40 shadow-sm animate-pulse hover:bg-emerald-500/30 transition-all cursor-pointer"
+              href="tel:+917580878825"
+              className="inline-flex items-center gap-1 text-emerald-200 font-bold bg-emerald-500/20 px-2 sm:px-2.5 py-0.5 rounded-full border border-emerald-400/40 shadow-xs hover:bg-emerald-500/30 transition-all cursor-pointer shrink-0"
+              title="Call Helpline +91 7580878825"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
-              <PhoneCall className="w-3 h-3 text-emerald-300 shrink-0" />
-              <span>{t.helpline}</span>
+              <PhoneCall className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-emerald-300 shrink-0" />
+              <span className="text-[10px] sm:text-[10.5px]">{t.helpline}</span>
             </a>
 
             {/* 3. Admissions Open Badge */}
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-white font-extrabold bg-gradient-to-r from-rose-600 via-red-500 to-amber-500 px-3 py-0.5 rounded-full border border-red-400/60 shadow-md animate-pulse">
+            <span className="hidden md:inline-flex items-center gap-1.5 text-white font-extrabold bg-gradient-to-r from-rose-600 via-red-500 to-amber-500 px-3 py-0.5 rounded-full border border-red-400/60 shadow-md animate-pulse">
               <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
               <span>{t.admissionsOpen}</span>
             </span>
           </div>
 
           {/* Right: Language Toggle */}
-          <div className="flex items-center space-x-3 sm:space-x-4 text-[11px] font-medium">
-
+          <div className="flex items-center shrink-0 text-[10.5px] font-medium">
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-1 text-amber-300 hover:text-amber-200 font-bold uppercase tracking-wider transition-colors cursor-pointer bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30"
               title="Switch Language (हिन्दी / English)"
             >
-              <Globe className="w-3 h-3" />
+              <Globe className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
               <span>{t.langName}</span>
             </button>
-
           </div>
 
         </div>
       </div>
 
       {/* 2. MAIN NAVBAR (Full Width - Logo Pure Left, Navigation Centered, Reviews + CTA Pure Right) */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="relative flex items-center justify-between h-[66px] sm:h-[70px] gap-4">
+      <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10">
+        <div className="relative flex items-center justify-between h-[58px] sm:h-[70px] gap-2 sm:gap-4">
           
           {/* ========================================================================= */}
           {/* LEFT: University Crest & Institution Branding (Pure Left Side) */}
           {/* ========================================================================= */}
           <div 
             onClick={() => handleNavClick('home')}
-            className="flex items-center gap-3 cursor-pointer group select-none shrink-0 z-10"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group select-none min-w-0 z-10"
           >
             {/* Crest Logo */}
-            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-[#071530] shadow-md group-hover:border-amber-500 transition-all duration-300">
+            <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden flex items-center justify-center p-0.5 bg-white border-2 border-[#071530] shadow-md group-hover:border-amber-500 transition-all duration-300 shrink-0">
               <img 
                 src="/pkc_logo.png" 
                 alt="PKC Education Learning Institute Logo" 
@@ -160,13 +159,13 @@ export default function Navbar({
             </div>
 
             {/* Institution Typography (Serif Academic) */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-serif-academic font-black text-base sm:text-lg md:text-xl text-[#071530] tracking-tight group-hover:text-amber-600 transition-colors">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span className="font-serif-academic font-black text-sm sm:text-lg md:text-xl text-[#071530] tracking-tight group-hover:text-amber-600 transition-colors truncate">
                   PKC EDUCATION
                 </span>
               </div>
-              <span className="text-[9.5px] sm:text-[10px] font-bold tracking-wider text-slate-600 uppercase -mt-0.5">
+              <span className="text-[8.5px] sm:text-[10px] font-bold tracking-wider text-slate-600 uppercase -mt-0.5 truncate">
                 LEARNING INSTITUTE &amp; CONSULTANCY
               </span>
               <span className="text-[8.5px] text-amber-700/90 font-semibold tracking-widest uppercase hidden sm:block">
@@ -279,18 +278,18 @@ export default function Navbar({
           {/* ========================================================================= */}
           {/* RIGHT: REVIEWS BUTTON + GOLD JOB APPLY CTA BUTTON */}
           {/* ========================================================================= */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 z-10">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 z-10">
             {/* Reviews Button */}
             <button
               onClick={() => {
                 fireCelebration({ x: 0.85, y: 0.1 });
                 setReviewModalOpen(true);
               }}
-              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100/90 text-amber-950 border border-amber-300/90 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all shadow-xs cursor-pointer hover:scale-105 active:scale-95 group"
+              className="flex items-center gap-1 sm:gap-1.5 bg-amber-50 hover:bg-amber-100/90 text-amber-950 border border-amber-300/90 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10.5px] sm:text-[11px] font-bold transition-all shadow-xs cursor-pointer hover:scale-105 active:scale-95 group shrink-0"
               title="Student Reviews & Comments"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-700 group-hover:scale-110 transition-transform" />
-              <span className="font-black text-[#071530] text-[11px]">
+              <MessageSquare className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-amber-700 group-hover:scale-110 transition-transform" />
+              <span className="font-black text-[#071530]">
                 {reviewsCount} Reviews
               </span>
             </button>
@@ -311,12 +310,13 @@ export default function Navbar({
             </div>
 
             {/* Mobile Hamburger Toggle */}
-            <div className="flex lg:hidden items-center gap-2">
+            <div className="flex lg:hidden items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-lg text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
+                aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
               </button>
             </div>
           </div>
@@ -381,6 +381,24 @@ export default function Navbar({
               }`}
             >
               GALLERY
+            </button>
+
+            {/* Mobile Laptop Button */}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                fireCelebration({ x: 0.5, y: 0.5 });
+                setLaptopModalOpen(true);
+              }}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider text-indigo-950 bg-gradient-to-r from-blue-50 to-indigo-100 border border-indigo-200"
+            >
+              <span className="flex items-center gap-2">
+                <Laptop className="w-4 h-4 text-blue-600" />
+                <span>CERTIFIED LAPTOPS</span>
+              </span>
+              <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                8 DEALS
+              </span>
             </button>
 
             <div className="pt-2 space-y-2">

@@ -3,8 +3,8 @@ export const translations = {
     // Top Bar
     admissionsOpen: 'Admissions Open 2026-27',
     societyReg: 'Approved & Registered Society • Reg No. 06/03/01/12345/18',
-    helpline: 'Helpline: +91 7000212637',
-    location: 'Chhatarpur, Madhya Pradesh',
+    helpline: '+91 7580878825',
+    location: 'Chhatarpur (M.P.)',
     
     // Navbar
     instituteName: 'PKC Education Learning Institute & Consultancy',
@@ -107,8 +107,8 @@ export const translations = {
     // Top Bar
     admissionsOpen: 'प्रवेश प्रारंभ सत्र 2026-27',
     societyReg: 'मान्यता प्राप्त एवं पंजीकृत समिति • पंजीयन क्र. 06/03/01/12345/18',
-    helpline: 'हेल्पलाइन: +91 7000212637',
-    location: 'छतरपुर, मध्य प्रदेश',
+    helpline: '+91 7580878825',
+    location: 'छतरपुर (म.प्र.)',
     
     // Navbar
     instituteName: 'पी.के.सी. एजुकेशन लर्निंग इंस्टीट्यूट एवं कंसल्टेंसी',
