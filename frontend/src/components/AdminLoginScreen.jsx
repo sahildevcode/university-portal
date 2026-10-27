@@ -525,7 +525,7 @@ export default function AdminLoginScreen({
                       type="text"
                       value={adminIdentifier}
                       onChange={(e) => setAdminIdentifier(e.target.value)}
-                      placeholder="e.g. 7000212637 or pkcinstitute@gmail.com"
+                      placeholder=""
                       autoComplete="username"
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 focus:outline-none transition-all cursor-text font-mono"
                       required
@@ -534,8 +534,8 @@ export default function AdminLoginScreen({
                   </div>
                   <p className="text-[10px] text-slate-500">
                     {isHindi 
-                      ? '💡 आप अपने पंजीकृत ईमेल (pkcinstitute@gmail.com) या मोबाइल (7000212637) किसी से भी लॉगिन कर सकते हैं।' 
-                      : '💡 You can login with either your registered Email or Mobile number.'}
+                      ? '💡 आप अपने पंजीकृत ईमेल या मोबाइल नंबर से लॉगिन कर सकते हैं।' 
+                      : '💡 You can login with your registered Email or Mobile number.'}
                   </p>
                 </div>
 
@@ -545,15 +545,6 @@ export default function AdminLoginScreen({
                     <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                       {isHindi ? 'एडमिन पासवर्ड *' : 'Admin Password *'}
                     </label>
-                    {!isSetupRequired && (
-                      <button
-                        type="button"
-                        onClick={() => switchAdminMode('forgot')}
-                        className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline transition-colors cursor-pointer"
-                      >
-                        {isHindi ? 'पासवर्ड या ईमेल भूल गए? (Forgot Details)' : 'Forgot Password or Email ID?'}
-                      </button>
-                    )}
                   </div>
                   <div className="relative">
                     <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />

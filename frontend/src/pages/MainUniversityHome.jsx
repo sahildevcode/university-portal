@@ -103,6 +103,38 @@ export default function MainUniversityHome({
     return () => clearInterval(timer);
   }, [dynamicPhrases.length]);
 
+  // Hero Background Images Auto-Slider
+  const defaultHeroBgs = [
+    homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1920&auto=format&fit=crop"
+  ];
+  const heroBackgrounds = (Array.isArray(homeCms?.heroBackgrounds) && homeCms.heroBackgrounds.length > 0)
+    ? homeCms.heroBackgrounds
+    : defaultHeroBgs;
+
+  const [currentHeroBgIdx, setCurrentHeroBgIdx] = useState(0);
+
+  useEffect(() => {
+    if (heroBackgrounds.length <= 1) return;
+    const bgTimer = setInterval(() => {
+      setCurrentHeroBgIdx(prev => (prev + 1) % heroBackgrounds.length);
+    }, 4500);
+    return () => clearInterval(bgTimer);
+  }, [heroBackgrounds.length]);
+
+  // Preload hero background images for butter-smooth crossfade
+  useEffect(() => {
+    heroBackgrounds.forEach(src => {
+      if (src) {
+        const img = new Image();
+        img.src = src;
+      }
+    });
+  }, [heroBackgrounds]);
+
   // Program Category Filter State
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchCollegeCourse, setSearchCollegeCourse] = useState('all');
@@ -535,14 +567,22 @@ export default function MainUniversityHome({
       {/* ========================================================================= */}
       {/* SECTION 1: HERO & LEGACY */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[380px] sm:min-h-[420px] lg:h-[calc(100vh-160px)] lg:max-h-[460px] flex flex-col justify-between bg-[#071530] text-white overflow-hidden border-b border-[#C59B27]/30">
-        {/* Campus Background Image with Balanced Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={homeCms?.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"} 
-            alt="University Campus" 
-            className="w-full h-full object-cover object-[center_30%] opacity-90 brightness-105 contrast-105 transition-all duration-700"
-          />
+      <section className="relative min-h-[calc(100vh-112px)] flex flex-col justify-between bg-[#071530] text-white overflow-hidden border-b border-[#C59B27]/30">
+        {/* Campus Background Image Auto-Slider with Balanced Overlay */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          {heroBackgrounds.map((bgSrc, idx) => {
+            const isActive = currentHeroBgIdx === idx;
+            return (
+              <img 
+                key={idx}
+                src={bgSrc} 
+                alt="University Campus" 
+                className={`absolute inset-0 w-full h-full object-cover object-[center_30%] transition-opacity duration-1000 ease-in-out ${
+                  isActive ? 'opacity-90 scale-100' : 'opacity-0 scale-105'
+                } brightness-105 contrast-105`}
+              />
+            );
+          })}
           {/* Subtle translucent dark overlay for text contrast while keeping background bright and clear */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#071530]/85 via-[#071530]/50 to-[#071530]/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#071530]/90 via-transparent to-black/25" />
@@ -565,14 +605,14 @@ export default function MainUniversityHome({
               </span>
             </div>
 
-            <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-[33px] font-black tracking-tight text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.25] font-sans' : 'leading-[1.12] font-serif-academic'}`}>
+            <h1 className={`text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${lang === 'hi' ? 'leading-[1.25] font-sans' : 'leading-[1.15] font-serif-academic'}`}>
               {lang === 'hi' ? (homeCms?.heroTitleHi || 'उज्ज्वल भविष्य और सम्मान।') : (homeCms?.heroTitleEn || 'A Legacy of Excellence.')} <br />
               <span className="relative inline-block mt-0.5 py-0.5">
                 <span 
                   key={currentPhraseIdx}
                   className={`font-bold block animate-fadeIn ${
                     lang === 'hi'
-                      ? 'text-amber-400 not-italic font-sans leading-snug tracking-normal text-lg sm:text-xl md:text-2xl lg:text-[28px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
+                      ? 'text-amber-400 not-italic font-sans leading-snug tracking-normal text-xl sm:text-2xl md:text-3xl lg:text-[36px] drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]'
                       : 'text-transparent bg-clip-text bg-gradient-to-r from-[#C59B27] via-amber-300 to-yellow-500 italic font-serif-academic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]'
                   }`}
                 >

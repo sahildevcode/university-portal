@@ -1130,6 +1130,23 @@ export default function WebsiteCmsManager({
                 />
               </div>
             </div>
+
+            {/* Campus Tour Video URL Settings */}
+            <div className="pt-4 border-t border-slate-200/80 space-y-2">
+              <label className="block text-xs font-bold text-[#071530] uppercase tracking-wider">
+                🎥 Campus Tour Video Link (YouTube Link or Direct MP4 Video URL)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. https://www.youtube.com/watch?v=... or leave blank for player placeholder"
+                value={homeCms.campusVideoUrl || ''}
+                onChange={e => setHomeCms({ ...homeCms, campusVideoUrl: e.target.value })}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-amber-400 focus:border-amber-500 focus:outline-none font-mono"
+              />
+              <p className="text-[10px] text-slate-500">
+                💡 Abhi default me koi video nahi chalegi. Jab aap YouTube ya video ka link yahan daalkar save karenge, wo automatically website par embed ho jayegi.
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-end">

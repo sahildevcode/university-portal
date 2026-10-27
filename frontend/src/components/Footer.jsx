@@ -301,24 +301,7 @@ export default function Footer({ setActiveTab = () => {} }) {
                   <span>Campus Photo Gallery</span>
                 </button>
               </li>
-              <li className="pt-2 border-t border-slate-800/80">
-                <a 
-                  href="/admin" 
-                  className="text-slate-400 hover:text-[#C59B27] transition-colors flex items-center gap-1.5 font-bold"
-                >
-                  <ShieldCheck className="w-3 h-3 text-[#C59B27]" />
-                  <span>Admin Portal</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="/staff" 
-                  className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 font-bold"
-                >
-                  <Briefcase className="w-3 h-3 text-emerald-400" />
-                  <span>Staff &amp; Cash Counter</span>
-                </a>
-              </li>
+
             </ul>
           </div>
 
@@ -470,8 +453,6 @@ export default function Footer({ setActiveTab = () => {} }) {
             <span className="hover:text-white cursor-pointer" onClick={() => setActiveTab('inquiry')}>Admissions</span>
             <span>•</span>
             <span className="text-emerald-400/80 font-medium">UGC &amp; MP Higher Education Recognized</span>
-            <span>•</span>
-            <a href="/admin" className="hover:text-[#C59B27] text-slate-500 font-semibold transition-colors">Admin Login</a>
           </div>
         </div>
 

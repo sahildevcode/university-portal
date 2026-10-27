@@ -32,7 +32,47 @@ if (process.env.MONGODB_URI) {
   }
 }
 
-// Ensure Master Admin exists in database (preserves whatever admin saved last)
+import bcrypt from 'bcryptjs';
+
+// In-Memory Rate Limiter for Login Brute Force Protection (max 5 failed attempts per 15 mins)
+const loginAttempts = new Map();
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+  if (!record) return { allowed: true };
+  if (now > record.resetTime) {
+    loginAttempts.delete(ip);
+    return { allowed: true };
+  }
+  if (record.count >= 5) {
+    const waitMins = Math.ceil((record.resetTime - now) / 60000);
+    return { allowed: false, waitMins };
+  }
+  return { allowed: true };
+}
+
+function recordFailedAttempt(ip) {
+  const now = Date.now();
+  const record = loginAttempts.get(ip) || { count: 0, resetTime: now + 15 * 60 * 1000 };
+  record.count += 1;
+  loginAttempts.set(ip, record);
+}
+
+function clearLoginAttempts(ip) {
+  loginAttempts.delete(ip);
+}
+
+// Password Strength Validator: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
+function validatePasswordStrength(password) {
+  if (!password || typeof password !== 'string') return { valid: false, message: 'Password is required.' };
+  if (password.length < 8) return { valid: false, message: 'Password must be at least 8 characters long.' };
+  if (!/[A-Z]/.test(password)) return { valid: false, message: 'Password must contain at least one uppercase letter (A-Z).' };
+  if (!/[a-z]/.test(password)) return { valid: false, message: 'Password must contain at least one lowercase letter (a-z).' };
+  if (!/[0-9]/.test(password)) return { valid: false, message: 'Password must contain at least one number (0-9).' };
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) return { valid: false, message: 'Password must contain at least one special symbol (!@#$%^&* etc.).' };
+  return { valid: true };
+}
 try {
   const db = readDB();
   if (!Array.isArray(db.users)) db.users = [];
@@ -505,7 +545,15 @@ app.get('/api/auth/status', (req, res) => {
 });
 
 // Admin Login (supports login by Email OR Mobile / WhatsApp Number OR Username)
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+  const rateLimit = checkRateLimit(clientIp);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      success: false,
+      message: `Too many failed login attempts from your IP. For security reasons, please wait ${rateLimit.waitMins} minute(s) before trying again.`
+    });
+  }
   const { username, email, phone, password } = req.body;
   const db = readDB();
 
@@ -648,280 +696,14 @@ function findAdminUser(db, inputIdentifier) {
   return admin || null;
 }
 
-// Step 1: Send 6-Digit OTP Code via WhatsApp, SMS, or Email
-app.post('/api/auth/forgot-password/send-code', (req, res) => {
-  const { identifier, email, phone, channel = 'whatsapp' } = req.body;
-  const db = readDB();
-
-  const rawInput = (identifier || email || phone || '').trim();
-  if (!rawInput) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide your registered Email or Mobile / WhatsApp Number.'
-    });
-  }
-
-  const admin = findAdminUser(db, rawInput);
-  if (!admin) {
-    return res.status(404).json({
-      success: false,
-      message: 'No registered admin account found with this Email or Mobile Number. (इस विवरण से कोई एडमिन नहीं मिला)'
-    });
-  }
-
-  // Generate real 6-digit random verification code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
-  const sessionKey = `reset_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-  const adminPhone = (admin.phone || '7000212637').replace(/[^0-9]/g, '');
-  const adminEmail = (admin.email || 'pkcinstitute@gmail.com').trim().toLowerCase();
-
-  const otpPayload = {
-    code,
-    expiresAt,
-    verified: false,
-    adminId: admin.id || 'admin',
-    email: adminEmail,
-    phone: adminPhone
-  };
-
-  // Store in global memory under sessionKey and identifiers
-  global.__adminResetOtp[sessionKey] = otpPayload;
-  global.__adminResetOtp[adminEmail] = otpPayload;
-  if (adminPhone.length >= 10) {
-    global.__adminResetOtp[adminPhone.slice(-10)] = otpPayload;
-  }
-
-  // Build WhatsApp Click-to-Send URL
-  const waPhone = adminPhone.length === 10 ? '91' + adminPhone : adminPhone;
-  const waMessage = `PKC Education Institute (Admin Verification): Your 6-digit OTP is ${code}. Valid for 10 minutes. Do not share with anyone.`;
-  const whatsappUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`;
-  const smsUri = `sms:+${waPhone}?body=${encodeURIComponent(waMessage)}`;
-
-  console.log(`[AUTH] 🔐 ${channel.toUpperCase()} OTP for Admin (${adminEmail} / ${adminPhone}): ${code} (Session: ${sessionKey})`);
-
-  res.json({
-    success: true,
-    message: channel === 'whatsapp'
-      ? `6-digit WhatsApp OTP sent for +91 ${adminPhone.slice(-10)}`
-      : `6-digit verification code generated for ${adminEmail}`,
-    sessionKey,
-    code, // Returned for instant on-screen test display without requiring 3rd party SMS gateway
-    whatsappUrl,
-    smsUri,
-    targetPhone: adminPhone.slice(-10),
-    maskedPhone: adminPhone ? `+91 ******${adminPhone.slice(-4)}` : '',
-    maskedEmail: adminEmail ? `${adminEmail.slice(0, 2)}***@${adminEmail.split('@')[1] || ''}` : '',
-    channel
+// Backdoor OTP Recovery permanently removed for security.
+app.all('/api/auth/forgot-password/*', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Forgot Password recovery via OTP has been permanently disabled for security. Please contact Master Administrator.'
   });
 });
 
-// Step 2: Verify 6-Digit OTP Code (and reveal registered details)
-app.post('/api/auth/forgot-password/verify-code', (req, res) => {
-  const { sessionKey, identifier, email, phone, code } = req.body;
-  const db = readDB();
-
-  const cleanCode = (code || '').trim();
-  if (!cleanCode) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please enter the 6-digit verification code.'
-    });
-  }
-
-  // Lookup OTP record by sessionKey or identifier
-  let otpData = null;
-  if (sessionKey && global.__adminResetOtp[sessionKey]) {
-    otpData = global.__adminResetOtp[sessionKey];
-  } else {
-    const rawId = (identifier || email || phone || '').trim().toLowerCase();
-    const idDigits = rawId.replace(/[^0-9]/g, '');
-    if (global.__adminResetOtp[rawId]) {
-      otpData = global.__adminResetOtp[rawId];
-    } else if (idDigits.length >= 10 && global.__adminResetOtp[idDigits.slice(-10)]) {
-      otpData = global.__adminResetOtp[idDigits.slice(-10)];
-    }
-  }
-
-  if (!otpData) {
-    return res.status(400).json({
-      success: false,
-      message: 'No verification session found. Please request a new verification code.'
-    });
-  }
-
-  if (Date.now() > otpData.expiresAt) {
-    if (sessionKey) delete global.__adminResetOtp[sessionKey];
-    return res.status(400).json({
-      success: false,
-      message: 'Verification code has expired. Please request a new code.'
-    });
-  }
-
-  if (otpData.code !== cleanCode) {
-    return res.status(400).json({
-      success: false,
-      message: 'Incorrect verification code. Please check the code and try again.'
-    });
-  }
-
-  otpData.verified = true;
-
-  // Find latest admin record to reveal the registered email and phone
-  const admin = (db.users || []).find(u => u.role === 'admin') || {
-    email: otpData.email || 'pkcinstitute@gmail.com',
-    phone: otpData.phone || '7000212637'
-  };
-
-  res.json({
-    success: true,
-    message: 'Verification code confirmed successfully!',
-    verified: true,
-    sessionKey: sessionKey || 'verified_session',
-    registeredEmail: admin.email || 'pkcinstitute@gmail.com',
-    registeredPhone: admin.phone || '7000212637',
-    adminName: admin.name || 'Administrator'
-  });
-});
-
-// Step 3: Reset Password and optionally Update Email & Phone
-app.post('/api/auth/forgot-password/reset', async (req, res) => {
-  const { sessionKey, identifier, email, phone, code, newPassword, confirmPassword, newEmail, newPhone } = req.body;
-  const db = readDB();
-
-  const cleanCode = (code || '').trim();
-  const cleanNewPass = (newPassword || '').trim();
-
-  if (!cleanNewPass) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide a new password.'
-    });
-  }
-
-  // Lookup OTP record
-  let otpData = null;
-  if (sessionKey && global.__adminResetOtp[sessionKey]) {
-    otpData = global.__adminResetOtp[sessionKey];
-  } else {
-    const rawId = (identifier || email || phone || '').trim().toLowerCase();
-    const idDigits = rawId.replace(/[^0-9]/g, '');
-    if (global.__adminResetOtp[rawId]) {
-      otpData = global.__adminResetOtp[rawId];
-    } else if (idDigits.length >= 10 && global.__adminResetOtp[idDigits.slice(-10)]) {
-      otpData = global.__adminResetOtp[idDigits.slice(-10)];
-    }
-  }
-
-  if (!otpData || otpData.code !== cleanCode || !otpData.verified) {
-    return res.status(403).json({
-      success: false,
-      message: 'Unauthorized password reset. Please verify your 6-digit code first.'
-    });
-  }
-
-  if (cleanNewPass.length < 4) {
-    return res.status(400).json({
-      success: false,
-      message: 'New password must be at least 4 characters long.'
-    });
-  }
-
-  if (confirmPassword && cleanNewPass !== confirmPassword.trim()) {
-    return res.status(400).json({
-      success: false,
-      message: 'New password and confirmation password do not match.'
-    });
-  }
-
-  if (!Array.isArray(db.users)) db.users = [];
-  let adminIndex = db.users.findIndex(u => u.role === 'admin');
-
-  if (adminIndex === -1) {
-    // If not found, create new master admin
-    const newMaster = {
-      id: `user-admin-${Date.now()}`,
-      username: 'admin',
-      email: (newEmail || otpData.email || 'pkcinstitute@gmail.com').trim().toLowerCase(),
-      phone: (newPhone || otpData.phone || '7000212637').replace(/[^0-9]/g, '').slice(-10),
-      password: cleanNewPass,
-      role: 'admin',
-      name: 'Institute Administrator',
-      isSetupRequired: false,
-      updatedAt: new Date().toISOString()
-    };
-    db.users.push(newMaster);
-    adminIndex = db.users.length - 1;
-  } else {
-    // Update existing admin
-    db.users[adminIndex].password = cleanNewPass;
-    db.users[adminIndex].isSetupRequired = false;
-    db.users[adminIndex].updatedAt = new Date().toISOString();
-
-    // If admin requested updating their email
-    if (newEmail && typeof newEmail === 'string' && newEmail.trim().includes('@')) {
-      db.users[adminIndex].email = newEmail.trim().toLowerCase();
-    }
-
-    // If admin requested updating their mobile phone
-    if (newPhone && typeof newPhone === 'string') {
-      const cleanNewDigits = newPhone.replace(/[^0-9]/g, '');
-      if (cleanNewDigits.length >= 10) {
-        db.users[adminIndex].phone = cleanNewDigits.slice(-10);
-      }
-    }
-  }
-
-  // Write changes locally and sync permanently to MongoDB Atlas
-  writeDB(db);
-
-  if (isMongoConnected()) {
-    try {
-      await UserModel.findOneAndUpdate(
-        { role: 'admin' },
-        {
-          $set: {
-            email: db.users[adminIndex].email,
-            phone: db.users[adminIndex].phone,
-            password: db.users[adminIndex].password,
-            name: db.users[adminIndex].name,
-            role: 'admin',
-            isSetupRequired: false
-          }
-        },
-        { upsert: true }
-      );
-    } catch (mErr) {
-      console.warn('Mongo Atlas user update notice:', mErr.message);
-    }
-  }
-
-  // Clear OTP session
-  if (sessionKey) delete global.__adminResetOtp[sessionKey];
-  if (otpData.email) delete global.__adminResetOtp[otpData.email];
-  if (otpData.phone) delete global.__adminResetOtp[otpData.phone];
-
-  const updatedAdmin = db.users[adminIndex];
-  console.log(`[AUTH] ✅ Password & Contact info updated for Admin: ${updatedAdmin.email} / ${updatedAdmin.phone}`);
-
-  res.json({
-    success: true,
-    message: 'Password and credentials successfully updated! You can now log in.',
-    email: updatedAdmin.email,
-    phone: updatedAdmin.phone,
-    user: {
-      id: updatedAdmin.id,
-      username: updatedAdmin.username,
-      email: updatedAdmin.email,
-      phone: updatedAdmin.phone,
-      name: updatedAdmin.name,
-      role: updatedAdmin.role
-    }
-  });
-});
-
-// Admin Profile API (View and Update Admin Contact & Password inside Dashboard)
 app.get('/api/auth/admin-profile', (req, res) => {
   const db = readDB();
   const admin = (db.users || []).find(u => u.role === 'admin');
@@ -977,7 +759,14 @@ app.put('/api/auth/admin-profile', async (req, res) => {
         message: 'Current password does not match. Please verify your current password (e.g. pkc@123).'
       });
     }
-    if (newPassword.trim().length < 4) {
+    const strengthCheck = validatePasswordStrength(newPassword.trim());
+    if (!strengthCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        message: strengthCheck.message
+      });
+    }
+    if (false) {
       return res.status(400).json({
         success: false,
         message: 'New password must be at least 4 characters long.'
@@ -6826,6 +6615,157 @@ app.post('/api/results', (req, res) => {
 app.get('/api/testimonials', (req, res) => {
   const db = readDB();
   res.json({ success: true, testimonials: db.testimonials || [] });
+});
+
+// ----------------------------------------------------
+// PUBLIC STUDENT REVIEWS & COMMENTS APIS (Saved in Shared DB)
+// ----------------------------------------------------
+app.get('/api/reviews', (req, res) => {
+  const db = readDB();
+  if (!Array.isArray(db.student_reviews) || db.student_reviews.length === 0) {
+    db.student_reviews = [
+      {
+        id: 'rev-1',
+        name: 'Aman Shrivastava',
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: '2 din pehle',
+        comment: 'PKC Education se maine DCA complete kiya. Faculty bahut supportive hai aur computer practical lab training Chhatarpur me sabse best hai. 100% recommended!'
+      },
+      {
+        id: 'rev-2',
+        name: 'Pooja Patel',
+        city: 'Nowgong, MP',
+        rating: 5,
+        date: '4 din pehle',
+        comment: 'MPTASS scholarship form bharne me PKC team ne meri poori madad ki. Zero tuition fee me meri UGC degree complete ho rahi hai. Bahut badhiya guidance mila.'
+      },
+      {
+        id: 'rev-3',
+        name: 'Rohit Tiwari',
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: '1 hafte pehle',
+        comment: 'MBA admission ke liye Bundelkhand me sabse bharosemand consultancy hai. Regular exam updates, assignment aur syllabus guidance time par milta hai.'
+      },
+      {
+        id: 'rev-4',
+        name: 'Neha Ahirwar',
+        city: 'Bijawar, MP',
+        rating: 5,
+        date: '1 hafte pehle',
+        comment: 'PGDCA computer course yahan se kiya aur MP Online exam me mera selection ho gaya. Pradeep Sir aur PKC team ka guidance bahut faydemand raha.'
+      },
+      {
+        id: 'rev-5',
+        name: 'Deepak Yadav',
+        city: 'Rajnagar, MP',
+        rating: 5,
+        date: '2 hafte pehle',
+        comment: 'B.Tech admission ke guidance ke liye aya tha. Sahi UGC approved university aur affordable fee structure me admission mil gaya. Transparent counseling.'
+      },
+      {
+        id: 'rev-6',
+        name: 'Kavita Sen',
+        city: 'Khajuraho, MP',
+        rating: 5,
+        date: '2 hafte pehle',
+        comment: 'Online inquiry karne ke sirf 10 minute me call back aaya. Staff ka nature bahut cooperative aur respectful hai. Sabhi course ki jankari acche se di.'
+      },
+      {
+        id: 'rev-7',
+        name: 'Sachin Vishwakarma',
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: '3 hafte pehle',
+        comment: 'CPCT aur Tally Prime with GST ka practical training yahan ka lajawab hai. Accounting ka real-world experience mila jisse job jaldi lagi.'
+      },
+      {
+        id: 'rev-8',
+        name: 'Priyanka Mishra',
+        city: 'Panna, MP',
+        rating: 5,
+        date: '3 hafte pehle',
+        comment: 'MA English distance mode se karna tha. PKC Education ne step-by-step admission form aur verified marksheet process bohot aasan bana diya.'
+      },
+      {
+        id: 'rev-9',
+        name: 'Ankit Rajput',
+        city: 'Bada Malhera, MP',
+        rating: 5,
+        date: '1 mahine pehle',
+        comment: 'B.Sc Agriculture me 100% scholarship guidance aur original university verification support mila. Chhatarpur ka No. 1 center.'
+      },
+      {
+        id: 'rev-10',
+        name: 'Ritu Chouhan',
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: '1 mahine pehle',
+        comment: 'Library, study notes aur online mock test facility bahut useful hai. Teachers hamesha sabhi doubts solve karte hain.'
+      },
+      {
+        id: 'rev-11',
+        name: 'Vikas Sahu',
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: '1 mahine pehle',
+        comment: 'Hindi aur English computer typing training best hai. CPCT scorecard first attempt me qualify ho gaya. Thanks PKC!'
+      },
+      {
+        id: 'rev-12',
+        name: 'Sunita Kushwaha',
+        city: 'Gaurihar, MP',
+        rating: 5,
+        date: '1 mahine pehle',
+        comment: 'Girls students ke liye safe environment aur dedicated scholarship helpdesk bahut achha hai. Polite and caring counseling.'
+      },
+      {
+        id: 'rev-13',
+        name: 'Manish Rawat',
+        city: 'Mahoba, UP',
+        rating: 5,
+        date: '2 mahine pehle',
+        comment: 'University documents verification, migration certificate aur marksheets timely mil gaya bina kisi pareshani ke. Genuine service.'
+      }
+    ];
+    writeDB(db);
+  }
+  res.json({ success: true, reviews: db.student_reviews, total: db.student_reviews.length });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const db = readDB();
+  const { name, comment, city, rating } = req.body;
+  const cleanName = (name || '').trim();
+  const cleanComment = (comment || '').trim();
+
+  if (!cleanName || !cleanComment) {
+    return res.status(400).json({ success: false, message: 'Name and comment are required.' });
+  }
+
+  const newReview = {
+    id: 'rev-' + Date.now(),
+    name: cleanName,
+    city: (city || 'Chhatarpur, MP').trim(),
+    rating: Number(rating) || 5,
+    date: 'Abhi-abhi (Just now)',
+    comment: cleanComment,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!Array.isArray(db.student_reviews)) {
+    db.student_reviews = [];
+  }
+  db.student_reviews.unshift(newReview);
+  writeDB(db);
+
+  res.status(201).json({ 
+    success: true, 
+    message: 'Review published successfully to main website!', 
+    review: newReview,
+    total: db.student_reviews.length
+  });
 });
 
 app.post('/api/testimonials', (req, res) => {

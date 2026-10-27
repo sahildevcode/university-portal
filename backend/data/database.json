@@ -61297,58 +61297,7 @@
       "createdAt": "2026-09-07T18:00:24.907Z"
     }
   ],
-  "event_photos": [
-    {
-      "id": "evt-1",
-      "title": "Annual Convocation & Degree Distribution Ceremony",
-      "titleHi": "वार्षिक दीक्षांत एवं उपाधि वितरण समारोह",
-      "category": "Convocation 2024",
-      "date": "2024",
-      "description": "Proud PKC students receiving authorized UGC university degrees, marksheets, and honors.",
-      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop",
-      "active": true
-    },
-    {
-      "id": "evt-2",
-      "title": "State Merit Felicitation & Scholarship Awards",
-      "titleHi": "मेधावी छात्र अलंकरण एवं छात्रवृत्ति सम्मान",
-      "category": "Merit Awards",
-      "date": "2024",
-      "description": "Felicitation of top-ranking academic achievers with medals, mementos, and scholarship checks.",
-      "imageUrl": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop",
-      "active": true
-    },
-    {
-      "id": "evt-3",
-      "title": "Annual Cultural Festival & Youth Showcase",
-      "titleHi": "वार्षिक युवा महोत्सव एवं सांस्कृतिक उत्सव",
-      "category": "Cultural Fest",
-      "date": "2024",
-      "description": "Celebrating youth talent, cultural performances, speech competitions, and artistic creativity.",
-      "imageUrl": "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop",
-      "active": true
-    },
-    {
-      "id": "evt-4",
-      "title": "Computer Lab Practical Workshop & Hands-on Training",
-      "titleHi": "कंप्यूटर लैब प्रायोगिक प्रशिक्षण कार्यशाला",
-      "category": "IT Lab Workshop",
-      "date": "2024",
-      "description": "Dedicated practical lab sessions for DCA, PGDCA, CPCT, and Web Development students.",
-      "imageUrl": "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
-      "active": true
-    },
-    {
-      "id": "evt-5",
-      "title": "Campus Career Guidance & Counseling Desk",
-      "titleHi": "कैरियर परामर्श एवं कॉरपोरेट मार्गदर्शन सत्र",
-      "category": "Career Counseling",
-      "date": "2023-2024",
-      "description": "Direct guidance from experienced counselors on government jobs, private sector careers, and higher education.",
-      "imageUrl": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop",
-      "active": true
-    }
-  ],
+  "event_photos": [],
   "university_payments": [
     {
       "id": "univ-pay-1788952217758",
@@ -62426,5 +62375,114 @@
       "status": "Paid",
       "createdAt": "2026-09-30T15:17:56.400Z"
     }
-  ]
+  ],
+  "student_reviews": [
+    {
+      "id": "rev-1",
+      "name": "Aman Shrivastava",
+      "city": "Chhatarpur, MP",
+      "rating": 5,
+      "date": "2 din pehle",
+      "comment": "PKC Education se maine DCA complete kiya. Faculty bahut supportive hai aur computer practical lab training Chhatarpur me sabse best hai. 100% recommended!"
+    },
+    {
+      "id": "rev-2",
+      "name": "Pooja Patel",
+      "city": "Nowgong, MP",
+      "rating": 5,
+      "date": "4 din pehle",
+      "comment": "MPTASS scholarship form bharne me PKC team ne meri poori madad ki. Zero tuition fee me meri UGC degree complete ho rahi hai. Bahut badhiya guidance mila."
+    },
+    {
+      "id": "rev-3",
+      "name": "Rohit Tiwari",
+      "city": "Chhatarpur, MP",
+      "rating": 5,
+      "date": "1 hafte pehle",
+      "comment": "MBA admission ke liye Bundelkhand me sabse bharosemand consultancy hai. Regular exam updates, assignment aur syllabus guidance time par milta hai."
+    },
+    {
+      "id": "rev-4",
+      "name": "Neha Ahirwar",
+      "city": "Bijawar, MP",
+      "rating": 5,
+      "date": "1 hafte pehle",
+      "comment": "PGDCA computer course yahan se kiya aur MP Online exam me mera selection ho gaya. Pradeep Sir aur PKC team ka guidance bahut faydemand raha."
+    },
+    {
+      "id": "rev-5",
+      "name": "Deepak Yadav",
+      "city": "Rajnagar, MP",
+      "rating": 5,
+      "date": "2 hafte pehle",
+      "comment": "B.Tech admission ke guidance ke liye aya tha. Sahi UGC approved university aur affordable fee structure me admission mil gaya. Transparent counseling."
+    },
+    {
+      "id": "rev-6",
+      "name": "Kavita Sen",
+      "city": "Khajuraho, MP",
+      "rating": 5,
+      "date": "2 hafte pehle",
+      "comment": "Online inquiry karne ke sirf 10 minute me call back aaya. Staff ka nature bahut cooperative aur respectful hai. Sabhi course ki jankari acche se di."
+    },
+    {
+      "id": "rev-7",
+      "name": "Sachin Vishwakarma",
+      "city": "Chhatarpur, MP",
+      "rating": 5,
+      "date": "3 hafte pehle",
+      "comment": "CPCT aur Tally Prime with GST ka practical training yahan ka lajawab hai. Accounting ka real-world experience mila jisse job jaldi lagi."
+    },
+    {
+      "id": "rev-8",
+      "name": "Priyanka Mishra",
+      "city": "Panna, MP",
+      "rating": 5,
+      "date": "3 hafte pehle",
+      "comment": "MA English distance mode se karna tha. PKC Education ne step-by-step admission form aur verified marksheet process bohot aasan bana diya."
+    },
+    {
+      "id": "rev-9",
+      "name": "Ankit Rajput",
+      "city": "Bada Malhera, MP",
+      "rating": 5,
+      "date": "1 mahine pehle",
+      "comment": "B.Sc Agriculture me 100% scholarship guidance aur original university verification support mila. Chhatarpur ka No. 1 center."
+    },
+    {
+      "id": "rev-10",
+      "name": "Ritu Chouhan",
+      "city": "Chhatarpur, MP",
+      "rating": 5,
+      "date": "1 mahine pehle",
+      "comment": "Library, study notes aur online mock test facility bahut useful hai. Teachers hamesha sabhi doubts solve karte hain."
+    },
+    {
+      "id": "rev-11",
+      "name": "Vikas Sahu",
+      "city": "Chhatarpur, MP",
+      "rating": 5,
+      "date": "1 mahine pehle",
+      "comment": "Hindi aur English computer typing training best hai. CPCT scorecard first attempt me qualify ho gaya. Thanks PKC!"
+    },
+    {
+      "id": "rev-12",
+      "name": "Sunita Kushwaha",
+      "city": "Gaurihar, MP",
+      "rating": 5,
+      "date": "1 mahine pehle",
+      "comment": "Girls students ke liye safe environment aur dedicated scholarship helpdesk bahut achha hai. Polite and caring counseling."
+    },
+    {
+      "id": "rev-13",
+      "name": "Manish Rawat",
+      "city": "Mahoba, UP",
+      "rating": 5,
+      "date": "2 mahine pehle",
+      "comment": "University documents verification, migration certificate aur marksheets timely mil gaya bina kisi pareshani ke. Genuine service."
+    }
+  ],
+  "homeCms": {
+    "campusVideoUrl": ""
+  }
 }

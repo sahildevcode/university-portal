@@ -15,11 +15,13 @@ import {
   Compass,
   ArrowRight,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Laptop
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { fireCelebration } from '../utils/confetti';
-import ReviewCommentModal, { getStoredReviews } from './ReviewCommentModal';
+import ReviewCommentModal, { getStoredReviews, fetchLiveReviews } from './ReviewCommentModal';
+import LaptopShowcaseModal from './LaptopShowcaseModal';
 
 export default function Navbar({ 
   activeView, 
@@ -42,9 +44,15 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [laptopModalOpen, setLaptopModalOpen] = useState(false);
   const [reviewsCount, setReviewsCount] = useState(() => getStoredReviews().length);
 
   React.useEffect(() => {
+    // Initial fetch from central backend database
+    fetchLiveReviews().then(liveList => {
+      setReviewsCount(liveList.length);
+    });
+
     const updateCount = () => {
       setReviewsCount(getStoredReviews().length);
     };
@@ -88,18 +96,27 @@ export default function Navbar({
         <div className="w-full flex flex-wrap items-center justify-between gap-2">
           
           {/* Left: Location & Contact */}
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center gap-1 text-slate-300 font-medium">
-              <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* 1. Location Badge */}
+            <span className="inline-flex items-center gap-1.5 text-amber-200 font-bold bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-sm animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+              <MapPin className="w-3 h-3 text-amber-300 shrink-0" />
               <span>{t.location}</span>
             </span>
-            <span className="hidden md:inline text-slate-600">|</span>
-            <span className="hidden md:flex items-center gap-1 text-slate-300 font-medium">
-              <PhoneCall className="w-3 h-3 text-emerald-400 shrink-0" />
+
+            {/* 2. Helpline Phone Badge */}
+            <a 
+              href="tel:+917000212637"
+              className="inline-flex items-center gap-1.5 text-emerald-200 font-bold bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-400/40 shadow-sm animate-pulse hover:bg-emerald-500/30 transition-all cursor-pointer"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              <PhoneCall className="w-3 h-3 text-emerald-300 shrink-0" />
               <span>{t.helpline}</span>
-            </span>
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-amber-300 font-semibold bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </a>
+
+            {/* 3. Admissions Open Badge */}
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-white font-extrabold bg-gradient-to-r from-rose-600 via-red-500 to-amber-500 px-3 py-0.5 rounded-full border border-red-400/60 shadow-md animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
               <span>{t.admissionsOpen}</span>
             </span>
           </div>
@@ -241,6 +258,20 @@ export default function Navbar({
               }`}
             >
               GALLERY
+            </button>
+
+            {/* 7. LAPTOP BUTTON (Between Gallery & Reviews) */}
+            <button
+              onClick={() => {
+                fireCelebration({ x: 0.75, y: 0.1 });
+                setLaptopModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wider text-indigo-950 bg-gradient-to-r from-blue-50 to-indigo-100 hover:from-blue-100 hover:to-indigo-200 border border-indigo-300 rounded-lg shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95 group"
+              title="Certified Second Hand Laptops at PKC"
+            >
+              <Laptop className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
+              <span className="font-black text-[#071530]">Laptop</span>
+              <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tight">8 Deals</span>
             </button>
 
           </nav>
@@ -388,6 +419,12 @@ export default function Navbar({
         isOpen={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
         onReviewAdded={(newCount) => setReviewsCount(newCount)}
+      />
+
+      {/* Second Hand Laptop Showcase Modal */}
+      <LaptopShowcaseModal
+        isOpen={laptopModalOpen}
+        onClose={() => setLaptopModalOpen(false)}
       />
 
     </header>

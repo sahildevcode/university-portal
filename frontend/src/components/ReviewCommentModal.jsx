@@ -120,6 +120,22 @@ export function getStoredReviews() {
   return INITIAL_13_REVIEWS;
 }
 
+export async function fetchLiveReviews() {
+  try {
+    const res = await fetch('/api/reviews');
+    const data = await res.json();
+    if (data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
+      try {
+        localStorage.setItem('pkc_reviews_list', JSON.stringify(data.reviews));
+      } catch {}
+      return data.reviews;
+    }
+  } catch (err) {
+    console.warn('Could not fetch reviews from server, falling back to local cache', err);
+  }
+  return getStoredReviews();
+}
+
 export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
   const [reviews, setReviews] = useState(getStoredReviews);
   const [reviewerName, setReviewerName] = useState('');
@@ -129,7 +145,10 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
 
   useEffect(() => {
     if (isOpen) {
-      setReviews(getStoredReviews());
+      fetchLiveReviews().then(liveList => {
+        setReviews(liveList);
+        if (onReviewAdded) onReviewAdded(liveList.length);
+      });
       setSuccessMsg(false);
       document.body.style.overflow = 'hidden';
     } else {
@@ -142,7 +161,7 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanName = reviewerName.trim();
     const cleanComment = reviewerComment.trim();
@@ -152,22 +171,47 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
     setIsSubmitting(true);
 
     const newReview = {
-      id: 'rev-' + Date.now(),
       name: cleanName,
       city: 'Chhatarpur, MP',
       rating: 5,
-      date: 'Abhi-abhi (Just now)',
       comment: cleanComment
     };
 
-    const updated = [newReview, ...reviews];
-    setReviews(updated);
     try {
-      localStorage.setItem('pkc_reviews_list', JSON.stringify(updated));
-      window.dispatchEvent(new Event('pkc_reviews_updated'));
-    } catch {}
-
-    if (onReviewAdded) onReviewAdded(updated.length);
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReview)
+      });
+      const data = await res.json();
+      if (data.success && data.review) {
+        const updated = [data.review, ...reviews.filter(r => r.id !== data.review.id)];
+        setReviews(updated);
+        try {
+          localStorage.setItem('pkc_reviews_list', JSON.stringify(updated));
+          window.dispatchEvent(new Event('pkc_reviews_updated'));
+        } catch {}
+        if (onReviewAdded) onReviewAdded(updated.length);
+      }
+    } catch (err) {
+      console.error('Failed to submit review to server:', err);
+      // Fallback local addition if network offline
+      const fallbackRev = {
+        id: 'rev-' + Date.now(),
+        name: cleanName,
+        city: 'Chhatarpur, MP',
+        rating: 5,
+        date: 'Abhi-abhi (Just now)',
+        comment: cleanComment
+      };
+      const updated = [fallbackRev, ...reviews];
+      setReviews(updated);
+      try {
+        localStorage.setItem('pkc_reviews_list', JSON.stringify(updated));
+        window.dispatchEvent(new Event('pkc_reviews_updated'));
+      } catch {}
+      if (onReviewAdded) onReviewAdded(updated.length);
+    }
 
     fireCelebration({ x: 0.5, y: 0.4 });
     setReviewerName('');

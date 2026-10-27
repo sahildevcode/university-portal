@@ -63,18 +63,16 @@ export default function App() {
   // Animated Splash Screen state (Logo + Name animation on first load, skipped on admin host)
   const [showSplash, setShowSplash] = useState(() => !isAdminHost());
 
-  // Automatic Inquiry Pop-up Modal on Student Portal load with smooth fade-in delay
+  // Automatic Inquiry Pop-up Modal on Student Portal load (fires strictly once after splash ends)
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
-  useEffect(() => {
-    if (isAdminHost() || activeView !== 'public') return;
-    // Wait until splash completes if splash is active, else gentle 1000ms delay for smooth fade-in
-    const delay = showSplash ? 2600 : 1000;
-    const timer = setTimeout(() => {
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+    // Trigger popup strictly once when splash animation finishes and page is visible
+    setTimeout(() => {
       setShowInquiryModal(true);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [showSplash, activeView]);
+    }, 800);
+  };
 
   // Navigation helper to sync URL and view state
   const navigateTo = (view, path) => {
@@ -359,7 +357,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
       
       {/* 0. Animated Intro Splash Screen with Logo and Institute Name */}
-      {showSplash && <PageIntroSplash onFinish={() => setShowSplash(false)} />}
+      {showSplash && <PageIntroSplash onFinish={handleSplashFinish} />}
 
       {/* 1. Top Navbar: ONLY rendered on public student website */}
       {activeView === 'public' && (
