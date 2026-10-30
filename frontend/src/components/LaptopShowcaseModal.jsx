@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Laptop, X, PhoneCall, MessageCircle, ShieldCheck, Cpu, HardDrive, CheckCircle2, Sparkles, Tag } from 'lucide-react';
 import { fireCelebration } from '../utils/confetti';
 
@@ -124,13 +125,15 @@ export default function LaptopShowcaseModal({ isOpen, onClose }) {
     window.open(url, '_blank');
   };
 
-  return (
+  if (!isOpen) return null;
+
+  return createPortal(
     <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="bg-slate-900 border border-slate-700/80 w-full max-w-6xl max-h-[88vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-white animate-scaleUp my-auto"
+        className="bg-slate-900 border border-slate-700/80 w-full max-w-6xl max-h-[88vh] rounded-3xl shadow-2xl flex flex-col min-h-0 overflow-hidden text-white animate-scaleUp my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
@@ -260,6 +263,7 @@ export default function LaptopShowcaseModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

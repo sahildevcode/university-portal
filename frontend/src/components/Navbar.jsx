@@ -85,7 +85,8 @@ export default function Navbar({
   };
 
   return (
-    <header className={`sticky top-0 z-40 transition-all duration-300 font-sans ${
+    <>
+      <header className={`sticky top-0 z-40 transition-all duration-300 font-sans ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200/90' 
         : 'bg-white shadow-xs border-b border-slate-200'
@@ -432,6 +433,8 @@ export default function Navbar({
 
       </div>
 
+      </header>
+
       {/* Review & Comment Modal */}
       <ReviewCommentModal
         isOpen={reviewModalOpen}
@@ -445,6 +448,6 @@ export default function Navbar({
         onClose={() => setLaptopModalOpen(false)}
       />
 
-    </header>
+    </>
   );
 }
