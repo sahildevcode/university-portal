@@ -225,20 +225,23 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      onClick={onClose}
+    >
       <div 
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] sm:max-h-[88vh] flex flex-col min-h-0 overflow-hidden border border-slate-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#071530] text-white p-5 sm:p-6 flex items-center justify-between shrink-0 relative border-b border-amber-500/30">
+        <div className="bg-[#071530] text-white px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between shrink-0 relative border-b border-amber-500/30">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-400/15 border border-amber-400/40 text-amber-400 flex items-center justify-center shadow-inner">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-400/15 border border-amber-400/40 text-amber-400 flex items-center justify-center shadow-inner shrink-0">
               <MessageSquare className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif-academic font-bold text-lg sm:text-xl text-white">
+                <h3 className="font-serif-academic font-bold text-base sm:text-xl text-white">
                   PKC Reviews & Comments
                 </h3>
                 <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-400/30">
@@ -250,7 +253,7 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -258,7 +261,7 @@ export default function ReviewCommentModal({ isOpen, onClose, onReviewAdded }) {
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1 divide-y divide-slate-100">
+        <div className="overflow-y-auto flex-1 min-h-0 p-4 sm:p-6 space-y-6 divide-y divide-slate-100">
           
           {/* Write a Review / Comment Form */}
           <div className="space-y-4">
