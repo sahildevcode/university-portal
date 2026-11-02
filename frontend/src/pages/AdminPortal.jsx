@@ -1031,7 +1031,13 @@ export default function AdminPortal({
 
       {/* TAB 2: CASH COUNTER & TREASURY FEED (WITH ADMIN EDIT POWER) */}
       {activeTab === 'cashcounter' && (
-        <AccountsDashboard isAdmin={canEdit} canEdit={canEdit} lang={lang} toggleLang={toggleLang} />
+        <AccountsDashboard 
+          isAdmin={!activeStaff && canEdit} 
+          canEdit={canEdit} 
+          staffUser={activeStaff || staffUser} 
+          lang={lang} 
+          toggleLang={toggleLang} 
+        />
       )}
 
       {/* TAB: STUDENT DOCUMENTS TRACKER & VERIFICATION */}
