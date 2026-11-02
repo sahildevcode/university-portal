@@ -963,6 +963,7 @@ export default function AdminPortal({
             <StudentList 
               courses={localCourses} 
               canEdit={canEdit}
+              staffUser={activeStaff || staffUser}
               onOpenNewAdmission={() => canEdit && setAdmissionSubTab('new')} 
               lang={lang}
               toggleLang={toggleLang}
@@ -987,6 +988,7 @@ export default function AdminPortal({
         <StudentList 
           courses={localCourses} 
           canEdit={canEdit}
+          staffUser={activeStaff || staffUser}
           lang={lang}
           toggleLang={toggleLang}
           isRecordsDesk={true}

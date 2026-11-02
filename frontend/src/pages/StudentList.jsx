@@ -83,6 +83,26 @@ export default function StudentList({
     if (s.registrationNo && String(s.registrationNo).trim()) return String(s.registrationNo).trim();
   };
 
+  // Helper to reliably resolve a student photo across all possible schema paths
+  const getStudentPhoto = (s) => {
+    if (!s) return '';
+    if (s.studentImage && typeof s.studentImage === 'string' && s.studentImage.trim()) return s.studentImage.trim();
+    if (s.photo && typeof s.photo === 'string' && s.photo.trim()) return s.photo.trim();
+    if (s.photoUrl && typeof s.photoUrl === 'string' && s.photoUrl.trim()) return s.photoUrl.trim();
+    if (s.documents) {
+      if (s.documents.student_image && typeof s.documents.student_image === 'string' && s.documents.student_image.trim()) return s.documents.student_image.trim();
+      if (s.documents.photo && typeof s.documents.photo === 'string' && s.documents.photo.trim()) return s.documents.photo.trim();
+      if (s.documents.studentPhoto && typeof s.documents.studentPhoto === 'string' && s.documents.studentPhoto.trim()) return s.documents.studentPhoto.trim();
+    }
+    if (s.documentsStatus && typeof s.documentsStatus === 'object') {
+      const passportDoc = s.documentsStatus['Passport Photos (4 Copies)'] || s.documentsStatus['Passport Photo'] || s.documentsStatus['Photo'];
+      if (passportDoc && passportDoc.fileUrl) return passportDoc.fileUrl;
+      const anyPhotoDoc = Object.values(s.documentsStatus).find(d => d && d.fileUrl && (String(d.docName || '').toLowerCase().includes('photo') || String(d.docName || '').toLowerCase().includes('passport')));
+      if (anyPhotoDoc && anyPhotoDoc.fileUrl) return anyPhotoDoc.fileUrl;
+    }
+    return '';
+  };
+
   // Helper to compute Year-Wise fee, scholarship, and received fee breakdown (1st, 2nd, 3rd, 4th Year)
   const calculateStudentYearBreakdown = (item) => {
     if (!item) return {
@@ -399,6 +419,8 @@ export default function StudentList({
   const [croppingStudent, setCroppingStudent] = useState(null);
   const editPhotoInputRef = useRef(null);
   const profilePhotoInputRef = useRef(null);
+  const tablePhotoInputRef = useRef(null);
+  const [tableTargetStudent, setTableTargetStudent] = useState(null);
 
   // Admission Cancellation State
   const [cancellingStudent, setCancellingStudent] = useState(null);
@@ -1775,7 +1797,11 @@ export default function StudentList({
 
       // Update students list in memory
       setStudents(prev => prev.map(s => {
-        if ((targetStudent.id && s.id === targetStudent.id) || (targetStudent.rollNo && s.rollNo === targetStudent.rollNo)) {
+        const isMatch = (targetStudent.id && s.id === targetStudent.id) ||
+                        (targetStudent.rollNo && s.rollNo && s.rollNo.toUpperCase() === targetStudent.rollNo.toUpperCase()) ||
+                        (targetStudent.enrollmentNo && s.enrollmentNo && s.enrollmentNo.toUpperCase() === targetStudent.enrollmentNo.toUpperCase()) ||
+                        (targetStudent.registrationNo && s.registrationNo && s.registrationNo.toUpperCase() === targetStudent.registrationNo.toUpperCase());
+        if (isMatch) {
           return {
             ...s,
             studentImage: newPhotoUrl,
@@ -1785,6 +1811,9 @@ export default function StudentList({
         }
         return s;
       }));
+
+      // Refresh from server to ensure persistence and sync
+      fetchStudents();
 
       return newPhotoUrl;
     } catch (err) {
@@ -2865,19 +2894,25 @@ export default function StudentList({
                             <td className="md:sticky md:left-[44px] z-20 bg-white group-hover:bg-[#eaf3fa] py-2 px-2 md:px-2.5 border-r border-slate-200 whitespace-nowrap min-w-[150px] md:min-w-[210px] md:shadow-[4px_0_6px_rgba(0,0,0,0.08)]">
                               <div className="flex items-center gap-2.5">
                                 <div
-                                  onClick={() => handleOpenProfile(std)}
-                                  className="w-9 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all shadow-2xs"
-                                  title="Click to view full photo & profile"
+                                  onClick={() => {
+                                    setTableTargetStudent(std);
+                                    if (tablePhotoInputRef.current) tablePhotoInputRef.current.click();
+                                  }}
+                                  className="group/avatar relative w-9 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all shadow-2xs"
+                                  title="Click to Upload / Change Student Photo (फोटो अपलोड करें)"
                                 >
-                                  {std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo ? (
+                                  {getStudentPhoto(std) ? (
                                     <img 
-                                      src={std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo} 
+                                      src={getStudentPhoto(std)} 
                                       alt="" 
                                       className="w-full h-full object-cover" 
                                     />
                                   ) : (
-                                    <Users className="w-4 h-4 text-slate-400" />
+                                    <Users className="w-4 h-4 text-slate-400 group-hover/avatar:hidden" />
                                   )}
+                                  <div className="absolute inset-0 bg-indigo-950/70 text-white flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                                    <Camera className="w-3.5 h-3.5 text-white" />
+                                  </div>
                                 </div>
                                 <div>
                                   <div
@@ -3347,9 +3382,9 @@ export default function StudentList({
                                       className="w-12 h-14 rounded-lg overflow-hidden bg-slate-100 border border-slate-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-indigo-500 shadow-2xs"
                                       title="View photo & KYC documents"
                                     >
-                                      {std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo ? (
+                                      {getStudentPhoto(std) ? (
                                         <img 
-                                          src={std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo} 
+                                          src={getStudentPhoto(std)} 
                                           alt="" 
                                           className="w-full h-full object-cover" 
                                         />
@@ -3915,9 +3950,9 @@ export default function StudentList({
                                           className="w-12 h-14 rounded-lg overflow-hidden bg-amber-50 border border-amber-300 shrink-0 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-amber-500 shadow-2xs"
                                           title="View photo & KYC documents"
                                         >
-                                          {std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo ? (
+                                          {getStudentPhoto(std) ? (
                                             <img 
-                                              src={std.studentImage || std.photo || std.documents?.student_image || std.documents?.photo} 
+                                              src={getStudentPhoto(std)} 
                                               alt="" 
                                               className="w-full h-full object-cover" 
                                             />
@@ -6418,9 +6453,9 @@ export default function StudentList({
                       title="Click to Upload or Change Photo"
                       className="w-28 h-32 rounded-xl overflow-hidden border-2 border-indigo-600 hover:border-indigo-800 shadow-md bg-white flex items-center justify-center cursor-pointer relative group transition-all"
                     >
-                      {selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo ? (
+                      {getStudentPhoto(selectedStudent) ? (
                         <img 
-                          src={selectedStudent.studentImage || selectedStudent.photo || selectedStudent.documents?.student_image || selectedStudent.documents?.photo} 
+                          src={getStudentPhoto(selectedStudent)} 
                           alt={selectedStudent.fullName} 
                           className="w-full h-full object-cover" 
                         />
@@ -6898,9 +6933,9 @@ export default function StudentList({
                       title="Click to Upload or Change Photo (फोटो अपलोड या बदलने के लिए क्लिक करें)"
                       className="relative group w-16 h-20 rounded-xl overflow-hidden border-2 border-slate-300 hover:border-indigo-600 bg-white flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-all"
                     >
-                      {editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo ? (
+                      {getStudentPhoto(editingStudent) ? (
                         <img 
-                          src={editingStudent.studentImage || editingStudent.photo || editingStudent.documents?.student_image || editingStudent.documents?.photo} 
+                          src={getStudentPhoto(editingStudent)} 
                           alt="" 
                           className="w-full h-full object-cover" 
                         />
@@ -8075,6 +8110,21 @@ export default function StudentList({
         onImportSuccess={() => {
           fetchStudents();
         }}
+      />
+
+      {/* Hidden file input for table avatar direct upload */}
+      <input 
+        type="file" 
+        ref={tablePhotoInputRef} 
+        accept="image/*" 
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && tableTargetStudent) {
+            handleInitiatePhotoCrop(tableTargetStudent, file);
+          }
+          e.target.value = '';
+        }} 
+        className="hidden" 
       />
 
       {/* Image Cropper Modal */}
