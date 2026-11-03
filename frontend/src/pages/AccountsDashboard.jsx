@@ -692,7 +692,7 @@ export default function AccountsDashboard({ preSelectedStudent, isAdmin = false,
           {/* Student Directory Table with identical searchbar, filters, and actions as Enrolled section */}
           <StudentList 
             hideHeader={true} 
-            canEdit={Boolean(isAdmin && !staffUser && canEdit)}
+            canEdit={canEdit}
             staffUser={staffUser}
             dueFilter={dueFilter} 
             filterStartDate={filterStartDate}

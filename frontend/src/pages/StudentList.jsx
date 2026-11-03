@@ -29,10 +29,11 @@ export default function StudentList({
   filterEndDate = '',
   onFeeReceived,
   isRecordsDesk = false,
-  canEdit: propCanEdit = true,
+  canEdit = true,
   staffUser
 }) {
-  const canEdit = !staffUser && Boolean(propCanEdit);
+  const isMasterAdmin = !staffUser;
+
   const context = useLanguage();
   const lang = propLang || context.lang || 'en';
   const toggleLang = propToggleLang || context.toggleLang;
@@ -5340,7 +5341,7 @@ export default function StudentList({
                                         ) : (
                                           <span>₹0/-</span>
                                         )}
-                                        {canEdit && yr.rec > 0 && (
+                                        {canEdit && yr.rec > 0 && isMasterAdmin && (
                                           <div className="flex items-center gap-1 ml-1.5">
                                             <button
                                               type="button"
@@ -5592,7 +5593,7 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      {canEdit && (
+                                      {canEdit && isMasterAdmin && (
                                         <>
                                           <button
                                             type="button"
@@ -5757,7 +5758,7 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      {canEdit && (
+                                      {canEdit && isMasterAdmin && (
                                         <>
                                           <button
                                             type="button"
@@ -5999,7 +6000,7 @@ export default function StudentList({
                                         <span>Print</span>
                                       </button>
 
-                                      {canEdit && (
+                                      {canEdit && isMasterAdmin && (
                                         <>
                                           <button
                                             type="button"
