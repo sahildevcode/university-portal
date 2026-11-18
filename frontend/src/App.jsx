@@ -60,13 +60,24 @@ export default function App() {
     setLang(prev => (prev === 'en' ? 'hi' : 'en'));
   };
 
-  // Animated Splash Screen state (Logo + Name animation on first load, skipped on admin host)
-  const [showSplash, setShowSplash] = useState(() => !isAdminHost());
+  // Animated Splash Screen state (Logo + Name animation on first load, skipped on admin host & strictly once per session)
+  const [showSplash, setShowSplash] = useState(() => {
+    if (isAdminHost()) return false;
+    try {
+      if (sessionStorage.getItem('pkc_splash_shown') === 'true') {
+        return false;
+      }
+    } catch {}
+    return true;
+  });
 
   // Automatic Inquiry Pop-up Modal on Student Portal load (fires strictly once after splash ends)
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
   const handleSplashFinish = () => {
+    try {
+      sessionStorage.setItem('pkc_splash_shown', 'true');
+    } catch {}
     setShowSplash(false);
     // Trigger popup strictly once when splash animation finishes and page is visible
     setTimeout(() => {
