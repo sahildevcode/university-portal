@@ -215,8 +215,13 @@ export default function VocationalCoursesManager({
 }) {
   const isHindi = lang === 'hi';
 
-  // Primary Workspace View: 'institutes' | 'courses' | 'students'
+  // Primary Workspace View: 'institutes' | 'courses' | 'students' | 'certificates'
   const [activeMainTab, setActiveMainTab] = useState('institutes');
+
+  // Selected student for Certificate Modal preview & print
+  const [selectedCertStudent, setSelectedCertStudent] = useState(null);
+  // Certificate inline edit state
+  const [certEditStudent, setCertEditStudent] = useState(null);
 
   // Institutes State
   const [institutes, setInstitutes] = useState(() => {
@@ -1924,6 +1929,7 @@ export default function VocationalCoursesManager({
         </div>
       )}
 
+
       {/* TOP HERO HEADER */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 border-2 border-amber-400/40 shadow-2xl relative overflow-hidden">
         {/* Background glow decoration */}
@@ -2047,6 +2053,20 @@ export default function VocationalCoursesManager({
               <Users className="w-4 h-4" />
               <span>🎓 Enrolled Students ({vocationalStudents.length})</span>
             </button>
+
+            {/* Tab 4: Student Certificate */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab('certificates')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                activeMainTab === 'certificates'
+                  ? 'bg-amber-400 text-slate-950 shadow-lg scale-105 ring-2 ring-amber-300'
+                  : 'bg-slate-800/80 text-amber-300 hover:bg-slate-750 hover:text-white border border-amber-500/40'
+              }`}
+            >
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>📜 Student Certificate ({vocationalStudents.length})</span>
+            </button>
           </div>
 
           {/* Quick link to Central 718+ Directory */}
@@ -2135,7 +2155,7 @@ export default function VocationalCoursesManager({
               placeholder={
                 activeMainTab === 'institutes'
                   ? 'Search institute by name, code (e.g. MDVTI, MDETTE)...'
-                  : activeMainTab === 'students'
+                  : (activeMainTab === 'students' || activeMainTab === 'certificates')
                   ? 'Search student by name, roll no, father name, Aadhaar, ABC ID...'
                   : 'Search course by name, code (e.g. VOC-ELE-101), sector, trade...'
               }
@@ -2442,6 +2462,7 @@ export default function VocationalCoursesManager({
         </div>
       )}
 
+
       {/* ========================================================================= */}
       {/* SECTION 2: VIEW COURSES (COURSES DESK) */}
       {/* ========================================================================= */}
@@ -2686,6 +2707,7 @@ export default function VocationalCoursesManager({
           )}
         </div>
       )}
+
 
       {/* ========================================================================= */}
       {/* SECTION 3: VIEW ENROLLED VOCATIONAL STUDENTS */}
@@ -3391,6 +3413,563 @@ export default function VocationalCoursesManager({
       )}
 
       {/* ========================================================================= */}
+      {/* SECTION 4: STUDENT CERTIFICATE DESK (ENROLLED STUDENTS LIST & CERTIFICATES) */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'certificates' && (
+        <div className="space-y-4">
+          {/* Top Bar for Certificates */}
+          <div className="bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 p-4 sm:p-5 rounded-2xl border-2 border-amber-400/40 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-lg shrink-0">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+                  Vocational Certification Center
+                </span>
+                <h2 className="text-lg sm:text-xl font-black text-white mt-0.5">
+                  Student Certificate & Skills Verification
+                </h2>
+                <p className="text-xs text-slate-300">
+                  Total Enrolled Students: <strong className="text-amber-300 font-mono">{vocationalStudents.length}</strong> | Filtered: <strong className="text-emerald-400 font-mono">{filteredStudents.length}</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Summary Pill */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
+                📜 Certificate Generator Ready
+              </span>
+            </div>
+          </div>
+
+          {/* Student Certificate Table */}
+          {filteredStudents.length === 0 ? (
+            <div className="bg-white rounded-3xl p-10 text-center border border-slate-200 shadow-sm space-y-3">
+              <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-500 mx-auto flex items-center justify-center">
+                <Award className="w-8 h-8" />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">No Enrolled Students Found</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No students match your filter criteria or no vocational students have been enrolled yet.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-900 text-white uppercase text-[10px] font-bold">
+                    <tr>
+                      <th className="p-3">Roll / Reg No</th>
+                      <th className="p-3">Student Name</th>
+                      <th className="p-3">Father Name</th>
+                      <th className="p-3">Course Name</th>
+                      <th className="p-3">Institute / Center</th>
+                      <th className="p-3 text-center">Duration</th>
+                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3 text-center">Certificate Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredStudents.map((st) => {
+                      const stKey = st.id || st.rollNo;
+                      const inst = institutes.find(i => i.id === st.instituteId) || { name: st.universityName || 'PKC Vocational Center' };
+                      return (
+                        <tr key={stKey} className="hover:bg-amber-50/40 transition-colors">
+                          {/* Roll / Reg No */}
+                          <td className="p-3 font-mono font-bold text-indigo-700 bg-indigo-50/40">
+                            {st.rollNo && st.rollNo !== '0' && st.rollNo !== 0 ? (
+                              <span>{st.rollNo}</span>
+                            ) : st.registrationNo ? (
+                              <span>{st.registrationNo}</span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">Auto-Issued</span>
+                            )}
+                          </td>
+
+                          {/* Student Name */}
+                          <td className="p-3">
+                            <span className="font-black text-slate-900 block">{st.fullName || st.studentName}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">{st.phone || st.contact || 'No phone'}</span>
+                          </td>
+
+                          {/* Father Name */}
+                          <td className="p-3 text-slate-700">
+                            {st.fatherName || '—'}
+                          </td>
+
+                          {/* Course Name */}
+                          <td className="p-3">
+                            <span className="font-bold text-slate-900 block truncate max-w-xs">{st.courseName || 'Vocational Trade Course'}</span>
+                            <span className="text-[10px] text-amber-600 font-semibold">{st.admissionSession || st.currentSession || 'Session 2026-27'}</span>
+                          </td>
+
+                          {/* Institute */}
+                          <td className="p-3 text-slate-600">
+                            <span className="font-semibold block truncate max-w-[200px]">{inst.name || 'PKC Vocational Training Hub'}</span>
+                          </td>
+
+                          {/* Duration */}
+                          <td className="p-3 text-center">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {st.courseDuration || st.duration || '3 Months'}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3 text-center">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              {st.status || 'Active Enrolled'}
+                            </span>
+                          </td>
+
+                          {/* Action Button */}
+                          <td className="p-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCertStudent(st)}
+                                className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-2.5 py-1.5 rounded-xl text-xs shadow-md border border-amber-300 hover:scale-105 transition-all cursor-pointer"
+                                title="View & Download Official Certificate"
+                              >
+                                <Award className="w-3.5 h-3.5 text-slate-950" />
+                                <span>View</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCertEditStudent({ ...st })}
+                                className="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold px-2.5 py-1.5 rounded-xl text-xs shadow-sm border border-slate-700 hover:scale-105 transition-all cursor-pointer"
+                                title="Edit Certificate Information"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* CERTIFICATE MODAL PREVIEW & PRINT POPUP */}
+      {/* ========================================================================= */}
+      {selectedCertStudent && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto flex justify-center items-start">
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden my-auto border-2 border-amber-400/50">
+            {/* Modal Controls Bar */}
+            <div className="no-print bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">PKC Vocational Student Certificate</h3>
+                  <span className="text-[11px] text-amber-300">Exact 100% Original Certificate Layout</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCertEditStudent({ ...selectedCertStudent });
+                    setSelectedCertStudent(null);
+                  }}
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold px-3 py-2 rounded-xl text-xs border border-slate-700 transition-all cursor-pointer"
+                  title="Edit certificate details before printing"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Edit Details</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                  title="Print Certificate"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Certificate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                  title="Download Certificate as PDF"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCertStudent(null)}
+                  className="w-8 h-8 rounded-xl bg-white/10 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer ml-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Exact 1:1 Clean Original Template Overlay */}
+            <div className="printable-area p-2 sm:p-5 bg-slate-100 flex justify-center">
+              <div 
+                className="relative select-none shadow-2xl bg-white overflow-hidden"
+                style={{
+                  width: '100%',
+                  maxWidth: '1024px',
+                  aspectRatio: '1024 / 679',
+                  backgroundImage: 'url("/pkc_clean_base_template.png")',
+                  backgroundSize: '100% 100%',
+                  backgroundRepeat: 'no-repeat',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}
+              >
+                {/* 1. Student Passport Photo Frame (TOP RIGHT) */}
+                <div 
+                  className="absolute overflow-hidden flex items-center justify-center bg-white"
+                  style={{ top: '32.9%', left: '72.2%', width: '11.7%', height: '20.4%' }}
+                >
+                  <img 
+                    src={selectedCertStudent.profileImg || selectedCertStudent.photo || '/sample_student_photo.png'} 
+                    alt="Student Photo" 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => { e.target.src = '/sample_student_photo.png'; }}
+                  />
+                </div>
+
+                {/* 2. Certificate No (PKC0009 / PKC0588) */}
+                <div 
+                  className="absolute font-black text-red-600 leading-none whitespace-nowrap font-mono"
+                  style={{ top: '52.1%', left: '23.0%', fontSize: '1.55vw' }}
+                >
+                  {selectedCertStudent.certificateNo || ('PKC' + (selectedCertStudent.rollNo || selectedCertStudent.id || '0009').toString().slice(-4).padStart(4, '0'))}
+                </div>
+
+                {/* 3. Student Name (Ayushi Gupta / Shivendra Singh Yadav) */}
+                <div 
+                  className="absolute font-bold text-red-600 italic whitespace-nowrap leading-none underline decoration-red-400 underline-offset-4"
+                  style={{ 
+                    top: '55.8%', 
+                    left: '54.5%', 
+                    fontFamily: 'Brush Script MT, cursive, serif', 
+                    fontSize: '2.5vw' 
+                  }}
+                >
+                  {selectedCertStudent.fullName || selectedCertStudent.studentName || 'Ayushi Gupta'}
+                </div>
+
+                {/* 4. Father Name (Shri [Sanjeev Gupta]) */}
+                <div 
+                  className="absolute italic font-serif text-slate-950 font-black whitespace-nowrap leading-none"
+                  style={{ top: '63.6%', left: '40.2%', fontSize: '1.55vw' }}
+                >
+                  {selectedCertStudent.fatherName || 'Sanjeev Gupta'}
+                </div>
+
+                {/* 5. Course Name (BASIC COMPUTER COURES. / DCA / PGDCA) */}
+                <div 
+                  className="absolute font-black text-red-600 uppercase whitespace-nowrap tracking-wide leading-none"
+                  style={{ top: '69.0%', left: '10.5%', fontSize: '1.85vw' }}
+                >
+                  {selectedCertStudent.courseName || 'BASIC COMPUTER COURES.'}
+                </div>
+
+                {/* 6. Course Duration (03 Month) */}
+                <div 
+                  className="absolute font-black text-slate-950 whitespace-nowrap leading-none"
+                  style={{ top: '73.8%', left: '30.0%', fontSize: '1.45vw' }}
+                >
+                  {selectedCertStudent.courseDuration || selectedCertStudent.duration || '03 Month'}
+                </div>
+
+                {/* 7. Course Period (14/05/2024 To 12/08/2024) */}
+                <div 
+                  className="absolute font-black text-slate-950 font-mono whitespace-nowrap leading-none"
+                  style={{ top: '73.8%', left: '60.5%', fontSize: '1.45vw' }}
+                >
+                  {selectedCertStudent.coursePeriod || '14/05/2024 To 12/08/2024'}
+                </div>
+
+                {/* 8. Place (Chhatarpur) */}
+                <div 
+                  className="absolute font-black text-slate-900 whitespace-nowrap leading-none"
+                  style={{ top: '78.3%', left: '21.0%', fontSize: '1.45vw' }}
+                >
+                  {selectedCertStudent.place || 'Chhatarpur'}
+                </div>
+
+                {/* 9. Date Of Issue (20/10/2024) */}
+                <div 
+                  className="absolute font-black text-slate-900 font-mono whitespace-nowrap leading-none"
+                  style={{ top: '82.5%', left: '28.5%', fontSize: '1.45vw' }}
+                >
+                  {selectedCertStudent.issueDate || '20/10/2024'}
+                </div>
+
+                {/* 10. Aadhar No (XXXX XXXX 1650) */}
+                <div 
+                  className="absolute font-black text-slate-900 font-mono whitespace-nowrap leading-none"
+                  style={{ top: '86.8%', left: '23.8%', fontSize: '1.45vw' }}
+                >
+                  {selectedCertStudent.aadhaarNo ? ('XXXX XXXX ' + selectedCertStudent.aadhaarNo.slice(-4)) : 'XXXX XXXX 1650'}
+                </div>
+
+                {/* 11. Live Verification QR Code (BOTTOM RIGHT) */}
+                <div 
+                  className="absolute bg-white overflow-hidden flex items-center justify-center"
+                  style={{ top: '78.9%', left: '67.0%', width: '7.5%', height: '11.3%' }}
+                >
+                  <img 
+                    src="/pkc_original_qr.png" 
+                    alt="QR Code" 
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.target.src = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=' + encodeURIComponent('PKC-CERT:' + (selectedCertStudent.certificateNo || 'PKC0009'));
+                    }}
+                  />
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* CERTIFICATE DETAILS EDIT MODAL */}
+      {/* ========================================================================= */}
+      {certEditStudent && createPortal(
+        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4 flex items-center justify-center">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-2 border-amber-400 overflow-hidden my-auto animate-fadeIn max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-900 text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Edit Certificate Info</h3>
+                  <p className="text-[11px] text-amber-300">Upload profile image & edit certificate details</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCertEditStudent(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Edit Form Body (Scrollable) */}
+            <div className="p-5 sm:p-6 space-y-3.5 text-xs flex-1 overflow-y-auto">
+              {/* Profile Image Upload Box */}
+              <div className="p-3.5 bg-amber-50/80 border-2 border-dashed border-amber-300 rounded-2xl flex items-center gap-4">
+                <div className="w-16 h-20 border-2 border-slate-400 bg-white rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                  {certEditStudent.profileImg || certEditStudent.photo ? (
+                    <img 
+                      src={certEditStudent.profileImg || certEditStudent.photo} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center p-1 text-slate-400">
+                      <Users className="w-6 h-6 mx-auto opacity-40" />
+                      <span className="text-[7.5px] font-bold block uppercase mt-0.5">No Photo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="font-black text-slate-900 block text-xs mb-1">
+                    📸 Student Profile Image (Passport Photo)
+                  </label>
+                  <p className="text-[10px] text-slate-500 mb-2">
+                    Upload real photo to display in the certificate photo frame.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-xs transition-all">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Choose Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files && e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (re) => {
+                              setCertEditStudent({
+                                ...certEditStudent,
+                                profileImg: re.target.result,
+                                photo: re.target.result
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {(certEditStudent.profileImg || certEditStudent.photo) && (
+                      <button
+                        type="button"
+                        onClick={() => setCertEditStudent({ ...certEditStudent, profileImg: null, photo: null })}
+                        className="text-xs text-rose-600 hover:underline font-bold"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">क्रमांक (Reference No)</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.kramank || '06/12/01/14659/23'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, kramank: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Certificate No</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.certificateNo || ('PKC' + (certEditStudent.rollNo || certEditStudent.id || '0009').toString().slice(-4).padStart(4, '0'))}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, certificateNo: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-red-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Student Full Name *</label>
+                <input
+                  type="text"
+                  value={certEditStudent.fullName || certEditStudent.studentName || ''}
+                  onChange={(e) => setCertEditStudent({ ...certEditStudent, fullName: e.target.value, studentName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Father's Name (Shri) *</label>
+                <input
+                  type="text"
+                  value={certEditStudent.fatherName || ''}
+                  onChange={(e) => setCertEditStudent({ ...certEditStudent, fatherName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Course / Program Name *</label>
+                <input
+                  type="text"
+                  value={certEditStudent.courseName || 'BASIC COMPUTER COURES.'}
+                  onChange={(e) => setCertEditStudent({ ...certEditStudent, courseName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-red-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Course Duration</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.courseDuration || certEditStudent.duration || '03 Month'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, courseDuration: e.target.value, duration: e.target.value })}
+                    placeholder="e.g. 03 Month"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Course Period (From - To)</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.coursePeriod || '14/05/2024 To 12/08/2024'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, coursePeriod: e.target.value })}
+                    placeholder="DD/MM/YYYY To DD/MM/YYYY"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Place</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.place || 'Chhatarpur'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, place: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Date Of Issue</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.issueDate || '20/10/2024'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, issueDate: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Aadhaar (Last 4 digits)</label>
+                  <input
+                    type="text"
+                    value={certEditStudent.aadhaarNo || '1650'}
+                    onChange={(e) => setCertEditStudent({ ...certEditStudent, aadhaarNo: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setCertEditStudent(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVocationalStudents(prev => prev.map(s => {
+                    if (s.id === certEditStudent.id || s.rollNo === certEditStudent.rollNo) {
+                      return { ...s, ...certEditStudent };
+                    }
+                    return s;
+                  }));
+                  setSelectedCertStudent({ ...certEditStudent });
+                  setCertEditStudent(null);
+                  showToast('✅ Certificate & Profile Photo updated successfully!');
+                }}
+                className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save & Preview Certificate</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       {/* MODAL 1: ENROLL VOCATIONAL STUDENT (MANUAL STUDENT REGISTRATION) */}
       {/* ========================================================================= */}
       {showEnrollModal && createPortal(
@@ -3855,6 +4434,7 @@ export default function VocationalCoursesManager({
         document.body
       )}
 
+
       {/* ========================================================================= */}
       {/* MODAL 2: ENROLLMENT SUCCESS POPUP */}
       {/* ========================================================================= */}
@@ -3983,6 +4563,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL 3: ADD / EDIT VOCATIONAL INSTITUTE */}
@@ -4124,6 +4705,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL 4: EXCEL UPLOAD MODAL WITH INSTITUTE SELECTION */}
@@ -4346,6 +4928,7 @@ export default function VocationalCoursesManager({
         document.body
       )}
 
+
       {/* ========================================================================= */}
       {/* MODAL 5: ADD / EDIT VOCATIONAL COURSE MANUALLY */}
       {/* ========================================================================= */}
@@ -4541,6 +5124,7 @@ export default function VocationalCoursesManager({
         document.body
       )}
 
+
       {/* ========================================================================= */}
       {/* MODAL: SET / EDIT ENROLLMENT NUMBER (ADMIN ASSIGNMENT) */}
       {/* ========================================================================= */}
@@ -4624,6 +5208,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: VIEW INSTITUTE COURSES (List, Search & Actions for selected institute) */}
@@ -4886,6 +5471,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: EDIT VOCATIONAL STUDENT DETAILS & FEE MANAGEMENT */}
@@ -5313,6 +5899,7 @@ export default function VocationalCoursesManager({
       )}
 
 
+
       {/* ========================================================================= */}
       {/* MODAL: CANCEL VOCATIONAL ADMISSION (MOVES TO CANCELLED HUB) */}
       {/* ========================================================================= */}
@@ -5490,6 +6077,7 @@ export default function VocationalCoursesManager({
         document.body
       )}
 
+
       {/* ========================================================================= */}
       {/* MODAL: DELETE VOCATIONAL STUDENT CONFIRMATION */}
       {/* ========================================================================= */}
@@ -5541,6 +6129,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: UNIFIED VOCATIONAL STUDENT FEE DESK (STUDENTLIST PARITY) */}
@@ -6194,6 +6783,7 @@ export default function VocationalCoursesManager({
         </div>,
         document.body
       )}
+
 
       {/* ========================================================================= */}
       {/* MODAL: OFFICIAL FEE RECEIPT PRINT VOUCHER */}

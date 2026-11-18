@@ -63,7 +63,8 @@ const DEFAULT_EVENT_PHOTOS = [
 ];
 
 export default function CampusEventSlider({ lang = 'en' }) {
-  const [photos, setPhotos] = useState(DEFAULT_EVENT_PHOTOS);
+  const [photos, setPhotos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const autoPlayRef = useRef(null);
@@ -76,15 +77,17 @@ export default function CampusEventSlider({ lang = 'en' }) {
         const res = await fetch('/api/event-photos');
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.photos) && data.photos.length > 0) {
+          if (data.success && Array.isArray(data.photos)) {
             const activeOnly = data.photos.filter(p => p.active !== false);
-            if (isMounted && activeOnly.length > 0) {
+            if (isMounted) {
               setPhotos(activeOnly);
             }
           }
         }
       } catch (err) {
-        console.warn('Using default event photos:', err);
+        console.warn('Error fetching event photos:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
     fetchPhotos();

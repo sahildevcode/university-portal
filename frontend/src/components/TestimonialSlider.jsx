@@ -3,68 +3,39 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function TestimonialSlider({ lang = 'en' }) {
   const [slides, setSlides] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // 5 Official PKC Promotional Banners (Auto-fit & perfectly adjusted)
-  const defaultSlides = [
-    {
-      id: 'tst-1',
-      title: 'PKC Education Admissions & Scholarship Tie-Up',
-      imageUrl: '/testimonials/pkc_scholarship_tieup.jpg',
-      active: true
-    },
-    {
-      id: 'tst-2',
-      title: 'PKC Education Learning Institute & Consultancy Group',
-      imageUrl: '/testimonials/pkc_admission_banner.jpg',
-      active: true
-    },
-    {
-      id: 'tst-3',
-      title: 'Free Laptop & Tablet Scheme for Professional Courses',
-      imageUrl: '/testimonials/pkc_free_laptop_mba.jpg',
-      active: true
-    },
-    {
-      id: 'tst-4',
-      title: 'MBA Admissions Open in Top UGC Universities',
-      imageUrl: '/testimonials/pkc_mba_admission.jpg',
-      active: true
-    },
-    {
-      id: 'tst-5',
-      title: 'Tally Prime, Basic Computer & CPCT Special Batch',
-      imageUrl: '/testimonials/pkc_tally_cpct_offer.jpg',
-      active: true
-    }
-  ];
 
   useEffect(() => {
     fetch('/api/testimonials')
       .then(res => res.json())
       .then(data => {
-        if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+        if (data.success && Array.isArray(data.testimonials)) {
           const activeOnly = data.testimonials.filter(t => t.active !== false && t.imageUrl);
-          setSlides(activeOnly.length > 0 ? activeOnly : defaultSlides);
+          setSlides(activeOnly);
         } else {
-          setSlides(defaultSlides);
+          setSlides([]);
         }
+        setIsLoading(false);
       })
       .catch(() => {
         const fallbackUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api/testimonials' : 'https://pkc-university-api.onrender.com/api/testimonials';
         fetch(fallbackUrl)
           .then(res => res.json())
           .then(data => {
-            if (data.success && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+            if (data.success && Array.isArray(data.testimonials)) {
               const activeOnly = data.testimonials.filter(t => t.active !== false && t.imageUrl);
-              setSlides(activeOnly.length > 0 ? activeOnly : defaultSlides);
+              setSlides(activeOnly);
+            } else {
+              setSlides([]);
             }
           })
-          .catch(() => setSlides(defaultSlides));
+          .catch(() => setSlides([]))
+          .finally(() => setIsLoading(false));
       });
   }, []);
 
-  const activeSlides = slides.length > 0 ? slides : defaultSlides;
+  const activeSlides = slides;
 
   // 1. PRELOAD all images immediately into browser cache so switching is INSTANT with 0-second delay
   useEffect(() => {
@@ -95,6 +66,10 @@ export default function TestimonialSlider({ lang = 'en' }) {
   const handleNext = () => {
     setCurrentIndex(prev => (prev + 1) % activeSlides.length);
   };
+
+  if (isLoading || activeSlides.length === 0) {
+    return null;
+  }
 
   return (
     <section 

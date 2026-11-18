@@ -1017,9 +1017,16 @@ export default function WebsiteCmsManager({
               {/* Direct Image File Upload for Campus Background & Sir Director Front Photo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ImageUploadField
-                  label="Campus Background Banner Photo"
+                  label="Primary Campus Background Banner Photo"
                   value={homeCms.campusBgImage}
-                  onChange={val => handleHomeImageChange('campusBgImage', val)}
+                  onChange={val => {
+                    handleHomeImageChange('campusBgImage', val);
+                    // Also ensure it's in heroBackgrounds if not already
+                    const currentBgs = Array.isArray(homeCms.heroBackgrounds) ? [...homeCms.heroBackgrounds] : [];
+                    if (val && !currentBgs.includes(val)) {
+                      handleHomeImageChange('heroBackgrounds', [val, ...currentBgs]);
+                    }
+                  }}
                   placeholder="Click to upload Campus Background Photo from computer / phone"
                 />
 
@@ -1029,6 +1036,89 @@ export default function WebsiteCmsManager({
                   onChange={val => handleHomeImageChange('sirHeroImage', val)}
                   placeholder="Click to upload Sir Photo"
                 />
+              </div>
+
+              {/* MULTIPLE HERO BACKGROUND SLIDER IMAGES MANAGER */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border-2 border-indigo-200/80 shadow-xs space-y-3.5 mt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                      <span>🖼️ Home Page Multiple Hero Sliding Images</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Auto-Rotating Slider
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Upload multiple campus/event images. Homepage background will automatically slide across these images every 4.5 seconds.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grid of Existing Slider Images */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {(Array.isArray(homeCms.heroBackgrounds) && homeCms.heroBackgrounds.length > 0 
+                    ? homeCms.heroBackgrounds 
+                    : [homeCms.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"]
+                  ).map((imgUrl, bIdx) => (
+                    <div key={bIdx} className="group relative rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-100 aspect-video shadow-xs">
+                      <img 
+                        src={imgUrl} 
+                        alt={`Hero Slide ${bIdx + 1}`} 
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute top-1 left-1 bg-slate-900/80 text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded">
+                        #{bIdx + 1}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = Array.isArray(homeCms.heroBackgrounds) && homeCms.heroBackgrounds.length > 0 
+                            ? [...homeCms.heroBackgrounds] 
+                            : [homeCms.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"];
+                          const filtered = current.filter((_, i) => i !== bIdx);
+                          handleHomeImageChange('heroBackgrounds', filtered);
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                        title="Remove this image from slider"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add New Slide Button */}
+                  <label className="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 rounded-xl aspect-video flex flex-col items-center justify-center gap-1 cursor-pointer transition-all p-2 text-center group">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-black text-indigo-900 leading-tight">
+                      + Add Slide Photo
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        if (file.size > 25 * 1024 * 1024) {
+                          alert('File size exceeds 25MB limit.');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = async (re) => {
+                          const newBase64 = re.target.result;
+                          const current = Array.isArray(homeCms.heroBackgrounds) && homeCms.heroBackgrounds.length > 0 
+                            ? [...homeCms.heroBackgrounds] 
+                            : [homeCms.campusBgImage || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop"];
+                          const updated = [...current, newBase64];
+                          handleHomeImageChange('heroBackgrounds', updated);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
