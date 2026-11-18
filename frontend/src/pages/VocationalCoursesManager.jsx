@@ -2054,19 +2054,7 @@ export default function VocationalCoursesManager({
               <span>🎓 Enrolled Students ({vocationalStudents.length})</span>
             </button>
 
-            {/* Tab 4: Student Certificate */}
-            <button
-              type="button"
-              onClick={() => setActiveMainTab('certificates')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
-                activeMainTab === 'certificates'
-                  ? 'bg-amber-400 text-slate-950 shadow-lg scale-105 ring-2 ring-amber-300'
-                  : 'bg-slate-800/80 text-amber-300 hover:bg-slate-750 hover:text-white border border-amber-500/40'
-              }`}
-            >
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>📜 Student Certificate ({vocationalStudents.length})</span>
-            </button>
+            
           </div>
 
           {/* Quick link to Central 718+ Directory */}
